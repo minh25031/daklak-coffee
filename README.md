@@ -12,7 +12,7 @@ Dưới đây là bản README đề xuất cho **Frontend Repository** của h�
 
 ## 🧑‍💻 Team Members
 
-* Lê Hoàng Phúc – SE173083 *(Frontend Lead)*
+* Lê Hoàng Phúc – SE173083 *(Project Lead)*
 * Nguyễn Nhật Minh – SE161013
 * Lê Hoàng Thiên Vũ – SE160593
 * Phạm Huỳnh Xuân Đăng – SE161782
@@ -129,4 +129,4 @@ npm run dev
 
 ---
 
-Bạn có muốn mình tạo file `README.md` hoàn chỉnh để bạn dán vào repo luôn không?
+
