@@ -40,7 +40,6 @@ Dưới đây là bản README đề xuất cho **Frontend Repository** của h�
 | -------------------- | -------------------------------------------------- |
 | **Farmer**           | Register crop plans, track progress, send harvest  |
 | **Business Manager** | Plan procurement, manage inventory, confirm orders |
-| **Trader**           | Explore products, place B2B orders                 |
 | **Expert**           | View anomalies, give feedback to farmers           |
 | **Admin**            | View system statistics, manage accounts & data     |
 | **Delivery Staff**   | Update delivery statuses                           |
