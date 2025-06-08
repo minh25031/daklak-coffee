@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/lib/components/ui/card";
 import { FaGoogle } from "react-icons/fa";
+import { Home } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -38,7 +39,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-muted">
+    <div className="relative flex h-screen w-full bg-muted">
       <Link
         href="/"
         className="hidden md:flex basis-2/3 bg-cover bg-center"
@@ -48,30 +49,44 @@ export default function LoginPage() {
       </Link>
 
       <div className="basis-full md:basis-1/3 flex items-center justify-center px-6 bg-white">
-        <Card className="w-full max-w-md shadow-lg">
+        <Card className="w-full max-w-md shadow-lg relative overflow-visible">
+          {/* Biểu tượng Home */}
+          <Link 
+            href="/" 
+            className="absolute -top-5 -right-5 bg-white border border-gray-300 shadow-lg rounded-full p-3 hover:bg-amber-100 transition z-20"
+          >
+            <Home className="w-6 h-6 text-amber-900" />
+          </Link>
+
           <CardHeader>
             <CardTitle className="text-2xl text-center">Đăng nhập</CardTitle>
+            <p className="text-sm text-muted-foreground text-center mt-1">
+              Tham gia nền tảng chuỗi cung ứng cà phê Đắk Lắk.
+            </p>
           </CardHeader>
+
           <CardContent>
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <div>
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  className="text-sm"
                 />
               </div>
-              <div>
-                <Label htmlFor="password">Mật khẩu</Label>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm">Mật khẩu</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="text-sm"
                 />
               </div>
               <Button
@@ -80,17 +95,25 @@ export default function LoginPage() {
               >
                 Đăng nhập
               </Button>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-right">
                 <Link
                   href="/auth/forgot_password"
-                  className="hover:underline text-amber-900"
+                  className="text-[#4B2E19] font-medium hover:underline hover:text-[#6F4E37] transition-colors duration-200"
                 >
                   Quên mật khẩu?
                 </Link>
               </div>
             </form>
-            <div className="mt-4 border-t pt-4">
-              <div className="flex justify-center space-x-4 mt-2">
+
+            {/* Dòng phân cách OR */}
+            <div className="flex items-center justify-center my-4">
+              <div className="border-t border-gray-300 w-full" />
+              <span className="mx-3 text-sm text-gray-400">hoặc</span>
+              <div className="border-t border-gray-300 w-full" />
+            </div>
+
+            <div>
+              <div>
                 <Button
                   variant="outline"
                   className="w-full flex items-center justify-center gap-2"
