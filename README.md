@@ -70,18 +70,64 @@ Dưới đây là bản README đề xuất cho **Frontend Repository** của h�
 ## 📦 Project Structure
 
 ```bash
-src/
-├── app/
-│   ├── dashboard/
-│   │   ├── farmer/
-│   │   ├── manager/
-│   │   ├── expert/
-│   │   ├── admin/
-│   ├── auth/         # login, register
-│   └── layout.tsx
-├── lib/
-│   ├── api/          # mock API calls
-│   └── components/   # UI wrappers (input, card, button...)
+📦 daklak-supplychain
+├── 📁 app/                     # App Router chính
+│   ├── layout.tsx             # Layout toàn cục (Header, Footer, children)
+│   ├── page.tsx               # Trang chủ (Home)
+│   ├── marketplace/
+│   │   └── page.tsx           # Trang marketplace: công khai hợp đồng thu mua
+│   ├── auth/                  # Đăng nhập / Đăng ký
+│   │   ├── login/page.tsx
+│   │   └── register/page.tsx
+│   └── dashboard/             # Khu vực Dashboard theo vai trò
+│       ├── farmer/
+│       │   ├── page.tsx               # Trang tổng quan nông dân
+│       │   ├── crop-seasons/page.tsx # Mùa vụ
+│       │   ├── batches/page.tsx      # Sơ chế
+│       │   └── profile/page.tsx
+│       ├── manager/
+│       │   ├── page.tsx
+│       │   ├── procurement-plans/page.tsx
+│       │   ├── contracts/page.tsx
+│       │   └── inventory/page.tsx
+│       ├── expert/
+│       │   ├── page.tsx
+│       │   ├── evaluations/page.tsx
+│       │   └── qa/page.tsx
+│       └── admin/
+│           ├── page.tsx
+│           └── statistics/page.tsx
+│
+├── 📁 components/              # Tất cả component UI tái sử dụng
+│   ├── 📁 ui/                  # Các component shadcn/ui: button, input...
+│   ├── 📁 layout/              # Header, Footer, Sidebar...
+│   │   ├── Header.tsx
+│   │   ├── Footer.tsx
+│   │   └── SidebarDashboard.tsx
+│   └── 📁 shared/              # Alert, badge, table nhỏ dùng lại
+│
+├── 📁 lib/
+│   ├── 📁 api/                 # Mock/fetch API: gọi data
+│   │   ├── procurementPlans.ts
+│   │   ├── cropSeasons.ts
+│   │   ├── batches.ts
+│   │   └── auth.ts
+│   └── utils.ts               # formatDate, generateCode, removeDiacritics,...
+│
+├── 📁 public/                  # Logo, ảnh, favicon...
+│   ├── logo.jpg
+│   └── banner.jpg
+│
+├── 📁 styles/
+│   └── globals.css            # Custom CSS (nếu cần ngoài Tailwind)
+│
+├── .env.local                 # API_URL, BASE_URL...
+├── tailwind.config.js         # Tailwind config
+├── tsconfig.json              # TypeScript config
+├── next.config.js             # Next.js config
+├── package.json
+└── README.md
+
 ```
 
 ---
