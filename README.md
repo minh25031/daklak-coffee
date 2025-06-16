@@ -71,62 +71,97 @@ Dưới đây là bản README đề xuất cho **Frontend Repository** của h�
 
 ```bash
 📦 daklak-supplychain
-├── 📁 app/                     # App Router chính
-│   ├── layout.tsx             # Layout toàn cục (Header, Footer, children)
-│   ├── page.tsx               # Trang chủ (Home)
-│   ├── marketplace/
-│   │   └── page.tsx           # Trang marketplace: công khai hợp đồng thu mua
-│   ├── auth/                  # Đăng nhập / Đăng ký
+
+src/
+├── app/                            # App Router của Next.js (routing chính)
+│
+│   ├── auth/                       # Trang xác thực (login, register)
 │   │   ├── login/page.tsx
 │   │   └── register/page.tsx
-│   └── dashboard/             # Khu vực Dashboard theo vai trò
-│       ├── farmer/
-│       │   ├── page.tsx               # Trang tổng quan nông dân
-│       │   ├── crop-seasons/page.tsx # Mùa vụ
-│       │   ├── batches/page.tsx      # Sơ chế
-│       │   └── profile/page.tsx
-│       ├── manager/
-│       │   ├── page.tsx
-│       │   ├── procurement-plans/page.tsx
-│       │   ├── contracts/page.tsx
-│       │   └── inventory/page.tsx
-│       ├── expert/
-│       │   ├── page.tsx
-│       │   ├── evaluations/page.tsx
-│       │   └── qa/page.tsx
-│       └── admin/
-│           ├── page.tsx
-│           └── statistics/page.tsx
 │
-├── 📁 components/              # Tất cả component UI tái sử dụng
-│   ├── 📁 ui/                  # Các component shadcn/ui: button, input...
-│   ├── 📁 layout/              # Header, Footer, Sidebar...
-│   │   ├── Header.tsx
-│   │   ├── Footer.tsx
-│   │   └── SidebarDashboard.tsx
-│   └── 📁 shared/              # Alert, badge, table nhỏ dùng lại
+│   ├── profile/                    # Hồ sơ người dùng (xem & sửa)
+│   │   ├── layout.tsx
+│   │   └── page.tsx
 │
-├── 📁 lib/
-│   ├── 📁 api/                 # Mock/fetch API: gọi data
-│   │   ├── procurementPlans.ts
-│   │   ├── cropSeasons.ts
-│   │   ├── batches.ts
-│   │   └── auth.ts
-│   └── utils.ts               # formatDate, generateCode, removeDiacritics,...
+│   ├── dashboard/                  # Dashboard chính chia theo role
+│   │
+│   │   ├── admin/                  # 🧑‍💻 Admin hệ thống
+│   │   │   └── page.tsx            # Trang thống kê tổng quan (biểu đồ)
 │
-├── 📁 public/                  # Logo, ảnh, favicon...
+│   │   ├── manager/                # 🧑‍💼 Business Manager
+│   │   │   ├── page.tsx
+│   │   │
+│   │   │   ├── procurement-plans/      # 📋 Kế hoạch thu mua
+│   │   │   │   ├── page.tsx            # Danh sách
+│   │   │   │   ├── create/page.tsx
+│   │   │   │   └── [id]/               # Chi tiết / Sửa
+│   │   │   │       ├── page.tsx
+│   │   │   │       └── edit/page.tsx
+│   │   │
+│   │   │   ├── cultivation-registrations/  # 🧾 Đăng ký trồng
+│   │   │   ├── farming-commitments/        # 🤝 Cam kết trồng
+│   │   │   ├── processing-methods/         # ⚙️ Phương pháp sơ chế
+│   │   │   ├── expert-feedbacks/           # 🧠 Phản hồi từ chuyên gia
+│   │   │   ├── contracts/                  # 📄 Hợp đồng thu mua
+│   │   │   ├── orders/                     # 📦 Đơn hàng
+│   │   │   ├── shipments/                  # 🚚 Giao hàng
+│   │   │   ├── warehouses/                 # 🏢 Kho lưu trữ
+│   │   │   └── inventories/                # 📊 Tồn kho
+
+│   │   │   # Mỗi module CRUD gồm: page.tsx, create/page.tsx, [id]/page.tsx, [id]/edit/page.tsx
+
+│   │   ├── farmer/                  # 👨‍🌾 Nông dân
+│   │   │   ├── page.tsx             # Dashboard tổng quan
+│   │   │
+│   │   │   ├── crop-seasons/        # 🌾 Mùa vụ
+│   │   │   ├── batches/             # ⚒️ Mẻ sơ chế
+│   │   │   ├── waste/               # ♻️ Phế phẩm
+│   │   │   └── request-feedback/    # 📬 Gửi phản hồi cho chuyên gia
+
+│   │   │   # Mỗi module CRUD gồm: page.tsx, create/page.tsx, [id]/page.tsx, [id]/edit/page.tsx
+
+│   │   ├── expert/                  # 🧠 Chuyên gia nông nghiệp
+│   │   │   ├── page.tsx
+│   │   │   ├── evaluations/         # 📋 Đánh giá mùa vụ, mẻ
+│   │   │   ├── qna/                 # ❓ Q&A với nông dân
+│   │   │   └── anomalies/           # 🚨 Cảnh báo mùa vụ
+
+│   │   ├── staff/                   # 👷 Nhân viên kho
+│   │   │   ├── inbounds/            # Danh sách yêu cầu nhập kho
+│   │   │   ├── receipts/            # Tạo phiếu nhập/xuất kho
+│   │   │   └── inventories/         # Danh sách tồn kho thực tế
+
+│   │   ├── delivery/                # 🚚 Nhân viên giao hàng
+│   │   │   └── shipments/           # Cập nhật trạng thái giao hàng
+
+│   ├── marketplace/                 # 🏬 Marketplace công khai
+│   │   ├── page.tsx                 # Danh sách sản phẩm
+│   │   └── [id]/page.tsx            # Chi tiết sản phẩm
+│
+├── components/                     # Các thành phần giao diện
+│   ├── ui/                         # Component shadcn/ui (button, input, ...)
+│   ├── layout/                     # Header, Footer, SidebarDashboard
+│   └── shared/                     # Alert, badge, loading,...
+│
+├── lib/                            # Thư viện logic phụ trợ
+│   ├── api/                        # Gọi API (REST hoặc mock)
+│   ├── constant/                   # Hằng số toàn cục
+│   └── utils.ts                    # Hàm tiện ích: formatDate, slugify, removeDiacritics,...
+│
+├── public/                         # Ảnh, favicon, logo dùng public
 │   ├── logo.jpg
 │   └── banner.jpg
 │
-├── 📁 styles/
-│   └── globals.css            # Custom CSS (nếu cần ngoài Tailwind)
+├── styles/
+│   └── globals.css                 # Custom CSS (ngoài Tailwind)
 │
-├── .env.local                 # API_URL, BASE_URL...
-├── tailwind.config.js         # Tailwind config
-├── tsconfig.json              # TypeScript config
-├── next.config.js             # Next.js config
-├── package.json
-└── README.md
+├── .env.local                      # Biến môi trường chạy dev (API_URL,...)
+├── .gitignore                      # Đã bao gồm `.env*` để tránh đẩy file nhạy cảm
+├── tailwind.config.js             # Cấu hình TailwindCSS
+├── tsconfig.json                  # Cấu hình TypeScript
+├── next.config.js                 # Config Next.js
+├── package.json                   # Danh sách dependencies
+└── README.md                      # Hướng dẫn setup và phát triển
 
 ```
 
