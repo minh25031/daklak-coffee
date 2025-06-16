@@ -2,31 +2,38 @@
 
 import {
     Sidebar,
-    SidebarHeader,
     SidebarContent,
-    SidebarGroup,
     SidebarFooter,
+    SidebarGroup,
 } from "@/components/ui/sidebar";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const [role, setRole] = useState<string | null>(null);
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    // const [role, setRole] = useState<string | null>(null);
 
-    useEffect(() => {
-        const storedRole = localStorage.getItem("user_role");
-        setRole(storedRole);
-    }, []);
+    // useEffect(() => {
+    //   const storedRole = localStorage.getItem("user_role");
+    //   setRole(storedRole);
+    // }, []);
+
+    const role = "manager";
 
     return (
-        <div className="min-h-screen w-full bg-[#fefaf4]">
-            <Sidebar>
+        <div className="min-h-screen w-full bg-[#fefaf4] overflow-x-hidden">
+            <Sidebar defaultCollapsed={isCollapsed} onCollapseChange={setIsCollapsed}>
                 <SidebarContent>
                     <SidebarGroup />
                 </SidebarContent>
                 <SidebarFooter role={role} />
             </Sidebar>
 
-            <main className="ml-64 p-6">{children}</main>
+            <main
+                className={`transition-all duration-300 p-6 ${isCollapsed ? "ml-[64px]" : "ml-[260px]"
+                    }`}
+            >
+                {children}
+            </main>
         </div>
     );
 }
