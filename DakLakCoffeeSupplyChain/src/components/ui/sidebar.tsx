@@ -6,14 +6,29 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
 import React from "react";
+import { FiPieChart, FiUsers, FiFileText, FiSettings, FiBarChart2, FiMessageCircle, FiBookOpen, FiClipboard, FiFeather } from "react-icons/fi";
+
+
+const iconMap = {
+    dashboard: <FiPieChart />,
+    users: <FiUsers />,
+    contracts: <FiFileText />,
+    reports: <FiBarChart2 />,
+    settings: <FiSettings />,
+    feedback: <FiMessageCircle />,
+    articles: <FiBookOpen />,
+    consultation: <FiFeather />,
+    crops: <FiClipboard />,
+};
 
 // ===== Sidebar Layout =====
 interface SidebarProps {
     children: ReactNode;
     defaultCollapsed?: boolean;
+    onCollapseChange?: (collapsed: boolean) => void;
 }
 
-export function Sidebar({ children, defaultCollapsed = false }: SidebarProps) {
+export function Sidebar({ children, defaultCollapsed = false, onCollapseChange }: SidebarProps) {
     const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
     // Truyền prop `isCollapsed` xuống SidebarFooter
@@ -49,11 +64,16 @@ export function Sidebar({ children, defaultCollapsed = false }: SidebarProps) {
                     )}
                 </div>
                 <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    onClick={() => {
+                        const newState = !isCollapsed;
+                        setIsCollapsed(newState);
+                        if (onCollapseChange) onCollapseChange(newState); // ✅ truyền ngược lên layout
+                    }}
                     className="text-orange-600 hover:bg-orange-100 rounded p-1"
                 >
                     <Menu size={20} />
                 </button>
+
             </div>
             <div className="flex-1 overflow-auto">{childrenWithProps}</div>
         </aside>
@@ -99,28 +119,28 @@ export function SidebarGroup() {
 
     const navigationItems = {
         farmer: [
-            { title: "Tổng quan", href: "/dashboard/farmer", icon: "🌱" },
-            { title: "Mùa vụ", href: "/dashboard/farmer/crop-seasons", icon: "🌾" },
-            { title: "Vườn cà phê", href: "/dashboard/farmer/batches", icon: "🌳" },
-            { title: "Tư vấn", href: "/dashboard/farmer/request-feedback", icon: "💬" },
+            { title: "Tổng quan", href: "/dashboard/farmer", icon: iconMap.dashboard },
+            { title: "Mùa vụ", href: "/dashboard/farmer/crop-seasons", icon: iconMap.crops },
+            { title: "Vườn cà phê", href: "/dashboard/farmer/batches", icon: <FiBookOpen /> },
+            { title: "Tư vấn", href: "/dashboard/farmer/request-feedback", icon: iconMap.feedback },
         ],
         admin: [
-            { title: "Tổng quan", href: "/dashboard/admin", icon: "📊" },
-            { title: "Người dùng", href: "/dashboard/admin/users", icon: "👤" },
-            { title: "Hợp đồng", href: "/dashboard/admin/contracts", icon: "📄" },
-            { title: "Báo cáo", href: "/dashboard/admin/reports", icon: "📈" },
-            { title: "Cài đặt", href: "/dashboard/admin/settings", icon: "⚙️" },
+            { title: "Tổng quan", href: "/dashboard/admin", icon: iconMap.dashboard },
+            { title: "Người dùng", href: "/dashboard/admin/users", icon: iconMap.users },
+            { title: "Hợp đồng", href: "/dashboard/admin/contracts", icon: iconMap.contracts },
+            { title: "Báo cáo", href: "/dashboard/admin/reports", icon: iconMap.reports },
+            { title: "Cài đặt", href: "/dashboard/admin/settings", icon: iconMap.settings },
         ],
         expert: [
-            { title: "Tổng quan", href: "/dashboard/expert", icon: "📋" },
-            { title: "Tư vấn", href: "/dashboard/expert/consultations", icon: "💡" },
-            { title: "Bài viết", href: "/dashboard/expert/articles", icon: "📝" },
+            { title: "Tổng quan", href: "/dashboard/expert", icon: iconMap.dashboard },
+            { title: "Tư vấn", href: "/dashboard/expert/consultations", icon: iconMap.consultation },
+            { title: "Bài viết", href: "/dashboard/expert/articles", icon: iconMap.articles },
         ],
         manager: [
-            { title: "Tổng quan", href: "/dashboard/manager", icon: "📊" },
-            { title: "Hợp đồng", href: "/dashboard/manager/contracts", icon: "📄" },
-            { title: "Nông dân", href: "/dashboard/manager/farmers", icon: "🌾" },
-            { title: "Báo cáo", href: "/dashboard/manager/reports", icon: "📈" },
+            { title: "Tổng quan", href: "/dashboard/manager", icon: iconMap.dashboard },
+            { title: "Hợp đồng", href: "/dashboard/manager/contracts", icon: iconMap.contracts },
+            { title: "Nông dân", href: "/dashboard/manager/farmers", icon: iconMap.users },
+            { title: "Báo cáo", href: "/dashboard/manager/reports", icon: iconMap.reports },
         ],
     };
 
