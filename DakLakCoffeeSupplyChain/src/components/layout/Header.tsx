@@ -26,7 +26,7 @@ export default function Header() {
         {/* Logo + Tên */}
         <div className="flex items-center gap-3">
           <Link href="/">
-            <img src="/logo.jpg" alt="Logo" className="h-10 w-auto" />
+            <img src="/logo_bg.png" alt="Logo" className="h-10 w-auto" />
           </Link>
           <h1 className="text-xl md:text-2xl font-bold text-orange-700">
             DakLak SupplyChain
