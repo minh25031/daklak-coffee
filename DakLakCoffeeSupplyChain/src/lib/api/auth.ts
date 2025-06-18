@@ -1,34 +1,48 @@
-import { mockUserData, UserProfile } from "./users";
-import { roleMap } from "@/lib/constrant/role"; // nếu bạn tách ra
+import { jwtDecode } from "jwt-decode";
+import { roleSlugMap } from "@/lib/constrant/role";
 
-export async function mockLogin(
-  email: string,
-  password: string
-): Promise<UserProfile | null> {
-  const user = mockUserData.find(
-    (u) => u.Email === email && u.Password === password
-  );
-
-  if (!user) return null;
-
-  // Gán localStorage
-  localStorage.setItem("user_id", user.user_id);
-  localStorage.setItem("username", user.Username);
-  localStorage.setItem("user_role", roleMap[user.RoleID]);
-  localStorage.setItem("email", user.Email);
-
-  return user;
+export interface DecodedToken {
+  nameid: string;
+  email: string;
+  role: string; // VD: "Admin", "AgriculturalExpert", ...
+  exp: number;
+  iat: number;
 }
 
-// Hàm kiểm tra xem người dùng đã đăng nhập chưa
+export async function login(email: string, password: string): Promise<DecodedToken> {
+  const response = await fetch("https://localhost:7163/api/Auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const result = await response.json();
+
+  if (result.status !== 1) {
+    throw new Error(result.message || "Đăng nhập thất bại");
+  }
+
+  const { token } = result.data;
+  const decoded: DecodedToken = jwtDecode(token);
+
+  // === 📦 Lưu vào localStorage ===
+  const roleSlug = roleSlugMap[decoded.role] ?? "unknown";
+
+  localStorage.setItem("token", token);
+  localStorage.setItem("user_id", decoded.nameid);
+  localStorage.setItem("email", decoded.email);
+  localStorage.setItem("user_role", roleSlug);           
+  localStorage.setItem("user_role_raw", decoded.role);    
+
+  return decoded;
+}
+
 export function isAuthenticated(): boolean {
-  return !!localStorage.getItem("user_id");
+  return !!localStorage.getItem("token");
 }
 
-// Hàm đăng xuất
 export function logout(): void {
-  localStorage.removeItem("user_id");
-  localStorage.removeItem("username");
-  localStorage.removeItem("user_role");
-  localStorage.removeItem("full_user");
+  localStorage.clear();
 }

@@ -1,18 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { roleMap } from "@/lib/constrant/role";
 
 export default function DashboardRootPage() {
   const [redirecting, setRedirecting] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const roleId = Number(localStorage.getItem("user_role_id"));
-    const role = roleMap[roleId];
-
-    if (role) {
-      router.push(`/dashboard/${role}`);
+    const roleSlug = localStorage.getItem("user_role");
+    if (roleSlug) {
+      router.push(`/dashboard/${roleSlug}`);
     } else {
       router.push("/not-found");
     }

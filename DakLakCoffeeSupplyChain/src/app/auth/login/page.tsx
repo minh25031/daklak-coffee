@@ -3,44 +3,35 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { mockLogin } from "@/lib/api/auth";
+import { login } from "@/lib/api/auth";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { FaGoogle } from "react-icons/fa";
 import { Home } from "lucide-react";
+import { roleSlugMap } from "@/lib/constrant/role";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const router = useRouter();
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
+
         try {
-            const user = await mockLogin(email, password);
+            const decoded = await login(email, password);
 
-            if (!user) {
-                alert("Email hoặc mật khẩu không đúng!");
-                return;
-            }
+            const roleSlug = roleSlugMap[decoded.role] ?? "dashboard";
+            router.push(`/dashboard/${roleSlug}`);
 
-            localStorage.setItem("user_role", user.RoleID.toString());
-            localStorage.setItem("username", user.Username);
-
-            const roleMap: Record<number, string> = {
-                1: "farmer",
-                2: "manager",
-                3: "expert",
-                4: "admin",
-            };
-
-            const rolePath = roleMap[user.RoleID] ?? "dashboard";
-            router.push(`/dashboard/${rolePath}`);
         } catch (err: any) {
-            alert("Đăng nhập thất bại: " + err.message);
+            alert("❌ Đăng nhập thất bại: " + err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -56,7 +47,6 @@ export default function LoginPage() {
 
             <div className="basis-full md:basis-1/3 flex items-center justify-center px-6 bg-white">
                 <Card className="w-full max-w-md shadow-lg relative overflow-visible">
-                    {/* Biểu tượng Home */}
                     <Link
                         href="/"
                         className="absolute -top-5 -right-5 bg-white border border-gray-300 shadow-lg rounded-full p-3 hover:bg-amber-100 transition z-20"
@@ -74,9 +64,7 @@ export default function LoginPage() {
                     <CardContent>
                         <form className="space-y-4" onSubmit={handleSubmit}>
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-sm">
-                                    Email
-                                </Label>
+                                <Label htmlFor="email" className="text-sm">Email</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -87,9 +75,7 @@ export default function LoginPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="password" className="text-sm">
-                                    Mật khẩu
-                                </Label>
+                                <Label htmlFor="password" className="text-sm">Mật khẩu</Label>
                                 <Input
                                     id="password"
                                     type="password"
@@ -101,9 +87,10 @@ export default function LoginPage() {
                             </div>
                             <Button
                                 type="submit"
+                                disabled={loading}
                                 className="w-full bg-amber-900 hover:bg-amber-800"
                             >
-                                Đăng nhập
+                                {loading ? "Đang xử lý..." : "Đăng nhập"}
                             </Button>
                             <div className="text-sm text-right">
                                 <Link
@@ -115,53 +102,25 @@ export default function LoginPage() {
                             </div>
                         </form>
 
-                        {/* Dòng phân cách OR */}
                         <div className="flex items-center justify-center my-4">
                             <div className="border-t border-gray-300 w-full" />
                             <span className="mx-3 text-sm text-gray-400">hoặc</span>
                             <div className="border-t border-gray-300 w-full" />
                         </div>
 
-                        <div>
-                            <div>
-                                <Button
-                                    variant="outline"
-                                    className="w-full flex items-center justify-center gap-2"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 48 48"
-                                    >
-                                        <path
-                                            fill="#4285F4"
-                                            d="M24 9.5c3.15 0 5.99 1.08 8.22 2.86l6.12-6.12C34.41 3.07 29.5 1 24 1 14.95 1 7.09 6.88 3.87 14.36l7.2 5.6C12.83 13.2 17.95 9.5 24 9.5z"
-                                        />
-                                        <path
-                                            fill="#34A853"
-                                            d="M46.1 24.5c0-1.64-.15-3.22-.43-4.74H24v9h12.5c-.54 2.84-2.2 5.24-4.67 6.9l7.26 5.66c4.23-3.9 6.63-9.65 6.63-16.82z"
-                                        />
-                                        <path
-                                            fill="#FBBC05"
-                                            d="M11.07 28.75c-.54-1.6-.84-3.3-.84-5.25s.3-3.65.84-5.25l-7.2-5.6C2.66 16.7 1.5 20.23 1.5 24s1.16 7.3 3.37 10.35l7.2-5.6z"
-                                        />
-                                        <path
-                                            fill="#EA4335"
-                                            d="M24 46.5c5.5 0 10.41-1.87 14.25-5.1l-7.26-5.66c-2 1.33-4.58 2.1-6.99 2.1-6.05 0-11.17-3.7-13-8.95l-7.2 5.6C7.09 41.12 14.95 46.5 24 46.5z"
-                                        />
-                                    </svg>
-                                    Đăng nhập với Google
-                                </Button>
-                            </div>
-                        </div>
+                        <Button variant="outline" className="w-full flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                                <path fill="#4285F4" d="M24 9.5c3.15 0 5.99 1.08 8.22 2.86l6.12-6.12C34.41 3.07 29.5 1 24 1 14.95 1 7.09 6.88 3.87 14.36l7.2 5.6C12.83 13.2 17.95 9.5 24 9.5z" />
+                                <path fill="#34A853" d="M46.1 24.5c0-1.64-.15-3.22-.43-4.74H24v9h12.5c-.54 2.84-2.2 5.24-4.67 6.9l7.26 5.66c4.23-3.9 6.63-9.65 6.63-16.82z" />
+                                <path fill="#FBBC05" d="M11.07 28.75c-.54-1.6-.84-3.3-.84-5.25s.3-3.65.84-5.25l-7.2-5.6C2.66 16.7 1.5 20.23 1.5 24s1.16 7.3 3.37 10.35l7.2-5.6z" />
+                                <path fill="#EA4335" d="M24 46.5c5.5 0 10.41-1.87 14.25-5.1l-7.26-5.66c-2 1.33-4.58 2.1-6.99 2.1-6.05 0-11.17-3.7-13-8.95l-7.2 5.6C7.09 41.12 14.95 46.5 24 46.5z" />
+                            </svg>
+                            Đăng nhập với Google
+                        </Button>
 
                         <div className="mt-6 text-center">
                             <span className="text-sm text-gray-600">Chưa có tài khoản? </span>
-                            <Link
-                                href="/auth/register"
-                                className="text-amber-900 font-semibold hover:underline"
-                            >
+                            <Link href="/auth/register" className="text-amber-900 font-semibold hover:underline">
                                 Đăng ký
                             </Link>
                         </div>

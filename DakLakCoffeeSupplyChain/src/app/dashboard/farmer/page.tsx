@@ -1,30 +1,26 @@
 "use client";
 
-import { FiFileText, FiUsers, FiBarChart2 } from "react-icons/fi";
+import { FiClipboard, FiFeather, FiBookOpen } from "react-icons/fi";
 
-export default function ManagerDashboard() {
+export default function FarmerDashboard() {
     return (
         <div className="w-full bg-orange-50 min-h-screen">
             <div className="p-6">
-                <h1 className="text-2xl font-bold text-orange-600 mb-6">
-                    🧑‍💼 Manager Dashboard
-                </h1>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <DashboardCard
-                        icon={<FiFileText className="text-orange-500 text-xl" />}
-                        title="Hợp đồng"
-                        description="Quản lý các hợp đồng thu mua, giao hàng, thanh toán."
+                        icon={<FiClipboard className="text-orange-500 text-xl" />}
+                        title="Mùa vụ"
+                        description="Theo dõi và quản lý mùa vụ canh tác của bạn."
                     />
                     <DashboardCard
-                        icon={<FiUsers className="text-orange-500 text-xl" />}
-                        title="Danh sách nông dân"
-                        description="Theo dõi và quản lý các hộ nông dân hợp tác."
+                        icon={<FiBookOpen className="text-orange-500 text-xl" />}
+                        title="Vườn cà phê"
+                        description="Thông tin chi tiết về các lô vườn bạn đang sở hữu."
                     />
                     <DashboardCard
-                        icon={<FiBarChart2 className="text-orange-500 text-xl" />}
-                        title="Báo cáo"
-                        description="Xem thống kê về sản lượng, tiến độ, và chất lượng."
+                        icon={<FiFeather className="text-orange-500 text-xl" />}
+                        title="Tư vấn kỹ thuật"
+                        description="Gửi yêu cầu và nhận phản hồi từ chuyên gia."
                     />
                 </div>
             </div>
