@@ -1,13 +1,22 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { JSX, ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
 import React from "react";
-import { FiPieChart, FiUsers, FiFileText, FiSettings, FiBarChart2, FiMessageCircle, FiBookOpen, FiClipboard, FiFeather } from "react-icons/fi";
-
+import {
+    FiPieChart,
+    FiUsers,
+    FiFileText,
+    FiSettings,
+    FiBarChart2,
+    FiMessageCircle,
+    FiBookOpen,
+    FiClipboard,
+    FiFeather,
+} from "react-icons/fi";
 
 const iconMap = {
     dashboard: <FiPieChart />,
@@ -31,7 +40,6 @@ interface SidebarProps {
 export function Sidebar({ children, defaultCollapsed = false, onCollapseChange }: SidebarProps) {
     const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
-    // Truyền prop `isCollapsed` xuống SidebarFooter
     const childrenWithProps = React.Children.map(children, (child) => {
         if (
             typeof child === "object" &&
@@ -67,13 +75,12 @@ export function Sidebar({ children, defaultCollapsed = false, onCollapseChange }
                     onClick={() => {
                         const newState = !isCollapsed;
                         setIsCollapsed(newState);
-                        if (onCollapseChange) onCollapseChange(newState); // ✅ truyền ngược lên layout
+                        onCollapseChange?.(newState);
                     }}
                     className="text-orange-600 hover:bg-orange-100 rounded p-1"
                 >
                     <Menu size={20} />
                 </button>
-
             </div>
             <div className="flex-1 overflow-auto">{childrenWithProps}</div>
         </aside>
@@ -93,35 +100,18 @@ export function SidebarContent({ children }: { children: ReactNode }) {
 // ===== Sidebar Group (navigation) =====
 export function SidebarGroup() {
     const pathname = usePathname();
-    const [role, setRole] = useState<"admin" | "expert" | "manager" | "farmer" | null>(null);
+    const [role, setRole] = useState<string | null>(null);
 
-
-    // useEffect(() => {
-    //     const storedRole = localStorage.getItem("user_role");
-    //     if (
-    //         storedRole === "admin" ||
-    //         storedRole === "expert" ||
-    //         storedRole === "manager" ||
-    //         storedRole === "farmer"
-    //     ) {
-    //         setRole(storedRole);
-    //     }
-    // }, []);
     useEffect(() => {
-        // Gán cứng để test, bạn có thể thay bằng localStorage nếu đã có login
-        localStorage.setItem("user_role", "admin"); // test
-        setRole("admin");
+        const storedRole = localStorage.getItem("user_role"); // slug: "admin", "expert", ...
+        setRole(storedRole);
     }, []);
 
-    if (!role) {
-        return <div className="px-4 text-gray-400 text-sm">Đang tải menu...</div>;
-    }
-
-    const navigationItems = {
+    const navigationItems: Record<string, { title: string; href: string; icon: JSX.Element }[]> = {
         farmer: [
             { title: "Tổng quan", href: "/dashboard/farmer", icon: iconMap.dashboard },
             { title: "Mùa vụ", href: "/dashboard/farmer/crop-seasons", icon: iconMap.crops },
-            { title: "Vườn cà phê", href: "/dashboard/farmer/batches", icon: <FiBookOpen /> },
+            { title: "Vườn cà phê", href: "/dashboard/farmer/batches", icon: iconMap.articles },
             { title: "Tư vấn", href: "/dashboard/farmer/request-feedback", icon: iconMap.feedback },
         ],
         admin: [
@@ -144,11 +134,13 @@ export function SidebarGroup() {
         ],
     };
 
-    const items = navigationItems[role];
+    if (!role || !navigationItems[role]) {
+        return <div className="px-4 text-gray-400 text-sm">Đang tải menu...</div>;
+    }
 
     return (
         <div className="space-y-1 px-2">
-            {items.map((item) => {
+            {navigationItems[role].map((item) => {
                 const isActive = pathname === item.href;
                 return (
                     <Link
@@ -177,12 +169,19 @@ interface SidebarFooterProps {
 }
 
 export function SidebarFooter({ role, isCollapsed }: SidebarFooterProps) {
+    const [currentRole, setCurrentRole] = useState<string | null>(null);
+
+    useEffect(() => {
+        const storedRole = localStorage.getItem("user_role_raw"); // e.g., "AgriculturalExpert"
+        setCurrentRole(storedRole);
+    }, []);
+
     if (isCollapsed) return null;
 
     return (
         <div className="border-t px-4 py-3 text-sm text-gray-600 flex items-center gap-2">
             <span className="text-gray-400">Đăng nhập:</span>
-            <span className="font-medium capitalize text-orange-600">{role ?? "Ẩn danh"}</span>
+            <span className="font-medium text-orange-600">{currentRole ?? "Ẩn danh"}</span>
         </div>
     );
 }

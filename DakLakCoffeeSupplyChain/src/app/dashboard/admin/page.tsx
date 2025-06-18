@@ -38,11 +38,7 @@ export default function ManagerDashboard() {
     return (
         <div className="w-full bg-orange-50 min-h-screen">
             <div className="p-6">
-                <h1 className="text-2xl font-bold text-orange-600 mb-6">
-                    🧑‍💼 Manager Dashboard
-                </h1>
 
-                {/* Stat Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
                     <Card>
                         <CardContent className="p-5 flex items-center gap-4">
