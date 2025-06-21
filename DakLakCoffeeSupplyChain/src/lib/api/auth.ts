@@ -22,7 +22,6 @@ export async function login(email: string, password: string): Promise<DecodedTok
 
     const result = response.data;
 
-    // 🔐 Nếu status trong body khác 1 thì coi là lỗi
     if (result.status !== 1) {
       throw new Error(result.message || "Đăng nhập thất bại");
     }
