@@ -22,6 +22,7 @@ import {
     FiBox,
     FiPieChart,
 } from "react-icons/fi";
+import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 
 ChartJS.register(
     CategoryScale,
@@ -35,6 +36,7 @@ ChartJS.register(
 );
 
 export default function ManagerDashboard() {
+    useAuthGuard(["admin"]);
     return (
         <div className="w-full bg-orange-50 min-h-screen">
             <div className="p-6">

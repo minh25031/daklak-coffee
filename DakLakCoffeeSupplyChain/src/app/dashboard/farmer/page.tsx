@@ -1,8 +1,10 @@
 "use client";
 
+import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 import { FiClipboard, FiFeather, FiBookOpen } from "react-icons/fi";
 
 export default function FarmerDashboard() {
+    useAuthGuard(["farmer"]);
     return (
         <div className="w-full bg-orange-50 min-h-screen">
             <div className="p-6">

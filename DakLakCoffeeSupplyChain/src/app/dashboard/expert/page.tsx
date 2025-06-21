@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 import {
     FiFeather,
     FiBookOpen,
@@ -8,6 +9,7 @@ import {
 } from "react-icons/fi";
 
 export default function ExpertDashboard() {
+    useAuthGuard(["expert"]);
     return (
         <div className="w-full bg-orange-50 min-h-screen">
             <div className="p-6">
