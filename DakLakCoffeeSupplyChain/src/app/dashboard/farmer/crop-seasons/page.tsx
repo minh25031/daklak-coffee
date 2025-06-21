@@ -1,68 +1,90 @@
-"use client";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { CropSeason, getAllCropSeasons } from "@/lib/api/cropSeasons";
-import { Button } from "@/components/ui/button";
+'use client';
 
-export default function CropSeasonListPage() {
-    const [data, setData] = useState<CropSeason[]>([]);
-    const [loading, setLoading] = useState(true);
-    const router = useRouter();
+import { useEffect, useState } from 'react';
+import { CropSeason, getAllCropSeasons } from '@/lib/api/cropSeasons';
+import Link from 'next/link';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+export default function FarmerCropSeasonsPage() {
+    const [cropSeasons, setCropSeasons] = useState<CropSeason[]>([]);
 
     useEffect(() => {
         const fetchData = async () => {
-            const result = await getAllCropSeasons();
-            setData(result);
-            setLoading(false);
+            const data = await getAllCropSeasons();
+            setCropSeasons(data);
         };
         fetchData();
     }, []);
 
+    function formatDate(dateString: string | null | undefined): string {
+        if (!dateString) return "-";
+        const date = new Date(dateString);
+        return date.toLocaleDateString("vi-VN");
+    }
+
     return (
-        <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Danh sách mùa vụ</h2>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">+ Tạo mùa vụ mới</Button>
+        <div className="p-6 space-y-6">
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-semibold text-gray-800">Mùa vụ của bạn</h1>
+                <Link href="/dashboard/farmer/crop-seasons/create">
+                    <Button variant="default" className="bg-green-600 hover:bg-green-700">
+                        + Tạo mùa vụ
+                    </Button>
+                </Link>
             </div>
 
-
-            {loading ? (
-                <p>Đang tải dữ liệu...</p>
-            ) : data.length === 0 ? (
-                <p>Không có mùa vụ nào.</p>
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm border">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="px-4 py-2 border text-left">Tên mùa vụ</th>
-                                <th className="px-4 py-2 border text-left">Nông hộ</th>
-                                <th className="px-4 py-2 border text-left">Thời gian</th>
-                                <th className="px-4 py-2 border text-left">Trạng thái</th>
-                                <th className="px-4 py-2 border text-left">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {data.map((item) => (
-                                <tr key={item.cropSeasonId}>
-                                    <td className="px-4 py-2 border">{item.seasonName}</td>
-                                    <td className="px-4 py-2 border">{item.farmerName}</td>
-                                    <td className="px-4 py-2 border">
-                                        {item.startDate} → {item.endDate}
-                                    </td>
-                                    <td className="px-4 py-2 border">{item.status}</td>
-                                    <td className="px-4 py-2 border space-x-2">
-                                        <Button variant="link" className="text-blue-600 text-sm">Xem</Button>
-                                        <Button variant="link" className="text-orange-600 text-sm">Sửa</Button>
-
-                                    </td>
+            <Card>
+                <CardContent className="p-4">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full table-auto text-sm text-left border border-gray-200 rounded-lg overflow-hidden">
+                            <thead className="bg-gray-100 text-gray-700 text-sm">
+                                <tr>
+                                    <th className="px-4 py-3 border-b font-medium">Tên mùa vụ</th>
+                                    <th className="px-4 py-3 border-b font-medium">Bắt đầu</th>
+                                    <th className="px-4 py-3 border-b font-medium">Kết thúc</th>
+                                    <th className="px-4 py-3 border-b font-medium">Diện tích (ha)</th>
+                                    <th className="px-4 py-3 border-b font-medium">Trạng thái</th>
+                                    <th className="px-4 py-3 border-b font-medium">Hành động</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                            </thead>
+                            <tbody>
+                                {cropSeasons.map((season) => (
+                                    <tr key={season.cropSeasonId} className="hover:bg-gray-50 border-t">
+                                        <td className="px-4 py-2">{season.seasonName}</td>
+                                        <td className="px-4 py-2">{formatDate(season.startDate)}</td>
+                                        <td className="px-4 py-2">{formatDate(season.endDate)}</td>
+                                        <td className="px-4 py-2">{season.area ?? '-'}</td>
+                                        <td className="px-4 py-2">
+                                            <Badge
+                                                className={cn(
+                                                    "w-[130px] h-8 inline-flex items-center justify-center text-sm font-semibold rounded-full border",
+                                                    season.status === 'Active'
+                                                        ? 'bg-green-100 text-green-700 border-green-500'
+                                                        : 'bg-red-100 text-red-700 border-red-500'
+                                                )}
+                                            >
+                                                {season.status === 'Active' ? 'Đang hoạt động' : 'Tạm dừng'}
+                                            </Badge>
+
+
+                                        </td>
+                                        <td className="px-4 py-2">
+                                            <Link href={`/dashboard/farmer/crop-seasons/${season.cropSeasonId}`}>
+                                                <Button variant="link" className="text-blue-600 p-0 h-auto text-sm">
+                                                    Xem chi tiết
+                                                </Button>
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

@@ -1,25 +1,26 @@
-"use client";
+'use client';
 
-import HeaderDashboard from "@/components/layout/HeaderDashboard";
+import HeaderDashboard from '@/components/layout/HeaderDashboard';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-} from "@/components/ui/sidebar";
-import { useState, useEffect } from "react";
+} from '@/components/ui/sidebar';
+import { useState, useEffect } from 'react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedRole = localStorage.getItem("user_role_raw");
+    const storedRole = localStorage.getItem('user_role_raw');
     setRole(storedRole);
   }, []);
 
   return (
-    <div className="min-h-screen w-full bg-[#fefaf4] overflow-x-hidden">
+    <div className="flex min-h-screen w-full overflow-hidden bg-[#fefaf4]">
+      {/* Sidebar */}
       <Sidebar defaultCollapsed={isCollapsed} onCollapseChange={setIsCollapsed}>
         <SidebarContent>
           <SidebarGroup />
@@ -27,14 +28,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <SidebarFooter role={role} />
       </Sidebar>
 
-      <main
-        className={`transition-all duration-300 ${isCollapsed ? "ml-[64px]" : "ml-[260px]"
-          }`}
+      {/* Content area */}
+      <div
+        className={`flex flex-col flex-1 transition-all duration-300 ${isCollapsed ? 'ml-[64px]' : 'ml-[260px]'}`}
       >
         <HeaderDashboard />
-
-        {children}
-      </main>
+        <main className="flex-1 overflow-auto p-6">{children}</main>
+      </div>
     </div>
   );
 }
