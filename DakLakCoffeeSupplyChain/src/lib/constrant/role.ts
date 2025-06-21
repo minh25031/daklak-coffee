@@ -1,9 +1,8 @@
-export const roleMap: Record<
-  number,
-  "farmer" | "manager" | "admin" | "expert"
-> = {
-  1: "farmer",
-  2: "manager",
-  3: "admin",
-  4: "expert",
+export const roleSlugMap: Record<string, string> = {
+  Admin: "admin",
+  BusinessManager: "manager",
+  BusinessStaff: "staff", 
+  Farmer: "farmer",
+  AgriculturalExpert: "expert",
+  DeliveryStaff: "delivery", 
 };

@@ -1,34 +1,45 @@
-import { mockUserData, UserProfile } from "./users";
-import { roleMap } from "@/lib/constrant/role"; // nếu bạn tách ra
+import { jwtDecode } from "jwt-decode";
+import { roleSlugMap } from "@/lib/constrant/role";
+import axios from "axios";
 
-export async function mockLogin(
-  email: string,
-  password: string
-): Promise<UserProfile | null> {
-  const user = mockUserData.find(
-    (u) => u.Email === email && u.Password === password
-  );
-
-  if (!user) return null;
-
-  // Gán localStorage
-  localStorage.setItem("user_id", user.user_id);
-  localStorage.setItem("username", user.Username);
-  localStorage.setItem("user_role", roleMap[user.RoleID]);
-  localStorage.setItem("email", user.Email);
-
-  return user;
+export interface DecodedToken {
+  nameid: string;
+  email: string;
+  role: string;
+  exp: number;
+  iat: number;
 }
 
-// Hàm kiểm tra xem người dùng đã đăng nhập chưa
-export function isAuthenticated(): boolean {
-  return !!localStorage.getItem("user_id");
-}
+export async function login(email: string, password: string): Promise<DecodedToken> {
+  try {
+    const response = await axios.post(
+      "https://localhost:7163/api/Auth/login",
+      { email, password },
+      {
+        validateStatus: () => true,
+      }
+    );
 
-// Hàm đăng xuất
-export function logout(): void {
-  localStorage.removeItem("user_id");
-  localStorage.removeItem("username");
-  localStorage.removeItem("user_role");
-  localStorage.removeItem("full_user");
+    const result = response.data;
+
+    // 🔐 Nếu status trong body khác 1 thì coi là lỗi
+    if (result.status !== 1) {
+      throw new Error(result.message || "Đăng nhập thất bại");
+    }
+
+    const { token } = result.data;
+    const decoded: DecodedToken = jwtDecode(token);
+    const roleSlug = roleSlugMap[decoded.role] ?? "unknown";
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("user_id", decoded.nameid);
+    localStorage.setItem("email", decoded.email);
+    localStorage.setItem("user_role", roleSlug);
+    localStorage.setItem("user_role_raw", decoded.role);
+
+    return decoded;
+  } catch (err: any) {
+    console.error("Đăng nhập lỗi:", err);
+    throw new Error(err.response?.data?.message || "Đăng nhập thất bại");
+  }
 }
