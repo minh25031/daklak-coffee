@@ -2,8 +2,8 @@ export type CropSeasonStatusValue = 'Active' | 'Paused' | 'Completed' | 'Cancell
 
 export const CropSeasonStatusMap: Record<CropSeasonStatusValue, {
   label: string;
-  color: 'green' | 'rose' | 'blue' | 'indigo';
-  icon: string; // để hiện ký hiệu bên trái như "Đ", "T"
+  color: 'green' | 'yellow' | 'blue' | 'red';
+  icon: string; 
 }> = {
   Active: {
     label: 'Đang hoạt động',
@@ -12,7 +12,7 @@ export const CropSeasonStatusMap: Record<CropSeasonStatusValue, {
   },
   Paused: {
     label: 'Tạm dừng',
-    color: 'rose',
+    color: 'yellow',
     icon: 'T'
   },
   Completed: {
@@ -22,7 +22,7 @@ export const CropSeasonStatusMap: Record<CropSeasonStatusValue, {
   },
   Cancelled: {
     label: 'Đã hủy',
-    color: 'indigo',
+    color: 'red',
     icon: 'Đ'
   }
 };

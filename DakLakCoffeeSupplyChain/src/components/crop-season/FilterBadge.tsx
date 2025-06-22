@@ -4,19 +4,19 @@ interface FilterBadgeProps {
     icon: string;
     label: string;
     count: number;
-    active?: boolean;
     color: string;
+    active?: boolean;
     onClick?: () => void;
 }
 
-export default function FilterBadge({ icon, label, count, active = false, color, onClick }: FilterBadgeProps) {
+export default function FilterBadge({ icon, label, count, color, active = false, onClick }: FilterBadgeProps) {
     return (
         <div
-            onClick={onClick}
             className={cn(
-                'flex items-center justify-between px-3 py-2 rounded-lg border cursor-pointer transition-colors',
-                active ? 'border-green-600 bg-green-50' : 'border-gray-200 hover:bg-gray-50'
+                'flex items-center justify-between px-3 py-2 rounded-lg border cursor-pointer',
+                active ? 'border-[#FD7622] bg-orange-50' : 'border-gray-200 bg-white hover:bg-gray-50'
             )}
+            onClick={onClick}
         >
             <div className="flex items-center gap-2">
                 <span
@@ -27,7 +27,7 @@ export default function FilterBadge({ icon, label, count, active = false, color,
                 >
                     {icon}
                 </span>
-                <span className="text-sm">{label}</span>
+                <span className="text-xs font-medium">{label}</span>
             </div>
             <span className="text-sm text-gray-500">{count} mùa vụ</span>
         </div>

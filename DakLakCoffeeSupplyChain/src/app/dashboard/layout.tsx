@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, []);
 
   return (
-    <div className="flex min-h-screen w-full overflow-hidden bg-[#fefaf4]">
+    <div className="flex h-screen w-full bg-[#fefaf4] overflow-hidden">
       {/* Sidebar */}
       <Sidebar defaultCollapsed={isCollapsed} onCollapseChange={setIsCollapsed}>
         <SidebarContent>
@@ -28,12 +28,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <SidebarFooter role={role} />
       </Sidebar>
 
-      {/* Content area */}
       <div
-        className={`flex flex-col flex-1 transition-all duration-300 ${isCollapsed ? 'ml-[64px]' : 'ml-[260px]'}`}
+        className={`flex flex-col flex-1 transition-all duration-300 ${isCollapsed ? 'ml-[64px]' : 'ml-[260px]'
+          }`}
       >
-        <HeaderDashboard />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <div className="shrink-0">
+          <HeaderDashboard />
+        </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          {children}
+        </div>
       </div>
     </div>
   );
