@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PackagePlus, Home } from "lucide-react";
-import { createWarehouseInboundRequest } from "@/lib/api/warehouseInboundRequests";
+import { createWarehouseInboundRequest } from "@/lib/api/warehouseInboundRequest";
 
 export default function FarmerWarehouseRequestPage() {
   const router = useRouter();
