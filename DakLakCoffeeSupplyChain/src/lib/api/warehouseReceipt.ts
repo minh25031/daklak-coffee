@@ -18,24 +18,36 @@ export async function getWarehouseReceiptById(id: string) {
   });
   return await res.json();
 }
-// Create a warehouse receipt
-export async function createWarehouseReceipt(receiptData: { warehouseId: string, batchId: string, receivedQuantity: number, note: string }) {
+
+// ✅ Create a warehouse receipt with InboundRequestId
+export async function createWarehouseReceipt(
+  inboundRequestId: string,
+  receiptData: {
+    warehouseId: string;
+    batchId: string;
+    receivedQuantity: number;
+    note: string;
+  }
+) {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("https://localhost:7163/api/WarehouseReceipts", {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(receiptData),
-  });
+  const res = await fetch(
+    `https://localhost:7163/api/WarehouseReceipts/${inboundRequestId}/receipt`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(receiptData),
+    }
+  );
 
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || 'Failed to create receipt');
+    throw new Error(data.message || "Failed to create receipt");
   }
 
-  return data; // Return the response if creation is successful
+  return data;
 }
