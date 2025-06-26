@@ -1,24 +1,22 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PackagePlus, Home } from "lucide-react";
-import { createWarehouseInboundRequest } from "@/lib/api/warehouseInboundRequest";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { PackagePlus } from 'lucide-react';
+import { createWarehouseInboundRequest } from '@/lib/api/warehouseInboundRequest';
 
 export default function FarmerWarehouseRequestPage() {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    requestedQuantity: "",
-    preferredDeliveryDate: "",
-    note: "",
-    businessStaffId: "",
-    batchId: "",
+    requestedQuantity: '',
+    preferredDeliveryDate: '',
+    note: '',
+    businessStaffId: '',
+    batchId: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -31,12 +29,11 @@ export default function FarmerWarehouseRequestPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const { requestedQuantity, preferredDeliveryDate, note, businessStaffId, batchId } = form;
 
       if (!businessStaffId || !batchId) {
-        throw new Error("Bạn chưa nhập đủ thông tin: ID nhân viên hoặc ID lô xử lý");
+        throw new Error('Bạn chưa nhập đủ thông tin: ID nhân viên hoặc ID lô xử lý');
       }
 
       const message = await createWarehouseInboundRequest({
@@ -47,101 +44,106 @@ export default function FarmerWarehouseRequestPage() {
         batchId,
       });
 
-      alert("✅ " + message);
-      router.push("/dashboard/farmer");
+      alert('✅ ' + message);
+      router.push('/dashboard/farmer');
     } catch (err: any) {
-      alert("❌ Lỗi: " + err.message);
+      alert('❌ Lỗi: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen px-4 bg-muted">
-      <Card className="w-full max-w-2xl px-6 py-4 shadow-lg relative overflow-visible">
-        <Link
-          href="/dashboard/farmer"
-          className="absolute -top-5 -right-5 bg-white border border-gray-300 shadow-lg rounded-full p-3 hover:bg-amber-100 transition z-20"
-        >
-          <Home className="w-6 h-6 text-amber-900" />
-        </Link>
+    <div className="flex min-h-screen bg-amber-200/50 p-6 gap-6">
+      {/* Sidebar hỗ trợ */}
+      <aside className="w-64 space-y-4">
+        <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
+          <h2 className="text-sm font-medium text-gray-700">Hướng dẫn</h2>
+          <p className="text-sm text-muted-foreground">
+            Điền đầy đủ thông tin để gửi yêu cầu nhập kho. Vui lòng đảm bảo bạn đã có ID nhân viên và lô sản xuất phù hợp.
+          </p>
+        </div>
+      </aside>
 
-        <CardHeader>
-          <CardTitle className="text-xl text-center flex items-center justify-center gap-2">
+      {/* Main content */}
+      <main className="flex-1 space-y-6">
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-bold text-center text-orange-700 flex items-center justify-center gap-2">
             <PackagePlus className="w-5 h-5" />
             Gửi yêu cầu nhập kho
-          </CardTitle>
-        </CardHeader>
+          </h2>
 
-        <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <Label htmlFor="requestedQuantity">Số lượng (kg)</Label>
-              <Input
-                id="requestedQuantity"
-                name="requestedQuantity"
-                type="number"
-                min={1}
-                value={form.requestedQuantity}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="requestedQuantity">Số lượng (kg)</Label>
+                <Input
+                  id="requestedQuantity"
+                  name="requestedQuantity"
+                  type="number"
+                  min={1}
+                  value={form.requestedQuantity}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="preferredDeliveryDate">Ngày giao dự kiến</Label>
-              <Input
-                id="preferredDeliveryDate"
-                name="preferredDeliveryDate"
-                type="date"
-                value={form.preferredDeliveryDate}
-                onChange={handleChange}
-                required
-              />
-            </div>
+              <div>
+                <Label htmlFor="preferredDeliveryDate">Ngày giao dự kiến</Label>
+                <Input
+                  id="preferredDeliveryDate"
+                  name="preferredDeliveryDate"
+                  type="date"
+                  value={form.preferredDeliveryDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="note">Ghi chú</Label>
-              <Input
-                id="note"
-                name="note"
-                value={form.note}
-                onChange={handleChange}
-              />
-            </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="note">Ghi chú</Label>
+                <Input
+                  id="note"
+                  name="note"
+                  placeholder="Thông tin thêm (không bắt buộc)"
+                  value={form.note}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="businessStaffId">ID nhân viên</Label>
-              <Input
-                id="businessStaffId"
-                name="businessStaffId"
-                value={form.businessStaffId}
-                onChange={handleChange}
-                required
-              />
-            </div>
+              <div>
+                <Label htmlFor="businessStaffId">ID Nhân viên phụ trách</Label>
+                <Input
+                  id="businessStaffId"
+                  name="businessStaffId"
+                  value={form.businessStaffId}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="batchId">ID lô xử lý (Batch)</Label>
-              <Input
-                id="batchId"
-                name="batchId"
-                value={form.batchId}
-                onChange={handleChange}
-                required
-              />
+              <div>
+                <Label htmlFor="batchId">ID Lô xử lý (Batch)</Label>
+                <Input
+                  id="batchId"
+                  name="batchId"
+                  value={form.batchId}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-amber-900 hover:bg-amber-800"
+              className="w-full bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium"
             >
-              {loading ? "Đang gửi..." : "Gửi yêu cầu"}
+              {loading ? 'Đang gửi...' : 'Gửi yêu cầu'}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </main>
     </div>
   );
 }

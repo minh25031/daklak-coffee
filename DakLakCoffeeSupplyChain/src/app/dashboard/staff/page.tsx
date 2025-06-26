@@ -5,6 +5,7 @@ import {
   FiClipboard,
   FiTruck,
   FiLayers,
+  FiHome,
 } from "react-icons/fi";
 import Link from "next/link";
 
@@ -36,6 +37,12 @@ export default function StaffDashboard() {
             title="Lô hàng & Mẻ sơ chế"
             description="Xem các batch sản xuất được liên kết với yêu cầu nhập kho."
             href="/dashboard/staff/batches" // nếu chưa có thì bạn có thể tạo sau
+          />
+           <DashboardCard
+            icon={<FiHome className="text-orange-500 text-xl" />}
+            title="Kho hàng"
+            description="Quản lý danh sách kho, thêm và xoá kho mới."
+            href="/dashboard/staff/warehouses"
           />
         </div>
       </div>

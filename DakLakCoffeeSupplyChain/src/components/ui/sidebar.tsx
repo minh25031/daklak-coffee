@@ -16,6 +16,7 @@ import {
     FiBookOpen,
     FiClipboard,
     FiFeather,
+    FiTruck,
 } from "react-icons/fi";
 
 const iconMap = {
@@ -113,6 +114,7 @@ export function SidebarGroup() {
             { title: "Mùa vụ", href: "/dashboard/farmer/crop-seasons", icon: iconMap.crops },
             { title: "Vườn cà phê", href: "/dashboard/farmer/batches", icon: iconMap.articles },
             { title: "Tư vấn", href: "/dashboard/farmer/request-feedback", icon: iconMap.feedback },
+            { title: "Gửi yêu cầu giao hàng", href: "/dashboard/farmer/warehouse-request", icon: <FiTruck /> },
         ],
         admin: [
             { title: "Tổng quan", href: "/dashboard/admin", icon: iconMap.dashboard },
@@ -125,6 +127,13 @@ export function SidebarGroup() {
             { title: "Tổng quan", href: "/dashboard/expert", icon: iconMap.dashboard },
             { title: "Tư vấn", href: "/dashboard/expert/consultations", icon: iconMap.consultation },
             { title: "Bài viết", href: "/dashboard/expert/articles", icon: iconMap.articles },
+        ],
+        staff: [
+            { title: "Yêu cầu nhập kho", href: "/dashboard/staff/inbounds", icon: <FiClipboard /> },
+            { title: "Phiếu nhập kho", href: "/dashboard/staff/receipts", icon: <FiFileText /> },
+            { title: "Tồn kho", href: "/dashboard/staff/inventories", icon: <FiPieChart /> },
+            { title: "Lô hàng", href: "/dashboard/staff/batches", icon: <FiBookOpen /> },
+            { title: "Kho hàng", href: "/dashboard/staff/warehouses", icon: <FiSettings /> },
         ],
         manager: [
             { title: "Tổng quan", href: "/dashboard/manager", icon: iconMap.dashboard },
