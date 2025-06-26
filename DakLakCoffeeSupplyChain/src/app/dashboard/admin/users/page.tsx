@@ -10,8 +10,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { mockUserData, UserProfile } from "@/lib/api/users";
-import { roleIdToNameMap } from "@/lib/constrant/role";
+import { mockUserData, UserProfile, UserAccountStatus } from "@/lib/api/users";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -19,21 +18,23 @@ export default function UserManagement() {
   const [users, setUsers] = useState<UserProfile[]>(mockUserData);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  
   const usersPerPage = 10;
-  const roleOptions = Object.entries(roleIdToNameMap).map(([id, name]) => ({
-    id: Number(id),
-    name,
-  }));
-  const [roleFilter, setRoleFilter] = useState<number | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("");
   const router = useRouter();
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
 
-  // Filter users by search (search by Email, Name) and role
+  // Get unique role names for filter
+  const roleOptions = Array.from(new Set(users.map(user => user.roleName)));
+
+  // Filter users by search (search by Email, Name, UserCode, PhoneNumber) and role
   const filteredUsers = users.filter(
     (user) =>
-      (user.Email.toLowerCase().includes(search.toLowerCase()) ||
-        user.Name.toLowerCase().includes(search.toLowerCase())) &&
-      (roleFilter === null || user.RoleID === roleFilter)
+      (user.email.toLowerCase().includes(search.toLowerCase()) ||
+        user.name.toLowerCase().includes(search.toLowerCase()) ||
+        user.userCode.toLowerCase().includes(search.toLowerCase()) ||
+        user.phoneNumber.toLowerCase().includes(search.toLowerCase())) &&
+      (roleFilter === "" || user.roleName === roleFilter)
   );
 
   // Pagination
@@ -42,6 +43,31 @@ export default function UserManagement() {
     (page - 1) * usersPerPage,
     page * usersPerPage
   );
+
+  // Format date for display
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  // Get status display info
+  const getStatusInfo = (status: UserAccountStatus) => {
+    switch (status) {
+      case UserAccountStatus.Active:
+        return { text: "Hoạt động", className: "bg-green-100 text-green-700" };
+      case UserAccountStatus.Inactive:
+        return { text: "Không hoạt động", className: "bg-gray-200 text-gray-600" };
+      case UserAccountStatus.Suspended:
+        return { text: "Tạm khóa", className: "bg-red-100 text-red-700" };
+      default:
+        return { text: "Không xác định", className: "bg-yellow-100 text-yellow-700" };
+    }
+  };
 
   return (
     <div className="w-full min-h-screen bg-orange-50 p-6">
@@ -59,7 +85,7 @@ export default function UserManagement() {
           <div className="flex items-center gap-4 mb-4">
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên hoặc email..."
+              placeholder="Tìm kiếm theo mã, tên hoặc email..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -69,90 +95,91 @@ export default function UserManagement() {
             />
             <select
               className="border rounded px-3 py-2"
-              value={roleFilter ?? ""}
+              value={roleFilter}
               onChange={(e) => {
-                setRoleFilter(e.target.value ? Number(e.target.value) : null);
+                setRoleFilter(e.target.value);
                 setPage(1);
               }}
             >
               <option value="">Tất cả vai trò</option>
               {roleOptions.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
+                <option key={role} value={role}>
+                  {role}
                 </option>
               ))}
             </select>
           </div>
-          <div className="overflow-x-auto">
-            <Table>
+          <div className="overflow-x-auto p-2">
+            <Table className="min-w-[1000px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Mã người dùng</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Họ tên</TableHead>
+                  <TableHead>Số điện thoại</TableHead>
                   <TableHead>Vai trò</TableHead>
                   <TableHead>Trạng thái</TableHead>
-                  <TableHead>Hành động</TableHead>
+                  <TableHead>Ngày đăng ký</TableHead>
+                  <TableHead style={{ minWidth: 120 }}>Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedUsers.map((user) => (
-                  <TableRow key={user.user_id}>
-                    <TableCell>{user.Username}</TableCell>
-                    <TableCell>{user.Email}</TableCell>
-                    <TableCell>{user.Name}</TableCell>
-                    <TableCell>
-                      {roleIdToNameMap[user.RoleID] || user.RoleID}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                          user.Status === "active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
-                      >
-                        {user.Status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/admin/users/${user.user_id}`
-                            )
-                          }
+                {paginatedUsers.map((user) => {
+                  const statusInfo = getStatusInfo(user.status);
+                  return (
+                    <TableRow key={user.userId}>
+                      <TableCell className="font-medium">{user.userCode}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.phoneNumber}</TableCell>
+                      <TableCell>{user.roleName}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${statusInfo.className}`}
                         >
-                          Chi tiết
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/admin/users/${user.user_id}/edit`
-                            )
-                          }
-                        >
-                          Sửa
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => setDeleteUserId(user.user_id)}
-                        >
-                          Xoá
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {statusInfo.text}
+                        </span>
+                      </TableCell>
+                      <TableCell>{formatDate(user.registrationDate)}</TableCell>
+                      <TableCell style={{ minWidth: 120 }}>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/admin/users/${user.userId}`
+                              )
+                            }
+                          >
+                            Chi tiết
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/admin/users/${user.userId}/edit`
+                              )
+                            }
+                          >
+                            Sửa
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setDeleteUserId(user.userId)}
+                          >
+                            Xoá
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                 {paginatedUsers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center">
+                    <TableCell colSpan={9} className="text-center">
                       Không có người dùng nào.
                     </TableCell>
                   </TableRow>
@@ -202,7 +229,7 @@ export default function UserManagement() {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  setUsers(users.filter((u) => u.user_id !== deleteUserId));
+                  setUsers(users.filter((u) => u.userId !== deleteUserId));
                   setDeleteUserId(null);
                 }}
               >

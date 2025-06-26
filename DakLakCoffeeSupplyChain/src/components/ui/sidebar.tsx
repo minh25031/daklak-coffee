@@ -116,7 +116,7 @@ export function SidebarGroup() {
         ],
         admin: [
             { title: "Tổng quan", href: "/dashboard/admin", icon: iconMap.dashboard },
-            { title: "Người dùng", href: "/dashboard/admin/users", icon: iconMap.users },
+            { title: "Quản lý người dùng", href: "/dashboard/admin/users", icon: iconMap.users },
             { title: "Hợp đồng", href: "/dashboard/admin/contracts", icon: iconMap.contracts },
             { title: "Báo cáo", href: "/dashboard/admin/reports", icon: iconMap.reports },
             { title: "Cài đặt", href: "/dashboard/admin/settings", icon: iconMap.settings },

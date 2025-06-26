@@ -18,7 +18,7 @@ const pathTitleMap: Record<string, string> = {
     articles: "Bài viết",
     contracts: "Hợp đồng",
     reports: "Báo cáo",
-    users: "Người dùng",
+    users: "Quản lý người dùng",
     settings: "Cài đặt",
 };
 
