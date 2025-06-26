@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { mockUserData, UserProfile } from "@/lib/api/users";
+import { mockUserDetailsData, UserProfileDetails, Gender, UserAccountStatus } from "@/lib/api/users";
 import { roleIdToNameMap } from "@/lib/constrant/role";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,25 +11,30 @@ interface UserFormProps {
   userId?: string;
 }
 
-const emptyUser: Partial<UserProfile> = {
-  Username: "",
-  Email: "",
-  PhoneNumber: "",
-  Name: "",
-  Gender: "Nam",
-  DateOfBirth: "",
-  Address: "",
-  RoleID: 1,
-  Status: "active",
+const emptyUser: Partial<UserProfileDetails> = {
+  userCode: "",
+  name: "",
+  email: "",
+  phoneNumber: "",
+  gender: Gender.Unknown,
+  dateOfBirth: undefined,
+  address: "",
+  roleName: "Nông dân",
+  status: UserAccountStatus.Active,
 };
 
 export default function UserForm({ mode, userId }: UserFormProps) {
   const router = useRouter();
-  const user =
-    mode === "edit" ? mockUserData.find((u) => u.user_id === userId) : null;
-  const [form, setForm] = useState<Partial<UserProfile>>(
-    user ? { ...user } : emptyUser
-  );
+  const user = mode === "edit" && userId ? mockUserDetailsData[userId] : null;
+  const [form, setForm] = useState<Record<string, any>>(() => {
+    if (user) {
+      return {
+        ...user,
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.toISOString().slice(0, 10) : ""
+      };
+    }
+    return emptyUser;
+  });
   const [error, setError] = useState("");
 
   const handleChange = (
@@ -42,7 +47,7 @@ export default function UserForm({ mode, userId }: UserFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Validate
-    if (!form.Username || !form.Email || !form.Name) {
+    if (!form.userCode || !form.email || !form.name) {
       setError("Vui lòng nhập đầy đủ thông tin bắt buộc.");
       return;
     }
@@ -64,24 +69,23 @@ export default function UserForm({ mode, userId }: UserFormProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block mb-1">
-                  Tên đăng nhập <span className="text-red-500">*</span>
+                  Mã người dùng <span className="text-red-500">*</span>
                 </label>
                 <input
-                  name="Username"
-                  value={form.Username || ""}
+                  name="userCode"
+                  value={form.userCode || ""}
                   onChange={handleChange}
                   className="border rounded px-3 py-2 w-full"
                   required
                 />
               </div>
-
               <div>
                 <label className="block mb-1">
                   Email <span className="text-red-500">*</span>
                 </label>
                 <input
-                  name="Email"
-                  value={form.Email || ""}
+                  name="email"
+                  value={form.email || ""}
                   onChange={handleChange}
                   className="border rounded px-3 py-2 w-full"
                   required
@@ -91,8 +95,8 @@ export default function UserForm({ mode, userId }: UserFormProps) {
               <div>
                 <label className="block mb-1">Số điện thoại</label>
                 <input
-                  name="PhoneNumber"
-                  value={form.PhoneNumber || ""}
+                  name="phoneNumber"
+                  value={form.phoneNumber || ""}
                   onChange={handleChange}
                   className="border rounded px-3 py-2 w-full"
                 />
@@ -102,8 +106,8 @@ export default function UserForm({ mode, userId }: UserFormProps) {
                   Họ tên <span className="text-red-500">*</span>
                 </label>
                 <input
-                  name="Name"
-                  value={form.Name || ""}
+                  name="name"
+                  value={form.name || ""}
                   onChange={handleChange}
                   className="border rounded px-3 py-2 w-full"
                   required
@@ -112,21 +116,21 @@ export default function UserForm({ mode, userId }: UserFormProps) {
               <div>
                 <label className="block mb-1">Giới tính</label>
                 <select
-                  name="Gender"
-                  value={form.Gender || "Nam"}
+                  name="gender"
+                  value={form.gender || Gender.Unknown}
                   onChange={handleChange}
                   className="border rounded px-3 py-2 w-full"
                 >
-                  <option value="Nam">Nam</option>
-                  <option value="Nữ">Nữ</option>
-                  <option value="Khác">Khác</option>
+                  <option value={Gender.Male}>Nam</option>
+                  <option value={Gender.Female}>Nữ</option>
+                  <option value={Gender.Unknown}>Khác</option>
                 </select>
               </div>
               <div>
                 <label className="block mb-1">Ngày sinh</label>
                 <input
-                  name="DateOfBirth"
-                  value={form.DateOfBirth || ""}
+                  name="dateOfBirth"
+                  value={typeof form.dateOfBirth === "string" ? form.dateOfBirth : (form.dateOfBirth ? form.dateOfBirth.toISOString().slice(0, 10) : "")}
                   onChange={handleChange}
                   className="border rounded px-3 py-2 w-full"
                   type="date"
@@ -135,37 +139,33 @@ export default function UserForm({ mode, userId }: UserFormProps) {
               <div>
                 <label className="block mb-1">Địa chỉ</label>
                 <input
-                  name="Address"
-                  value={form.Address || ""}
+                  name="address"
+                  value={form.address || ""}
                   onChange={handleChange}
                   className="border rounded px-3 py-2 w-full"
                 />
               </div>
               <div>
                 <label className="block mb-1">Vai trò</label>
-                <select
-                  name="RoleID"
-                  value={form.RoleID || 1}
+                <input
+                  name="roleName"
+                  value={form.roleName || ""}
                   onChange={handleChange}
                   className="border rounded px-3 py-2 w-full"
-                >
-                  {Object.entries(roleIdToNameMap).map(([id, name]) => (
-                    <option key={id} value={id}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div>
                 <label className="block mb-1">Trạng thái</label>
                 <select
-                  name="Status"
-                  value={form.Status || "active"}
+                  name="status"
+                  value={form.status || UserAccountStatus.Active}
                   onChange={handleChange}
                   className="border rounded px-3 py-2 w-full"
                 >
-                  <option value="active">Hoạt động</option>
-                  <option value="inactive">Ngừng</option>
+                  <option value={UserAccountStatus.Active}>Hoạt động</option>
+                  <option value={UserAccountStatus.Inactive}>Ngừng</option>
+                  <option value={UserAccountStatus.Suspended}>Tạm khóa</option>
+                  <option value={UserAccountStatus.Unknown}>Không xác định</option>
                 </select>
               </div>
             </div>
