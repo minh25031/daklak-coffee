@@ -10,19 +10,37 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { mockUserData, UserProfile, UserAccountStatus } from "@/lib/api/users";
-import { useState } from "react";
+import { getAllUsers, deleteUser, UserProfile, UserAccountStatus } from "@/lib/api/users";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<UserProfile[]>(mockUserData);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  
   const usersPerPage = 10;
   const [roleFilter, setRoleFilter] = useState<string>("");
   const router = useRouter();
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await getAllUsers();
+        setUsers(data);
+      } catch (err: any) {
+        setError(err.message || "Lỗi khi tải danh sách người dùng");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUsers();
+  }, []);
 
   // Get unique role names for filter
   const roleOptions = Array.from(new Set(users.map(user => user.roleName)));
@@ -45,14 +63,15 @@ export default function UserManagement() {
   );
 
   // Format date for display
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | Date) => {
+    const d = typeof date === "string" ? new Date(date) : date;
     return new Intl.DateTimeFormat('vi-VN', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
-    }).format(date);
+    }).format(d);
   };
 
   // Get status display info
@@ -69,6 +88,20 @@ export default function UserManagement() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteUserId) return;
+    setDeleting(true);
+    try {
+      await deleteUser(deleteUserId);
+      setUsers((prev) => prev.filter((u) => u.userId !== deleteUserId));
+      setDeleteUserId(null);
+    } catch (err: any) {
+      alert(err.message || "Xoá người dùng thất bại");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-orange-50 p-6">
       <Card>
@@ -82,133 +115,140 @@ export default function UserManagement() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-4">
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo mã, tên hoặc email..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="border rounded px-3 py-2 w-64"
-            />
-            <select
-              className="border rounded px-3 py-2"
-              value={roleFilter}
-              onChange={(e) => {
-                setRoleFilter(e.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="">Tất cả vai trò</option>
-              {roleOptions.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="overflow-x-auto p-2">
-            <Table className="min-w-[1000px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã người dùng</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Họ tên</TableHead>
-                  <TableHead>Số điện thoại</TableHead>
-                  <TableHead>Vai trò</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Ngày đăng ký</TableHead>
-                  <TableHead style={{ minWidth: 120 }}>Hành động</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedUsers.map((user) => {
-                  const statusInfo = getStatusInfo(user.status);
-                  return (
-                    <TableRow key={user.userId}>
-                      <TableCell className="font-medium">{user.userCode}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.phoneNumber}</TableCell>
-                      <TableCell>{user.roleName}</TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-semibold ${statusInfo.className}`}
-                        >
-                          {statusInfo.text}
-                        </span>
-                      </TableCell>
-                      <TableCell>{formatDate(user.registrationDate)}</TableCell>
-                      <TableCell style={{ minWidth: 120 }}>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/admin/users/${user.userId}`
-                              )
-                            }
-                          >
-                            Chi tiết
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/admin/users/${user.userId}/edit`
-                              )
-                            }
-                          >
-                            Sửa
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => setDeleteUserId(user.userId)}
-                          >
-                            Xoá
-                          </Button>
-                        </div>
-                      </TableCell>
+          {error && <div className="text-red-500 mb-2">{error}</div>}
+          {loading ? (
+            <div className="text-center py-8">Đang tải...</div>
+          ) : (
+            <>
+              <div className="flex items-center gap-4 mb-4">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm theo mã, tên hoặc email..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="border rounded px-3 py-2 w-64"
+                />
+                <select
+                  className="border rounded px-3 py-2"
+                  value={roleFilter}
+                  onChange={(e) => {
+                    setRoleFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">Tất cả vai trò</option>
+                  {roleOptions.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="overflow-x-auto p-2">
+                <Table className="min-w-[1000px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mã người dùng</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Họ tên</TableHead>
+                      <TableHead>Số điện thoại</TableHead>
+                      <TableHead>Vai trò</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead>Ngày đăng ký</TableHead>
+                      <TableHead style={{ minWidth: 120 }}>Hành động</TableHead>
                     </TableRow>
-                  );
-                })}
-                {paginatedUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center">
-                      Không có người dùng nào.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          {/* Pagination */}
-          <div className="flex justify-end items-center gap-2 mt-4">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-            >
-              Trước
-            </Button>
-            <span>
-              Trang {page} / {totalPages}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page === totalPages || totalPages === 0}
-              onClick={() => setPage(page + 1)}
-            >
-              Sau
-            </Button>
-          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedUsers.map((user) => {
+                      const statusInfo = getStatusInfo(user.status);
+                      return (
+                        <TableRow key={user.userId}>
+                          <TableCell className="font-medium">{user.userCode}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{user.name}</TableCell>
+                          <TableCell>{user.phoneNumber}</TableCell>
+                          <TableCell>{user.roleName}</TableCell>
+                          <TableCell>
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-semibold ${statusInfo.className}`}
+                            >
+                              {statusInfo.text}
+                            </span>
+                          </TableCell>
+                          <TableCell>{formatDate(user.registrationDate)}</TableCell>
+                          <TableCell style={{ minWidth: 120 }}>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/admin/users/${user.userId}`
+                                  )
+                                }
+                              >
+                                Chi tiết
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/admin/users/${user.userId}/edit`
+                                  )
+                                }
+                              >
+                                Sửa
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setDeleteUserId(user.userId)}
+                              >
+                                Xoá
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {paginatedUsers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center">
+                          Không có người dùng nào.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              {/* Pagination */}
+              <div className="flex justify-end items-center gap-2 mt-4">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Trước
+                </Button>
+                <span>
+                  Trang {page} / {totalPages}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page === totalPages || totalPages === 0}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Sau
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
       {/* Popup xác nhận xoá */}
@@ -223,17 +263,15 @@ export default function UserManagement() {
               hoàn tác.
             </p>
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setDeleteUserId(null)}>
+              <Button variant="outline" onClick={() => setDeleteUserId(null)} disabled={deleting}>
                 Huỷ
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => {
-                  setUsers(users.filter((u) => u.userId !== deleteUserId));
-                  setDeleteUserId(null);
-                }}
+                onClick={handleDelete}
+                disabled={deleting}
               >
-                Xoá
+                {deleting ? "Đang xoá..." : "Xoá"}
               </Button>
             </div>
           </div>
