@@ -1,16 +1,31 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import { mockUserDetailsData, UserProfileDetails, UserAccountStatus, Gender } from "@/lib/api/users";
+import { getUserById, UserProfileDetails, UserAccountStatus, Gender } from "@/lib/api/users";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import React from "react";
 
 export default function UserDetail() {
   const params = useParams();
   const router = useRouter();
   const userId = params.id as string;
-  const user = mockUserDetailsData[userId];
+  const [user, setUser] = React.useState<UserProfileDetails | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
 
-  if (!user) {
+  React.useEffect(() => {
+    setLoading(true);
+    getUserById(userId)
+      .then(setUser)
+      .catch((err) => setError(err.message || "Không lấy được thông tin người dùng"))
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  if (loading) {
+    return <div className="text-center py-8">Đang tải...</div>;
+  }
+
+  if (error || !user) {
     return (
       <div className="p-8">
         <Card>
@@ -18,6 +33,7 @@ export default function UserDetail() {
             <CardTitle>Không tìm thấy người dùng</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="text-red-500 mb-2">{error || "Không tìm thấy người dùng"}</div>
             <Button onClick={() => router.back()}>Quay lại</Button>
           </CardContent>
         </Card>
@@ -26,23 +42,29 @@ export default function UserDetail() {
   }
 
   // Format date for display
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | Date | null | undefined) => {
+    if (!date) return "Chưa cập nhật";
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(d.getTime())) return "Chưa cập nhật";
     return new Intl.DateTimeFormat('vi-VN', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
-    }).format(date);
+    }).format(d);
   };
 
   // Format date only (without time)
-  const formatDateOnly = (date: Date) => {
+  const formatDateOnly = (date: string | Date | null | undefined) => {
+    if (!date) return "Chưa cập nhật";
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(d.getTime())) return "Chưa cập nhật";
     return new Intl.DateTimeFormat('vi-VN', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
-    }).format(date);
+    }).format(d);
   };
 
   // Get status display info
