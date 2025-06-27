@@ -109,7 +109,7 @@ export default function WarehouseListPage() {
                     <td className="p-3">{w.location}</td>
                     <td className="p-3">{w.capacity?.toLocaleString()} kg</td>
                     <td className="p-3 space-x-2">
-                      <Link href={`/dashboard/business/warehouses/${w.warehouseId}`}>
+                      <Link href={`/dashboard/staff/warehouses/${w.warehouseId}`}>
                         <Button variant="outline" size="sm">
                           <Eye className="w-4 h-4 mr-1" /> Xem
                         </Button>
