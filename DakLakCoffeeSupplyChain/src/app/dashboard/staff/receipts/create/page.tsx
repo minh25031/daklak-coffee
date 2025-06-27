@@ -46,24 +46,46 @@ export default function CreateReceiptPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+    try {
       const res = await getAllWarehouses();
-      if (res.status === 1) setWarehouses(res.data);
-      else alert("❌ Không thể tải danh sách kho");
+      console.log("📦 getAllWarehouses response:", res);
+      if (res.status === 1) {
+        setWarehouses(res.data);
+      } else {
+        console.warn("❗️ Lỗi khi lấy danh sách kho:", res.message);
+        alert("❌ Không thể tải danh sách kho: " + res.message);
+      }
+    } catch (err: any) {
+      console.error("❌ Exception khi gọi getAllWarehouses:", err);
+      alert("❌ Lỗi không xác định khi tải danh sách kho");
+    }
 
+    try {
       const resInbound = await getAllInboundRequests();
-      if (resInbound.status === 1)
-        setInboundRequests(resInbound.data.filter((r: any) => r.status === "Approved")); // 🛠️ lọc tại đây
-      else
-        alert("❌ Không thể tải phiếu yêu cầu nhập kho");
+      console.log("📋 getAllInboundRequests response:", resInbound);
+      if (resInbound.status === 1) {
+        const approved = resInbound.data.filter((r: any) => r.status === "Approved");
+        console.log("✅ Danh sách yêu cầu đã duyệt:", approved);
+        setInboundRequests(approved);
+      } else {
+        console.warn("❗️ Lỗi khi lấy danh sách yêu cầu:", resInbound.message);
+        alert("❌ Không thể tải phiếu yêu cầu nhập kho: " + resInbound.message);
+      }
+    } catch (err: any) {
+      console.error("❌ Exception khi gọi getAllInboundRequests:", err);
+      alert("❌ Lỗi không xác định khi tải phiếu yêu cầu nhập kho");
+    }
 
-      setBatches([
-        { batchId: "batch1", code: "Mẻ 1" },
-        { batchId: "batch2", code: "Mẻ 2" },
-      ]);
-    };
-    fetchData();
-  }, []);
+    setBatches([
+      { batchId: "batch1", code: "Mẻ 1" },
+      { batchId: "batch2", code: "Mẻ 2" },
+    ]);
+  };
+
+  fetchData();
+}, []);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,8 +107,9 @@ export default function CreateReceiptPage() {
       await createWarehouseReceipt(inboundRequestId, receiptData);
       alert('✅ Tạo phiếu nhập kho thành công');
       router.push('/dashboard/staff/receipts');
-    } catch (err) {
-      setError('❌ Tạo phiếu thất bại. Vui lòng thử lại.');
+    } catch (err: any) {
+      console.error("❌ Lỗi tạo phiếu từ BE:", err);
+      setError(`❌ ${err.message || "Tạo phiếu thất bại. Vui lòng thử lại."}`);
     }
   };
 

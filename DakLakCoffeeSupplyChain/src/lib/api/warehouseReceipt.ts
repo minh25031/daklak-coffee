@@ -19,7 +19,6 @@ export async function getWarehouseReceiptById(id: string) {
   return await res.json();
 }
 
-// ✅ Create a warehouse receipt with InboundRequestId
 export async function createWarehouseReceipt(
   inboundRequestId: string,
   receiptData: {
@@ -45,8 +44,35 @@ export async function createWarehouseReceipt(
 
   const data = await res.json();
 
-  if (!res.ok) {
-    throw new Error(data.message || "Failed to create receipt");
+  // ✅ Nếu BE trả status khác 1, thì ném lỗi
+  if (data.status !== 1) {
+    throw new Error(data.message || "Tạo phiếu thất bại từ backend");
+  }
+
+  return data;
+}
+export async function confirmWarehouseReceipt(
+  receiptId: string,
+  confirmData: {
+    confirmedQuantity: number;
+    note?: string;
+  }
+) {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`https://localhost:7163/api/WarehouseReceipts/${receiptId}/confirm`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(confirmData),
+  });
+
+  const data = await res.json();
+
+  if (data.status !== 1) {
+    throw new Error(data.message || "Xác nhận thất bại từ backend");
   }
 
   return data;
