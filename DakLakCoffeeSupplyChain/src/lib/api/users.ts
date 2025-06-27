@@ -32,16 +32,29 @@ export interface UserProfileDetails {
 }
 
 export enum UserAccountStatus {
+  Unknown = "Unknown",
+  PendingApproval = "PendingApproval",
   Active = "Active",
   Inactive = "Inactive",
+  Locked = "Locked",
   Suspended = "Suspended",
-  Unknown = "Unknown"
+  Rejected = "Rejected",
+  Deleted = "Deleted",
+  Banned = "Banned",
 }
 
 export enum Gender {
+  Unknown = "Unknown",
   Male = "Male",
   Female = "Female",
-  Unknown = "Unknown"
+  Other = "Other",
+}
+
+export enum LoginType {
+  System = "System",
+  Google = "Google",
+  Facebook = "Facebook",
+  Apple = "Apple",
 }
 
 const API_URL = "https://localhost:7163/api/UserAccounts";
@@ -96,14 +109,14 @@ export async function updateUser(id: string, data: Partial<UserProfileDetails>) 
   return await res.json();
 }
 
-export async function deleteUser(id: string) {
+export async function softDeleteUser(id: string) {
   const token = localStorage.getItem("token");
-  const res = await fetch(`${API_URL}/${id}`, {
-    method: "DELETE",
+  const res = await fetch(`${API_URL}/soft-delete/${id}`, {
+    method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
   if (!res.ok) throw new Error("Không xoá được người dùng");
-  return await res.json();
+  return await res.text();
 }

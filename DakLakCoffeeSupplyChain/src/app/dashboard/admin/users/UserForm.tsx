@@ -1,7 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getUserById, createUser, updateUser, UserProfileDetails, Gender, UserAccountStatus } from "@/lib/api/users";
+import {
+  getUserById,
+  createUser,
+  updateUser,
+  UserProfileDetails,
+  Gender,
+  UserAccountStatus,
+} from "@/lib/api/users";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -36,10 +43,14 @@ export default function UserForm({ mode, userId }: UserFormProps) {
         .then((user) => {
           setForm({
             ...user,
-            dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().slice(0, 10) : ""
+            dateOfBirth: user.dateOfBirth
+              ? new Date(user.dateOfBirth).toISOString().slice(0, 10)
+              : "",
           });
         })
-        .catch((err) => setError(err.message || "Không lấy được thông tin người dùng"))
+        .catch((err) =>
+          setError(err.message || "Không lấy được thông tin người dùng")
+        )
         .finally(() => setLoading(false));
     }
   }, [mode, userId]);
@@ -140,14 +151,20 @@ export default function UserForm({ mode, userId }: UserFormProps) {
                   >
                     <option value={Gender.Male}>Nam</option>
                     <option value={Gender.Female}>Nữ</option>
-                    <option value={Gender.Unknown}>Khác</option>
+                    <option value={Gender.Other}>Khác</option>
                   </select>
                 </div>
                 <div>
                   <label className="block mb-1">Ngày sinh</label>
                   <input
                     name="dateOfBirth"
-                    value={typeof form.dateOfBirth === "string" ? form.dateOfBirth : (form.dateOfBirth ? form.dateOfBirth.toISOString().slice(0, 10) : "")}
+                    value={
+                      typeof form.dateOfBirth === "string"
+                        ? form.dateOfBirth
+                        : form.dateOfBirth
+                        ? form.dateOfBirth.toISOString().slice(0, 10)
+                        : ""
+                    }
                     onChange={handleChange}
                     className="border rounded px-3 py-2 w-full"
                     type="date"
@@ -179,10 +196,33 @@ export default function UserForm({ mode, userId }: UserFormProps) {
                     onChange={handleChange}
                     className="border rounded px-3 py-2 w-full"
                   >
-                    <option value={UserAccountStatus.Active}>Hoạt động</option>
-                    <option value={UserAccountStatus.Inactive}>Ngừng</option>
-                    <option value={UserAccountStatus.Suspended}>Tạm khóa</option>
-                    <option value={UserAccountStatus.Unknown}>Không xác định</option>
+                    <option value={UserAccountStatus.PendingApproval}>
+                      Chờ duyệt
+                    </option>
+                    <option value={UserAccountStatus.Active}>
+                      Hoạt động
+                    </option>
+                    <option value={UserAccountStatus.Inactive}>
+                      Tạm ngưng
+                    </option>
+                    <option value={UserAccountStatus.Locked}>
+                      Bị khóa
+                    </option>
+                    <option value={UserAccountStatus.Suspended}>
+                      Tạm đình chỉ
+                    </option>
+                    <option value={UserAccountStatus.Rejected}>
+                      Từ chối
+                    </option>
+                    <option value={UserAccountStatus.Deleted}>
+                      Đã xoá
+                    </option>
+                    <option value={UserAccountStatus.Banned}>
+                      Cấm vĩnh viễn
+                    </option>
+                    <option value={UserAccountStatus.Unknown}>
+                      Không xác định
+                    </option>
                   </select>
                 </div>
               </div>

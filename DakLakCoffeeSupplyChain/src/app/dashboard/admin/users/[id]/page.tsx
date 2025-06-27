@@ -1,7 +1,21 @@
 "use client";
-import { useParams, useRouter } from "next/navigation";
-import { getUserById, UserProfileDetails, UserAccountStatus, Gender } from "@/lib/api/users";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { 
+  useParams, 
+  useRouter 
+} from "next/navigation";
+import { 
+  getUserById, 
+  UserProfileDetails, 
+  UserAccountStatus, 
+  Gender, 
+  LoginType 
+} from "@/lib/api/users";
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent 
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import React from "react";
 
@@ -68,30 +82,59 @@ export default function UserDetail() {
   };
 
   // Get status display info
-  const getStatusInfo = (status: UserAccountStatus) => {
-    switch (status) {
-      case UserAccountStatus.Active:
-        return { text: "Hoạt động", className: "bg-green-100 text-green-700" };
-      case UserAccountStatus.Inactive:
-        return { text: "Không hoạt động", className: "bg-gray-200 text-gray-600" };
-      case UserAccountStatus.Suspended:
-        return { text: "Tạm khóa", className: "bg-red-100 text-red-700" };
-      default:
-        return { text: "Không xác định", className: "bg-yellow-100 text-yellow-700" };
-    }
-  };
+const getStatusInfo = (status: UserAccountStatus) => {
+  switch (status) {
+    case UserAccountStatus.PendingApproval:
+      return { text: "Chờ duyệt", className: "bg-blue-100 text-blue-700" };
+    case UserAccountStatus.Active:
+      return { text: "Hoạt động", className: "bg-green-100 text-green-700" };
+    case UserAccountStatus.Inactive:
+      return { text: "Tạm ngưng", className: "bg-gray-200 text-gray-600" };
+    case UserAccountStatus.Locked:
+      return { text: "Bị khóa", className: "bg-orange-100 text-orange-700" };
+    case UserAccountStatus.Suspended:
+      return { text: "Tạm đình chỉ", className: "bg-red-100 text-red-700" };
+    case UserAccountStatus.Rejected:
+      return { text: "Từ chối duyệt", className: "bg-pink-100 text-pink-700" };
+    case UserAccountStatus.Deleted:
+      return { text: "Đã xoá", className: "bg-gray-300 text-gray-700" };
+    case UserAccountStatus.Banned:
+      return { text: "Cấm vĩnh viễn", className: "bg-black text-white" };
+    default:
+      return { text: "Không xác định", className: "bg-yellow-100 text-yellow-700" };
+  }
+};
 
   // Get gender display
-  const getGenderDisplay = (gender: Gender) => {
-    switch (gender) {
-      case Gender.Male:
-        return "Nam";
-      case Gender.Female:
-        return "Nữ";
-      default:
-        return "Không xác định";
-    }
-  };
+const getGenderDisplay = (gender: Gender) => {
+  switch (gender) {
+    case Gender.Male:
+      return "Nam";
+    case Gender.Female:
+      return "Nữ";
+    case Gender.Other:
+      return "Khác";
+    case Gender.Unknown:
+    default:
+      return "Không xác định";
+  }
+};
+
+  // Get login type display
+const getLoginTypeLabel = (loginType: LoginType) => {
+  switch (loginType) {
+    case "System":
+      return "Hệ thống";
+    case "Google":
+      return "Google";
+    case "Facebook":
+      return "Facebook";
+    case "Apple":
+      return "Apple";
+    default:
+      return "Không xác định";
+  }
+};
 
   const statusInfo = getStatusInfo(user.status);
 
@@ -172,7 +215,7 @@ export default function UserDetail() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex justify-between">
                     <span className="font-medium">Loại đăng nhập:</span>
-                    <span className="capitalize">{user.loginType}</span>
+                    <span>{getLoginTypeLabel(user.loginType as LoginType)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Xác thực email:</span>

@@ -1,6 +1,11 @@
 "use client";
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent 
+} from "@/components/ui/card";
 import {
   Table,
   TableHeader,
@@ -10,8 +15,16 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { getAllUsers, deleteUser, UserProfile, UserAccountStatus } from "@/lib/api/users";
-import { useState, useEffect } from "react";
+import { 
+  getAllUsers, 
+  softDeleteUser, 
+  UserProfile, 
+  UserAccountStatus 
+} from "@/lib/api/users";
+import { 
+  useState, 
+  useEffect 
+} from "react";
 import { useRouter } from "next/navigation";
 
 export default function UserManagement() {
@@ -75,24 +88,34 @@ export default function UserManagement() {
   };
 
   // Get status display info
-  const getStatusInfo = (status: UserAccountStatus) => {
-    switch (status) {
-      case UserAccountStatus.Active:
-        return { text: "Hoạt động", className: "bg-green-100 text-green-700" };
-      case UserAccountStatus.Inactive:
-        return { text: "Không hoạt động", className: "bg-gray-200 text-gray-600" };
-      case UserAccountStatus.Suspended:
-        return { text: "Tạm khóa", className: "bg-red-100 text-red-700" };
-      default:
-        return { text: "Không xác định", className: "bg-yellow-100 text-yellow-700" };
-    }
-  };
+const getStatusInfo = (status: UserAccountStatus) => {
+  switch (status) {
+    case UserAccountStatus.PendingApproval:
+      return { text: "Chờ duyệt", className: "bg-blue-100 text-blue-700" };
+    case UserAccountStatus.Active:
+      return { text: "Hoạt động", className: "bg-green-100 text-green-700" };
+    case UserAccountStatus.Inactive:
+      return { text: "Tạm ngưng", className: "bg-gray-200 text-gray-600" };
+    case UserAccountStatus.Locked:
+      return { text: "Bị khóa", className: "bg-orange-100 text-orange-700" };
+    case UserAccountStatus.Suspended:
+      return { text: "Tạm đình chỉ", className: "bg-red-100 text-red-700" };
+    case UserAccountStatus.Rejected:
+      return { text: "Từ chối duyệt", className: "bg-pink-100 text-pink-700" };
+    case UserAccountStatus.Deleted:
+      return { text: "Đã xoá", className: "bg-gray-300 text-gray-700" };
+    case UserAccountStatus.Banned:
+      return { text: "Cấm vĩnh viễn", className: "bg-black text-white" };
+    default:
+      return { text: "Không xác định", className: "bg-yellow-100 text-yellow-700" };
+  }
+};
 
   const handleDelete = async () => {
     if (!deleteUserId) return;
     setDeleting(true);
     try {
-      await deleteUser(deleteUserId);
+      await softDeleteUser(deleteUserId);
       setUsers((prev) => prev.filter((u) => u.userId !== deleteUserId));
       setDeleteUserId(null);
     } catch (err: any) {
