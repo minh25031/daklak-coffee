@@ -114,7 +114,7 @@ export function SidebarGroup() {
             { title: "Mùa vụ", href: "/dashboard/farmer/crop-seasons", icon: iconMap.crops },
             { title: "Vườn cà phê", href: "/dashboard/farmer/batches", icon: iconMap.articles },
             { title: "Tư vấn", href: "/dashboard/farmer/request-feedback", icon: iconMap.feedback },
-            { title: "Gửi yêu cầu giao hàng", href: "/dashboard/farmer/warehouse-request", icon: <FiTruck /> },
+            { title: "Gửi yêu cầu nhập kho", href: "/dashboard/farmer/warehouse-request", icon: <FiTruck /> },
         ],
         admin: [
             { title: "Tổng quan", href: "/dashboard/admin", icon: iconMap.dashboard },

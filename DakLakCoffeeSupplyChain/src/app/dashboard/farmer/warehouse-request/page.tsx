@@ -15,7 +15,6 @@ export default function FarmerWarehouseRequestPage() {
     requestedQuantity: '',
     preferredDeliveryDate: '',
     note: '',
-    businessStaffId: '',
     batchId: '',
   });
 
@@ -30,17 +29,16 @@ export default function FarmerWarehouseRequestPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { requestedQuantity, preferredDeliveryDate, note, businessStaffId, batchId } = form;
+      const { requestedQuantity, preferredDeliveryDate, note, batchId } = form;
 
-      if (!businessStaffId || !batchId) {
-        throw new Error('Bạn chưa nhập đủ thông tin: ID nhân viên hoặc ID lô xử lý');
+      if (!batchId) {
+        throw new Error('Bạn chưa nhập ID lô xử lý');
       }
 
       const message = await createWarehouseInboundRequest({
         requestedQuantity: Number(requestedQuantity),
         preferredDeliveryDate,
         note,
-        businessStaffId,
         batchId,
       });
 
@@ -60,7 +58,7 @@ export default function FarmerWarehouseRequestPage() {
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
           <h2 className="text-sm font-medium text-gray-700">Hướng dẫn</h2>
           <p className="text-sm text-muted-foreground">
-            Điền đầy đủ thông tin để gửi yêu cầu nhập kho. Vui lòng đảm bảo bạn đã có ID nhân viên và lô sản xuất phù hợp.
+            Điền đầy đủ thông tin để gửi yêu cầu nhập kho. Lô xử lý (Batch) là bắt buộc.
           </p>
         </div>
       </aside>
@@ -108,17 +106,6 @@ export default function FarmerWarehouseRequestPage() {
                   placeholder="Thông tin thêm (không bắt buộc)"
                   value={form.note}
                   onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="businessStaffId">ID Nhân viên phụ trách</Label>
-                <Input
-                  id="businessStaffId"
-                  name="businessStaffId"
-                  value={form.businessStaffId}
-                  onChange={handleChange}
-                  required
                 />
               </div>
 
