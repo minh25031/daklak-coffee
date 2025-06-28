@@ -7,10 +7,28 @@ interface FilterStatusPanelProps {
     statusCounts: Record<CropSeasonStatusValue, number>;
 }
 
-export default function FilterStatusPanel({ selectedStatus, setSelectedStatus, statusCounts }: FilterStatusPanelProps) {
+export default function FilterStatusPanel({
+    selectedStatus,
+    setSelectedStatus,
+    statusCounts,
+}: FilterStatusPanelProps) {
     return (
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
             <h2 className="text-sm font-medium text-gray-700">Lọc theo trạng thái</h2>
+
+            {/* FilterBadge cho tất cả */}
+            <FilterBadge
+                icon="Đ"
+                label="Tất cả trạng thái"
+                count={
+                    Object.values(statusCounts).reduce((sum, val) => sum + val, 0)
+                }
+                color="orange"
+                active={selectedStatus === null}
+                onClick={() => setSelectedStatus(null)}
+            />
+
+            {/* Các filter theo từng trạng thái */}
             {Object.entries(CropSeasonStatusMap).map(([key, { label, color, icon }]) => (
                 <FilterBadge
                     key={key}

@@ -33,14 +33,13 @@ export default function AdminLayout({
       </Sidebar>
 
       <div
-        className={`flex flex-col flex-1 transition-all duration-300 ${
-          isCollapsed ? "ml-[64px]" : "ml-[260px]"
-        }`}
+        className={`flex flex-col flex-1 transition-all duration-300 ${isCollapsed ? "ml-[64px]" : "ml-[260px]"
+          }`}
       >
         <div className="shrink-0">
           <HeaderDashboard />
         </div>
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
+        <div className="flex-1 p-6">{children}</div>
       </div>
     </div>
   );

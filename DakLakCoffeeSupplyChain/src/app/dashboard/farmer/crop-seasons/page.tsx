@@ -1,27 +1,37 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CropSeason, getAllCropSeasons } from '@/lib/api/cropSeasons';
+import { getAllCropSeasons, CropSeasonListItem } from '@/lib/api/cropSeasons';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { CropSeasonStatusMap, CropSeasonStatusValue } from '@/lib/constrant/cropSeasonStatus';
 import { cn } from '@/lib/utils';
-import CropSeasonCard from '@/components/crop-season/CropSeasonCard';
-import FilterBadge from '@/components/crop-season/FilterBadge';
-import FilterStatusPanel from '@/components/crop-season/FilterStatusPanel';
+import CropSeasonCard from '@/components/crop-seasons/CropSeasonCard';
+import FilterStatusPanel from '@/components/crop-seasons/FilterStatusPanel';
 
 export default function FarmerCropSeasonsPage() {
-    const [cropSeasons, setCropSeasons] = useState<CropSeason[]>([]);
+    const [cropSeasons, setCropSeasons] = useState<CropSeasonListItem[]>([]);
     const [search, setSearch] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
     const pageSize = 10;
 
     useEffect(() => {
         const fetchData = async () => {
-            const data = await getAllCropSeasons();
-            setCropSeasons(data);
+            setIsLoading(true);
+            try {
+                const data = await getAllCropSeasons();
+                setCropSeasons(data);
+                setError(null);
+            } catch (err) {
+                setError('Không thể tải dữ liệu mùa vụ');
+            } finally {
+                setIsLoading(false);
+            }
         };
         fetchData();
     }, []);
@@ -46,10 +56,9 @@ export default function FarmerCropSeasonsPage() {
     });
 
     return (
-        <div className="flex min-h-screen bg-amber-200-50 p-6 gap-6">
+        <div className="flex min-h-screen bg-amber-50 p-6 gap-6">
             {/* Sidebar */}
             <aside className="w-64 space-y-4">
-                {/* Search block */}
                 <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
                     <h2 className="text-sm font-medium text-gray-700">Tìm kiếm mùa vụ</h2>
                     <div className="relative">
@@ -61,14 +70,7 @@ export default function FarmerCropSeasonsPage() {
                         />
                         <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     </div>
-                    <div className="flex justify-end text-sm">
-                        <Button className="w-full bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium text-sm">
-                            Search
-                        </Button>
-
-                    </div>
                 </div>
-
                 <FilterStatusPanel
                     selectedStatus={selectedStatus}
                     setSelectedStatus={setSelectedStatus}
@@ -76,66 +78,74 @@ export default function FarmerCropSeasonsPage() {
                 />
             </aside>
 
-            {/* Main content */}
             <main className="flex-1 space-y-6">
                 <div className="bg-white rounded-xl shadow-sm p-4">
-                    <table className="w-full text-sm table-auto">
-                        <thead className="bg-gray-100 text-gray-700 font-medium">
-                            <tr>
-                                <th className="px-4 py-3 text-left">Tên mùa vụ</th>
-                                <th className="px-4 py-3 text-left">Diện tích</th>
-                                <th className="px-4 py-3 text-left">Trạng thái</th>
-                                <th className="px-4 py-3 text-left">Ngày bắt đầu – kết thúc</th>
-                                <th className="px-4 py-3 text-left">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pagedSeasons.map((season) => (
-                                <CropSeasonCard key={season.cropSeasonId} season={season} />
-                            ))}
-                        </tbody>
-                    </table>
+                    {isLoading ? (
+                        <p className="text-center py-8 text-sm text-muted-foreground">Đang tải dữ liệu mùa vụ...</p>
+                    ) : error ? (
+                        <p className="text-center py-8 text-sm text-red-500">{error}</p>
+                    ) : pagedSeasons.length === 0 ? (
+                        <p className="text-center py-8 text-sm text-muted-foreground">Không tìm thấy mùa vụ nào</p>
+                    ) : (
+                        <table className="w-full text-sm table-auto">
+                            <thead className="bg-gray-100 text-gray-700 font-medium">
+                                <tr>
+                                    <th className="px-4 py-3 text-left">Tên mùa vụ</th>
+                                    <th className="px-4 py-3 text-left">Diện tích (ha)</th>
+                                    <th className="px-4 py-3 text-left">Trạng thái</th>
+                                    <th className="px-4 py-3 text-left">Thời gian</th>
+                                    <th className="px-4 py-3 text-left">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pagedSeasons.map((season) => (
+                                    <CropSeasonCard key={season.cropSeasonId} season={season} />
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
 
-                {/* Pagination */}
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                        Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredSeasons.length)} trong {filteredSeasons.length} mùa vụ
-                    </span>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        {[...Array(totalPages).keys()].map((_, i) => {
-                            const page = i + 1;
-                            return (
-                                <Button
-                                    key={page}
-                                    onClick={() => setCurrentPage(page)}
-                                    className={cn(
-                                        'rounded-md px-3 py-1 text-sm',
-                                        page === currentPage ? 'bg-black text-white' : 'bg-white text-black border'
-                                    )}
-                                >
-                                    {page}
-                                </Button>
-                            );
-                        })}
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </Button>
+                {!isLoading && !error && totalPages > 1 && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                            Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredSeasons.length)} trong {filteredSeasons.length} mùa vụ
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </Button>
+                            {[...Array(totalPages).keys()].map((_, i) => {
+                                const page = i + 1;
+                                return (
+                                    <Button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={cn(
+                                            'rounded-md px-3 py-1 text-sm',
+                                            page === currentPage ? 'bg-black text-white' : 'bg-white text-black border'
+                                        )}
+                                    >
+                                        {page}
+                                    </Button>
+                                );
+                            })}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                )}
             </main>
         </div>
     );
