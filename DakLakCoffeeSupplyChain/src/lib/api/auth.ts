@@ -1,6 +1,7 @@
 import { jwtDecode } from "jwt-decode";
 import { roleSlugMap } from "@/lib/constrant/role";
 import axios from "axios";
+import { extractErrorMessage } from "../utils";
 
 export interface DecodedToken {
   nameid: string;
@@ -55,32 +56,24 @@ export async function login(email: string, password: string): Promise<DecodedTok
 }
 
 export async function signUp(signUpData: SignUpData): Promise<void> {
-  try {
     const response = await axios.post(
       "https://localhost:7163/api/Auth/SignUpRequest",
       signUpData,
-      {
-        validateStatus: () => true,
-      }
+    { validateStatus: () => true }
     );
 
-    console.log("Kết quả đăng ký:", response.data, response.status);
-
-    if (response.status !== 200 && response.status !== 201) {
+  if (response.status !== 200 && response.status !== 201) 
+  {
       const errorMessage =
         typeof response.data === "string"
           ? response.data
           : response.data?.message || "Đăng ký thất bại";
       throw new Error(errorMessage);
     }
-    // Lưu email vào localStorage để dùng lại
-    localStorage.setItem("pending_email", signUpData.email);
 
-  } catch (err: any) {
-    console.error("Đăng ký lỗi:", err);
-    throw new Error(err || "Đăng ký thất bại");
-  }
+    localStorage.setItem("pending_email", signUpData.email);
 }
+
 
 export async function resendVerificationEmail(email: string): Promise<void> {
   try {
@@ -94,8 +87,7 @@ export async function resendVerificationEmail(email: string): Promise<void> {
     } else {
       alert(response.data || "Không thể gửi lại email xác thực.");
     }
-  } catch (err: any) {
-    console.error("Gửi lại email xác thực thất bại:", err);
-    alert("Có lỗi xảy ra khi gửi lại email xác thực.");
+  } catch (err: unknown) {
+    alert(extractErrorMessage(err));
   }
 }

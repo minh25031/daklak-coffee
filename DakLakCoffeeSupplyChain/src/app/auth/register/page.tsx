@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Home } from "lucide-react";
 import { resendVerificationEmail, signUp } from "@/lib/api/auth";
+import { extractErrorMessage } from "@/lib/utils";
 
 export default function RegisterPage() {
   const [showResendBox, setShowResendBox] = useState(false);
@@ -97,25 +98,12 @@ export default function RegisterPage() {
 
     try {
       await signUp(payload);
-      alert("Bạn hãy kiểm tra email đã được đăng ký để xác thực.");
-      setTimeout(() => setShowResendBox(true), 10000);
-    } catch (err: any) {
-      let errorMessage = "Đăng ký thất bại";
-
-      console.log("Đăng ký lỗi:", err);
-      if (typeof err === "string") {
-        errorMessage = err;
-      } else if (err?.response?.data) {
-        errorMessage =
-          typeof err.response.data === "string"
-            ? err.response.data
-            : err.response.data?.message || errorMessage;
-      } else if (err?.message) {
-        errorMessage = err.message;
-      }
-
-      alert(errorMessage);
+    } catch (err: unknown) {
+        alert(extractErrorMessage(err));
+        return;
     }
+    alert("Bạn hãy kiểm tra email đã được đăng ký để xác thực.");
+    setTimeout(() => setShowResendBox(true), 10000);
   };
 
   const handleChange = (
@@ -309,7 +297,14 @@ export default function RegisterPage() {
     </div>
   );
 }
-
+type InputFieldProps = {
+  label: string;
+  name: string;
+  type?: string;
+  value: string | number;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
+  error?: string;
+};
 function InputField({
   label,
   name,
@@ -317,14 +312,7 @@ function InputField({
   value,
   onChange,
   error,
-}: {
-  label: string;
-  name: string;
-  type?: string;
-  value: string | number;
-  onChange: any;
-  error?: string;
-}) {
+}: InputFieldProps) {
   return (
     <div className='space-y-2'>
       <Label htmlFor={name} className='text-sm'>
