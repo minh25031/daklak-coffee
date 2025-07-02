@@ -1,6 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 
-// Lấy URL API từ biến môi trường
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 if (!apiUrl) {
