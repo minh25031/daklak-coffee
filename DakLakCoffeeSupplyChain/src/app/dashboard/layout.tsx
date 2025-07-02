@@ -39,7 +39,6 @@ export default function AdminLayout({
         <div className="shrink-0 ">
           <HeaderDashboard />
         </div>
-        <div className="flex-1 p-6 scroll-smooth">{children}</div>
         <div className="flex-1 p-5 overflow-auto	">{children}</div>
       </div>
     </div>
