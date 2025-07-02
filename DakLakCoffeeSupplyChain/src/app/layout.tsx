@@ -12,7 +12,6 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
 
-  // ✅ Chỉ hiện header/footer ở trang gốc & marketplace
   const showHeaderFooter =
     pathname === "/" || pathname.startsWith("/marketplace");
 
