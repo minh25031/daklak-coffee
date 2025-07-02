@@ -1,7 +1,7 @@
 import { jwtDecode } from "jwt-decode";
 import { roleSlugMap } from "@/lib/constrant/role";
-import axios from "axios";
 import { extractErrorMessage } from "../utils";
+import api from "./axios";
 
 export interface DecodedToken {
   nameid: string;
@@ -22,26 +22,16 @@ export interface SignUpData {
   businessLicenseURl?: string;
 }
 
-export async function login(
-  email: string,
-  password: string
-): Promise<DecodedToken> {
+export async function login(email: string, password: string): Promise<DecodedToken> {
   try {
-    const response = await axios.post(
-      "https://localhost:7163/api/Auth/login",
-      { email, password },
-      {
-        validateStatus: () => true,
-      }
-    );
+    const response = await api.post("/Auth/login", { email, password });
 
-    const result = response.data;
+    const token = response.data;
 
-    if (result.status !== 1) {
-      throw new Error(result.message || "Đăng nhập thất bại");
+    if (!token || typeof token !== "string") {
+      throw new Error("Đăng nhập thất bại: Token không hợp lệ");
     }
 
-    const { token } = result.data;
     const decoded: DecodedToken = jwtDecode(token);
     const roleSlug = roleSlugMap[decoded.role] ?? "unknown";
 
@@ -54,41 +44,38 @@ export async function login(
     return decoded;
   } catch (err: any) {
     console.error("Đăng nhập lỗi:", err);
-    throw new Error(err.response?.data?.message || "Đăng nhập thất bại");
+    throw new Error(extractErrorMessage(err));
   }
 }
 
 export async function signUp(signUpData: SignUpData): Promise<void> {
-  const response = await axios.post(
-    "https://localhost:7163/api/Auth/SignUpRequest",
-    signUpData,
-    { validateStatus: () => true }
-  );
+  try {
+    const response = await api.post("/Auth/SignUpRequest", signUpData);
 
-  if (response.status !== 200 && response.status !== 201) {
-    const errorMessage =
-      typeof response.data === "string"
-        ? response.data
-        : response.data?.message || "Đăng ký thất bại";
-    throw new Error(errorMessage);
+    if (![200, 201].includes(response.status)) {
+      const errorMessage =
+        typeof response.data === "string"
+          ? response.data
+          : response.data?.message || "Đăng ký thất bại";
+      throw new Error(errorMessage);
+    }
+
+    localStorage.setItem("pending_email", signUpData.email);
+  } catch (err) {
+    throw new Error(extractErrorMessage(err));
   }
-
-  localStorage.setItem("pending_email", signUpData.email);
 }
 
 export async function resendVerificationEmail(email: string): Promise<void> {
   try {
-    const response = await axios.post(
-      "https://localhost:7163/api/Auth/resend-verification-email",
-      { email }
-    );
+    const response = await api.post("/Auth/resend-verification-email", { email });
 
     if (response.status === 200) {
       alert("Email xác thực đã được gửi lại.");
     } else {
-      alert(response.data || "Không thể gửi lại email xác thực.");
+      alert(response.data?.message || "Không thể gửi lại email xác thực.");
     }
-  } catch (err: unknown) {
+  } catch (err) {
     alert(extractErrorMessage(err));
   }
 }
