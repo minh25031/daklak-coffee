@@ -32,13 +32,13 @@ export async function login(email: string, password: string): Promise<DecodedTok
       }
     );
 
-    const result = response.data;
+    const token = response.data;
 
-    if (result.status !== 1) {
-      throw new Error(result.message || "Đăng nhập thất bại");
+    // Nếu API trả về không phải chuỗi token, ném lỗi
+    if (!token || typeof token !== "string") {
+      throw new Error("Đăng nhập thất bại: Token không hợp lệ");
     }
 
-    const { token } = result.data;
     const decoded: DecodedToken = jwtDecode(token);
     const roleSlug = roleSlugMap[decoded.role] ?? "unknown";
 
@@ -51,9 +51,10 @@ export async function login(email: string, password: string): Promise<DecodedTok
     return decoded;
   } catch (err: any) {
     console.error("Đăng nhập lỗi:", err);
-    throw new Error(err.response?.data?.message || "Đăng nhập thất bại");
+    throw new Error(err?.response?.data?.message || "Đăng nhập thất bại");
   }
 }
+
 
 export async function signUp(signUpData: SignUpData): Promise<void> {
     const response = await axios.post(
