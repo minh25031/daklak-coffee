@@ -20,13 +20,9 @@ export async function login(email: string, password: string): Promise<DecodedTok
       }
     );
 
-    const result = response.data;
+    const token = response.data; // 👈 trả về là chuỗi token luôn
+    console.log("Token từ API:", token);
 
-    if (result.status !== 1) {
-      throw new Error(result.message || "Đăng nhập thất bại");
-    }
-
-    const { token } = result.data;
     const decoded: DecodedToken = jwtDecode(token);
     const roleSlug = roleSlugMap[decoded.role] ?? "unknown";
 
@@ -35,10 +31,11 @@ export async function login(email: string, password: string): Promise<DecodedTok
     localStorage.setItem("email", decoded.email);
     localStorage.setItem("user_role", roleSlug);
     localStorage.setItem("user_role_raw", decoded.role);
+    localStorage.setItem("user_name", decoded.name); // 👈 nếu muốn hiển thị tên
 
     return decoded;
   } catch (err: any) {
     console.error("Đăng nhập lỗi:", err);
-    throw new Error(err.response?.data?.message || "Đăng nhập thất bại");
+    throw new Error("Đăng nhập thất bại");
   }
 }
