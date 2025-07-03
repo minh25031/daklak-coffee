@@ -1,10 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-    getCropSeasonsForCurrentUser,
-    CropSeasonListItem
-} from '@/lib/api/cropSeasons';
+import { getAllCropSeasons, CropSeasonListItem } from '@/lib/api/cropSeasons';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
@@ -27,7 +24,7 @@ export default function FarmerCropSeasonsPage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const data = await getCropSeasonsForCurrentUser();
+                const data = await getAllCropSeasons();
                 setCropSeasons(data);
                 setError(null);
             } catch (err) {

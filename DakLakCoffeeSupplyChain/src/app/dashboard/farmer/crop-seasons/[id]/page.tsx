@@ -15,6 +15,7 @@ import { Leaf } from 'lucide-react';
 import StatusBadge from '@/components/crop-seasons/StatusBadge';
 import { CropSeasonStatusMap } from '@/lib/constrant/cropSeasonStatus';
 import { CropSeasonDetailStatusMap } from '@/lib/constrant/cropSeasonDetailStatus';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function CropSeasonDetail() {
     const params = useParams();
@@ -24,6 +25,7 @@ export default function CropSeasonDetail() {
     const [season, setSeason] = useState<CropSeason | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const { user } = useAuth();
 
 
     useEffect(() => {
@@ -75,33 +77,6 @@ export default function CropSeasonDetail() {
                         <div className="flex justify-between items-center">
                             <CardTitle>Thông tin mùa vụ</CardTitle>
                             <div className="flex gap-2">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() =>
-                                        router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/edit`)
-                                    }
-                                >
-                                    <FiEdit className="mr-1" /> Chỉnh sửa
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={async () => {
-                                        const confirmDelete = window.confirm('Bạn có chắc chắn muốn xoá mùa vụ này không?');
-                                        if (!confirmDelete) return;
-
-                                        try {
-                                            await deleteCropSeasonById(season.cropSeasonId);
-                                            alert('Đã xoá mùa vụ thành công.');
-                                            router.push('/dashboard/farmer/crop-seasons');
-                                        } catch (err: any) {
-                                            alert(err.message || 'Xoá thất bại.');
-                                        }
-                                    }}
-                                >
-                                    <FiTrash2 className="mr-1" /> Xoá
-                                </Button>
                             </div>
                         </div>
                     </CardHeader>
@@ -188,28 +163,34 @@ export default function CropSeasonDetail() {
                                                 <StatusBadge status={detail.status} map={CropSeasonDetailStatusMap} />
                                             </td>
                                             <td className="px-3 py-2 space-x-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() =>
-                                                        router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/${detail.detailId}/edit`)
-                                                    }
-                                                >
-                                                    Sửa
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="destructive"
-                                                    onClick={() => {
-                                                        const confirmDelete = window.confirm('Bạn có chắc muốn xoá vùng trồng này?');
-                                                        if (confirmDelete) {
-                                                            // TODO: Gọi delete API
-                                                            alert(`Đã xoá ${detail.typeName}`);
-                                                        }
-                                                    }}
-                                                >
-                                                    Xoá
-                                                </Button>
+                                                {detail.farmerId === user?.id ? (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() =>
+                                                                router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/${detail.detailId}/edit`)
+                                                            }
+                                                        >
+                                                            Sửa
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            onClick={() => {
+                                                                const confirmDelete = window.confirm("Bạn có chắc muốn xoá vùng trồng này?");
+                                                                if (confirmDelete) {
+                                                                    // TODO: Gọi delete API
+                                                                    alert(`Đã xoá ${detail.typeName}`);
+                                                                }
+                                                            }}
+                                                        >
+                                                            Xoá
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-xs italic text-muted-foreground">Không có quyền</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

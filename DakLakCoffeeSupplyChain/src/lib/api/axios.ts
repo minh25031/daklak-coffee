@@ -16,7 +16,18 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-// Interceptor kiểm tra response
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token"); // hoặc "access_token"
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// ✅ Interceptor để xử lý lỗi từ response
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     if (response.status >= 200 && response.status < 300) {
