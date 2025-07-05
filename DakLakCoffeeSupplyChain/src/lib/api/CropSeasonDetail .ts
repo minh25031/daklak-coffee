@@ -25,3 +25,4 @@ export async function createCropSeasonDetail(data: CreateCropSeasonDetail): Prom
     throw new Error("Thêm vùng trồng thất bại");
   }
 }
+
