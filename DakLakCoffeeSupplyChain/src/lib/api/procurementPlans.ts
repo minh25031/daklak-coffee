@@ -1,36 +1,61 @@
+import api from "./axios";
+
 export type ProcurementPlan = {
   planId: string;
   planCode: string;
   title: string;
   description: string;
   totalQuantity: number;
-  createdBy: string;
+  createdBy: {
+    managerId: string;
+    userId: string;
+    managerCode: string;
+    companyName: string;
+    companyAddress: string;
+    website: string;
+    contactEmail: string;
+  };
   startDate: string;
   endDate: string;
   progressPercentage: number;
   createdAt: string;
   updatedAt: string;
   status: string;
+  procurementPlansDetails: ProcurementPlansDetails[];
+};
+
+export type ProcurementPlansDetails = {
+  planDetailsId: string;
+  planDetailCode: string;
+  planId: string;
+  coffeeType: {
+    coffeeTypeId: string;
+    typeCode: string;
+    typeName: string;
+    botanicalName: string;
+    description: string;
+    typicalRegion: string;
+    specialtyLevel: string;
+  };
+  processingMethodName: string;
+  targetQuantity: number;
+  targetRegion: string;
+  minimumRegistrationQuantity: number;
+  minPriceRange: number;
+  maxPriceRange: number;
+  note: string;
+  progressPercentage: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export async function getAllProcurementPlans(): Promise<ProcurementPlan[]> {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("Token không tồn tại!");
+  const response = await api.get("/ProcurementPlans");
+  return response.data;
+}
 
-    const res = await fetch("https://localhost:7163/api/ProcurementPlans", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, 
-      },
-      cache: "no-store",
-    });
-
-    if (!res.ok) throw new Error("Không lấy được dữ liệu kế hoạch thu mua");
-    return await res.json();
-  } catch (err) {
-    console.error("Lỗi khi gọi API:", err);
-    return [];
-  }
+export async function getProcurementPlanById(planId: string): Promise<ProcurementPlan | null> {
+  const response = await api.get(`/ProcurementPlans/${planId}`);
+  return response.data;
 }
