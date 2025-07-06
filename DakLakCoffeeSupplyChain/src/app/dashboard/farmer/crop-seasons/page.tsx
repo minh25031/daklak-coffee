@@ -24,8 +24,12 @@ export default function FarmerCropSeasonsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [search, setSearch] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-
     const pageSize = 10;
+
+    const handleSeasonDeleted = (deletedId: string) => {
+        setCropSeasons(prev => prev.filter(season => season.cropSeasonId !== deletedId));
+    };
+
 
     useEffect(() => {
         setCurrentPage(1);
@@ -120,7 +124,11 @@ export default function FarmerCropSeasonsPage() {
                             </thead>
                             <tbody>
                                 {pagedSeasons.map((season) => (
-                                    <CropSeasonCard key={season.cropSeasonId} season={season} />
+                                    <CropSeasonCard
+                                        key={season.cropSeasonId}
+                                        season={season}
+                                        onDeleted={handleSeasonDeleted}
+                                    />
                                 ))}
                             </tbody>
                         </table>
