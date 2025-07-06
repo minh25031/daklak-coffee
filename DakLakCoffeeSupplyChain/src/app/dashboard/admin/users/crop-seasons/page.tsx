@@ -1,10 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-    getCropSeasonsForCurrentUser,
-    CropSeasonListItem
-} from '@/lib/api/cropSeasons';
+import { getAllCropSeasons, CropSeasonListItem } from '@/lib/api/cropSeasons';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
@@ -12,29 +9,22 @@ import { CropSeasonStatusMap, CropSeasonStatusValue } from '@/lib/constrant/crop
 import { cn } from '@/lib/utils';
 import CropSeasonCard from '@/components/crop-seasons/CropSeasonCard';
 import FilterStatusPanel from '@/components/crop-seasons/FilterStatusPanel';
-import { useAuthGuard } from '@/lib/auth/useAuthGuard';
-import { useRouter } from 'next/navigation';
 
 export default function FarmerCropSeasonsPage() {
-    useAuthGuard(['farmer']);
     const [cropSeasons, setCropSeasons] = useState<CropSeasonListItem[]>([]);
     const [search, setSearch] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const router = useRouter();
 
     const pageSize = 10;
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [search, selectedStatus]);
 
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const data = await getCropSeasonsForCurrentUser();
+                const data = await getAllCropSeasons();
                 setCropSeasons(data);
                 setError(null);
             } catch (err) {
@@ -90,11 +80,6 @@ export default function FarmerCropSeasonsPage() {
 
             <main className="flex-1 space-y-6">
                 <div className="bg-white rounded-xl shadow-sm p-4">
-                    <div className="flex justify-end mb-4">
-                        <Button onClick={() => router.push('/dashboard/farmer/crop-seasons/create')}>
-                            + Tạo mùa vụ mới
-                        </Button>
-                    </div>
                     {isLoading ? (
                         <p className="text-center py-8 text-sm text-muted-foreground">Đang tải dữ liệu mùa vụ...</p>
                     ) : error ? (

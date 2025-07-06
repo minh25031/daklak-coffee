@@ -1,6 +1,6 @@
 'use client';
 
-import { CropSeasonListItem as CropSeason } from '@/lib/api/cropSeasons'; // đảm bảo dùng interface rút gọn phù hợp
+import { CropSeasonListItem as CropSeason } from '@/lib/api/cropSeasons';
 import { FaUser } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import StatusBadge from './StatusBadge';
@@ -18,21 +18,19 @@ export default function CropSeasonCard({ season }: { season: CropSeason }) {
                     {season.farmerName}
                 </div>
             </td>
-
             <td className="px-4 py-3 whitespace-nowrap">{season.area} ha</td>
-
             <td className="px-4 py-3">
                 <StatusBadge status={season.status} map={CropSeasonStatusMap} />
             </td>
-
             <td className="px-4 py-3 whitespace-nowrap">
                 {new Date(season.startDate).toLocaleDateString('vi-VN')} –{' '}
                 {new Date(season.endDate).toLocaleDateString('vi-VN')}
             </td>
-
             <td className="px-4 py-3 text-center">
                 <button
-                    onClick={() => router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}`)}
+                    onClick={() =>
+                        router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}`)
+                    }
                     className="text-[#FD7622] hover:underline text-sm"
                 >
                     Xem chi tiết

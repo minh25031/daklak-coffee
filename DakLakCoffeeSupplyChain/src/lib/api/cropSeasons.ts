@@ -1,5 +1,6 @@
-// ---------- Interfaces ----------
+import api from "@/lib/api/axios";
 
+// ========== TYPES ==========
 export interface CropSeasonDetail {
   detailId: string;
   coffeeTypeId: string;
@@ -12,6 +13,8 @@ export interface CropSeasonDetail {
   plannedQuality: string;
   qualityGrade: string;
   status: string;
+  farmerId: string;
+  farmerName: string;
 }
 
 export interface CropSeason {
@@ -37,78 +40,76 @@ export interface CropSeasonListItem {
   startDate: string;
   endDate: string;
   area: number;
+  farmerId: string; 
   farmerName: string;
   status: string;
 }
-const API_BASE = "https://localhost:7163/api/CropSeasons";
 
+// ========== API FUNCTIONS ==========
 
+// Lấy tất cả mùa vụ (dành cho Admin hoặc Manager)
 export async function getAllCropSeasons(): Promise<CropSeasonListItem[]> {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("Token không tồn tại!");
-
-    const res = await fetch(API_BASE, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
-
-    if (!res.ok) throw new Error("Không lấy được danh sách mùa vụ");
-
-    return await res.json();
+    const res = await api.get<CropSeasonListItem[]>("/CropSeasons");
+    return res.data;
   } catch (err) {
     console.error("Lỗi getAllCropSeasons:", err);
     return [];
   }
 }
 
+// Lấy mùa vụ theo userId (dành cho Farmer - chỉ xem của mình)
+export async function getCropSeasonsForCurrentUser(): Promise<CropSeasonListItem[]> {
+  try {
+    const res = await api.get<CropSeasonListItem[]>(`/CropSeasons`);
+    return res.data;
+  } catch (err) {
+    console.error("Lỗi getCropSeasonsForCurrentUser:", err);
+    return [];
+  }
+}
+
+
+// Lấy chi tiết 1 mùa vụ (bao gồm danh sách vùng trồng)
 export async function getCropSeasonById(id: string): Promise<CropSeason | null> {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("Token không tồn tại!");
-
-    const res = await fetch(`${API_BASE}/${id}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
-
-    if (!res.ok) throw new Error("Không lấy được chi tiết mùa vụ");
-
-    return await res.json();
+    const res = await api.get<CropSeason>(`/CropSeasons/${id}`);
+    return res.data;
   } catch (err) {
     console.error("Lỗi getCropSeasonById:", err);
     return null;
   }
 }
 
+// Xoá mùa vụ (chỉ Admin hoặc Farmer chủ mùa vụ)
 export async function deleteCropSeasonById(id: string): Promise<boolean> {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('Token không tồn tại!');
-
-    const res = await fetch(`${API_BASE}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(errorText || 'Xoá mùa vụ thất bại');
-    }
-
+    await api.delete(`/CropSeasons/${id}`);
     return true;
   } catch (err) {
-    console.error('Lỗi deleteCropSeasonById:', err);
-    throw err;
+    console.error("Lỗi deleteCropSeasonById:", err);
+    return false;
+  }
+}
+
+// Cập nhật mùa vụ
+export async function updateCropSeason(id: string, data: Partial<CropSeason>): Promise<boolean> {
+  try {
+    await api.put(`/CropSeasons/${id}`, data);
+    return true;
+  } catch (err) {
+    console.error("Lỗi updateCropSeason:", err);
+    return false;
+  }
+}
+
+// Tạo mới mùa vụ
+export async function createCropSeason(data: Partial<CropSeason>): Promise<string | null> {
+  try {
+    const res = await api.post<string>("/CropSeasons", data);
+    return res.data; 
+  } catch (err) {
+    console.error("Lỗi createCropSeason:", err);
+    return null;
   }
 }

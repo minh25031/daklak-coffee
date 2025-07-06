@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export function useAuthGuard(allowedRoles: string[] = []) {
-  // const router = useRouter();
+  const router = useRouter();
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   const role = localStorage.getItem("user_role");
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('user_role');
 
-  //   if (!token) {
-  //     router.push("/auth/login");
-  //     return;
-  //   }
+    if (!token) {
+      router.replace('/auth/login');
+      return;
+    }
 
-  //   if (allowedRoles.length > 0 && !allowedRoles.includes(role ?? "")) {
-  //     router.push("/unauthorized");
-  //   }
-  // }, []);
+    if (allowedRoles.length > 0 && !allowedRoles.includes(role ?? '')) {
+      router.replace('/unauthorized');
+    }
+  }, [allowedRoles, router]);
 }
