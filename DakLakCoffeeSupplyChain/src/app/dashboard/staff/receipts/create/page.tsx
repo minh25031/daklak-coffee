@@ -21,23 +21,18 @@ type Warehouse = {
   name: string;
 };
 
-type Batch = {
-  batchId: string;
-  code: string;
-};
-
 type InboundRequest = {
   inboundRequestId: string;
   requestCode: string;
+  status: string;
+  batchId: string; // ✅ Thêm batchId ở đây
 };
 
 export default function CreateReceiptPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [batches, setBatches] = useState<Batch[]>([]);
   const [inboundRequests, setInboundRequests] = useState<InboundRequest[]>([]);
 
   const [warehouseId, setWarehouseId] = useState('');
-  const [batchId, setBatchId] = useState('');
   const [inboundRequestId, setInboundRequestId] = useState('');
   const [receivedQuantity, setReceivedQuantity] = useState(0);
   const [note, setNote] = useState('');
@@ -46,67 +41,66 @@ export default function CreateReceiptPage() {
   const router = useRouter();
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const res = await getAllWarehouses();
-      console.log("📦 getAllWarehouses response:", res);
-      if (res.status === 1) {
-        setWarehouses(res.data);
-      } else {
-        console.warn("❗️ Lỗi khi lấy danh sách kho:", res.message);
-        alert("❌ Không thể tải danh sách kho: " + res.message);
+    const fetchData = async () => {
+      try {
+        const res = await getAllWarehouses();
+        if (res.status === 1) {
+          setWarehouses(res.data);
+        } else {
+          alert("❌ Không thể tải danh sách kho: " + res.message);
+        }
+      } catch (err: any) {
+        console.error("❌ Exception khi gọi getAllWarehouses:", err);
+        alert("❌ Lỗi không xác định khi tải danh sách kho");
       }
-    } catch (err: any) {
-      console.error("❌ Exception khi gọi getAllWarehouses:", err);
-      alert("❌ Lỗi không xác định khi tải danh sách kho");
-    }
 
-    try {
-      const resInbound = await getAllInboundRequests();
-      console.log("📋 getAllInboundRequests response:", resInbound);
-      if (resInbound.status === 1) {
-        const approved = resInbound.data.filter((r: any) => r.status === "Approved");
-        console.log("✅ Danh sách yêu cầu đã duyệt:", approved);
-        setInboundRequests(approved);
-      } else {
-        console.warn("❗️ Lỗi khi lấy danh sách yêu cầu:", resInbound.message);
-        alert("❌ Không thể tải phiếu yêu cầu nhập kho: " + resInbound.message);
+      try {
+        const resInbound = await getAllInboundRequests();
+        if (resInbound.status === 1) {
+          const approved = resInbound.data.filter((r: any) => r.status === "Approved");
+          setInboundRequests(approved);
+        } else {
+          alert("❌ Không thể tải phiếu yêu cầu nhập kho: " + resInbound.message);
+        }
+      } catch (err: any) {
+        console.error("❌ Exception khi gọi getAllInboundRequests:", err);
+        alert("❌ Lỗi không xác định khi tải phiếu yêu cầu nhập kho");
       }
-    } catch (err: any) {
-      console.error("❌ Exception khi gọi getAllInboundRequests:", err);
-      alert("❌ Lỗi không xác định khi tải phiếu yêu cầu nhập kho");
-    }
+    };
 
-    setBatches([
-      { batchId: "batch1", code: "Mẻ 1" },
-      { batchId: "batch2", code: "Mẻ 2" },
-    ]);
-  };
-
-  fetchData();
-}, []);
-
+    fetchData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!warehouseId || !batchId || !inboundRequestId || receivedQuantity <= 0) {
+    if (!warehouseId || !inboundRequestId || receivedQuantity <= 0) {
       setError('Vui lòng điền đầy đủ thông tin và số lượng hợp lệ');
+      return;
+    }
+
+    const selectedRequest = inboundRequests.find(r => r.inboundRequestId === inboundRequestId);
+    if (!selectedRequest || !selectedRequest.batchId) {
+      setError("Không tìm thấy batchId tương ứng với phiếu yêu cầu.");
       return;
     }
 
     const receiptData = {
       warehouseId,
-      batchId,
+      batchId: selectedRequest.batchId, // ✅ Thêm batchId vào object
       receivedQuantity,
       note,
     };
 
     try {
-      await createWarehouseReceipt(inboundRequestId, receiptData);
-      alert('✅ Tạo phiếu nhập kho thành công');
-      router.push('/dashboard/staff/receipts');
+      const res = await createWarehouseReceipt(inboundRequestId, receiptData);
+      if (res.status === 1) {
+        alert('✅ Tạo phiếu nhập kho thành công');
+        router.push('/dashboard/staff/receipts');
+      } else {
+        setError(res.message || "Tạo phiếu thất bại từ server.");
+      }
     } catch (err: any) {
       console.error("❌ Lỗi tạo phiếu từ BE:", err);
       setError(`❌ ${err.message || "Tạo phiếu thất bại. Vui lòng thử lại."}`);
@@ -159,27 +153,6 @@ export default function CreateReceiptPage() {
                   {warehouses.map(w => (
                     <SelectItem key={w.warehouseId} value={w.warehouseId}>
                       {w.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Batch */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Mẻ sơ chế</label>
-              <Select value={batchId} onValueChange={setBatchId}>
-                <SelectTrigger className="mt-1">
-                  <span>
-                    {batchId
-                      ? batches.find(b => b.batchId === batchId)?.code || 'Chọn mẻ'
-                      : 'Chọn mẻ'}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  {batches.map(b => (
-                    <SelectItem key={b.batchId} value={b.batchId}>
-                      {b.code}
                     </SelectItem>
                   ))}
                 </SelectContent>

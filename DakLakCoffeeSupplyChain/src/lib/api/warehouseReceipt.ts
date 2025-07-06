@@ -1,24 +1,55 @@
+const BASE_URL = "https://localhost:7163/api/WarehouseReceipts";
+
+// Hàm tiện ích dùng chung để gọi API an toàn
+async function safeFetch(
+  url: string,
+  options: RequestInit = {}
+): Promise<{ status: number; message: string; data?: any }> {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return { status: 0, message: "Token không tồn tại trong localStorage" };
+  }
+
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${token}`,
+    ...(options.headers || {}),
+  };
+
+  try {
+    const res = await fetch(url, { ...options, headers });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("❌ HTTP Error:", res.status, text);
+      return { status: 0, message: `Lỗi server: ${res.status} - ${text}` };
+    }
+
+    const data = await res.json();
+    return { status: 1, message: "Thành công", data };
+  } catch (err: any) {
+    console.error("❌ Fetch exception:", err);
+    return { status: 0, message: "Lỗi kết nối hoặc token không hợp lệ" };
+  }
+}
+
+// ================================
+// 📦 GET ALL RECEIPTS
+// ================================
 export async function getAllWarehouseReceipts() {
-  const token = localStorage.getItem("token");
-  const res = await fetch("https://localhost:7163/api/WarehouseReceipts", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return await res.json();
+  return await safeFetch(BASE_URL);
 }
 
-// Fetch a single receipt by its ID
+// ================================
+// 📄 GET RECEIPT BY ID
+// ================================
 export async function getWarehouseReceiptById(id: string) {
-  const token = localStorage.getItem("token");
-  const res = await fetch(`https://localhost:7163/api/WarehouseReceipts/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return await res.json();
+  return await safeFetch(`${BASE_URL}/${id}`);
 }
 
+// ================================
+// 📝 CREATE RECEIPT
+// ================================
 export async function createWarehouseReceipt(
   inboundRequestId: string,
   receiptData: {
@@ -28,29 +59,16 @@ export async function createWarehouseReceipt(
     note: string;
   }
 ) {
-  const token = localStorage.getItem("token");
-
-  const res = await fetch(
-    `https://localhost:7163/api/WarehouseReceipts/${inboundRequestId}/receipt`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(receiptData),
-    }
-  );
-
-  const data = await res.json();
-
-  // ✅ Nếu BE trả status khác 1, thì ném lỗi
-  if (data.status !== 1) {
-    throw new Error(data.message || "Tạo phiếu thất bại từ backend");
-  }
-
-  return data;
+  return await safeFetch(`${BASE_URL}/${inboundRequestId}/receipt`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(receiptData),
+  });
 }
+
+// ================================
+// ✅ CONFIRM RECEIPT
+// ================================
 export async function confirmWarehouseReceipt(
   receiptId: string,
   confirmData: {
@@ -58,22 +76,10 @@ export async function confirmWarehouseReceipt(
     note?: string;
   }
 ) {
-  const token = localStorage.getItem("token");
-
-  const res = await fetch(`https://localhost:7163/api/WarehouseReceipts/${receiptId}/confirm`, {
+  return await safeFetch(`${BASE_URL}/${receiptId}/confirm`, {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(confirmData),
   });
-
-  const data = await res.json();
-
-  if (data.status !== 1) {
-    throw new Error(data.message || "Xác nhận thất bại từ backend");
-  }
-
-  return data;
 }
+// 
