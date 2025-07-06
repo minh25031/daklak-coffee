@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
+import { HTTP_ERROR_MESSAGES } from "../constrant/httpErrors";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -27,26 +28,29 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ✅ Interceptor để xử lý lỗi từ response
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    if (response.status >= 200 && response.status < 300) {
-      return response;
-    }
-    return Promise.reject(
-      new Error(response.data?.message || `Lỗi HTTP status ${response.status}`)
-    );
+    return response;
   },
   (error) => {
     if (error.response) {
-      return Promise.reject(
-        new Error(
+      const status = error.response.status;
+      let message = "";
+      // Nếu dữ liệu trả về là chuỗi không rỗng, sử dụng nó làm thông báo lỗi
+      // Nếu không, sử dụng thông báo lỗi mặc định hoặc thông báo theo status code
+      // Nếu muốn đánh chặn truy cập vì unauthorized thì đừng làm ở đây mà hãy làm ở phía dashboard page, sau khi người dùng nhập url dashboard mà chưa đăng nhập thì sẽ chuyển hướng về trang unauthorized hoặc trang đăng nhập.
+      if (typeof error.response.data === "string" && error.response.data.trim() !== "") {
+        message = error.response.data;
+      } else {
+        message =
           error.response.data?.message ||
-            `Lỗi HTTP status ${error.response.status}`
-        )
-      );
+          HTTP_ERROR_MESSAGES[status] || `Lỗi HTTP status ${status}`;
+      }
+      return Promise.reject(new Error(message));
     } else if (error.request) {
-      return Promise.reject(new Error("Không nhận được phản hồi từ máy chủ"));
+      return Promise.reject(
+        new Error("Không nhận được phản hồi từ máy chủ")
+      );
     } else {
       return Promise.reject(error);
     }

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Home } from "lucide-react";
 import { resendVerificationEmail, signUp } from "@/lib/api/auth";
-import { extractErrorMessage } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function RegisterPage() {
   const [showResendBox, setShowResendBox] = useState(false);
@@ -95,15 +95,14 @@ export default function RegisterPage() {
       businessLicenseURl:
         formData.roleId === 2 ? formData.businessLicenseURl : "",
     };
-
+    
     try {
       await signUp(payload);
-    } catch (err: unknown) {
-        alert(extractErrorMessage(err));
-        return;
+      setTimeout(() => setShowResendBox(true), 10000);
+      alert("Bạn hãy kiểm tra email đã được đăng ký để xác thực.");
+    } catch (err) {
+      alert(getErrorMessage(err));
     }
-    alert("Bạn hãy kiểm tra email đã được đăng ký để xác thực.");
-    setTimeout(() => setShowResendBox(true), 10000);
   };
 
   const handleChange = (
