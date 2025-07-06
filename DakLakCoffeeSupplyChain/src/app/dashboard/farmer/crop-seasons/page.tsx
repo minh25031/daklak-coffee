@@ -14,18 +14,19 @@ import CropSeasonCard from '@/components/crop-seasons/CropSeasonCard';
 import FilterStatusPanel from '@/components/crop-seasons/FilterStatusPanel';
 import { useAuthGuard } from '@/lib/auth/useAuthGuard';
 import { useRouter } from 'next/navigation';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { toast } from 'sonner';
 
 export default function FarmerCropSeasonsPage() {
     useAuthGuard(['farmer']);
     const [cropSeasons, setCropSeasons] = useState<CropSeasonListItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
     const [search, setSearch] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const router = useRouter();
 
     const pageSize = 10;
+
     useEffect(() => {
         setCurrentPage(1);
     }, [search, selectedStatus]);
@@ -34,17 +35,23 @@ export default function FarmerCropSeasonsPage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const data = await getCropSeasonsForCurrentUser();
+                const data = await getCropSeasonsForCurrentUser({
+                    search,
+                    status: selectedStatus ?? undefined,
+                    page: currentPage,
+                    pageSize,
+                });
+
                 setCropSeasons(data);
-                setError(null);
             } catch (err) {
-                setError('Không thể tải dữ liệu mùa vụ');
+                toast.error('Không thể tải danh sách mùa vụ');
             } finally {
                 setIsLoading(false);
             }
         };
+
         fetchData();
-    }, []);
+    }, [search, selectedStatus, currentPage]);
 
     const filteredSeasons = cropSeasons.filter(season =>
         (!selectedStatus || season.status === selectedStatus) &&
@@ -65,9 +72,10 @@ export default function FarmerCropSeasonsPage() {
         Cancelled: 0
     });
 
+    const router = useRouter();
+
     return (
         <div className="flex min-h-screen bg-amber-50 p-6 gap-6">
-            {/* Sidebar */}
             <aside className="w-64 space-y-4">
                 <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
                     <h2 className="text-sm font-medium text-gray-700">Tìm kiếm mùa vụ</h2>
@@ -96,9 +104,7 @@ export default function FarmerCropSeasonsPage() {
                         </Button>
                     </div>
                     {isLoading ? (
-                        <p className="text-center py-8 text-sm text-muted-foreground">Đang tải dữ liệu mùa vụ...</p>
-                    ) : error ? (
-                        <p className="text-center py-8 text-sm text-red-500">{error}</p>
+                        <LoadingSpinner />
                     ) : pagedSeasons.length === 0 ? (
                         <p className="text-center py-8 text-sm text-muted-foreground">Không tìm thấy mùa vụ nào</p>
                     ) : (
@@ -121,7 +127,7 @@ export default function FarmerCropSeasonsPage() {
                     )}
                 </div>
 
-                {!isLoading && !error && totalPages > 1 && (
+                {!isLoading && totalPages > 1 && (
                     <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">
                             Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredSeasons.length)} trong {filteredSeasons.length} mùa vụ

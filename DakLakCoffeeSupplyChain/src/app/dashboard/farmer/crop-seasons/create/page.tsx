@@ -9,9 +9,12 @@ import { useAuthGuard } from '@/lib/auth/useAuthGuard';
 import { createCropSeason } from '@/lib/api/cropSeasons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { AppToast } from '@/components/ui/AppToast';
+import { getErrorMessage } from '@/lib/utils'; // ✅ import hàm xử lý lỗi
 
 export default function CreateCropSeasonPage() {
     useAuthGuard(['farmer']);
+    const formatDate = (d: string) => new Date(d).toISOString().split('T')[0];
 
     const router = useRouter();
     const [form, setForm] = useState({
@@ -22,11 +25,9 @@ export default function CreateCropSeasonPage() {
         note: '',
         registrationId: '',
         commitmentId: '',
-
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -35,13 +36,12 @@ export default function CreateCropSeasonPage() {
 
     const handleSubmit = async () => {
         setIsSubmitting(true);
-        setError('');
 
         const requiredFields = ['seasonName', 'area', 'startDate', 'endDate', 'registrationId', 'commitmentId'];
         const missing = requiredFields.filter((field) => !form[field as keyof typeof form]);
 
         if (missing.length > 0) {
-            setError('Vui lòng điền đầy đủ các trường bắt buộc.');
+            AppToast.error('Vui lòng điền đầy đủ các trường bắt buộc.');
             setIsSubmitting(false);
             return;
         }
@@ -50,16 +50,29 @@ export default function CreateCropSeasonPage() {
             await createCropSeason({
                 ...form,
                 area: parseFloat(form.area),
+                startDate: formatDate(form.startDate),
+                endDate: formatDate(form.endDate),
             });
+            AppToast.success('Tạo mùa vụ thành công!');
             router.push('/dashboard/farmer/crop-seasons');
-        } catch (err: any) {
-            console.error(err);
-            const msg = err?.response?.data?.message || 'Không thể tạo mùa vụ.';
-            setError(msg);
+        } catch (err) {
+            const message = getErrorMessage(err);
+            AppToast.error(message);
+
+            // 🚫 Xoá lại các trường nếu có lỗi đặc biệt
+            if (message.includes('Ngày bắt đầu phải trước ngày kết thúc')) {
+                setForm(prev => ({ ...prev, startDate: '', endDate: '' }));
+            }
+
+            if (message.includes('đã có mùa vụ trong năm')) {
+                setForm(prev => ({ ...prev, registrationId: '' }));
+            }
+
         } finally {
             setIsSubmitting(false);
         }
     };
+
 
     return (
         <div className="max-w-2xl mx-auto py-10 px-4">
@@ -103,8 +116,6 @@ export default function CreateCropSeasonPage() {
                         <Label htmlFor="commitmentId">Mã cam kết (UUID)</Label>
                         <Input name="commitmentId" value={form.commitmentId} onChange={handleChange} required />
                     </div>
-
-                    {error && <p className="text-sm text-red-500">{error}</p>}
 
                     <div className="flex justify-end">
                         <Button onClick={handleSubmit} disabled={isSubmitting}>

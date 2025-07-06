@@ -59,15 +59,28 @@ export async function getAllCropSeasons(): Promise<CropSeasonListItem[]> {
 }
 
 // Lấy mùa vụ theo userId (dành cho Farmer - chỉ xem của mình)
-export async function getCropSeasonsForCurrentUser(): Promise<CropSeasonListItem[]> {
+export async function getCropSeasonsForCurrentUser(params: {
+  search?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<CropSeasonListItem[]> {
   try {
-    const res = await api.get<CropSeasonListItem[]>(`/CropSeasons`);
+    const res = await api.get<CropSeasonListItem[]>("/CropSeasons", {
+      params: {
+        search: params.search,
+        status: params.status,
+        page: params.page ?? 1,
+        pageSize: params.pageSize ?? 10,
+      }
+    });
     return res.data;
   } catch (err) {
     console.error("Lỗi getCropSeasonsForCurrentUser:", err);
     return [];
   }
 }
+
 
 
 // Lấy chi tiết 1 mùa vụ (bao gồm danh sách vùng trồng)
@@ -104,12 +117,24 @@ export async function updateCropSeason(id: string, data: Partial<CropSeason>): P
 }
 
 // Tạo mới mùa vụ
-export async function createCropSeason(data: Partial<CropSeason>): Promise<string | null> {
+interface ServiceResult<T = any> {
+  code: number | string;
+  message: string;
+  data: T | null;
+}
+
+export async function createCropSeason(data: Partial<CropSeason>): Promise<ServiceResult> {
   try {
-    const res = await api.post<string>("/CropSeasons", data);
-    return res.data; 
+    const res = await api.post<ServiceResult>("/CropSeasons", data);
+
+    // Nếu code là 400 hoặc không có dữ liệu → coi là lỗi
+    if (!res.data || res.data.code === 400 || res.data.data === null) {
+      throw new Error(res.data.message || "Tạo mùa vụ thất bại.");
+    }
+
+    return res.data; // ✅ thành công
   } catch (err) {
     console.error("Lỗi createCropSeason:", err);
-    return null;
+    throw err; // để FE hiển thị toast lỗi
   }
 }
