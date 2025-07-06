@@ -45,6 +45,13 @@ export interface CropSeasonListItem {
   status: string;
 }
 
+interface ServiceResult<T = any> {
+  code: number | string;
+  message: string;
+  data: T | null;
+}
+
+
 // ========== API FUNCTIONS ==========
 
 // Lấy tất cả mùa vụ (dành cho Admin hoặc Manager)
@@ -94,14 +101,20 @@ export async function getCropSeasonById(id: string): Promise<CropSeason | null> 
   }
 }
 
-// Xoá mùa vụ (chỉ Admin hoặc Farmer chủ mùa vụ)
-export async function deleteCropSeasonById(id: string): Promise<boolean> {
+export async function deleteCropSeasonById(id: string): Promise<{ code: any; message: string }> {
   try {
-    await api.delete(`/CropSeasons/${id}`);
-    return true;
-  } catch (err) {
-    console.error("Lỗi deleteCropSeasonById:", err);
-    return false;
+    const res = await api.patch(`/CropSeasons/soft-delete/${id}`); // ✅ Dùng PATCH thay vì DELETE
+    return {
+      code: 200,
+      message: res.data || 'Xoá thành công',
+    };
+  } catch (err: any) {
+    const message =
+      err?.response?.data || err?.message || 'Xoá mùa vụ thất bại.';
+    return {
+      code: 400,
+      message,
+    };
   }
 }
 
@@ -117,11 +130,6 @@ export async function updateCropSeason(id: string, data: Partial<CropSeason>): P
 }
 
 // Tạo mới mùa vụ
-interface ServiceResult<T = any> {
-  code: number | string;
-  message: string;
-  data: T | null;
-}
 
 export async function createCropSeason(data: Partial<CropSeason>): Promise<ServiceResult> {
   try {

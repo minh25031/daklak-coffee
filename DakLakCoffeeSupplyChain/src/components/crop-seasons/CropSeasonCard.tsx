@@ -1,13 +1,37 @@
 'use client';
 
 import { CropSeasonListItem as CropSeason } from '@/lib/api/cropSeasons';
-import { FaUser } from 'react-icons/fa';
+import { FaUser, FaTrashAlt, FaEdit, FaEye } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import StatusBadge from './StatusBadge';
 import { CropSeasonStatusMap } from '@/lib/constrant/cropSeasonStatus';
+import { toast } from 'sonner';
+import { deleteCropSeasonById } from '@/lib/api/cropSeasons';
 
-export default function CropSeasonCard({ season }: { season: CropSeason }) {
+interface Props {
+    season: CropSeason;
+    onDeleted?: (id: string) => void;
+}
+
+export default function CropSeasonCard({ season, onDeleted }: Props) {
     const router = useRouter();
+
+    const handleDelete = async () => {
+        const confirmed = window.confirm('Bạn có chắc chắn muốn xoá mùa vụ này?');
+        if (!confirmed) return;
+
+        try {
+            const result = await deleteCropSeasonById(season.cropSeasonId);
+            if (result.code === 200 || result.code === 'SUCCESS_DELETE') {
+                toast.success('Đã xoá mùa vụ thành công.');
+                onDeleted?.(season.cropSeasonId); // cập nhật UI
+            } else {
+                toast.error(result.message || 'Xoá mùa vụ thất bại.');
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'Đã xảy ra lỗi khi xoá mùa vụ.');
+        }
+    };
 
     return (
         <tr className="border-t hover:bg-gray-50 transition">
@@ -26,15 +50,34 @@ export default function CropSeasonCard({ season }: { season: CropSeason }) {
                 {new Date(season.startDate).toLocaleDateString('vi-VN')} –{' '}
                 {new Date(season.endDate).toLocaleDateString('vi-VN')}
             </td>
-            <td className="px-4 py-3 text-center">
-                <button
-                    onClick={() =>
-                        router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}`)
-                    }
-                    className="text-[#FD7622] hover:underline text-sm"
-                >
-                    Xem chi tiết
-                </button>
+            <td className="px-4 py-3">
+                <div className="flex gap-3 justify-center">
+                    <button
+                        title="Xem chi tiết"
+                        onClick={() => router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}`)}
+                        className="text-blue-600 hover:text-blue-800"
+                    >
+                        <FaEye className="w-4 h-4" />
+                    </button>
+                    <button
+                        title="Sửa"
+                        onClick={() => router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/edit`)}
+                        className="text-amber-600 hover:text-amber-800"
+                    >
+                        <FaEdit className="w-4 h-4" />
+                    </button>
+
+                    {/* ❗ Chỉ hiện nút xoá nếu trạng thái là Cancelled */}
+                    {season.status === 'Cancelled' && (
+                        <button
+                            title="Xoá"
+                            onClick={handleDelete}
+                            className="text-red-600 hover:text-red-800"
+                        >
+                            <FaTrashAlt className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
             </td>
         </tr>
     );
