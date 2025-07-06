@@ -2,8 +2,6 @@ import { jwtDecode } from "jwt-decode";
 import { roleSlugMap } from "@/lib/constrant/role";
 import api from "./axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 export interface DecodedToken {
   nameid: string;
   email: string;
@@ -24,7 +22,16 @@ export interface SignUpData {
 }
 
 export async function login(email: string, password: string): Promise<DecodedToken> {
+  const response = await api.post("/Auth/login", { email, password });
 
+  const token = response.data;
+
+  if (!token || typeof token !== "string") {
+    throw new Error("Đăng nhập thất bại: Token không hợp lệ");
+  }
+
+  const decoded: DecodedToken = jwtDecode(token);
+  const roleSlug = roleSlugMap[decoded.role] ?? "unknown";
 
   localStorage.setItem("token", token);
   localStorage.setItem("user_id", decoded.nameid);
@@ -32,15 +39,14 @@ export async function login(email: string, password: string): Promise<DecodedTok
   localStorage.setItem("user_role", roleSlug);
   localStorage.setItem("user_role_raw", decoded.role);
 
-
+  return decoded;
 }
 
-
-
 export async function signUp(signUpData: SignUpData): Promise<void> {
-
+  await api.post("/Auth/SignUpRequest", signUpData);
   localStorage.setItem("pending_email", signUpData.email);
 }
 
 export async function resendVerificationEmail(email: string): Promise<void> {
-
+  await api.post("/Auth/resend-verification-email", { email });
+}
