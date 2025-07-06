@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { ProcurementPlanStatusValue } from '@/lib/constrant/procurementPlanStatus';
-import { cn } from '@/lib/utils';
+import { cn, getErrorMessage } from '@/lib/utils';
 import FilterStatusPanel from '@/components/procurement-plan/FilterStatusPanel';
 import { ProcurementPlan, getAllProcurementPlans } from '@/lib/api/procurementPlans';
 import ProcurementPlanCard from '@/components/procurement-plan/ProcurementPlanCard';
@@ -19,7 +19,10 @@ export default function BusinessProcurementPlansPage() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const data = await getAllProcurementPlans();
+            const data = await getAllProcurementPlans().catch((error) => {
+                alert(getErrorMessage(error));
+                return [];
+            });
             console.log('Fetched Procurement Plans:', data);
             setProcurementPlans(data);
         };
@@ -47,7 +50,7 @@ export default function BusinessProcurementPlansPage() {
     });
 
     return (
-        <div className="flex min-h-screen bg-amber-200-50 p-6 gap-6">
+        <div className="flex bg-amber-200-50 p-6 gap-6">
             {/* Sidebar */}
             <aside className="w-64 space-y-4">
                 {/* Search block */}

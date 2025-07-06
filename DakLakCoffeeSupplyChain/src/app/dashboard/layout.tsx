@@ -23,7 +23,7 @@ export default function AdminLayout({
   }, []);
 
   return (
-    <div className="flex h-screen  w-full bg-[#fefaf4] overflow-hidden">
+    <div className="flex min-h-screen bg-[#fefaf4] overflow-hidden">
       {/* Sidebar */}
       <Sidebar defaultCollapsed={isCollapsed} onCollapseChange={setIsCollapsed}>
         <SidebarContent>

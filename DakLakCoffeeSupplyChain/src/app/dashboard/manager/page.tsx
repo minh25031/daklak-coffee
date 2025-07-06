@@ -9,7 +9,7 @@ import {
 
 export default function ManagerDashboard() {
     return (
-        <div className="w-full bg-orange-50 min-h-screen">
+        <div className="w-full">
             <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <DashboardCard
