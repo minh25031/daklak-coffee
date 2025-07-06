@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import HeaderDashboard from "@/components/layout/HeaderDashboard";
 import {
@@ -8,6 +8,7 @@ import {
   SidebarGroup,
 } from "@/components/ui/sidebar";
 import { useState, useEffect } from "react";
+import { Toaster } from "sonner"; // ✅ thêm dòng này
 
 export default function AdminLayout({
   children,
@@ -23,7 +24,7 @@ export default function AdminLayout({
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#fefaf4] overflow-hidden">
+    <div className="flex h-screen w-full bg-[#fefaf4] overflow-hidden">
       {/* Sidebar */}
       <Sidebar defaultCollapsed={isCollapsed} onCollapseChange={setIsCollapsed}>
         <SidebarContent>
@@ -36,11 +37,13 @@ export default function AdminLayout({
         className={`flex flex-col flex-1 transition-all duration-300 ${isCollapsed ? "ml-[64px]" : "ml-[260px]"
           }`}
       >
-        <div className="shrink-0 ">
+        <div className="shrink-0">
           <HeaderDashboard />
         </div>
-        <div className="flex-1 p-5 overflow-auto	">{children}</div>
+        <div className="flex-1 p-5 overflow-auto">{children}</div>
       </div>
+
+      <Toaster richColors /> {/* ✅ thêm Toaster ở cuối cùng */}
     </div>
   );
 }
