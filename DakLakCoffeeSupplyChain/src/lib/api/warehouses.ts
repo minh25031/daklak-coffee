@@ -19,25 +19,38 @@ async function safeFetch(
   try {
     const res = await fetch(url, { ...options, headers });
 
+    const contentType = res.headers.get("content-type");
+    const isJson = contentType?.includes("application/json");
+
     if (!res.ok) {
-      const text = await res.text();
-      console.error("❌ HTTP Error:", res.status, text);
-      return { status: 0, message: `Lỗi server: ${res.status}` };
+      const errorBody = isJson ? await res.json() : await res.text();
+      const message =
+        typeof errorBody === "string"
+          ? errorBody
+          : errorBody?.message || `Lỗi server: ${res.status}`;
+      return { status: 0, message };
     }
 
-    const data = await res.json();
+    // Nếu phản hồi có JSON
+    if (isJson) {
+      const data = await res.json();
 
-    // ✅ Nếu BE trả kiểu ServiceResult (status, message, data)
-    if ("status" in data && "message" in data) {
-      if (data.status !== 1) {
-        return { status: 0, message: data.message || "Lỗi từ backend" };
+      // Nếu là kiểu ServiceResult
+      if (typeof data === "object" && data !== null && "status" in data && "message" in data) {
+        if (data.status !== 1) {
+          return { status: 0, message: data.message || "Lỗi từ backend" };
+        }
+        return { status: 1, message: data.message, data: data.data };
       }
-      return { status: 1, message: data.message, data: data.data };
+
+      // Nếu chỉ là phản hồi JSON thuần
+      return { status: 1, message: "Thành công", data };
     }
 
-    // ✅ Nếu BE trả kiểu Ok(data) → JSON thuần
-    return { status: 1, message: "Thành công", data };
-  } catch (err: any) {
+    // Nếu không phải JSON mà là text thường
+    const text = await res.text();
+    return { status: 1, message: "Thành công", data: text };
+  } catch (err) {
     console.error("❌ Fetch exception:", err);
     return { status: 0, message: "Lỗi kết nối hoặc token không hợp lệ" };
   }
