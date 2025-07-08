@@ -7,7 +7,6 @@ if (!apiUrl) {
   throw new Error("API URL is not defined in environment variables.");
 }
 
-console.log("🌐 API Base URL:", apiUrl);
 
 const api: AxiosInstance = axios.create({
   baseURL: apiUrl,
@@ -19,7 +18,7 @@ const api: AxiosInstance = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token"); // hoặc "access_token"
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,10 +35,7 @@ api.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
       let message = "";
-      // Nếu dữ liệu trả về là chuỗi không rỗng, sử dụng nó làm thông báo lỗi
-      // Nếu không, sử dụng thông báo lỗi mặc định hoặc thông báo theo status code
-      // Nếu muốn đánh chặn truy cập vì unauthorized thì đừng làm ở đây mà hãy làm ở phía dashboard page, sau khi người dùng nhập url dashboard mà chưa đăng nhập thì sẽ chuyển hướng về trang unauthorized hoặc trang đăng nhập.
-      if (typeof error.response.data === "string" && error.response.data.trim() !== "") {
+       if (typeof error.response.data === "string" && error.response.data.trim() !== "") {
         message = error.response.data;
       } else {
         message =

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { AppToast } from '@/components/ui/AppToast';
 import { getErrorMessage } from '@/lib/utils'; // ✅ import hàm xử lý lỗi
+import { getFarmerCommitments, FarmingCommitmentItem } from "@/lib/api/farmingCommitments";
 
 export default function CreateCropSeasonPage() {
     useAuthGuard(['farmer']);
@@ -23,13 +24,22 @@ export default function CreateCropSeasonPage() {
         startDate: '',
         endDate: '',
         note: '',
-        registrationId: '',
         commitmentId: '',
     });
+    const [availableCommitments, setAvailableCommitments] = useState<FarmingCommitmentItem[]>([]);
+    useEffect(() => {
+        async function fetchCommitments() {
+            const data = await getFarmerCommitments();
+            setAvailableCommitments(data);
+        }
 
+        fetchCommitments();
+    }, []);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
     };
@@ -37,7 +47,7 @@ export default function CreateCropSeasonPage() {
     const handleSubmit = async () => {
         setIsSubmitting(true);
 
-        const requiredFields = ['seasonName', 'area', 'startDate', 'endDate', 'registrationId', 'commitmentId'];
+        const requiredFields = ['seasonName', 'area', 'startDate', 'endDate', 'commitmentId'];
         const missing = requiredFields.filter((field) => !form[field as keyof typeof form]);
 
         if (missing.length > 0) {
@@ -63,11 +73,6 @@ export default function CreateCropSeasonPage() {
             if (message.includes('Ngày bắt đầu phải trước ngày kết thúc')) {
                 setForm(prev => ({ ...prev, startDate: '', endDate: '' }));
             }
-
-            if (message.includes('đã có mùa vụ trong năm')) {
-                setForm(prev => ({ ...prev, registrationId: '' }));
-            }
-
         } finally {
             setIsSubmitting(false);
         }
@@ -107,15 +112,21 @@ export default function CreateCropSeasonPage() {
                         <Textarea name="note" value={form.note} onChange={handleChange} />
                     </div>
 
-                    <div>
-                        <Label htmlFor="registrationId">Mã đăng ký (UUID)</Label>
-                        <Input name="registrationId" value={form.registrationId} onChange={handleChange} required />
-                    </div>
+                    <select
+                        name="commitmentId"
+                        value={form.commitmentId}
+                        onChange={handleChange}
+                        required
+                        className="w-full border rounded px-2 py-2"
+                    >
+                        <option value="">-- Chọn cam kết --</option>
+                        {availableCommitments.map((c) => (
+                            <option key={c.commitmentId} value={c.commitmentId}>
+                                {c.commitmentCode} ({c.commitmentName})
+                            </option>
+                        ))}
+                    </select>
 
-                    <div>
-                        <Label htmlFor="commitmentId">Mã cam kết (UUID)</Label>
-                        <Input name="commitmentId" value={form.commitmentId} onChange={handleChange} required />
-                    </div>
 
                     <div className="flex justify-end">
                         <Button onClick={handleSubmit} disabled={isSubmitting}>
