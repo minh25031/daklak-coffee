@@ -6,7 +6,6 @@ import { getCropSeasonById, updateCropSeason } from '@/lib/api/cropSeasons';
 import { CropSeasonUpdatePayload } from '@/lib/api/cropSeasons';
 import { AppToast } from '@/components/ui/AppToast';
 import {
-    CropSeasonStatusMap,
     CropSeasonStatusValue,
     CropSeasonStatusValueToNumber,
 } from '@/lib/constrant/cropSeasonStatus';
@@ -21,7 +20,6 @@ export default function EditCropSeasonPage() {
 
     const [form, setForm] = useState({
         cropSeasonId: '',
-        registrationId: '',
         commitmentId: '',
         seasonName: '',
         area: 0,
@@ -38,18 +36,17 @@ export default function EditCropSeasonPage() {
             const data = await getCropSeasonById(id);
             if (!data) {
                 AppToast.error('Không tìm thấy mùa vụ');
-                router.push('/crop-seasons');
+                router.push('/dashboard/farmer/crop-seasons');
                 return;
             }
 
             setForm({
                 cropSeasonId: data.cropSeasonId,
-                registrationId: data.registrationId,
                 commitmentId: data.commitmentId,
-                seasonName: data.seasonName,
+                seasonName: data.seasonName || '',
                 area: data.area || 0,
-                startDate: data.startDate,
-                endDate: data.endDate,
+                startDate: formatDate(data.startDate),
+                endDate: formatDate(data.endDate),
                 note: data.note || '',
                 status: Number(CropSeasonStatusValueToNumber[data.status as CropSeasonStatusValue]),
             });
@@ -82,7 +79,6 @@ export default function EditCropSeasonPage() {
 
         const payload: CropSeasonUpdatePayload = {
             cropSeasonId: form.cropSeasonId,
-            registrationId: form.registrationId,
             commitmentId: form.commitmentId,
             seasonName: form.seasonName,
             area: form.area,
@@ -111,9 +107,7 @@ export default function EditCropSeasonPage() {
             <p className="text-sm text-gray-600 mb-4">
                 Cam kết: <span className="font-medium">{form.commitmentId}</span>
             </p>
-            <p className="text-sm text-gray-600 mb-4">
-                Đăng ký: <span className="font-medium">{form.registrationId}</span>
-            </p>
+
             <form onSubmit={handleSubmit} className="space-y-4 bg-white shadow p-6 rounded-lg">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -138,6 +132,18 @@ export default function EditCropSeasonPage() {
                             required
                         />
                     </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Tên mùa vụ</label>
+                    <input
+                        type="text"
+                        name="seasonName"
+                        value={form.seasonName}
+                        onChange={handleChange}
+                        className="mt-1 w-full border rounded px-3 py-2"
+                        required
+                    />
                 </div>
 
                 <div>
@@ -181,7 +187,6 @@ export default function EditCropSeasonPage() {
                     )}
                 </button>
             </form>
-
         </div>
     );
 }
