@@ -39,7 +39,7 @@ export default function AdminLayout({
         <div className="shrink-0">
           <HeaderDashboard />
         </div>
-        <div className="flex-1 p-5 overflow-auto">{children}</div>
+        <div className="flex-1 p-5 bg-orange-50 overflow-auto ">{children}</div>
       </div>
 
       <Toaster richColors /> {/* ✅ thêm Toaster ở cuối cùng */}

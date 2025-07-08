@@ -44,6 +44,18 @@ export interface CropSeasonListItem {
   farmerName: string;
   status: string;
 }
+export interface CropSeasonUpdatePayload {
+  cropSeasonId: string;
+  registrationId: string;
+  commitmentId: string;
+  seasonName: string;
+  area?: number | null;
+  startDate: string;
+  endDate: string;   
+  note?: string | null;
+  status: number;    
+}
+
 
 interface ServiceResult<T = any> {
   code: number | string;
@@ -118,14 +130,18 @@ export async function deleteCropSeasonById(id: string): Promise<{ code: any; mes
   }
 }
 
-// Cập nhật mùa vụ
-export async function updateCropSeason(id: string, data: Partial<CropSeason>): Promise<boolean> {
+export async function updateCropSeason(
+  id: string,
+  data: CropSeasonUpdatePayload
+): Promise<{ success: boolean; error?: string }> {
   try {
-    await api.put(`/CropSeasons/${id}`, data);
-    return true;
-  } catch (err) {
-    console.error("Lỗi updateCropSeason:", err);
-    return false;
+    const response = await api.put(`/CropSeasons/${id}`, data);
+    return { success: response.status === 200 };
+  } catch (err: any) {
+    const message =
+      err?.response?.data?.message || err?.response?.data || err.message || 'Lỗi không xác định';
+    console.error("Lỗi updateCropSeason:", message);
+    return { success: false, error: message };
   }
 }
 
