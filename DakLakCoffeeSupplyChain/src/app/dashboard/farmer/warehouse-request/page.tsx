@@ -52,7 +52,7 @@ export default function FarmerWarehouseRequestPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-amber-200/50 p-6 gap-6">
+    <div className="flex min-h-screen bg-orange-50  p-6 gap-6">
       {/* Sidebar hỗ trợ */}
       <aside className="w-64 space-y-4">
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
