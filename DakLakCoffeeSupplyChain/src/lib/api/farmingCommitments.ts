@@ -22,3 +22,8 @@ export async function getFarmerCommitments(): Promise<FarmingCommitmentItem[]> {
     return [];
   }
 }
+
+export async function getBusinessCommitments(): Promise<FarmingCommitmentItem[]> {
+  const res = await api.get<FarmingCommitmentItem[]>("/FarmingCommitment/BusinessManager");
+  return res.data;
+}

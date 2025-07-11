@@ -29,7 +29,7 @@ export default function FilterBadge({ icon, label, count, color, active = false,
                 </span>
                 <span className="text-xs font-medium">{label}</span>
             </div>
-            <span className="text-sm text-gray-500">{count} kế hoạch</span>
+            <span className="text-sm text-gray-500">{count} kết quả</span>
         </div>
     );
 }

@@ -4,16 +4,16 @@ import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { ProcurementPlanStatusValue } from '@/lib/constrant/procurementPlanStatus';
+import { ProcurementPlanStatusMap, ProcurementPlanStatusValue } from '@/lib/constrant/procurementPlanStatus';
 import { cn, getErrorMessage } from '@/lib/utils';
-import FilterStatusPanel from '@/components/procurement-plan/FilterStatusPanel';
 import { ProcurementPlan, getAllProcurementPlans } from '@/lib/api/procurementPlans';
 import ProcurementPlanCard from '@/components/procurement-plan/ProcurementPlanCard';
+import FilterStatusPanel from '@/components/ui/filterStatusPanel';
 
 export default function BusinessProcurementPlansPage() {
     const [procurementPlans, setProcurementPlans] = useState<ProcurementPlan[]>([]);
     const [search, setSearch] = useState('');
-    const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+    const [selectedStatus, setSelectedStatus] = useState<ProcurementPlanStatusValue | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
 
@@ -73,10 +73,11 @@ export default function BusinessProcurementPlansPage() {
                     </div>
                 </div>
 
-                <FilterStatusPanel
+                <FilterStatusPanel<ProcurementPlanStatusValue>
                     selectedStatus={selectedStatus}
                     setSelectedStatus={setSelectedStatus}
                     statusCounts={statusCounts}
+                    statusMap={ProcurementPlanStatusMap}
                 />
             </aside>
 

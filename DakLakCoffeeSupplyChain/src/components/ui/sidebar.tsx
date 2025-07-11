@@ -139,6 +139,7 @@ export function SidebarGroup() {
             { title: "Tổng quan", href: "/dashboard/manager", icon: iconMap.dashboard },
             { title: "Hợp đồng", href: "/dashboard/manager/contracts", icon: iconMap.contracts },
             { title: "Kế hoạch thu mua", href: "/dashboard/manager/procurement-plans", icon: iconMap.crops },
+            { title: "Cam kết với nông dân", href: "/dashboard/manager/farming-commitments", icon: iconMap.contracts },
             { title: "Nông dân", href: "/dashboard/manager/farmers", icon: iconMap.users },
             { title: "Báo cáo", href: "/dashboard/manager/reports", icon: iconMap.reports },
         ],
