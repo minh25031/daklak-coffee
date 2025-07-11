@@ -3,8 +3,6 @@
 import { ProcurementPlan } from "@/lib/api/procurementPlans";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-//import { FaUser } from 'react-icons/fa';
-//import CropSeasonDetailDialog from './CropSeasonDetailDialog';
 import {
   ProcurementPlanStatusMap,
   ProcurementPlanStatusValue,
