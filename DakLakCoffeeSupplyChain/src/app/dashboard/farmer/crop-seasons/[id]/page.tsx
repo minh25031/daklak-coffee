@@ -4,18 +4,16 @@ import { useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import {
     getCropSeasonById,
-    deleteCropSeasonById,
     CropSeason,
 } from '@/lib/api/cropSeasons';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FiEdit, FiTrash2 } from 'react-icons/fi';
 import { Separator } from '@/components/ui/separator';
 import { Leaf } from 'lucide-react';
 import StatusBadge from '@/components/crop-seasons/StatusBadge';
 import { CropSeasonStatusMap } from '@/lib/constrant/cropSeasonStatus';
-import { CropSeasonDetailStatusMap } from '@/lib/constrant/cropSeasonDetailStatus';
 import { useAuth } from '@/lib/hooks/useAuth';
+import CropSeasonDetailTable from '@/components/crop-seasons/CropSeasonDetailTable';
 
 export default function CropSeasonDetail() {
     const params = useParams();
@@ -27,14 +25,25 @@ export default function CropSeasonDetail() {
     const [error, setError] = useState('');
     const { user } = useAuth();
 
+    // Hàm xử lý tải và lọc dữ liệu mùa vụ
+    const loadSeason = async () => {
+        try {
+            const data = await getCropSeasonById(cropSeasonId);
+
+            setSeason(data);
+        } catch (err: any) {
+            setError(err.message || 'Không thể tải dữ liệu mùa vụ');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        setLoading(true);
-        getCropSeasonById(cropSeasonId)
-            .then(setSeason)
-            .catch((err) => setError(err.message || 'Không thể tải dữ liệu mùa vụ'))
-            .finally(() => setLoading(false));
-    }, [cropSeasonId]);
+        if (user?.id) {
+            setLoading(true);
+            loadSeason();
+        }
+    }, [user?.id, cropSeasonId]);
 
     const formatDate = (date?: string) => {
         if (!date) return 'Chưa cập nhật';
@@ -76,8 +85,6 @@ export default function CropSeasonDetail() {
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <CardTitle>Thông tin mùa vụ</CardTitle>
-                            <div className="flex gap-2">
-                            </div>
                         </div>
                     </CardHeader>
 
@@ -114,89 +121,25 @@ export default function CropSeasonDetail() {
                 </Card>
 
                 <Card>
-                    <CardHeader>
-                        <CardHeader className="flex justify-between items-center">
-                            <CardTitle>Chi tiết vùng trồng</CardTitle>
+                    <CardHeader className="flex justify-between items-center">
+                        <CardTitle>Chi tiết vùng trồng</CardTitle>
+                        {user?.role === 'farmer' && (
                             <Button
                                 size="sm"
-                                onClick={() => router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/create`)}
+                                onClick={() =>
+                                    router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/create`)
+                                }
                             >
                                 + Thêm vùng trồng
                             </Button>
-                        </CardHeader>
+                        )}
                     </CardHeader>
                     <CardContent>
-                        {season.details.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Không có dữ liệu vùng trồng</p>
-                        ) : (
-                            <table className="w-full text-sm border">
-                                <thead className="bg-gray-100">
-                                    <tr>
-                                        <th className="text-left px-3 py-2">Loại cà phê</th>
-                                        <th className="text-left px-3 py-2">Diện tích</th>
-                                        <th className="text-left px-3 py-2">Chất lượng</th>
-                                        <th className="text-left px-3 py-2">Năng suất (dự kiến)</th>
-                                        <th className="text-left px-3 py-2">Năng suất thực</th>
-                                        <th className="text-left px-3 py-2">Thời gian thu hoạch</th>
-                                        <th className="text-left px-3 py-2">Trạng thái</th>
-                                        <th className="text-left px-3 py-2">Hành động</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {season.details.map((detail) => (
-                                        <tr key={detail.detailId} className="border-t">
-                                            <td className="px-3 py-2">{detail.typeName}</td>
-                                            <td className="px-3 py-2">{detail.areaAllocated} ha</td>
-                                            <td className="px-3 py-2">{detail.plannedQuality}</td>
-                                            <td className="px-3 py-2">{detail.estimatedYield ?? '-'} tấn</td>
-                                            <td className="px-3 py-2">
-                                                {detail.actualYield !== null
-                                                    ? `${detail.actualYield} tấn`
-                                                    : <span className="italic text-muted-foreground">Chưa thu hoạch</span>}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                {detail.expectedHarvestStart
-                                                    ? `${formatDate(detail.expectedHarvestStart)} – ${formatDate(detail.expectedHarvestEnd)}`
-                                                    : '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <StatusBadge status={detail.status} map={CropSeasonDetailStatusMap} />
-                                            </td>
-                                            <td className="px-3 py-2 space-x-2">
-                                                {detail.farmerId === user?.id ? (
-                                                    <>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() =>
-                                                                router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/${detail.detailId}/edit`)
-                                                            }
-                                                        >
-                                                            Sửa
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="destructive"
-                                                            onClick={() => {
-                                                                const confirmDelete = window.confirm("Bạn có chắc muốn xoá vùng trồng này?");
-                                                                if (confirmDelete) {
-                                                                    // TODO: Gọi delete API
-                                                                    alert(`Đã xoá ${detail.typeName}`);
-                                                                }
-                                                            }}
-                                                        >
-                                                            Xoá
-                                                        </Button>
-                                                    </>
-                                                ) : (
-                                                    <span className="text-xs italic text-muted-foreground">Không có quyền</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
+                        <CropSeasonDetailTable
+                            details={season.details}
+                            cropSeasonId={season.cropSeasonId}
+                            onReload={loadSeason}
+                        />
                     </CardContent>
                 </Card>
             </div>

@@ -1,192 +1,179 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { getCropSeasonById, updateCropSeason } from '@/lib/api/cropSeasons';
-import { CropSeasonUpdatePayload } from '@/lib/api/cropSeasons';
+import { useRouter, useParams } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { AppToast } from '@/components/ui/AppToast';
-import {
-    CropSeasonStatusValue,
-    CropSeasonStatusValueToNumber,
-} from '@/lib/constrant/cropSeasonStatus';
-import { format } from 'date-fns';
+import { getCropSeasonById, updateCropSeason } from '@/lib/api/cropSeasons';
+import { getFarmerCommitments, FarmingCommitmentItem } from '@/lib/api/farmingCommitments';
+import { getErrorMessage } from '@/lib/utils';
+import { useAuthGuard } from '@/lib/auth/useAuthGuard';
+import { CropSeasonStatusValueToNumber } from '@/lib/constrant/cropSeasonStatus';
 
 export default function EditCropSeasonPage() {
-    const { id } = useParams<{ id: string }>();
+    useAuthGuard(['farmer']);
     const router = useRouter();
-
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
+    const { id } = useParams();
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [availableCommitments, setAvailableCommitments] = useState<FarmingCommitmentItem[]>([]);
 
     const [form, setForm] = useState({
-        cropSeasonId: '',
-        commitmentId: '',
         seasonName: '',
-        area: 0,
+        area: '',
         startDate: '',
         endDate: '',
         note: '',
-        status: 0,
+        commitmentId: '',
+        status: 'Active',
     });
 
-    const formatDate = (d: string) => format(new Date(d), 'yyyy-MM-dd');
+    const formatDate = (d: string) => new Date(d).toISOString().split('T')[0];
 
     useEffect(() => {
         const fetchData = async () => {
-            const data = await getCropSeasonById(id);
-            if (!data) {
-                AppToast.error('Không tìm thấy mùa vụ');
-                router.push('/dashboard/farmer/crop-seasons');
-                return;
+            try {
+                const season = await getCropSeasonById(id as string);
+                const commitments = await getFarmerCommitments();
+                if (season) {
+                    setForm({
+                        seasonName: season.seasonName,
+                        area: season.area.toString(),
+                        startDate: formatDate(season.startDate),
+                        endDate: formatDate(season.endDate),
+                        note: season.note || '',
+                        commitmentId: season.commitmentId,
+                        status: season.status,
+                    });
+                }
+                setAvailableCommitments(commitments);
+            } catch (err) {
+                AppToast.error('Không thể tải dữ liệu mùa vụ.');
+            } finally {
+                setIsLoading(false);
             }
-
-            setForm({
-                cropSeasonId: data.cropSeasonId,
-                commitmentId: data.commitmentId,
-                seasonName: data.seasonName || '',
-                area: data.area || 0,
-                startDate: formatDate(data.startDate),
-                endDate: formatDate(data.endDate),
-                note: data.note || '',
-                status: Number(CropSeasonStatusValueToNumber[data.status as CropSeasonStatusValue]),
-            });
-
-            setLoading(false);
         };
 
         fetchData();
-    }, [id, router]);
+    }, [id]);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
         const { name, value } = e.target;
-        setForm((prev) => ({
-            ...prev,
-            [name]: name === 'area' ? parseFloat(value) : value,
-        }));
+        setForm((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
+        setIsSubmitting(true);
+        const requiredFields = ['seasonName', 'area', 'startDate', 'endDate', 'commitmentId'];
+        const missing = requiredFields.filter((field) => !form[field as keyof typeof form]);
 
-        if (form.startDate >= form.endDate) {
-            AppToast.error('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
+        if (missing.length > 0) {
+            AppToast.error('Vui lòng điền đầy đủ các trường bắt buộc.');
+            setIsSubmitting(false);
             return;
         }
 
-        setSubmitting(true);
+        try {
+            const payload = {
+                cropSeasonId: id as string,
+                seasonName: form.seasonName,
+                area: parseFloat(form.area),
+                startDate: form.startDate,
+                endDate: form.endDate,
+                note: form.note,
+                commitmentId: form.commitmentId,
+                status: CropSeasonStatusValueToNumber[form.status as keyof typeof CropSeasonStatusValueToNumber]
+            };
 
-        const payload: CropSeasonUpdatePayload = {
-            cropSeasonId: form.cropSeasonId,
-            commitmentId: form.commitmentId,
-            seasonName: form.seasonName,
-            area: form.area,
-            startDate: formatDate(form.startDate),
-            endDate: formatDate(form.endDate),
-            note: form.note,
-            status: form.status,
-        };
+            const result = await updateCropSeason(id as string, payload);
 
-        const result = await updateCropSeason(form.cropSeasonId, payload);
-        setSubmitting(false);
-
-        if (result.success) {
-            AppToast.success('Cập nhật mùa vụ thành công');
-            router.push('/dashboard/farmer/crop-seasons');
-        } else {
-            AppToast.error(result.error || 'Cập nhật mùa vụ thất bại');
+            if (result.success) {
+                AppToast.success('Cập nhật mùa vụ thành công!');
+                router.push('/dashboard/farmer/crop-seasons');
+            } else {
+                AppToast.error(result.error || 'Cập nhật thất bại.');
+            }
+        } catch (err) {
+            AppToast.error(getErrorMessage(err));
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    if (loading) return <p className="text-center py-8 text-gray-600">Đang tải dữ liệu...</p>;
+    if (isLoading) return <p>Đang tải dữ liệu...</p>;
 
     return (
-        <div className="max-w-2xl mx-auto py-8 px-4">
-            <h1 className="text-2xl font-bold mb-6 text-orange-600">Cập nhật mùa vụ</h1>
-            <p className="text-sm text-gray-600 mb-4">
-                Cam kết: <span className="font-medium">{form.commitmentId}</span>
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4 bg-white shadow p-6 rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
+        <div className="max-w-2xl mx-auto py-10 px-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Cập nhật mùa vụ</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Ngày bắt đầu</label>
-                        <input
-                            type="date"
-                            name="startDate"
-                            value={form.startDate}
-                            onChange={handleChange}
-                            className="mt-1 w-full border rounded px-3 py-2"
-                            required
-                        />
+                        <Label htmlFor="seasonName">Tên mùa vụ</Label>
+                        <Input name="seasonName" value={form.seasonName} onChange={handleChange} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Ngày kết thúc</label>
-                        <input
-                            type="date"
-                            name="endDate"
-                            value={form.endDate}
-                            onChange={handleChange}
-                            className="mt-1 w-full border rounded px-3 py-2"
-                            required
-                        />
+                        <Label htmlFor="area">Diện tích (ha)</Label>
+                        <Input type="number" name="area" value={form.area} onChange={handleChange} />
                     </div>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Tên mùa vụ</label>
-                    <input
-                        type="text"
-                        name="seasonName"
-                        value={form.seasonName}
-                        onChange={handleChange}
-                        className="mt-1 w-full border rounded px-3 py-2"
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Diện tích (ha)</label>
-                    <input
-                        type="number"
-                        name="area"
-                        value={form.area}
-                        onChange={handleChange}
-                        className="mt-1 w-full border rounded px-3 py-2"
-                        step="0.1"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Ghi chú</label>
-                    <textarea
-                        name="note"
-                        value={form.note}
-                        onChange={handleChange}
-                        rows={3}
-                        className="mt-1 w-full border rounded px-3 py-2"
-                    />
-                </div>
-
-                <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded flex justify-center items-center"
-                >
-                    {submitting ? (
-                        <>
-                            <svg className="animate-spin h-5 w-5 mr-2 text-white" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3.5-3.5L12 0v4a8 8 0 00-8 8z" />
-                            </svg>
-                            Đang lưu...
-                        </>
-                    ) : (
-                        'Lưu thay đổi'
-                    )}
-                </button>
-            </form>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="startDate">Ngày bắt đầu</Label>
+                            <Input type="date" name="startDate" value={form.startDate} onChange={handleChange} />
+                        </div>
+                        <div>
+                            <Label htmlFor="endDate">Ngày kết thúc</Label>
+                            <Input type="date" name="endDate" value={form.endDate} onChange={handleChange} />
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="note">Ghi chú</Label>
+                        <Textarea name="note" value={form.note} onChange={handleChange} />
+                    </div>
+                    <div>
+                        <Label htmlFor="commitmentId">Cam kết</Label>
+                        <select
+                            name="commitmentId"
+                            value={form.commitmentId}
+                            onChange={handleChange}
+                            className="w-full border rounded px-2 py-2"
+                        >
+                            <option value="">-- Chọn cam kết --</option>
+                            {availableCommitments.map((c) => (
+                                <option key={c.commitmentId} value={c.commitmentId}>
+                                    {c.commitmentCode} ({c.commitmentName})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <Label htmlFor="status">Trạng thái</Label>
+                        <select
+                            name="status"
+                            value={form.status}
+                            onChange={handleChange}
+                            className="w-full border rounded px-2 py-2"
+                        >
+                            <option value="Active">Đang hoạt động</option>
+                            <option value="Paused">Tạm dừng</option>
+                            <option value="Completed">Hoàn thành</option>
+                            <option value="Cancelled">Đã huỷ</option>
+                        </select>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button onClick={handleSubmit} disabled={isSubmitting}>
+                            {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật'}
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

@@ -8,7 +8,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { CropSeasonStatusMap, CropSeasonStatusValue } from '@/lib/constrant/cropSeasonStatus';
+import { CropSeasonStatusValue } from '@/lib/constrant/cropSeasonStatus';
 import { cn } from '@/lib/utils';
 import CropSeasonCard from '@/components/crop-seasons/CropSeasonCard';
 import FilterStatusPanel from '@/components/crop-seasons/FilterStatusPanel';
@@ -77,7 +77,6 @@ export default function FarmerCropSeasonsPage() {
     });
 
     const router = useRouter();
-
     return (
         <div className="flex min-h-screen bg-amber-50 p-6 gap-6">
             <aside className="w-64 space-y-4">

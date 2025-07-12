@@ -35,6 +35,7 @@ export default function CreateCropSeasonPage() {
 
         fetchCommitments();
     }, []);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (
