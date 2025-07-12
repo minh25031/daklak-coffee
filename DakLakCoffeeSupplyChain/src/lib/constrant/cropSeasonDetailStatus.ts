@@ -1,45 +1,45 @@
+export type CropSeasonDetailStatusValue = 'Planned' | 'InProgress' | 'Completed' | 'Cancelled';
+
 export enum CropSeasonDetailStatusEnum {
   Planned = 0,
-  Harvesting = 1,
-  Harvested = 2,
-  Completed = 3,
-  Cancelled = 4,
+  InProgress = 1,
+  Completed = 2,
+  Cancelled = 3,
 }
-
-export type CropSeasonDetailStatusValue = keyof typeof CropSeasonDetailStatusEnum;
 
 export const CropSeasonDetailStatusMap: Record<CropSeasonDetailStatusValue, {
   label: string;
-  color: 'green' | 'yellow' | 'blue' | 'red' | 'gray';
+  color: 'gray' | 'yellow' | 'green' | 'red';
 }> = {
   Planned: {
-    label: 'Lên kế hoạch',
+    label: 'Đã lên kế hoạch',
     color: 'gray',
   },
-  Harvesting: {
-    label: 'Đang thu hoạch',
+  InProgress: {
+    label: 'Đang canh tác',
     color: 'yellow',
   },
-  Harvested: {
-    label: 'Đã thu hoạch',
+  Completed: {
+    label: 'Đã hoàn thành',
     color: 'green',
   },
-  Completed: {
-    label: 'Hoàn thành',
-    color: 'blue',
-  },
   Cancelled: {
-    label: 'Đã hủy',
+    label: 'Đã huỷ',
     color: 'red',
   },
 };
 
-export function mapStatusFromEnum(value: number): CropSeasonDetailStatusValue {
-  return Object.keys(CropSeasonDetailStatusEnum).find(
-    (key) => CropSeasonDetailStatusEnum[key as keyof typeof CropSeasonDetailStatusEnum] === value
-  ) as CropSeasonDetailStatusValue;
-}
+// Mapping number <-> string
+export const CropSeasonDetailStatusNumberToValue: Record<number, CropSeasonDetailStatusValue> = {
+  0: 'Planned',
+  1: 'InProgress',
+  2: 'Completed',
+  3: 'Cancelled',
+};
 
-export function mapStatusToEnum(value: CropSeasonDetailStatusValue): number {
-  return CropSeasonDetailStatusEnum[value];
-}
+export const CropSeasonDetailStatusValueToNumber: Record<CropSeasonDetailStatusValue, number> = {
+  Planned: 0,
+  InProgress: 1,
+  Completed: 2,
+  Cancelled: 3,
+};
