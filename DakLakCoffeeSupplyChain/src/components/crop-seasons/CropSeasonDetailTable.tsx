@@ -11,9 +11,13 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { toast } from 'sonner';
 import { CropSeasonDetail } from '@/lib/api/cropSeasons';
 import { Edit, Trash } from 'lucide-react';
-import { deleteCropSeasonDetail } from '@/lib/api/cropSeasonDetail ';
-import UpdateCropSeasonDetailPage from '@/app/dashboard/farmer/crop-seasons/[id]/details/edit/page';
-
+import {
+    Dialog,
+    DialogTrigger,
+    DialogContent,
+} from '@/components/ui/dialog';
+import UpdateCropSeasonDetailDialog from '@/app/dashboard/farmer/crop-seasons/[id]/details/edit/page';
+import { deleteCropSeasonDetail } from '@/lib/api/cropSeasonDetail';
 
 interface Props {
     details: CropSeasonDetail[];
@@ -71,26 +75,38 @@ export default function CropSeasonDetailTable({ details, cropSeasonId, onReload 
                             <td className="px-3 py-2">{detail.plannedQuality}</td>
                             <td className="px-3 py-2">{detail.estimatedYield ?? '-'} tấn</td>
                             <td className="px-3 py-2">
-                                {detail.actualYield !== null
-                                    ? `${detail.actualYield} tấn`
-                                    : <span className="italic text-muted-foreground">Chưa thu hoạch</span>}
+                                {detail.actualYield !== null ? (
+                                    `${detail.actualYield} tấn`
+                                ) : (
+                                    <span className="italic text-muted-foreground">Chưa thu hoạch</span>
+                                )}
                             </td>
                             <td className="px-3 py-2">
-                                {detail.expectedHarvestStart
-                                    ? `${formatDate(detail.expectedHarvestStart)} – ${formatDate(detail.expectedHarvestEnd)}`
-                                    : '-'}
+                                {detail.expectedHarvestStart ? (
+                                    `${formatDate(detail.expectedHarvestStart)} – ${formatDate(detail.expectedHarvestEnd)}`
+                                ) : (
+                                    '-')
+                                }
                             </td>
                             <td className="px-3 py-2">
                                 <StatusBadge status={detail.status} map={CropSeasonDetailStatusMap} />
                             </td>
                             <td className="px-3 py-2 space-x-1">
-                                <Button
-                                    size="icon"
-                                    variant="outline"
-                                    onClick={() => setEditingDetailId(detail.detailId)}
-                                >
-                                    <Edit className="w-4 h-4" />
-                                </Button>
+                                <Dialog open={editingDetailId === detail.detailId} onOpenChange={(open) => setEditingDetailId(open ? detail.detailId : null)}>
+                                    <DialogTrigger asChild>
+                                        <Button size="icon" variant="outline">
+                                            <Edit className="w-4 h-4" />
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent title="Chỉnh sửa vùng trồng">
+                                        <UpdateCropSeasonDetailDialog
+                                            detailId={detail.detailId}
+                                            cropSeasonId={cropSeasonId}
+                                            onClose={() => setEditingDetailId(null)}
+                                            onSuccess={onReload}
+                                        />
+                                    </DialogContent>
+                                </Dialog>
                                 <Button
                                     size="icon"
                                     variant="destructive"
@@ -103,15 +119,6 @@ export default function CropSeasonDetailTable({ details, cropSeasonId, onReload 
                     ))}
                 </tbody>
             </table>
-
-            {editingDetailId && (
-                <UpdateCropSeasonDetailPage
-                    detailId={editingDetailId}
-                    cropSeasonId={cropSeasonId}
-                    onClose={() => setEditingDetailId(null)}
-                    onSuccess={onReload}
-                />
-            )}
         </>
     );
 }
