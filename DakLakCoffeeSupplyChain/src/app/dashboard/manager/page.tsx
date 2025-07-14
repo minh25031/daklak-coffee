@@ -6,6 +6,7 @@ import {
   FiPackage,
   FiBarChart2,
   FiHome,
+  FiTruck, // 🚚 Biểu tượng phù hợp cho Xuất kho
 } from 'react-icons/fi';
 import Link from 'next/link';
 import React from 'react';
@@ -35,12 +36,23 @@ export default function ManagerDashboard() {
             title="Báo cáo sản lượng"
             description="Thống kê về sản lượng, chất lượng và tiến độ."
           />
-          {/* ✅ Card có điều hướng */}
+
+          {/* ✅ Kho hàng */}
           <Link href="/dashboard/manager/warehouses">
             <DashboardCard
               icon={<FiHome className="text-orange-500 text-xl" />}
               title="Kho hàng"
               description="Quản lý danh sách kho, thêm và xoá kho mới."
+              isLink
+            />
+          </Link>
+
+          {/* ✅ Thêm nút Yêu cầu xuất kho */}
+          <Link href="/dashboard/manager/warehouse-request">
+            <DashboardCard
+              icon={<FiTruck className="text-orange-500 text-xl" />}
+              title="Yêu cầu xuất kho"
+              description="Gửi yêu cầu và theo dõi các yêu cầu xuất hàng từ kho."
               isLink
             />
           </Link>
