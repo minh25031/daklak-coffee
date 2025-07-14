@@ -15,3 +15,11 @@ export const roleIdToNameMap: Record<number, string> = {
   5: "Nhân viên giao hàng",
   6: "Quản trị viên",
 };
+export const roleRawToDisplayName: Record<string, string> = {
+  Admin: "Quản trị viên",
+  BusinessManager: "Quản lý doanh nghiệp",
+  BusinessStaff: "Nhân viên doanh nghiệp",
+  Farmer: "Nông dân",
+  AgriculturalExpert: "Chuyên gia nông nghiệp",
+  DeliveryStaff: "Nhân viên giao hàng",
+};
