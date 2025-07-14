@@ -9,21 +9,21 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
+  const [userName, setUserName] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const user = localStorage.getItem("username");
-    if (user) {
+    const storedName = localStorage.getItem("user_name");
+    if (storedName) {
       setIsLoggedIn(true);
-      setUsername(user);
+      setUserName(storedName);
     }
   }, []);
 
   return (
     <header className="bg-white shadow sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex justify-between items-center">
-        {/* Logo + Tên */}
+        {/* Logo */}
         <div className="flex items-center gap-3">
           <Link href="/">
             <img src="/logo_bg.png" alt="Logo" className="h-10 w-auto" />
@@ -33,7 +33,7 @@ export default function Header() {
           </h1>
         </div>
 
-        {/* Điều hướng */}
+        {/* Navigation */}
         <nav className="flex items-center gap-4 text-sm text-gray-700">
           <Link href="/" className="hover:text-orange-600 transition">
             Trang chủ
@@ -45,12 +45,12 @@ export default function Header() {
             Marketplace
           </Link>
 
-          {isLoggedIn ? (
+          {isLoggedIn && userName ? (
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <button className="flex items-center gap-2 hover:text-orange-700 transition">
                   <User className="w-5 h-5" />
-                  <span className="font-semibold">{username}</span>
+                  <span className="font-semibold">{userName}</span>
                 </button>
               </DropdownMenu.Trigger>
 
@@ -66,7 +66,6 @@ export default function Header() {
                     Hồ sơ cá nhân
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
-
                   <DropdownMenu.Item
                     className="px-3 py-2 text-red-600 hover:bg-red-50 rounded cursor-pointer"
                     onClick={() => {
