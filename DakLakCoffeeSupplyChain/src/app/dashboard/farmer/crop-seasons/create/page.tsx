@@ -10,8 +10,8 @@ import { createCropSeason } from '@/lib/api/cropSeasons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { AppToast } from '@/components/ui/AppToast';
-import { getErrorMessage } from '@/lib/utils'; // ✅ import hàm xử lý lỗi
-import { getFarmerCommitments, FarmingCommitmentItem } from "@/lib/api/farmingCommitments";
+import { getErrorMessage } from '@/lib/utils';
+import { getAvailableCommitments, FarmingCommitmentItem } from '@/lib/api/farmingCommitments';
 
 export default function CreateCropSeasonPage() {
     useAuthGuard(['farmer']);
@@ -26,17 +26,25 @@ export default function CreateCropSeasonPage() {
         note: '',
         commitmentId: '',
     });
+
     const [availableCommitments, setAvailableCommitments] = useState<FarmingCommitmentItem[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingCommitments, setIsLoadingCommitments] = useState(true);
+
     useEffect(() => {
         async function fetchCommitments() {
-            const data = await getFarmerCommitments();
-            setAvailableCommitments(data);
+            try {
+                const data = await getAvailableCommitments(); // ✅ Gọi API đã lọc
+                setAvailableCommitments(data);
+            } catch (err) {
+                AppToast.error('Không thể tải danh sách cam kết.');
+            } finally {
+                setIsLoadingCommitments(false);
+            }
         }
 
         fetchCommitments();
     }, []);
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -70,15 +78,13 @@ export default function CreateCropSeasonPage() {
             const message = getErrorMessage(err);
             AppToast.error(message);
 
-            // 🚫 Xoá lại các trường nếu có lỗi đặc biệt
             if (message.includes('Ngày bắt đầu phải trước ngày kết thúc')) {
-                setForm(prev => ({ ...prev, startDate: '', endDate: '' }));
+                setForm((prev) => ({ ...prev, startDate: '', endDate: '' }));
             }
         } finally {
             setIsSubmitting(false);
         }
     };
-
 
     return (
         <div className="max-w-2xl mx-auto py-10 px-4">
@@ -100,11 +106,23 @@ export default function CreateCropSeasonPage() {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label htmlFor="startDate">Ngày bắt đầu</Label>
-                            <Input type="date" name="startDate" value={form.startDate} onChange={handleChange} required />
+                            <Input
+                                type="date"
+                                name="startDate"
+                                value={form.startDate}
+                                onChange={handleChange}
+                                required
+                            />
                         </div>
                         <div>
                             <Label htmlFor="endDate">Ngày kết thúc</Label>
-                            <Input type="date" name="endDate" value={form.endDate} onChange={handleChange} required />
+                            <Input
+                                type="date"
+                                name="endDate"
+                                value={form.endDate}
+                                onChange={handleChange}
+                                required
+                            />
                         </div>
                     </div>
 
@@ -113,24 +131,34 @@ export default function CreateCropSeasonPage() {
                         <Textarea name="note" value={form.note} onChange={handleChange} />
                     </div>
 
-                    <select
-                        name="commitmentId"
-                        value={form.commitmentId}
-                        onChange={handleChange}
-                        required
-                        className="w-full border rounded px-2 py-2"
-                    >
-                        <option value="">-- Chọn cam kết --</option>
-                        {availableCommitments.map((c) => (
-                            <option key={c.commitmentId} value={c.commitmentId}>
-                                {c.commitmentCode} ({c.commitmentName})
-                            </option>
-                        ))}
-                    </select>
-
+                    <div>
+                        <Label htmlFor="commitmentId">Cam kết</Label>
+                        {isLoadingCommitments ? (
+                            <p className="text-sm text-gray-500">Đang tải danh sách cam kết...</p>
+                        ) : availableCommitments.length === 0 ? (
+                            <p className="text-red-500 text-sm italic">
+                                Bạn không có cam kết nào khả dụng để tạo mùa vụ.
+                            </p>
+                        ) : (
+                            <select
+                                name="commitmentId"
+                                value={form.commitmentId}
+                                onChange={handleChange}
+                                required
+                                className="w-full border rounded px-2 py-2"
+                            >
+                                <option value="">-- Chọn cam kết --</option>
+                                {availableCommitments.map((c) => (
+                                    <option key={c.commitmentId} value={c.commitmentId}>
+                                        {c.commitmentCode} ({c.commitmentName})
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
 
                     <div className="flex justify-end">
-                        <Button onClick={handleSubmit} disabled={isSubmitting}>
+                        <Button onClick={handleSubmit} disabled={isSubmitting || availableCommitments.length === 0}>
                             {isSubmitting ? 'Đang tạo...' : 'Tạo mùa vụ'}
                         </Button>
                     </div>

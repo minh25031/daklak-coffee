@@ -132,10 +132,10 @@ export default function FarmerCropSeasonsPage() {
               <thead className="bg-gray-100 text-gray-700 font-medium">
                 <tr>
                   <th className="px-4 py-3 text-left">Tên mùa vụ</th>
-                  <th className="px-4 py-3 text-left">Diện tích (ha)</th>
-                  <th className="px-4 py-3 text-left">Trạng thái</th>
-                  <th className="px-4 py-3 text-left">Thời gian</th>
-                  <th className="px-4 py-3 text-left">Hành động</th>
+                  <th className="px-4 py-3 text-center">Diện tích (ha)</th>
+                  <th className="px-4 py-3 text-center">Trạng thái</th>
+                  <th className="px-4 py-3 text-center">Thời gian</th>
+                  <th className="px-4 py-3 text-center">Hành động</th>
                 </tr>
               </thead>
               <tbody>
