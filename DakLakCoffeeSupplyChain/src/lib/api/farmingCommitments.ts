@@ -27,3 +27,15 @@ export async function getBusinessCommitments(): Promise<FarmingCommitmentItem[]>
   const res = await api.get<FarmingCommitmentItem[]>("/FarmingCommitment/BusinessManager");
   return res.data;
 }
+
+export async function getAvailableCommitments(): Promise<FarmingCommitmentItem[]> {
+  try {
+    const res = await api.get<FarmingCommitmentItem[]>(
+      "/FarmingCommitment/Farmer/AvailableForCropSeason"
+    );
+    return res.data;
+  } catch (err) {
+    console.error("Lỗi getAvailableCommitments:", err);
+    return [];
+  }
+}

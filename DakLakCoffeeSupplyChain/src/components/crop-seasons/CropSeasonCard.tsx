@@ -35,39 +35,50 @@ export default function CropSeasonCard({ season, onDeleted }: Props) {
 
     return (
         <tr className="border-t hover:bg-gray-50 transition">
-            <td className="px-4 py-3">
+            <td className="px-4 py-3 text-left align-middle">
                 <div className="font-medium text-gray-900">{season.seasonName}</div>
                 <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                     <FaUser className="w-4 h-4 text-gray-400" />
                     {season.farmerName}
                 </div>
             </td>
-            <td className="px-4 py-3 whitespace-nowrap">{season.area} ha</td>
-            <td className="px-4 py-3">
+
+            <td className="px-4 py-3 text-center align-middle whitespace-nowrap">
+                {season.area} ha
+            </td>
+
+            <td className="px-4 py-3 text-center align-middle">
                 <StatusBadge status={season.status} map={CropSeasonStatusMap} />
             </td>
-            <td className="px-4 py-3 whitespace-nowrap">
+
+            <td className="px-4 py-3 text-center align-middle whitespace-nowrap">
                 {new Date(season.startDate).toLocaleDateString('vi-VN')} –{' '}
                 {new Date(season.endDate).toLocaleDateString('vi-VN')}
             </td>
-            <td className="px-4 py-3">
-                <div className="flex gap-3 justify-center">
+
+            <td className="px-4 py-3 text-center align-middle">
+                <div className="flex justify-center gap-3">
                     <button
                         title="Xem chi tiết"
-                        onClick={() => router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}`)}
+                        onClick={() =>
+                            router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}`)
+                        }
                         className="text-blue-600 hover:text-blue-800"
                     >
                         <FaEye className="w-4 h-4" />
                     </button>
                     <button
                         title="Sửa"
-                        onClick={() => router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/edit`)}
+                        onClick={() =>
+                            router.push(
+                                `/dashboard/farmer/crop-seasons/${season.cropSeasonId}/edit`
+                            )
+                        }
                         className="text-amber-600 hover:text-amber-800"
                     >
                         <FaEdit className="w-4 h-4" />
                     </button>
 
-                    {/* ❗ Chỉ hiện nút xoá nếu trạng thái là Cancelled */}
                     {season.status === 'Cancelled' && (
                         <button
                             title="Xoá"
@@ -80,5 +91,6 @@ export default function CropSeasonCard({ season, onDeleted }: Props) {
                 </div>
             </td>
         </tr>
+
     );
 }
