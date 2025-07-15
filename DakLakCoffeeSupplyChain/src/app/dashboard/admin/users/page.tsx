@@ -26,6 +26,7 @@ import {
   useEffect 
 } from "react";
 import { useRouter } from "next/navigation";
+import { roleNameToVietnamese } from "@/lib/constrant/role";
 
 export default function UserManagement() {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -58,14 +59,20 @@ export default function UserManagement() {
   // Get unique role names for filter
   const roleOptions = Array.from(new Set(users.map(user => user.roleName)));
 
-  // Filter users by search (search by Email, Name, UserCode, PhoneNumber) and role
+  // Filter users by search (search by Email, Name, UserCode, PhoneNumber, roleName tiếng Việt)
   const filteredUsers = users.filter(
-    (user) =>
-      (user.email.toLowerCase().includes(search.toLowerCase()) ||
-        user.name.toLowerCase().includes(search.toLowerCase()) ||
-        user.userCode.toLowerCase().includes(search.toLowerCase()) ||
-        user.phoneNumber.toLowerCase().includes(search.toLowerCase())) &&
-      (roleFilter === "" || user.roleName === roleFilter)
+    (user) => {
+      const searchLower = search.toLowerCase();
+      const roleVi = roleNameToVietnamese[user.roleName] || user.roleName;
+      return (
+        user.email.toLowerCase().includes(searchLower) ||
+        user.name.toLowerCase().includes(searchLower) ||
+        user.userCode.toLowerCase().includes(searchLower) ||
+        user.phoneNumber.toLowerCase().includes(searchLower) ||
+        roleVi.toLowerCase().includes(searchLower) ||
+        user.roleName.toLowerCase().includes(searchLower)
+      ) && (roleFilter === "" || user.roleName === roleFilter);
+    }
   );
 
   // Pagination
@@ -165,7 +172,7 @@ const getStatusInfo = (status: UserAccountStatus) => {
                   <option value="">Tất cả vai trò</option>
                   {roleOptions.map((role) => (
                     <option key={role} value={role}>
-                      {role}
+                      {roleNameToVietnamese[role] || role}
                     </option>
                   ))}
                 </select>
@@ -193,7 +200,7 @@ const getStatusInfo = (status: UserAccountStatus) => {
                           <TableCell>{user.email}</TableCell>
                           <TableCell>{user.name}</TableCell>
                           <TableCell>{user.phoneNumber}</TableCell>
-                          <TableCell>{user.roleName}</TableCell>
+                          <TableCell>{roleNameToVietnamese[user.roleName] || user.roleName}</TableCell>
                           <TableCell>
                             <span
                               className={`px-2 py-1 rounded text-xs font-semibold ${statusInfo.className}`}

@@ -8,9 +8,13 @@ import {
   UserProfileDetails,
   Gender,
   UserAccountStatus,
+  getAllRoles,
+  RoleItem,
 } from "@/lib/api/users";
+import { roleNameToVietnamese } from "@/lib/constrant/role";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
 
 interface UserFormProps {
   mode: "create" | "edit";
@@ -18,22 +22,69 @@ interface UserFormProps {
 }
 
 const emptyUser: Partial<UserProfileDetails> = {
-  userCode: "",
   name: "",
   email: "",
   phoneNumber: "",
   gender: Gender.Unknown,
   dateOfBirth: undefined,
   address: "",
-  roleName: "Nông dân",
+  roleName: "",
   status: UserAccountStatus.Active,
+  password: "",
 };
+
+const statusOptions: { label: string; value: string }[] = [
+  { label: "Chờ duyệt", value: UserAccountStatus.PendingApproval },
+  { label: "Hoạt động", value: UserAccountStatus.Active },
+  { label: "Tạm ngưng", value: UserAccountStatus.Inactive },
+  { label: "Bị khóa", value: UserAccountStatus.Locked },
+  { label: "Tạm đình chỉ", value: UserAccountStatus.Suspended },
+  { label: "Từ chối", value: UserAccountStatus.Rejected },
+  { label: "Đã xoá", value: UserAccountStatus.Deleted },
+  { label: "Cấm vĩnh viễn", value: UserAccountStatus.Banned },
+  { label: "Không xác định", value: UserAccountStatus.Unknown },
+];
 
 export default function UserForm({ mode, userId }: UserFormProps) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, any>>(emptyUser);
   const [loading, setLoading] = useState(mode === "edit");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [roleOptions, setRoleOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+
+  // Fetch roles from API
+  useEffect(() => {
+    let ignore = false;
+    getAllRoles()
+      .then((roles: RoleItem[]) => {
+        if (ignore) return;
+        setRoleOptions(
+          roles
+            .filter((role) => role.status === "Active")
+            .map((role) => ({
+              label: role.roleName, // value tiếng Anh, label sẽ mapping khi render
+              value: role.roleName,
+            }))
+        );
+      })
+      .catch(() => {
+        // fallback nếu lỗi API
+        setRoleOptions([
+          { label: "Admin", value: "Admin" },
+          { label: "BusinessManager", value: "BusinessManager" },
+          { label: "BusinessStaff", value: "BusinessStaff" },
+          { label: "Farmer", value: "Farmer" },
+          { label: "AgriculturalExpert", value: "AgriculturalExpert" },
+          { label: "DeliveryStaff", value: "DeliveryStaff" },
+        ]);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // Fetch user data if edit mode
   useEffect(() => {
@@ -64,20 +115,40 @@ export default function UserForm({ mode, userId }: UserFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.userCode || !form.email || !form.name) {
+    if (!form.email || !form.name || !form.phoneNumber) {
       setError("Vui lòng nhập đầy đủ thông tin bắt buộc.");
       return;
     }
+    if (mode === "create" && !form.password) {
+      setError("Vui lòng nhập mật khẩu.");
+      return;
+    }
     setError("");
+
+    const payload = {
+      ...form,
+      gender: form.gender?.toString?.(),
+      status: form.status?.toString?.(),
+      roleName: form.roleName,
+      loginType: "System",
+      profilePictureUrl: form.profilePictureUrl?.startsWith("http")
+        ? form.profilePictureUrl
+        : undefined, // hoặc dùng link mặc định
+      ...(mode === "edit" ? { userId } : {}),
+    };
+
     try {
       if (mode === "create") {
-        await createUser(form);
+        await createUser(payload);
       } else if (mode === "edit" && userId) {
-        await updateUser(userId, form);
+        await updateUser(userId, payload);
       }
       router.back();
     } catch (err: any) {
-      setError(err.message || "Lưu người dùng thất bại");
+      console.error("API error:", err);
+
+      // Ghi trực tiếp message từ Error
+      setError(err?.message || "Lưu người dùng thất bại");
     }
   };
 
@@ -95,18 +166,7 @@ export default function UserForm({ mode, userId }: UserFormProps) {
           ) : (
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1">
-                    Mã người dùng <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    name="userCode"
-                    value={form.userCode || ""}
-                    onChange={handleChange}
-                    className="border rounded px-3 py-2 w-full"
-                    required
-                  />
-                </div>
+                {/* Không render mã người dùng */}
                 <div>
                   <label className="block mb-1">
                     Email <span className="text-red-500">*</span>
@@ -179,50 +239,71 @@ export default function UserForm({ mode, userId }: UserFormProps) {
                     className="border rounded px-3 py-2 w-full"
                   />
                 </div>
+                {/* Password chỉ hiển thị khi tạo mới */}
+                {mode === "create" && (
+                  <div className="col-span-2">
+                    <label className="block mb-1">
+                      Mật khẩu <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        name="password"
+                        value={form.password || ""}
+                        onChange={handleChange}
+                        className="border rounded px-3 py-2 w-full pr-10"
+                        type={showPassword ? "text" : "password"}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800"
+                        tabIndex={-1}
+                        onClick={() => setShowPassword((v) => !v)}
+                      >
+                        {showPassword ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="block mb-1">Vai trò</label>
-                  <input
+                  <select
                     name="roleName"
                     value={form.roleName || ""}
                     onChange={handleChange}
                     className="border rounded px-3 py-2 w-full"
-                  />
+                    required
+                  >
+                    <option value="" disabled className="text-gray-400">
+                      -- Chọn vai trò --
+                    </option>
+                    {roleOptions.map((role) => (
+                      <option key={role.value} value={role.value}>
+                        {roleNameToVietnamese[role.value] || role.value}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="block mb-1">Trạng thái</label>
+                  <label className="block mb-1">
+                    Trạng thái <span className="text-red-500">*</span>
+                  </label>
                   <select
                     name="status"
                     value={form.status || UserAccountStatus.Active}
                     onChange={handleChange}
                     className="border rounded px-3 py-2 w-full"
+                    required
                   >
-                    <option value={UserAccountStatus.PendingApproval}>
-                      Chờ duyệt
-                    </option>
-                    <option value={UserAccountStatus.Active}>
-                      Hoạt động
-                    </option>
-                    <option value={UserAccountStatus.Inactive}>
-                      Tạm ngưng
-                    </option>
-                    <option value={UserAccountStatus.Locked}>
-                      Bị khóa
-                    </option>
-                    <option value={UserAccountStatus.Suspended}>
-                      Tạm đình chỉ
-                    </option>
-                    <option value={UserAccountStatus.Rejected}>
-                      Từ chối
-                    </option>
-                    <option value={UserAccountStatus.Deleted}>
-                      Đã xoá
-                    </option>
-                    <option value={UserAccountStatus.Banned}>
-                      Cấm vĩnh viễn
-                    </option>
-                    <option value={UserAccountStatus.Unknown}>
-                      Không xác định
-                    </option>
+                    {statusOptions.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
