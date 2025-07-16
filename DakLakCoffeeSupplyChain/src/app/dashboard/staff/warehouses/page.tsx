@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAllWarehouses, deleteWarehouse } from '@/lib/api/warehouses';
+import { getAllWarehouses } from '@/lib/api/warehouses';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Trash2, Eye, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 type Warehouse = {
   warehouseId: string;
@@ -26,17 +26,14 @@ export default function WarehouseListPage() {
       try {
         const res = await getAllWarehouses();
 
-        console.log('✅ Response from API:', res); // 🔍 debug
         if (Array.isArray(res)) {
           setWarehouses(res);
         } else if (res.status === 1 && Array.isArray(res.data)) {
           setWarehouses(res.data);
         } else {
-          console.warn('❗️ Unexpected response:', res);
           alert('❌ Không thể tải danh sách kho');
         }
       } catch (error) {
-        console.error('❌ Lỗi khi fetch kho:', error);
         alert('❌ Đã xảy ra lỗi khi tải danh sách kho');
       }
     };
@@ -50,18 +47,6 @@ export default function WarehouseListPage() {
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
-  const handleDelete = async (id: string) => {
-    if (confirm('Bạn chắc chắn muốn xoá kho này?')) {
-      const res = await deleteWarehouse(id);
-      if (res.status === 1) {
-        alert('✅ Xoá thành công');
-        setWarehouses(prev => prev.filter(w => w.warehouseId !== id));
-      } else {
-        alert('❌ ' + res.message);
-      }
-    }
-  };
 
   return (
     <div className="flex min-h-screen bg-amber-100/30 p-6 gap-6">
@@ -84,12 +69,6 @@ export default function WarehouseListPage() {
         <Card>
           <CardHeader className="flex justify-between items-center">
             <CardTitle>Danh sách kho</CardTitle>
-            <Link href="/dashboard/business/warehouses/create">
-              <Button className="bg-amber-900 text-white hover:bg-amber-800">
-                <Plus className="w-4 h-4 mr-1" />
-                Tạo kho mới
-              </Button>
-            </Link>
           </CardHeader>
 
           <CardContent>
@@ -108,30 +87,21 @@ export default function WarehouseListPage() {
                     <td className="p-3">{w.name}</td>
                     <td className="p-3">{w.location}</td>
                     <td className="p-3">{w.capacity?.toLocaleString()} kg</td>
-                    <td className="p-3 space-x-2">
+                    <td className="p-3">
                       <Link href={`/dashboard/staff/warehouses/${w.warehouseId}`}>
                         <Button variant="outline" size="sm">
                           <Eye className="w-4 h-4 mr-1" /> Xem
                         </Button>
                       </Link>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(w.warehouseId)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" /> Xoá
-                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            {/* Pagination */}
             <div className="flex justify-between items-center mt-4">
               <span className="text-sm text-muted-foreground">
-                Hiển thị {(currentPage - 1) * pageSize + 1}–
-                {Math.min(currentPage * pageSize, filtered.length)} trong {filtered.length} kho
+                Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} trong {filtered.length} kho
               </span>
               <div className="flex items-center gap-2">
                 <Button
