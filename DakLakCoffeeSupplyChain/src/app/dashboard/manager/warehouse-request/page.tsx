@@ -43,7 +43,7 @@ export default function ManagerOutboundRequestList() {
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">Yêu cầu xuất kho của công ty</h1>
         <Button
-          onClick={() => router.push('/dashboard/manager/outbound-requests/create')}
+          onClick={() => router.push('/dashboard/manager/warehouse-request/create')}
           className="bg-orange-600 text-white"
         >
           + Tạo yêu cầu xuất kho

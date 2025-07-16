@@ -26,23 +26,14 @@ export async function createWarehouseOutboundRequest(
     body: JSON.stringify(input),
   });
 
-  const contentType = response.headers.get("content-type");
-
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Lỗi server: ${errorText}`);
   }
 
-  if (contentType?.includes("application/json")) {
-    const result = await response.json();
-    if (result.status !== 1) {
-      throw new Error(result.message || "Gửi yêu cầu thất bại");
-    }
-    return result.message;
-  }
-
-  const text = await response.text();
-  return text || "Gửi yêu cầu thành công";
+  // Không cần check status nữa
+  const result = await response.text();
+  return result || "Gửi yêu cầu thành công";
 }
 
 export async function getAllOutboundRequests() {
