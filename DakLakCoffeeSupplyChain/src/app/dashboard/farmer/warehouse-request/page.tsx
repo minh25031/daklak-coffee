@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { PackagePlus } from 'lucide-react';
 import { createWarehouseInboundRequest } from '@/lib/api/warehouseInboundRequest';
+import { getAllProcessingBatches, ProcessingBatch } from '@/lib/api/processingBatches';
 
 export default function FarmerWarehouseRequestPage() {
   const router = useRouter();
@@ -18,12 +19,21 @@ export default function FarmerWarehouseRequestPage() {
     batchId: '',
   });
 
+  const [batches, setBatches] = useState<ProcessingBatch[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+    getAllProcessingBatches()
+      .then(setBatches)
+      .catch((err) => alert('Không thể tải danh sách lô xử lý: ' + err.message));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +42,7 @@ export default function FarmerWarehouseRequestPage() {
       const { requestedQuantity, preferredDeliveryDate, note, batchId } = form;
 
       if (!batchId) {
-        throw new Error('Bạn chưa nhập ID lô xử lý');
+        throw new Error('Bạn chưa chọn lô xử lý');
       }
 
       const message = await createWarehouseInboundRequest({
@@ -52,7 +62,7 @@ export default function FarmerWarehouseRequestPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-orange-50  p-6 gap-6">
+    <div className="flex min-h-screen bg-amber-200/50 p-6 gap-6">
       {/* Sidebar hỗ trợ */}
       <aside className="w-64 space-y-4">
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
@@ -109,15 +119,23 @@ export default function FarmerWarehouseRequestPage() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="batchId">ID Lô xử lý (Batch)</Label>
-                <Input
+              <div className="sm:col-span-2">
+                <Label htmlFor="batchId">Chọn lô xử lý</Label>
+                <select
                   id="batchId"
                   name="batchId"
                   value={form.batchId}
                   onChange={handleChange}
                   required
-                />
+                  className="w-full rounded-md border px-3 py-2"
+                >
+                  <option value="">-- Chọn lô --</option>
+                  {batches.map((b) => (
+                    <option key={b.batchId} value={b.batchId}>
+                      {b.batchCode} ({b.status})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

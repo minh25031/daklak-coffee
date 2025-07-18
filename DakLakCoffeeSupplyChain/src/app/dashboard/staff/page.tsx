@@ -38,11 +38,17 @@ export default function StaffDashboard() {
             description="Xem các batch sản xuất được liên kết với yêu cầu nhập kho."
             href="/dashboard/staff/batches" // nếu chưa có thì bạn có thể tạo sau
           />
-           <DashboardCard
+          <DashboardCard
             icon={<FiHome className="text-orange-500 text-xl" />}
             title="Kho hàng"
             description="Quản lý danh sách kho, thêm và xoá kho mới."
             href="/dashboard/staff/warehouses"
+          />
+          <DashboardCard
+            icon={<FiTruck className="text-orange-500 text-xl" />}
+            title="Yêu cầu xuất kho"
+            description="Xem và duyệt các yêu cầu xuất kho do quản lý tạo."
+            href="/dashboard/staff/outbounds"
           />
         </div>
       </div>
