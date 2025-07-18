@@ -15,12 +15,12 @@ import { getAvailableCommitments, FarmingCommitmentItem } from '@/lib/api/farmin
 
 export default function CreateCropSeasonPage() {
     useAuthGuard(['farmer']);
-    const formatDate = (d: string) => new Date(d).toISOString().split('T')[0];
 
+    const formatDate = (d: string) => new Date(d).toISOString().split('T')[0];
     const router = useRouter();
+
     const [form, setForm] = useState({
         seasonName: '',
-        area: '',
         startDate: '',
         endDate: '',
         note: '',
@@ -34,7 +34,7 @@ export default function CreateCropSeasonPage() {
     useEffect(() => {
         async function fetchCommitments() {
             try {
-                const data = await getAvailableCommitments(); // ✅ Gọi API đã lọc
+                const data = await getAvailableCommitments();
                 setAvailableCommitments(data);
             } catch (err) {
                 AppToast.error('Không thể tải danh sách cam kết.');
@@ -56,7 +56,7 @@ export default function CreateCropSeasonPage() {
     const handleSubmit = async () => {
         setIsSubmitting(true);
 
-        const requiredFields = ['seasonName', 'area', 'startDate', 'endDate', 'commitmentId'];
+        const requiredFields = ['seasonName', 'startDate', 'endDate', 'commitmentId'];
         const missing = requiredFields.filter((field) => !form[field as keyof typeof form]);
 
         if (missing.length > 0) {
@@ -68,10 +68,10 @@ export default function CreateCropSeasonPage() {
         try {
             await createCropSeason({
                 ...form,
-                area: parseFloat(form.area),
                 startDate: formatDate(form.startDate),
                 endDate: formatDate(form.endDate),
             });
+
             AppToast.success('Tạo mùa vụ thành công!');
             router.push('/dashboard/farmer/crop-seasons');
         } catch (err) {
@@ -95,12 +95,12 @@ export default function CreateCropSeasonPage() {
                 <CardContent className="space-y-4">
                     <div>
                         <Label htmlFor="seasonName">Tên mùa vụ</Label>
-                        <Input name="seasonName" value={form.seasonName} onChange={handleChange} required />
-                    </div>
-
-                    <div>
-                        <Label htmlFor="area">Diện tích (ha)</Label>
-                        <Input type="number" name="area" value={form.area} onChange={handleChange} required />
+                        <Input
+                            name="seasonName"
+                            value={form.seasonName}
+                            onChange={handleChange}
+                            required
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -140,25 +140,45 @@ export default function CreateCropSeasonPage() {
                                 Bạn không có cam kết nào khả dụng để tạo mùa vụ.
                             </p>
                         ) : (
-                            <select
-                                name="commitmentId"
-                                value={form.commitmentId}
-                                onChange={handleChange}
-                                required
-                                className="w-full border rounded px-2 py-2"
-                            >
-                                <option value="">-- Chọn cam kết --</option>
-                                {availableCommitments.map((c) => (
-                                    <option key={c.commitmentId} value={c.commitmentId}>
-                                        {c.commitmentCode} ({c.commitmentName})
-                                    </option>
-                                ))}
-                            </select>
+                            <>
+                                <select
+                                    name="commitmentId"
+                                    value={form.commitmentId}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full border rounded px-2 py-2"
+                                >
+                                    <option value="">-- Chọn cam kết --</option>
+                                    {[...new Map(
+                                        availableCommitments
+                                            .filter(c => c && c.commitmentId)
+                                            .map(c => [c.commitmentId, c])
+                                    ).values()].map((c) => (
+                                        <option key={c.commitmentId} value={c.commitmentId}>
+                                            {c.commitmentCode} ({c.commitmentName})
+                                        </option>
+                                    ))}
+                                </select>
+                                {form.commitmentId && (
+                                    <p className="text-xs text-gray-600 mt-1 italic">
+                                        Đã chọn:{' '}
+                                        {
+                                            availableCommitments.find(
+                                                (c) => c.commitmentId === form.commitmentId
+                                            )?.commitmentName
+                                        }
+                                    </p>
+                                )}
+
+                            </>
                         )}
                     </div>
 
                     <div className="flex justify-end">
-                        <Button onClick={handleSubmit} disabled={isSubmitting || availableCommitments.length === 0}>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={isSubmitting || availableCommitments.length === 0 || !form.commitmentId}
+                        >
                             {isSubmitting ? 'Đang tạo...' : 'Tạo mùa vụ'}
                         </Button>
                     </div>
