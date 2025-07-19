@@ -13,8 +13,11 @@ export default function StaffOutboundRequestList() {
   useEffect(() => {
     getAllOutboundRequests()
       .then((res) => {
-        if (Array.isArray(res)) setData(res);
-        else alert('⚠️ Dữ liệu không hợp lệ');
+        if (res.status === 1 && Array.isArray(res.data)) {
+          setData(res.data);
+        } else {
+          alert('⚠️ ' + (res.message || 'Dữ liệu không hợp lệ'));
+        }
       })
       .catch((err) => alert('❌ Lỗi khi tải danh sách: ' + err.message))
       .finally(() => setLoading(false));
@@ -26,8 +29,12 @@ export default function StaffOutboundRequestList() {
 
     try {
       const result = await acceptOutboundRequest(id);
-      alert('✅ ' + result.message);
-      location.reload();
+      if (result.status === 1) {
+        alert('✅ ' + result.message);
+        location.reload();
+      } else {
+        alert('❌ ' + result.message);
+      }
     } catch (err: any) {
       alert('❌ ' + err.message);
     }
@@ -57,7 +64,9 @@ export default function StaffOutboundRequestList() {
               <tr key={item.outboundRequestId}>
                 <td className="border p-2">{item.outboundRequestCode}</td>
                 <td className="border p-2">{item.warehouseName}</td>
-                <td className="border p-2">{item.requestedQuantity} {item.unit}</td>
+                <td className="border p-2">
+                  {item.requestedQuantity} {item.unit}
+                </td>
                 <td className="border p-2">{item.status}</td>
                 <td className="border p-2 space-x-2">
                   <Button
@@ -69,7 +78,10 @@ export default function StaffOutboundRequestList() {
                     Xem
                   </Button>
                   {item.status === 'Pending' && (
-                    <Button onClick={() => handleAccept(item.outboundRequestId)} className="bg-green-600 text-white">
+                    <Button
+                      onClick={() => handleAccept(item.outboundRequestId)}
+                      className="bg-green-600 text-white"
+                    >
                       Duyệt
                     </Button>
                   )}

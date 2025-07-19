@@ -11,17 +11,17 @@ export default function ManagerOutboundRequestList() {
   const router = useRouter();
 
   useEffect(() => {
-  getAllOutboundRequests()
-    .then((res) => {
-      if (Array.isArray(res)) {
-        setData(res); // Gán trực tiếp mảng trả về từ backend
-      } else {
-        alert('⚠️ Dữ liệu trả về không hợp lệ');
-      }
-    })
-    .catch((err) => alert('❌ Lỗi tải danh sách: ' + err.message))
-    .finally(() => setLoading(false));
-}, []);
+    getAllOutboundRequests()
+      .then((res) => {
+        if (res.status === 1 && Array.isArray(res.data)) {
+          setData(res.data);
+        } else {
+          alert('⚠️ ' + (res.message || 'Dữ liệu không hợp lệ'));
+        }
+      })
+      .catch((err) => alert('❌ Lỗi tải danh sách: ' + err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleCancel = async (id: string) => {
     const confirm = window.confirm('Bạn chắc chắn muốn hủy yêu cầu này?');
@@ -29,8 +29,8 @@ export default function ManagerOutboundRequestList() {
 
     try {
       const result = await cancelOutboundRequest(id);
-      alert('✅ ' + result.message);
-      location.reload();
+      alert(result.status === 1 ? `✅ ${result.message}` : `❌ ${result.message}`);
+      if (result.status === 1) location.reload();
     } catch (err: any) {
       alert('❌ ' + err.message);
     }
@@ -54,8 +54,8 @@ export default function ManagerOutboundRequestList() {
         <p className="text-muted-foreground">Không có yêu cầu xuất kho nào.</p>
       ) : (
         <table className="w-full border table-auto">
-          <thead>
-            <tr className="bg-gray-100">
+          <thead className="bg-gray-100">
+            <tr>
               <th className="p-2 border">Mã</th>
               <th className="p-2 border">Kho</th>
               <th className="p-2 border">Số lượng</th>
