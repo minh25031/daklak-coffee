@@ -50,6 +50,13 @@ export default function StaffDashboard() {
             description="Xem và duyệt các yêu cầu xuất kho do quản lý tạo."
             href="/dashboard/staff/outbounds"
           />
+           <DashboardCard
+            icon={<FiPackage className="text-orange-500 text-xl" />}
+            title="Phiếu xuất kho"
+            description="Xem và xác nhận các phiếu xuất kho được tạo từ yêu cầu đã duyệt."
+            href="/dashboard/staff/outbound-receipts"
+          />
+          
         </div>
       </div>
     </div>
