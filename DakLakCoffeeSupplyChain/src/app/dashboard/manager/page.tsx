@@ -56,6 +56,15 @@ export default function ManagerDashboard() {
               isLink
             />
           </Link>
+          {/* ✅ Tồn kho (Inventory) */}
+          <Link href="/dashboard/manager/inventories">
+            <DashboardCard
+              icon={<FiPackage className="text-orange-500 text-xl" />} // 📦 dùng icon cũ cho nhất quán
+              title="Tồn kho"
+              description="Xem danh sách hàng tồn trong các kho do bạn quản lý."
+              isLink
+            />
+          </Link>
         </div>
       </div>
     </div>

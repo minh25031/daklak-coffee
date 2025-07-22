@@ -27,13 +27,19 @@ export interface CreateProcessingBatchPayload {
   inputUnit: string;
 }
 
-export async function getAllProcessingBatches(): Promise<ProcessingBatch[]> {
+export async function getAllProcessingBatches(): Promise<ProcessingBatch[] | null> {
   try {
     const res = await api.get("/ProcessingBatch");
-    return res.data;
-  } catch (err) {
-    console.error("Lỗi getAllProcessingBatches:", err);
-    return [];
+    return res.data; // Dữ liệu hợp lệ
+  } catch (err: any) {
+    // Nếu lỗi 401 hoặc 403 thì có thể do không đủ quyền
+    if (err.response?.status === 401 || err.response?.status === 403) {
+      console.warn("⚠️ Không đủ quyền truy cập batch: ", err.response?.status);
+      return null; // Phân biệt rõ với []
+    }
+
+    console.error("❌ Lỗi getAllProcessingBatches:", err);
+    return []; // các lỗi khác vẫn trả rỗng
   }
 }
 
