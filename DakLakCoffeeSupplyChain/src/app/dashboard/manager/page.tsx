@@ -6,7 +6,8 @@ import {
   FiPackage,
   FiBarChart2,
   FiHome,
-  FiTruck, // 🚚 Biểu tượng phù hợp cho Xuất kho
+  FiTruck,
+  FiClock, // 🚚 Biểu tượng phù hợp cho Xuất kho
 } from 'react-icons/fi';
 import Link from 'next/link';
 import React from 'react';
@@ -62,6 +63,15 @@ export default function ManagerDashboard() {
               icon={<FiPackage className="text-orange-500 text-xl" />} // 📦 dùng icon cũ cho nhất quán
               title="Tồn kho"
               description="Xem danh sách hàng tồn trong các kho do bạn quản lý."
+              isLink
+            />
+          </Link>
+          {/* ✅ Lịch sử tồn kho */}
+          <Link href="/dashboard/manager/inventory-logs">
+            <DashboardCard
+              icon={<FiClock className="text-orange-500 text-xl" />}
+              title="Lịch sử tồn kho"
+              description="Xem toàn bộ lịch sử thay đổi tồn kho theo công ty bạn."
               isLink
             />
           </Link>
