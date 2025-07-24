@@ -1,6 +1,21 @@
 import api from "./axios";
 import { useRouter } from "next/navigation";
 
+export interface ProcessingProgress {
+  stageName: string;
+  stageDescription: string;
+  outputQuantity: string;
+  outputUnit: string;
+  startedAt?: string;
+  endedAt?: string;
+  note?: string;
+}
+
+export interface ProcessingProduct {
+  name: string;
+  quantity: number;
+  unit: string;
+}
 export interface ProcessingBatch {
   batchId: string;
   batchCode: string;
@@ -12,10 +27,13 @@ export interface ProcessingBatch {
   methodId: number;
   methodName: string;
   stageCount: number;
-  totalInputQuantity: number;
+  inputQuantity: number;
   totalOutputQuantity: number;
-  status: string;
+  inputUnit: string;
+  status: number;
   createdAt: string;
+  progresses: ProcessingProgress[];
+  products: ProcessingProduct[];
 }
 
 export interface CreateProcessingBatchPayload {
@@ -51,6 +69,17 @@ export async function createProcessingBatch(
     return res.data;
   } catch (err) {
     console.error("Lỗi createProcessingBatch:", err);
+    throw err;
+  }
+}
+export async function getProcessingBatchById(
+  id: string
+): Promise<ProcessingBatch> {
+  try {
+    const res = await api.get(`/ProcessingBatch/${id}`);
+    return res.data;
+  } catch (err) {
+    console.error("Lỗi getProcessingBatchById:", err);
     throw err;
   }
 }
