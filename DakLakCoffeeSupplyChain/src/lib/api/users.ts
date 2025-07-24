@@ -1,4 +1,6 @@
 // lib/api/users.ts
+import api from "./axios";
+
 export interface UserProfile {
   userId: string; // Guid in backend
   userCode: string;
@@ -17,6 +19,7 @@ export interface UserProfileDetails {
   email: string;
   phoneNumber: string;
   name: string;
+  password: string;
   gender: Gender;
   dateOfBirth?: Date;
   address: string;
@@ -57,6 +60,12 @@ export enum LoginType {
   Apple = "Apple",
 }
 
+export interface RoleItem {
+  roleId: number;
+  roleName: string;
+  status: string; // 'Active' | 'Inactive' hoặc enum nếu muốn
+}
+
 const API_URL = "https://localhost:7163/api/UserAccounts";
 
 export async function getAllUsers(): Promise<UserProfile[]> {
@@ -83,6 +92,7 @@ export async function getUserById(id: string): Promise<UserProfileDetails> {
 
 export async function createUser(data: Partial<UserProfileDetails>) {
   const token = localStorage.getItem("token");
+
   const res = await fetch(API_URL, {
     method: "POST",
     headers: {
@@ -91,12 +101,49 @@ export async function createUser(data: Partial<UserProfileDetails>) {
     },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Không tạo được người dùng");
-  return await res.json();
+
+  const contentType = res.headers.get("Content-Type") || "";
+  let responseBody: any;
+
+  try {
+    responseBody = contentType.includes("application/json")
+      ? await res.json()
+      : await res.text();
+  } catch (err) {
+    responseBody = null;
+  }
+
+  if (!res.ok) {
+    let message = "Không tạo được người dùng";
+
+    if (typeof responseBody === "string") {
+      try {
+        const parsed = JSON.parse(responseBody);
+        if (parsed?.errors && typeof parsed.errors === "object") {
+          message = Object.values(parsed.errors).flat().filter(Boolean).join(" | ");
+        } else if (parsed?.message) {
+          message = parsed.message;
+        } else {
+          message = responseBody;
+        }
+      } catch {
+        message = responseBody;
+      }
+    } else if (responseBody?.errors && typeof responseBody.errors === "object") {
+      message = Object.values(responseBody.errors).flat().filter(Boolean).join(" | ");
+    } else if (responseBody?.message) {
+      message = responseBody.message;
+    }
+
+    throw new Error(message);
+  }
+
+  return responseBody;
 }
 
 export async function updateUser(id: string, data: Partial<UserProfileDetails>) {
   const token = localStorage.getItem("token");
+
   const res = await fetch(`${API_URL}/${id}`, {
     method: "PUT",
     headers: {
@@ -105,8 +152,46 @@ export async function updateUser(id: string, data: Partial<UserProfileDetails>) 
     },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Không cập nhật được người dùng");
-  return await res.json();
+
+  const contentType = res.headers.get("Content-Type") || "";
+  let responseBody: any;
+
+  try {
+    responseBody = contentType.includes("application/json")
+      ? await res.json()
+      : await res.text();
+  } catch (err) {
+    responseBody = null;
+  }
+
+  if (!res.ok) {
+    let message = "Không cập nhật được người dùng";
+
+    if (typeof responseBody === "string") {
+      try {
+        const parsed = JSON.parse(responseBody);
+        // Nếu parse được từ string JSON
+        if (parsed?.errors && typeof parsed.errors === "object") {
+          message = Object.values(parsed.errors).flat().filter(Boolean).join(" | ");
+        } else if (parsed?.message) {
+          message = parsed.message;
+        } else {
+          message = responseBody;
+        }
+      } catch {
+        // không parse được thì cứ để nguyên string
+        message = responseBody;
+      }
+    } else if (responseBody?.errors && typeof responseBody.errors === "object") {
+      message = Object.values(responseBody.errors).flat().filter(Boolean).join(" | ");
+    } else if (responseBody?.message) {
+      message = responseBody.message;
+    }
+
+    throw new Error(message);
+  }
+
+  return responseBody;
 }
 
 export async function softDeleteUser(id: string) {
@@ -119,4 +204,10 @@ export async function softDeleteUser(id: string) {
   });
   if (!res.ok) throw new Error("Không xoá được người dùng");
   return await res.text();
+}
+
+export async function getAllRoles(): Promise<RoleItem[]> {
+  // Nếu dùng biến môi trường, có thể thay bằng `${api.defaults.baseURL}/Roles`
+  const res = await api.get("/Roles");
+  return res.data;
 }

@@ -1,4 +1,3 @@
-Dưới đây là bản README đề xuất cho **Frontend Repository** của hệ thống **DakLakCoffeeSupplyChain\_FE**, nhất quán với phần backend mà bạn đã trình bày:
 
 ---
 

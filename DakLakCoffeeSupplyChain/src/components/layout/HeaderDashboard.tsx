@@ -1,32 +1,35 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useMemo, useEffect, useState } from "react";
 import { FiBell, FiMail, FiSmile } from "react-icons/fi";
 import { Input } from "@/components/ui/input";
+import { roleRawToDisplayName } from "@/lib/constrant/role";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { LogOut, User } from "lucide-react";
 
 // Map path segment to page title
 const pathTitleMap: Record<string, string> = {
-  dashboard: "Tổng quan",
-  farmer: "Tổng quan",
-  admin: "Tổng quan",
-  manager: "Tổng quan",
-  "crop-seasons": "Mùa vụ",
-  batches: "Danh sách lô sơ chế",
-  evaluations: "Đánh giá lô sơ chế",
-  progresses: "Tiến trình lô sơ chế",
-  wastes: "Chất thải lô sơ chế",
-  "processing-methods": "Phương pháp sơ chế",
-  parameters: "Tham số sơ chế",
-  stages: "Công đoạn sơ chế",
-  "waste-disposals": "Xử lý chất thải",
-  "request-feedback": "Tư vấn kỹ thuật",
-  consultations: "Tư vấn",
-  articles: "Bài viết",
-  contracts: "Hợp đồng",
-  reports: "Báo cáo",
-  users: "Quản lý người dùng",
-  settings: "Cài đặt",
+    dashboard: "Tổng quan",
+    farmer: "Tổng quan",
+    admin: "Tổng quan",
+    manager: "Tổng quan",
+    "crop-seasons": "Mùa vụ",
+    batches: "Danh sách lô sơ chế",
+    evaluations: "Đánh giá lô sơ chế",
+    progresses: "Tiến trình lô sơ chế",
+    wastes: "Chất thải lô sơ chế",
+    "processing-methods": "Phương pháp sơ chế",
+    parameters: "Tham số sơ chế",
+    stages: "Công đoạn sơ chế",
+    "waste-disposals": "Xử lý chất thải",
+    "request-feedback": "Tư vấn kỹ thuật",
+    consultations: "Tư vấn",
+    articles: "Bài viết",
+    contracts: "Hợp đồng",
+    reports: "Báo cáo",
+    users: "Quản lý người dùng",
+    settings: "Cài đặt",
 };
 
 export default function HeaderDashboard() {
@@ -70,6 +73,7 @@ export default function HeaderDashboard() {
                 </span>
             </div>
 
+            {/* Icons + Avatar + Dropdown */}
             {/* Icons + Avatar + Dropdown */}
             <div className="flex items-center gap-4">
                 <IconWithBadge icon={<FiBell size={20} />} count={23} />
@@ -126,6 +130,7 @@ export default function HeaderDashboard() {
         </div>
     );
 }
+
 
 function IconWithBadge({
     icon,

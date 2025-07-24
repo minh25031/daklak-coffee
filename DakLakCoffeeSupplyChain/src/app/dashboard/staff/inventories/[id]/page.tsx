@@ -13,18 +13,26 @@ export default function InventoryDetailPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-  if (id) {
-    async function fetchInventory() {
-      const res = await getInventoryById(id as string);
-      if (res.status === 200 && res.data) {
-        setInventory(res.data);
-      } else {
-        setError(res.message || "Không tìm thấy tồn kho.");
+    if (id) {
+      async function fetchInventory() {
+        try {
+          const res = await getInventoryById(id as string);
+
+          // ✅ Hỗ trợ cả ServiceResult hoặc trả thẳng object
+          if (res?.data) {
+            setInventory(res.data);
+          } else if (res?.inventoryId) {
+            setInventory(res); // fallback nếu API trả object trực tiếp
+          } else {
+            setError(res.message || "Không tìm thấy tồn kho.");
+          }
+        } catch (err: any) {
+          setError(err.message || "Lỗi khi tải dữ liệu tồn kho.");
+        }
       }
+      fetchInventory();
     }
-    fetchInventory();
-  }
-}, [id]);
+  }, [id]);
 
   if (error) return <div className="text-red-500 p-6">{error}</div>;
   if (!inventory) return <div className="p-6">Đang tải dữ liệu tồn kho...</div>;
@@ -40,8 +48,8 @@ export default function InventoryDetailPage() {
             <p><strong>Mã:</strong> {inventory.inventoryCode}</p>
             <p><strong>Kho:</strong> {inventory.warehouseName}</p>
             <p><strong>Batch:</strong> {inventory.batchCode}</p>
-            <p><strong>Sản phẩm:</strong> {inventory.productName}</p>
-            <p><strong>Loại cà phê:</strong> {inventory.coffeeTypeName}</p>
+            <p><strong>Sản phẩm:</strong> {inventory.productName || "Không có"}</p>
+            <p><strong>Loại cà phê:</strong> {inventory.coffeeTypeName || "Không xác định"}</p>
             <p><strong>Số lượng:</strong> {inventory.quantity} {inventory.unit}</p>
             <p><strong>Tạo lúc:</strong> {new Date(inventory.createdAt).toLocaleString()}</p>
             <p><strong>Cập nhật:</strong> {new Date(inventory.updatedAt).toLocaleString()}</p>

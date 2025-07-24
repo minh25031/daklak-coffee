@@ -21,7 +21,7 @@ export type ProcurementPlan = {
   createdAt: string;
   updatedAt: string;
   status: string;
-  procurementPlansDetails: ProcurementPlansDetails[];
+  procurementPlansDetails: Partial<ProcurementPlansDetails>[];
 };
 
 export type ProcurementPlansDetails = {
@@ -43,6 +43,7 @@ export type ProcurementPlansDetails = {
   minimumRegistrationQuantity: number;
   minPriceRange: number;
   maxPriceRange: number;
+  expectedYieldPerHectare: number;
   note: string;
   progressPercentage: number;
   status: string;
@@ -58,4 +59,9 @@ export async function getAllProcurementPlans(): Promise<ProcurementPlan[]> {
 export async function getProcurementPlanById(planId: string): Promise<ProcurementPlan | null> {
   const response = await api.get(`/ProcurementPlans/${planId}`);
   return response.data;
+}
+
+export async function createProcurementPlan(data: Partial<ProcurementPlan>): Promise<ProcurementPlan | null> {
+  const response = await api.post(`/ProcurementPlans`, data)
+  return response.data
 }

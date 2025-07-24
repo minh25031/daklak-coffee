@@ -1,80 +1,97 @@
-const BASE_URL = "https://localhost:7163/api/Inventories";
-
-function getAuthHeaders() {
-  const token = localStorage.getItem("token");
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
-}
+// /lib/api/inventory.ts
 
 export async function getAllInventories() {
-  try {
-    const res = await fetch(BASE_URL, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      return { status: res.status, message: err, data: [] };
-    }
-
-    const data = await res.json();
-    return { status: 200, message: "OK", data };
-  } catch (err: any) {
-    return {
-      status: 500,
-      message: err.message || "Lỗi kết nối đến server",
-      data: [],
-    };
-  }
+  const token = localStorage.getItem("token");
+  const res = await fetch("https://localhost:7163/api/Inventories", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await res.json(); // ✅ KHÔNG cần sửa gì ở đây
 }
 
 export async function getInventoryById(id: string) {
-  try {
-    const res = await fetch(`${BASE_URL}/${id}`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      return { status: res.status, message: err, data: null };
-    }
-
-    const data = await res.json();
-    return { status: 200, message: "OK", data };
-  } catch (err: any) {
-    return {
-      status: 500,
-      message: err.message || "Lỗi kết nối đến server",
-      data: null,
-    };
-  }
+  const token = localStorage.getItem("token");
+  const res = await fetch(`https://localhost:7163/api/Inventories/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await res.json();
 }
 
-export async function createInventory(data: {
-  warehouseId: string;
-  batchId: string;
-  quantity: number;
-}) {
-  try {
-    const res = await fetch(BASE_URL, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
+export async function getInventoriesByWarehouseId(warehouseId: string) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`https://localhost:7163/api/Inventories/warehouse/${warehouseId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-    if (!res.ok) {
-      const err = await res.text();
-      return { status: res.status, message: err };
-    }
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(errText || "Không lấy được tồn kho theo kho.");
+  }
 
-    const result = await res.json();
-    return { status: 200, message: "Tạo thành công", data: result };
-  } catch (err) {
+  const contentType = res.headers.get("content-type");
+  if (!contentType?.includes("application/json")) {
+    return [];
+  }
+
+  return await res.json(); // ✅ Trả mảng tồn kho theo kho
+}
+export async function createInventory(data: any) {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch("https://localhost:7163/api/Inventories", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const contentType = res.headers.get("content-type");
+
+  // Nếu là JSON thì parse
+  if (contentType && contentType.includes("application/json")) {
+    const json = await res.json();
     return {
-      status: 500,
-      message: "Lỗi không xác định khi tạo tồn kho.",
+      status: res.status,
+      ...json,
     };
   }
+
+  // Nếu là plain text (VD: lỗi như "Tồn kho đã tồn tại...")
+  const text = await res.text();
+  return {
+    status: res.status,
+    message: text,
+  };
+}
+export async function softDeleteInventory(id: string) {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`https://localhost:7163/api/Inventories/soft/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const contentType = res.headers.get("content-type");
+  if (contentType?.includes("application/json")) {
+    const json = await res.json();
+    return {
+      status: res.status,
+      ...json,
+    };
+  }
+
+  const text = await res.text();
+  return {
+    status: res.status,
+    message: text,
+  };
 }

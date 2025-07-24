@@ -4,9 +4,11 @@ import api from "./axios";
 
 export interface DecodedToken {
   nameid: string;
+  name: string;
   email: string;
   role: string;
   exp: number;
+  avatar?: string;
   iat: number;
 }
 
@@ -35,9 +37,11 @@ export async function login(email: string, password: string): Promise<DecodedTok
 
   localStorage.setItem("token", token);
   localStorage.setItem("user_id", decoded.nameid);
+  localStorage.setItem("user_name", decoded.name);
   localStorage.setItem("email", decoded.email);
   localStorage.setItem("user_role", roleSlug);
   localStorage.setItem("user_role_raw", decoded.role);
+  localStorage.setItem("user_avatar", decoded.avatar || "");
 
   return decoded;
 }

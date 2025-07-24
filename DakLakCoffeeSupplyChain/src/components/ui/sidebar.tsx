@@ -398,22 +398,23 @@ interface SidebarFooterProps {
   isCollapsed?: boolean;
 }
 
-export function SidebarFooter({ role, isCollapsed }: SidebarFooterProps) {
-  const [currentRole, setCurrentRole] = useState<string | null>(null);
+export function SidebarFooter({ isCollapsed }: SidebarFooterProps) {
+  const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedRole = localStorage.getItem("user_role_raw"); // e.g., "AgriculturalExpert"
-    setCurrentRole(storedRole);
+    const storedName = localStorage.getItem("user_name");
+    console.log("Stored user name:", storedName);
+    setUserName(storedName);
   }, []);
 
   if (isCollapsed) return null;
 
   return (
-    <div className="border-t px-4 py-3 text-sm text-gray-600 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <span className="text-gray-400">Đăng nhập:</span>
+    <div className="border-t px-4 py-3 text-sm text-gray-600">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-gray-400">Xin chào:</span>
         <span className="font-medium text-orange-600">
-          {currentRole ?? "Ẩn danh"}
+          {userName ?? "Ẩn danh"}
         </span>
       </div>
       <button
@@ -426,5 +427,6 @@ export function SidebarFooter({ role, isCollapsed }: SidebarFooterProps) {
         Đăng xuất
       </button>
     </div>
+
   );
 }

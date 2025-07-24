@@ -15,17 +15,31 @@ export default function InventoryListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  useEffect(() => {
+useEffect(() => {
   async function fetchData() {
-    const res = await getAllInventories();
-    if (res.status === 200) {
-      setInventories(res.data);
-    } else {
-      alert(`❌ Lỗi: ${res.message}`);
+    try {
+      const res = await getAllInventories();
+
+      // Trường hợp trả về dạng ServiceResult
+      if (Array.isArray(res?.data)) {
+        setInventories(res.data);
+      }
+      // Trường hợp API trả thẳng mảng
+      else if (Array.isArray(res)) {
+        setInventories(res);
+      }
+      // Còn lại là lỗi
+      else {
+        alert(`❌ Lỗi: ${res.message || "Không thể lấy dữ liệu tồn kho."}`);
+      }
+    } catch (err: any) {
+      alert(`❌ Lỗi hệ thống: ${err.message}`);
     }
   }
+
   fetchData();
 }, []);
+
 
   const filtered = inventories.filter((inv) =>
     inv.inventoryCode?.toLowerCase().includes(search.toLowerCase()) ||
@@ -67,6 +81,7 @@ export default function InventoryListPage() {
                   <p className="font-semibold">Code: {inv.inventoryCode}</p>
                   <p>Warehouse: {inv.warehouseName}</p>
                   <p>Product: {inv.productName}</p>
+                  <p>Coffee Type: <span className="text-green-700 font-medium">{inv.coffeeTypeName}</span></p> {/* ✅ thêm dòng này */}
                 </div>
                 <Badge className="capitalize px-3 py-1 rounded-md font-medium text-sm bg-gray-100 text-gray-800">
                   {inv.quantity > 0 ? "Available" : "Empty"}
