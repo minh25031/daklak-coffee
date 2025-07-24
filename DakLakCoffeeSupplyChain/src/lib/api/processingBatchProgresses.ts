@@ -18,7 +18,20 @@ export interface ProcessingBatchProgress {
   createdAt: string;
   updatedAt: string;
 }
-
+export interface UpdateProgressDto {
+  progressDate: string; // yyyy-MM-dd
+  outputQuantity: number;
+  outputUnit: string;
+  photoUrl?: string | null;
+  videoUrl?: string | null;
+}
+export interface CreateProgressDto {
+  progressDate: string;
+  outputQuantity: number;
+  outputUnit: string;
+  photoUrl?: string | null;
+  videoUrl?: string | null;
+}
 export async function getAllProcessingBatchProgresses(): Promise<ProcessingBatchProgress[]> {
   try {
     const res = await api.get("/ProcessingBatchsProgress");
@@ -41,15 +54,19 @@ export async function getProcessingBatchProgressById(id: string): Promise<Proces
 }
 
 //  Tạo tiến trình mới thủ công (create bước đầu tiên)
-export async function createProcessingBatchProgress(payload: Partial<ProcessingBatchProgress>) {
+
+export async function createProcessingBatchProgress(
+  batchId: string,
+  payload: CreateProgressDto
+): Promise<void> {
   try {
-    const res = await api.post("/ProcessingBatchsProgress", payload);
-    return res.data;
-  } catch (err) {
-    console.error("Lỗi createProcessingBatchProgress:", err);
-    throw err;
+    await api.post(`/ProcessingBatchsProgress/${batchId}`, payload);
+  } catch (error) {
+    console.error("❌ Lỗi tạo tiến trình:", error);
+    throw error;
   }
 }
+
 
 //  Cập nhật nội dung tiến trình hiện tại (chỉnh sửa dữ liệu cũ)
 export async function updateProcessingBatchProgress(id: string, payload: Partial<ProcessingBatchProgress>) {
@@ -63,9 +80,8 @@ export async function updateProcessingBatchProgress(id: string, payload: Partial
 }
 
 //  Tiến sang bước tiếp theo từ tiến trình hiện tại (theo logic UpdateAsync bên backend)
-// ✅ Gọi API advance tiến trình kế tiếp
-export async function advanceToNextProcessingProgress(
-  id: string,
+export const advanceToNextProcessingProgress = async (
+  batchId: string,
   payload: {
     progressDate: string;
     outputQuantity?: number;
@@ -73,16 +89,15 @@ export async function advanceToNextProcessingProgress(
     photoUrl?: string | null;
     videoUrl?: string | null;
   }
-) {
+) => {
   try {
-    // ✅ Gọi đúng method POST và đúng endpoint mới
-    const res = await api.post(`/ProcessingBatchsProgress/${id}/advance`, payload);
-    return res.data;
+    const { data } = await api.post(`/ProcessingBatchsProgress/${batchId}/advance`, payload);
+    return data;
   } catch (err) {
     console.error("Lỗi advanceToNextProcessingProgress:", err);
     throw err;
   }
-}
+};
 
 //  Xóa mềm tiến trình
 export async function deleteProcessingBatchProgress(id: string) {

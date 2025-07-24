@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   getAllProcessingBatchProgresses,
-  ProcessingBatchProgress,
   advanceToNextProcessingProgress,
+  ProcessingBatchProgress,
 } from "@/lib/api/processingBatchProgresses";
+import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
+import { ProcessingStatus } from "@/lib/constrant/batchStatus";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,24 +30,28 @@ export default function ProcessingProgressesPage() {
   const pageSize = 10;
 
   const [openModal, setOpenModal] = useState(false);
-  const [selectedProgressId, setSelectedProgressId] = useState<string | null>(null);
-  const [stageName, setStageName] = useState<string>("");
+  const [selectedProgress, setSelectedProgress] = useState<ProcessingBatchProgress | null>(null);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split("T")[0]);
   const [outputQuantity, setOutputQuantity] = useState("");
   const [outputUnit, setOutputUnit] = useState("kg");
   const [photoUrl, setPhotoUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [batches, setBatches] = useState<ProcessingBatch[]>([]);
+
+const fetchData = async () => {
+  setLoading(true);
+  const [progressRes, batchRes] = await Promise.all([
+    getAllProcessingBatchProgresses(),
+    getAllProcessingBatches()
+  ]);
+  setData(progressRes);
+  setBatches(batchRes ?? []);
+  setLoading(false);
+};
 
   useEffect(() => {
     const batchCode = searchParams.get("batchCode");
-    if (batchCode) {
-      setSearch(batchCode);
-    }
-    const fetchData = async () => {
-      setLoading(true);
-      setData(await getAllProcessingBatchProgresses());
-      setLoading(false);
-    };
+    if (batchCode) setSearch(batchCode);
     fetchData();
   }, []);
 
@@ -55,19 +61,57 @@ export default function ProcessingProgressesPage() {
 
   const sortedFiltered = [...filtered].sort((a, b) => {
     const batchCompare = a.batchCode.localeCompare(b.batchCode);
-    if (batchCompare !== 0) return batchCompare;
-    return (a.stepIndex ?? 0) - (b.stepIndex ?? 0);
+    return batchCompare !== 0 ? batchCompare : (a.stepIndex ?? 0) - (b.stepIndex ?? 0);
   });
 
   const totalPages = Math.ceil(sortedFiltered.length / pageSize);
-  const paged = sortedFiltered.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const paged = sortedFiltered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
+  const handleAdvanceProgress = async () => {
+    if (!selectedProgress) {
+      toast.error("Không có tiến trình được chọn.");
+      return;
+    }
+
+    console.log("✅ Tiến trình hiện tại:", {
+      batchId: selectedProgress.batchId,
+      stageId: selectedProgress.stageId,
+      stageName: selectedProgress.stageName,
+      stepIndex: selectedProgress.stepIndex,
+    });
+
+    try {
+      await advanceToNextProcessingProgress(selectedProgress.batchId, {
+        progressDate,
+        outputQuantity: parseFloat(outputQuantity),
+        outputUnit,
+        photoUrl: photoUrl || null,
+        videoUrl: videoUrl || null,
+      });
+
+      toast.success("Đã tạo bước tiếp theo thành công!");
+      setOpenModal(false);
+      location.reload();
+    } catch (error) {
+      console.error("❌ Lỗi khi gọi API advanceToNextProcessingProgress:", error);
+      toast.error("Có lỗi khi cập nhật tiến trình.");
+    }
+  };
+const latestStepByBatchId: Record<string, number> = {};
+data.forEach((p) => {
+  if (!p.batchId) return;
+  const step = p.stepIndex ?? 0;
+  if (!latestStepByBatchId[p.batchId] || step > latestStepByBatchId[p.batchId]) {
+    latestStepByBatchId[p.batchId] = step;
+  }
+});
+
+const batchStatusMap: Record<string, number> = {};
+batches.forEach((b) => {
+  batchStatusMap[b.batchId] = b.status;
+});
   return (
     <div className="flex min-h-screen bg-amber-50 p-6 gap-6">
-      {/* Sidebar */}
       <aside className="w-64 space-y-4">
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
           <h2 className="text-sm font-medium text-gray-700">Tìm kiếm tiến trình</h2>
@@ -83,15 +127,10 @@ export default function ProcessingProgressesPage() {
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 space-y-6">
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex justify-end mb-4">
-            <Button
-              onClick={() => router.push("/dashboard/farmer/processing/progresses/create")}
-            >
-              + Thêm tiến trình
-            </Button>
+            <Button onClick={() => router.push("/dashboard/farmer/processing/progresses/create")}>+ Thêm tiến trình</Button>
           </div>
 
           {loading ? (
@@ -111,42 +150,59 @@ export default function ProcessingProgressesPage() {
                   <th className="px-4 py-3 text-left">Hành động</th>
                 </tr>
               </thead>
-              <tbody>
-                {Object.entries(
-                  paged.reduce((acc, curr) => {
-                    if (!curr.batchId) return acc;
-                    if (!acc[curr.batchId]) acc[curr.batchId] = [];
-                    acc[curr.batchId].push(curr);
-                    return acc;
-                  }, {} as Record<string, ProcessingBatchProgress[]>)
-                ).map(([batchId, progresses]) =>
-                  progresses.map((item, idx) => (
-                    <tr key={item.progressId} className="border-t hover:bg-gray-50 transition">
-                      {idx === 0 ? (
-                        <td className="px-4 py-3" rowSpan={progresses.length}>{item.batchCode}</td>
-                      ) : null}
-                      <td className="px-4 py-3">{item.stageName}</td>
-                      <td className="px-4 py-3">{item.stepIndex ?? <span className="text-gray-400 italic">Chưa có</span>}</td>
-                      <td className="px-4 py-3">{new Date(item.progressDate).toLocaleDateString("vi-VN")}</td>
-                      <td className="px-4 py-3">{item.updatedByName ?? <span className="text-gray-400 italic">-</span>}</td>
-                      <td className="px-4 py-3">{new Date(item.updatedAt).toLocaleDateString("vi-VN")}</td>
-                      <td className="px-4 py-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedProgressId(item.progressId);
-                            setStageName(item.stageName);
-                            setOpenModal(true);
-                          }}
-                        >
-                          Cập nhật
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
+            <tbody>
+  {Object.entries(
+    paged.reduce((acc, curr) => {
+      if (!curr.batchId) return acc;
+      if (!acc[curr.batchId]) acc[curr.batchId] = [];
+      acc[curr.batchId].push(curr);
+      return acc;
+    }, {} as Record<string, ProcessingBatchProgress[]>)
+  ).map(([batchId, progressesRaw]) => {
+    const progresses = [...progressesRaw].sort((a, b) => (a.stepIndex ?? 0) - (b.stepIndex ?? 0));
+    const maxStep = latestStepByBatchId[batchId];
+
+    return progresses.map((item, idx) => (
+      <tr key={item.progressId} className="border-t hover:bg-gray-50 transition">
+        {idx === 0 && (
+          <td className="px-4 py-3" rowSpan={progresses.length}>
+            {item.batchCode}
+          </td>
+        )}
+        <td className="px-4 py-3">{item.stageName}</td>
+        <td className="px-4 py-3">
+          {item.stepIndex ?? <span className="text-gray-400 italic">Chưa có</span>}
+        </td>
+        <td className="px-4 py-3">
+          {new Date(item.progressDate).toLocaleDateString("vi-VN")}
+        </td>
+        <td className="px-4 py-3">
+          {item.updatedByName ?? <span className="text-gray-400 italic">-</span>}
+        </td>
+        <td className="px-4 py-3">
+          {new Date(item.updatedAt).toLocaleDateString("vi-VN")}
+        </td>
+        <td className="px-4 py-3">
+          {item.stepIndex === maxStep &&
+            batchStatusMap[item.batchId] !== ProcessingStatus.Completed && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedProgress(item);
+                  setOpenModal(true);
+                }}
+              >
+                Cập nhật
+              </Button>
+            )}
+        </td>
+      </tr>
+    ));
+  })}
+</tbody>
+
+
             </table>
           )}
         </div>
@@ -154,50 +210,26 @@ export default function ProcessingProgressesPage() {
         {!loading && totalPages > 1 && (
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">
-              Hiển thị {(currentPage - 1) * pageSize + 1}–
-              {Math.min(currentPage * pageSize, sortedFiltered.length)} trong {sortedFiltered.length} tiến trình
+              Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, sortedFiltered.length)} trong {sortedFiltered.length} tiến trình
             </span>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
+              <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}><ChevronLeft className="w-4 h-4" /></Button>
               {[...Array(totalPages).keys()].map((_, i) => {
                 const page = i + 1;
                 return (
-                  <Button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`rounded-md px-3 py-1 text-sm ${
-                      page === currentPage ? "bg-black text-white" : "bg-white text-black border"
-                    }`}
-                  >
-                    {page}
-                  </Button>
+                  <Button key={page} onClick={() => setCurrentPage(page)} className={`rounded-md px-3 py-1 text-sm ${page === currentPage ? "bg-black text-white" : "bg-white text-black border"}`}>{page}</Button>
                 );
               })}
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+              <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}><ChevronRight className="w-4 h-4" /></Button>
             </div>
           </div>
         )}
 
-        {/* Modal */}
         <Dialog open={openModal} onOpenChange={setOpenModal}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Cập nhật tiến trình kế tiếp</DialogTitle>
-              <p className="text-sm text-muted-foreground">Công đoạn hiện tại: <b>{stageName}</b></p>
+              <p className="text-sm text-muted-foreground">Công đoạn hiện tại: <b>{selectedProgress?.stageName}</b></p>
             </DialogHeader>
             <div className="space-y-3">
               <div>
@@ -221,41 +253,7 @@ export default function ProcessingProgressesPage() {
                 <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
               </div>
               <div className="pt-2 flex justify-end">
-             <Button
-  onClick={async () => {
-    if (!selectedProgressId) return;
-
-    const parsedQty = parseFloat(outputQuantity);
-    if (isNaN(parsedQty)) {
-      toast.error("Vui lòng nhập sản lượng hợp lệ.");
-      return;
-    }
-
-    try {
-      await advanceToNextProcessingProgress(selectedProgressId, {
-        progressDate,
-        outputQuantity: parsedQty,
-        outputUnit,
-        photoUrl: photoUrl || null,
-        videoUrl: videoUrl || null,
-      });
-
-      toast.success("Đã tạo bước tiếp theo thành công!");
-      setOpenModal(false);
-
-      // ✅ Load lại danh sách, không reload toàn trang
-      const refreshed = await getAllProcessingBatchProgresses();
-      setData(refreshed);
- } catch (error: any) {
-  console.log("Selected progress ID:", selectedProgressId);
-  console.error("Lỗi khi gọi API advanceToNextProcessingProgress:", error);
-  const message = error?.response?.data?.message || "Có lỗi khi cập nhật tiến trình.";
-  toast.error(message);
-}
-  }}
->
-  Xác nhận
-</Button>
+                <Button onClick={handleAdvanceProgress}>Xác nhận</Button>
               </div>
             </div>
           </DialogContent>
