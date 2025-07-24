@@ -20,14 +20,19 @@ export default function Batches() {
   const [loading, setLoading] = useState(true);
   const pageSize = 10;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setBatches(await getAllProcessingBatches());
-      setLoading(false);
-    };
-    fetchData();
-  }, []);
+ useEffect(() => {
+  const fetchData = async () => {
+    setLoading(true);
+    const result = await getAllProcessingBatches();
+    if (result) {
+      setBatches(result);
+    } else {
+      setBatches([]); // fallback to empty array if result is null
+    }
+    setLoading(false);
+  };
+  fetchData();
+}, []);
   const filtered = batches.filter(
     (b) =>
       (selectedStatus === null || b.status === selectedStatus) &&
