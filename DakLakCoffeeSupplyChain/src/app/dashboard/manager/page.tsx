@@ -75,6 +75,15 @@ export default function ManagerDashboard() {
               isLink
             />
           </Link>
+          {/* ✅ Quản lý nhân viên (BusinessStaffs) */}
+          <Link href="/dashboard/manager/business-staffs">
+            <DashboardCard
+              icon={<FiUsers className="text-orange-500 text-xl" />}
+              title="Nhân viên"
+              description="Xem, tạo và quản lý danh sách nhân viên thuộc công ty bạn."
+              isLink
+            />
+          </Link>
         </div>
       </div>
     </div>
