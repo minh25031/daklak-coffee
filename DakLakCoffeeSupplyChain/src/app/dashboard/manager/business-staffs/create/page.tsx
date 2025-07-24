@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBusinessStaff } from "@/lib/api/businessStaffs";
+import { getAllWarehouses } from "@/lib/api/warehouses";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,12 +20,29 @@ export default function CreateBusinessStaffPage() {
     password: "",
     position: "",
     department: "",
-    assignedWarehouseId: null as string | null, // null là đúng chuẩn kiểu Guid?
+    assignedWarehouseId: null as string | null,
   });
 
+  const [warehouses, setWarehouses] = useState<
+    { warehouseId: string; name: string }[]
+  >([]);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const fetchWarehouses = async () => {
+      const res = await getAllWarehouses();
+      if (res.status === 1 && Array.isArray(res.data)) {
+        setWarehouses(res.data);
+      } else {
+        toast.error("Không thể tải danh sách kho.");
+      }
+    };
+    fetchWarehouses();
+  }, []);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setForm(prev => ({
       ...prev,
@@ -36,7 +54,11 @@ export default function CreateBusinessStaffPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await createBusinessStaff(form);
+      const res = await createBusinessStaff({
+        ...form,
+        assignedWarehouseId: form.assignedWarehouseId || null,
+      });
+
       if (res.status === 201 || res.status === 200) {
         toast.success("Tạo nhân viên thành công!");
         router.push("/dashboard/manager/business-staffs");
@@ -85,9 +107,7 @@ export default function CreateBusinessStaffPage() {
           <Label>Phòng ban</Label>
           <Input name="department" value={form.department} onChange={handleChange} />
         </div>
-
-        {/* Nếu sau này bạn có dropdown chọn kho: */}
-        {/* <div>
+        <div>
           <Label>Kho phụ trách</Label>
           <select
             name="assignedWarehouseId"
@@ -101,10 +121,13 @@ export default function CreateBusinessStaffPage() {
             className="w-full border rounded px-3 py-2"
           >
             <option value="">-- Không chọn --</option>
-            <option value="guid-kho-1">Kho Buôn Hồ</option>
-            <option value="guid-kho-2">Kho M'gar</option>
+            {warehouses.map((w) => (
+              <option key={w.warehouseId} value={w.warehouseId}>
+                {w.name}
+              </option>
+            ))}
           </select>
-        </div> */}
+        </div>
 
         <div className="pt-4 flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => router.back()}>
