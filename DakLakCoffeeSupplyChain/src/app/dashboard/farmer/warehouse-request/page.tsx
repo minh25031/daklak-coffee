@@ -31,7 +31,13 @@ export default function FarmerWarehouseRequestPage() {
 
   useEffect(() => {
     getAllProcessingBatches()
-      .then(setBatches)
+      .then((data) => {
+        if (data) {
+          setBatches(data);
+        } else {
+          setBatches([]);
+        }
+      })
       .catch((err) => alert('Không thể tải danh sách lô xử lý: ' + err.message));
   }, []);
 

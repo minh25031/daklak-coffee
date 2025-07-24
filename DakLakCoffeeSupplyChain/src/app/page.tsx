@@ -37,7 +37,7 @@ export default function HomePage() {
         </div>
         {/* Hình minh họa */}
         <img
-          src="/illustration_coffee.svg"
+          src="/images/logo.png"
           alt="Coffee Illustration"
           className="w-72 mx-auto mt-10"
         />

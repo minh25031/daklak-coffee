@@ -282,6 +282,6 @@ export default function ManagerProcessingBatchesPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </main>
-  );
+  </main>
+);
 } 

@@ -77,7 +77,11 @@ export default function CropSeasonDetailTable({
           {details.map((detail) => (
             <tr key={detail.detailId} className="border-t">
               <td className="px-3 py-2">{detail.typeName}</td>
-              <td className="px-3 py-2">{detail.areaAllocated} ha</td>
+              <td className="px-3 py-2">
+                {detail.areaAllocated && detail.areaAllocated > 0
+                  ? `${detail.areaAllocated} ha`
+                  : <span className="italic text-red-500">Chưa nhập</span>}
+              </td>
               <td className="px-3 py-2">{detail.plannedQuality}</td>
               <td className="px-3 py-2">{detail.estimatedYield ?? "-"} tấn</td>
               <td className="px-3 py-2">
@@ -92,8 +96,8 @@ export default function CropSeasonDetailTable({
               <td className="px-3 py-2">
                 {detail.expectedHarvestStart
                   ? `${formatDate(detail.expectedHarvestStart)} – ${formatDate(
-                      detail.expectedHarvestEnd
-                    )}`
+                    detail.expectedHarvestEnd
+                  )}`
                   : "-"}
               </td>
               <td className="px-3 py-2">
