@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getBusinessStaffById, updateBusinessStaff } from "@/lib/api/businessStaffs";
+import { getAllWarehouses } from "@/lib/api/warehouses";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,13 +25,15 @@ export default function EditBusinessStaffPage() {
     assignedWarehouseId: "",
   });
 
+  const [warehouses, setWarehouses] = useState<
+    { warehouseId: string; name: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await getBusinessStaffById(id as string);
-
         if (res?.staffId) {
           setForm({
             staffId: res.staffId,
@@ -45,6 +48,13 @@ export default function EditBusinessStaffPage() {
         } else {
           toast.error("Không tìm thấy nhân viên.");
         }
+
+        const warehouseRes = await getAllWarehouses();
+        if (warehouseRes.status === 1 && Array.isArray(warehouseRes.data)) {
+          setWarehouses(warehouseRes.data);
+        } else {
+          toast.error("Không tải được danh sách kho.");
+        }
       } catch (err) {
         toast.error("Lỗi khi tải dữ liệu.");
       } finally {
@@ -55,7 +65,7 @@ export default function EditBusinessStaffPage() {
     fetchData();
   }, [id]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -66,11 +76,10 @@ export default function EditBusinessStaffPage() {
         position: form.position,
         department: form.department,
         assignedWarehouseId: form.assignedWarehouseId || null,
-        isActive: true, // Hoặc bạn có thể làm toggle nếu muốn cho phép bật/tắt
+        isActive: true,
       };
 
       const res = await updateBusinessStaff(updateDto);
-
       if (res.status === 200) {
         toast.success("Cập nhật thành công.");
         router.push(`/dashboard/manager/business-staffs/${id}`);
@@ -115,11 +124,19 @@ export default function EditBusinessStaffPage() {
         </div>
         <div>
           <Label>Kho phụ trách (nếu có)</Label>
-          <Input
+          <select
             name="assignedWarehouseId"
             value={form.assignedWarehouseId}
             onChange={handleChange}
-          />
+            className="w-full border rounded px-3 py-2"
+          >
+            <option value="">-- Không chọn --</option>
+            {warehouses.map((w) => (
+              <option key={w.warehouseId} value={w.warehouseId}>
+                {w.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
