@@ -55,7 +55,7 @@ export default function HeaderDashboard() {
         userName ?? "U"
     )}&background=FD7622&color=fff`;
 
-    return (
+  return (
         <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
             {/* Title */}
             <h1 className="text-2xl font-bold text-gray-800">{currentTitle}</h1>
@@ -72,6 +72,7 @@ export default function HeaderDashboard() {
                 </span>
             </div>
 
+            {/* Icons + Avatar + Dropdown */}
             {/* Icons + Avatar + Dropdown */}
             <div className="flex items-center gap-4">
                 <IconWithBadge icon={<FiBell size={20} />} count={23} />
@@ -128,6 +129,7 @@ export default function HeaderDashboard() {
         </div>
     );
 }
+
 
 function IconWithBadge({
     icon,
