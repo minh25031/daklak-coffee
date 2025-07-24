@@ -8,7 +8,6 @@ import { roleRawToDisplayName } from "@/lib/constrant/role";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { LogOut, User } from "lucide-react";
 
-// Map path segment to page title
 const pathTitleMap: Record<string, string> = {
     dashboard: "Tổng quan",
     farmer: "Tổng quan",
