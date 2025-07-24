@@ -410,8 +410,8 @@ export function SidebarFooter({ isCollapsed }: SidebarFooterProps) {
   if (isCollapsed) return null;
 
   return (
-    <div className="border-t px-4 py-3 text-sm text-gray-600 flex items-center justify-between">
-      <div className="flex items-center gap-2">
+    <div className="border-t px-4 py-3 text-sm text-gray-600">
+      <div className="flex items-center gap-2 mb-1">
         <span className="text-gray-400">Xin chào:</span>
         <span className="font-medium text-orange-600">
           {userName ?? "Ẩn danh"}
@@ -427,5 +427,6 @@ export function SidebarFooter({ isCollapsed }: SidebarFooterProps) {
         Đăng xuất
       </button>
     </div>
+
   );
 }
