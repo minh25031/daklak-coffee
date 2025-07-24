@@ -15,7 +15,7 @@ export default function Batches() {
   const router = useRouter();
   const [batches, setBatches] = useState<ProcessingBatch[]>([]);
   const [search, setSearch] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const pageSize = 10;
@@ -28,12 +28,12 @@ export default function Batches() {
     };
     fetchData();
   }, []);
-
   const filtered = batches.filter(
     (b) =>
-      (!selectedStatus || b.status === selectedStatus) &&
+      (selectedStatus === null || b.status === selectedStatus) &&
       (!search || b.batchCode.toLowerCase().includes(search.toLowerCase()))
   );
+
   const totalPages = Math.ceil(filtered.length / pageSize);
   const pagedBatches = filtered.slice(
     (currentPage - 1) * pageSize,
@@ -41,7 +41,7 @@ export default function Batches() {
   );
 
   // Đếm số lượng theo trạng thái
-  const statusCounts = batches.reduce<Record<string, number>>((acc, batch) => {
+  const statusCounts = batches.reduce<Record<number, number>>((acc, batch) => {
     acc[batch.status] = (acc[batch.status] || 0) + 1;
     return acc;
   }, {});
@@ -75,7 +75,9 @@ export default function Batches() {
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex justify-end mb-4">
             <Button
-              onClick={() => router.push("/dashboard/farmer/processing/batches/create")}
+              onClick={() =>
+                router.push("/dashboard/farmer/processing/batches/create")
+              }
             >
               + Thêm lô sơ chế
             </Button>
@@ -103,7 +105,13 @@ export default function Batches() {
               </thead>
               <tbody>
                 {pagedBatches.map((batch) => (
-                  <ProcessingBatchCard key={batch.batchId} batch={batch} />
+                  <ProcessingBatchCard
+                    key={batch.batchId}
+                    batch={batch}
+                    onViewDetail={(id) =>
+                      router.push(`/dashboard/farmer/processing/batches/${id}`)
+                    }
+                  />
                 ))}
               </tbody>
             </table>
@@ -114,7 +122,8 @@ export default function Batches() {
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">
               Hiển thị {(currentPage - 1) * pageSize + 1}–
-              {Math.min(currentPage * pageSize, filtered.length)} trong {filtered.length} lô
+              {Math.min(currentPage * pageSize, filtered.length)} trong{" "}
+              {filtered.length} lô
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -145,7 +154,9 @@ export default function Batches() {
                 variant="outline"
                 size="icon"
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>

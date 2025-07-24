@@ -24,7 +24,7 @@ export default function ProcessingBatchEvaluationsPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Đánh giá lô sơ chế</h1>
+      <h1 className="text-2xl font-bold mb-4"></h1>
       <div className="flex justify-between mb-4">
         <Input
           placeholder="Tìm kiếm mã lô..."
