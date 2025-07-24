@@ -13,20 +13,23 @@ export default function UserInfoPage() {
     });
 
     useEffect(() => {
+        const rawAvatar = localStorage.getItem("user_avatar")?.trim();
+        const name = localStorage.getItem("user_name") || "Ẩn danh";
+
         setUserInfo({
-            name: localStorage.getItem("user_name") || "Ẩn danh",
+            name,
             email: localStorage.getItem("email") || "",
             phone: localStorage.getItem("phone") || "Chưa cập nhật",
             role:
                 roleRawToDisplayName[localStorage.getItem("user_role_raw") ?? ""] ||
                 "Không xác định",
             avatar:
-                localStorage.getItem("user_avatar") ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    localStorage.getItem("user_name") || "U"
-                )}&background=FD7622&color=fff`,
+                rawAvatar && rawAvatar !== ""
+                    ? rawAvatar
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=FD7622&color=fff`,
         });
     }, []);
+
 
     return (
         <div className="max-w-3xl mx-auto py-10 px-4">
@@ -35,11 +38,13 @@ export default function UserInfoPage() {
             </h1>
 
             <div className="bg-white rounded-lg shadow p-6 flex gap-6 items-start">
-                <img
-                    src={userInfo.avatar}
-                    alt="avatar"
-                    className="w-32 h-32 rounded-full object-cover border border-gray-300"
-                />
+                {userInfo.avatar && (
+                    <img
+                        src={userInfo.avatar}
+                        alt="avatar"
+                        className="w-32 h-32 rounded-full object-cover border border-gray-300"
+                    />
+                )}
                 <div className="flex-1 space-y-4">
                     <div>
                         <p className="text-sm text-gray-500">Họ tên</p>
