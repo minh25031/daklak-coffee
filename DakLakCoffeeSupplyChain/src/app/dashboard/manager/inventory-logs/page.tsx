@@ -73,38 +73,42 @@ export default function ManagerInventoryLogsPage() {
     }
   };
 
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Tất cả lịch sử tồn kho</h1>
-        <div className="w-72 relative">
-          <Input
-            placeholder="Tìm theo mã tồn kho, kho, loại cà phê..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="pr-10"
-          />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        </div>
-      </div>
+    return (
+        <div className="p-6 space-y-6">
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-semibold">Tất cả lịch sử tồn kho</h1>
+                <div className="w-72 relative">
+                    <Input
+                        placeholder="Tìm theo mã tồn kho, kho, loại cà phê..."
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="pr-10"
+                    />
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                </div>
+            </div>
 
-      {/* Bộ lọc theo hành động */}
-      <div className="flex gap-3 flex-wrap">
-        {["All", "ConfirmInbound", "ConfirmOutbound"].map((action) => (
-          <Button
-            key={action}
-            variant={actionFilter === action ? "default" : "outline"}
-            onClick={() => {
-              setActionFilter(action);
-              setCurrentPage(1);
-            }}
-          >
-            {action === "All" ? "🔄 Tất cả" : action === "ConfirmInbound" ? "📥 Nhập kho" : "📤 Xuất kho"}
-          </Button>
-        ))}
+            {/* Bộ lọc theo hành động */}
+            <div className="flex gap-3 flex-wrap">
+                {["All", "increase", "decrease"].map((action) => (
+                    <Button
+                        key={action}
+                        variant={actionFilter === action ? "default" : "outline"}
+                        onClick={() => {
+                            setActionFilter(action);
+                            setCurrentPage(1);
+                        }}
+                    >
+    {action === "All"
+      ? "🔄 Tất cả"
+      : action === "increase"
+      ? "📥 Nhập kho"
+      : "📤 Xuất kho"}
+  </Button>
+))}
       </div>
 
       <Card>
