@@ -17,6 +17,9 @@ export default function RootLayout({
 
   return (
     <html lang="vi">
+      <head>
+        <script src="https://cdn.lordicon.com/lordicon.js"></script>
+      </head>
       <body className="bg-white text-black">
         {showHeaderFooter && <Header />}
         <main className="min-h-screen">{children}</main>
