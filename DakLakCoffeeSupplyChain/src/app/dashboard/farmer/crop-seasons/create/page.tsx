@@ -15,8 +15,6 @@ import { getAvailableCommitments, FarmingCommitmentItem } from '@/lib/api/farmin
 
 export default function CreateCropSeasonPage() {
     useAuthGuard(['farmer']);
-
-    const formatDate = (d: string) => new Date(d).toISOString().split('T')[0];
     const router = useRouter();
 
     const [form, setForm] = useState({
@@ -28,21 +26,20 @@ export default function CreateCropSeasonPage() {
     });
 
     const [availableCommitments, setAvailableCommitments] = useState<FarmingCommitmentItem[]>([]);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingCommitments, setIsLoadingCommitments] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        async function fetchCommitments() {
+        const fetchCommitments = async () => {
             try {
                 const data = await getAvailableCommitments();
                 setAvailableCommitments(data);
-            } catch (err) {
+            } catch {
                 AppToast.error('Không thể tải danh sách cam kết.');
             } finally {
                 setIsLoadingCommitments(false);
             }
-        }
-
+        };
         fetchCommitments();
     }, []);
 
@@ -53,32 +50,33 @@ export default function CreateCropSeasonPage() {
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
+    const formatDate = (d: string) => new Date(d).toISOString().split('T')[0];
+
     const handleSubmit = async () => {
-        setIsSubmitting(true);
+        const { seasonName, startDate, endDate, commitmentId } = form;
+        const requiredFields = [seasonName, startDate, endDate, commitmentId];
 
-        const requiredFields = ['seasonName', 'startDate', 'endDate', 'commitmentId'];
-        const missing = requiredFields.filter((field) => !form[field as keyof typeof form]);
-
-        if (missing.length > 0) {
+        if (requiredFields.some(f => !f)) {
             AppToast.error('Vui lòng điền đầy đủ các trường bắt buộc.');
-            setIsSubmitting(false);
             return;
         }
+
+        setIsSubmitting(true);
 
         try {
             await createCropSeason({
                 ...form,
-                startDate: formatDate(form.startDate),
-                endDate: formatDate(form.endDate),
+                startDate: formatDate(startDate),
+                endDate: formatDate(endDate),
             });
 
             AppToast.success('Tạo mùa vụ thành công!');
             router.push('/dashboard/farmer/crop-seasons');
         } catch (err) {
-            const message = getErrorMessage(err);
-            AppToast.error(message);
+            const msg = getErrorMessage(err);
+            AppToast.error(msg);
 
-            if (message.includes('Ngày bắt đầu phải trước ngày kết thúc')) {
+            if (msg.includes('Ngày bắt đầu phải trước ngày kết thúc')) {
                 setForm((prev) => ({ ...prev, startDate: '', endDate: '' }));
             }
         } finally {
@@ -149,11 +147,7 @@ export default function CreateCropSeasonPage() {
                                     className="w-full border rounded px-2 py-2"
                                 >
                                     <option value="">-- Chọn cam kết --</option>
-                                    {[...new Map(
-                                        availableCommitments
-                                            .filter(c => c && c.commitmentId)
-                                            .map(c => [c.commitmentId, c])
-                                    ).values()].map((c) => (
+                                    {availableCommitments.map((c) => (
                                         <option key={c.commitmentId} value={c.commitmentId}>
                                             {c.commitmentCode} ({c.commitmentName})
                                         </option>
@@ -161,15 +155,9 @@ export default function CreateCropSeasonPage() {
                                 </select>
                                 {form.commitmentId && (
                                     <p className="text-xs text-gray-600 mt-1 italic">
-                                        Đã chọn:{' '}
-                                        {
-                                            availableCommitments.find(
-                                                (c) => c.commitmentId === form.commitmentId
-                                            )?.commitmentName
-                                        }
+                                        Hệ thống sẽ tự động tính diện tích từ đơn đăng ký của cam kết này.
                                     </p>
                                 )}
-
                             </>
                         )}
                     </div>
@@ -177,7 +165,7 @@ export default function CreateCropSeasonPage() {
                     <div className="flex justify-end">
                         <Button
                             onClick={handleSubmit}
-                            disabled={isSubmitting || availableCommitments.length === 0 || !form.commitmentId}
+                            disabled={isSubmitting || !form.commitmentId}
                         >
                             {isSubmitting ? 'Đang tạo...' : 'Tạo mùa vụ'}
                         </Button>
