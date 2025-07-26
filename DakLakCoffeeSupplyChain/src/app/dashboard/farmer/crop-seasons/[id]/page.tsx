@@ -125,16 +125,6 @@ export default function CropSeasonDetail() {
                 <Card>
                     <CardHeader className="flex justify-between items-center">
                         <CardTitle>Chi tiết vùng trồng</CardTitle>
-                        {user?.role === 'farmer' && (
-                            <Button
-                                size="sm"
-                                onClick={() =>
-                                    router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/create`)
-                                }
-                            >
-                                + Thêm vùng trồng
-                            </Button>
-                        )}
                     </CardHeader>
                     <CardContent>
                         <CropSeasonDetailTable

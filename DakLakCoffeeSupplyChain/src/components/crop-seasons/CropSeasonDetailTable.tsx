@@ -82,7 +82,11 @@ export default function CropSeasonDetailTable({
                   ? `${detail.areaAllocated} ha`
                   : <span className="italic text-red-500">Chưa nhập</span>}
               </td>
-              <td className="px-3 py-2">{detail.plannedQuality}</td>
+              <td className="px-3 py-2">
+                {detail.plannedQuality?.trim()
+                  ? detail.plannedQuality
+                  : <span className="italic text-muted-foreground">Chưa có</span>}
+              </td>
               <td className="px-3 py-2">{detail.estimatedYield ?? "-"} tấn</td>
               <td className="px-3 py-2">
                 {detail.actualYield !== null ? (

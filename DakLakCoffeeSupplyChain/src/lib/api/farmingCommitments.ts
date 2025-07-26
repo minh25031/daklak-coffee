@@ -12,6 +12,16 @@ export interface FarmingCommitmentItem {
   estimatedDeliveryEnd: string;
   status: number;
 }
+export interface CommitmentDetailItem {
+  commitmentDetailId: string;
+  commitmentDetailCode: string;
+  coffeeTypeId: string;
+  typeName: string;
+  confirmedPrice: number;
+  committedQuantity: number;
+  estimatedDeliveryStart?: string;
+  estimatedDeliveryEnd?: string;
+}
 
 export async function getFarmerCommitments(): Promise<FarmingCommitmentItem[]> {
   try {
@@ -36,6 +46,19 @@ export async function getAvailableCommitments(): Promise<FarmingCommitmentItem[]
     return res.data;
   } catch (err) {
     console.error("Lỗi getAvailableCommitments:", err);
+    return [];
+  }
+}
+export async function getAvailableCommitmentDetails(
+  cropSeasonId: string
+): Promise<CommitmentDetailItem[]> {
+  try {
+    const res = await api.get<CommitmentDetailItem[]>(
+      `/CropSeasonDetails/AvailableCommitmentDetails/${cropSeasonId}`
+    );
+    return res.data;
+  } catch (err) {
+    console.error("Lỗi getAvailableCommitmentDetails:", err);
     return [];
   }
 }
