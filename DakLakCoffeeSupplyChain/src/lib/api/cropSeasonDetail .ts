@@ -2,14 +2,13 @@ import api from '@/lib/api/axios';
 import { getErrorMessage } from '@/lib/utils';
 
 // ================== TYPES ==================
-// ================== TYPES ==================
 
 export type CropSeasonDetail = {
   success: any;
   error: string;
   detailId: string;
   cropSeasonId: string;
-  coffeeTypeId: string;
+  commitmentDetailId: string; // ✅ Dùng thay cho coffeeTypeId
   expectedHarvestStart: string;
   expectedHarvestEnd: string;
   estimatedYield: number;
@@ -22,23 +21,29 @@ export type CropSeasonDetail = {
   farmerName: string;
 };
 
-export type CropSeasonDetailCreatePayload = Omit<
-  CropSeasonDetail,
-  'detailId' | 'farmerId' | 'farmerName' | 'qualityGrade' | 'actualYield'
->;
+// ✅ Tạo vùng trồng – sử dụng commitmentDetailId thay cho coffeeTypeId
+export type CropSeasonDetailCreatePayload = {
+  cropSeasonId: string;
+  commitmentDetailId: string;
+  expectedHarvestStart: string;
+  expectedHarvestEnd: string;
+  estimatedYield: number;
+  areaAllocated: number;
+  plannedQuality: string;
+  status: number;
+};
 
-// ✅ Cập nhật lại chuẩn payload update
+// ✅ Cập nhật vùng trồng – không thay đổi
 export type CropSeasonDetailUpdatePayload = {
-  detailId: string;               // ✅ Required
-  coffeeTypeId: string;           // ✅ Required
-  expectedHarvestStart?: string; // gửi đúng định dạng yyyy-MM-dd
+  detailId: string;
+  commitmentDetailId?: string; // optional nếu không đổi dòng cam kết
+  expectedHarvestStart?: string;
   expectedHarvestEnd?: string;
   estimatedYield?: number;
   areaAllocated?: number;
   plannedQuality?: string;
-  status: number;                 // enum int
+  status: number;
 };
-
 
 // ================== API FUNCTIONS ==================
 

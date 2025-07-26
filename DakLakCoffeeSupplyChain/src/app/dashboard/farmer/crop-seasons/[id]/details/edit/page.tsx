@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
 import { AppToast } from "@/components/ui/AppToast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,7 @@ export default function UpdateCropSeasonDetailDialog({
   onSuccess,
 }: Props) {
   const [form, setForm] = useState({
-    coffeeTypeId: "",
+    commitmentDetailId: "",
     areaAllocated: "",
     plannedQuality: "",
     expectedHarvestStart: "",
@@ -41,22 +40,16 @@ export default function UpdateCropSeasonDetailDialog({
     status: "Planned" as CropSeasonDetailStatusValue,
   });
 
-  const [coffeeTypes, setCoffeeTypes] = useState<CoffeeType[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [types, detail] = await Promise.all([
-          getCoffeeTypes(),
-          getCropSeasonDetailById(detailId),
-        ]);
-
-        setCoffeeTypes(types);
+        const detail = await getCropSeasonDetailById(detailId);
 
         setForm({
-          coffeeTypeId: detail.coffeeTypeId,
+          commitmentDetailId: detail.commitmentDetailId,
           areaAllocated: detail.areaAllocated?.toString() || "",
           plannedQuality: detail.plannedQuality || "",
           expectedHarvestStart: detail.expectedHarvestStart,
@@ -86,7 +79,7 @@ export default function UpdateCropSeasonDetailDialog({
 
   const handleSubmit = async () => {
     const {
-      coffeeTypeId,
+      commitmentDetailId,
       areaAllocated,
       plannedQuality,
       expectedHarvestStart,
@@ -99,7 +92,7 @@ export default function UpdateCropSeasonDetailDialog({
 
     const payload = {
       detailId,
-      coffeeTypeId,
+      commitmentDetailId,
       expectedHarvestStart,
       expectedHarvestEnd,
       estimatedYield: parseFloat(estimatedYield || "0"),
@@ -126,20 +119,14 @@ export default function UpdateCropSeasonDetailDialog({
   return (
     <div className="space-y-4">
       <div>
-        <Label>Loại cà phê</Label>
-        <select
-          name="coffeeTypeId"
-          value={form.coffeeTypeId}
+        <Label>ID dòng cam kết (commitmentDetailId)</Label>
+        <Input
+          name="commitmentDetailId"
+          value={form.commitmentDetailId}
           onChange={handleChange}
-          className="w-full border rounded px-2 py-2"
-        >
-          <option value="">-- Chọn loại cà phê --</option>
-          {coffeeTypes.map((type) => (
-            <option key={type.coffeeTypeId} value={type.coffeeTypeId}>
-              {type.typeName}
-            </option>
-          ))}
-        </select>
+          placeholder="Nhập ID dòng cam kết"
+          required
+        />
       </div>
 
       <div>
