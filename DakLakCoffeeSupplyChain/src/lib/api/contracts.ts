@@ -1,3 +1,5 @@
+import api from "./axios";
+
 export interface Contract {
   id: string;
   title: string;
@@ -16,6 +18,20 @@ export interface Contract {
   };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ContractViewAllDto {
+  contractId: string;
+  contractCode: string;
+  contractTitle: string;
+  sellerName: string;
+  buyerName: string;
+  deliveryRounds?: number;
+  totalQuantity?: number;
+  totalValue?: number;
+  startDate?: string; // DateOnly as string
+  endDate?: string;   // DateOnly as string
+  status: string; // ContractStatus as string
 }
 
 // Mock data for contracts
@@ -68,10 +84,10 @@ export const mockContracts: Contract[] = [
   },
 ];
 
-// Get all contracts
-export async function getAllContracts(): Promise<Contract[]> {
-  // TODO: Replace with actual API call
-  return mockContracts;
+// Get all contracts (real API)
+export async function getAllContracts(): Promise<ContractViewAllDto[]> {
+  const response = await api.get<ContractViewAllDto[]>("/Contracts");
+  return response.data;
 }
 
 // Get contract by ID
