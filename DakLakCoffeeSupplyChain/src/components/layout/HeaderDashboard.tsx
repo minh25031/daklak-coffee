@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useEffect, useState } from "react";
 import { FiBell, FiMail, FiSmile } from "react-icons/fi";
 import { Input } from "@/components/ui/input";
-import { roleRawToDisplayName } from "@/lib/constrant/role";
+import { roleRawToDisplayName } from "@/lib/constants/role";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { LogOut, User } from "lucide-react";
 
@@ -55,7 +55,7 @@ export default function HeaderDashboard() {
         userName ?? "U"
     )}&background=FD7622&color=fff`;
 
-  return (
+    return (
         <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
             {/* Title */}
             <h1 className="text-2xl font-bold text-gray-800">{currentTitle}</h1>

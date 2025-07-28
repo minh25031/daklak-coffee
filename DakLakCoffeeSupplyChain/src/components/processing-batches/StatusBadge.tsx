@@ -3,7 +3,7 @@ import React from "react";
 import {
   ProcessingStatusMap,
   ProcessingStatus,
-} from "@/lib/constrant/batchStatus";
+} from "@/lib/constants/batchStatus";
 
 interface StatusBadgeProps {
   status: number;

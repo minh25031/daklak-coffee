@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import {
   ProcurementPlanStatusMap,
   ProcurementPlanStatusValue,
-} from "@/lib/constrant/procurementPlanStatus";
+} from "@/lib/constants/procurementPlanStatus";
 import { cn, getErrorMessage } from "@/lib/utils";
 import {
   ProcurementPlan,
@@ -34,10 +34,10 @@ export default function BusinessProcurementPlansPage() {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-        const data = await getAllProcurementPlans().catch((error) => {
-          AppToast.error(getErrorMessage(error));
-          return [];
-        });
+      const data = await getAllProcurementPlans().catch((error) => {
+        AppToast.error(getErrorMessage(error));
+        return [];
+      });
       // console.log("Fetched Procurement Plans:", data);
       setProcurementPlans(data);
     };

@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { FarmingCommitmentItem } from "@/lib/api/farmingCommitments";
-import { FarmingCommitmentStatusMap, FarmingCommitmentStatusValue } from "@/lib/constrant/FarmingCommitmentStatu";
+import { FarmingCommitmentStatusMap, FarmingCommitmentStatusValue } from "@/lib/constants/FarmingCommitmentStatu";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -32,12 +32,12 @@ export default function FarmingCommitmentCard({
             commitment.status === 1
               ? "bg-green-100 text-green-700 border-green-500"
               : commitment.status === 2
-              ? "bg-gray-100 text-gray-700 border-gray-500"
-              : commitment.status === 3
-              ? "bg-rose-100 text-rose-700 border-rose-500"
-              : commitment.status === 0
-              ? "bg-blue-100 text-blue-700 border-blue-500"
-              : "bg-red-100 text-red-700 border-red-500"
+                ? "bg-gray-100 text-gray-700 border-gray-500"
+                : commitment.status === 3
+                  ? "bg-rose-100 text-rose-700 border-rose-500"
+                  : commitment.status === 0
+                    ? "bg-blue-100 text-blue-700 border-blue-500"
+                    : "bg-red-100 text-red-700 border-red-500"
           )}
         >
           {FarmingCommitmentStatusMap[commitment.status as FarmingCommitmentStatusValue]

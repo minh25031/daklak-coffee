@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { cn, getErrorMessage } from '@/lib/utils';
 import { FarmingCommitmentItem, getBusinessCommitments } from '@/lib/api/farmingCommitments';
 import { toast } from 'sonner';
-import { FarmingCommitmentStatusMap, FarmingCommitmentStatusValue } from '@/lib/constrant/FarmingCommitmentStatu';
+import { FarmingCommitmentStatusMap, FarmingCommitmentStatusValue } from '@/lib/constants/FarmingCommitmentStatu';
 import FilterStatusPanel from '@/components/ui/filterStatusPanel';
 import FarmingCommitmentCard from '@/components/farming-commitments/FarmingCommitmentCard';
 

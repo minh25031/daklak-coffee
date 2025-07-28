@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   ProcurementPlanStatusMap,
   ProcurementPlanStatusValue,
-} from "@/lib/constrant/procurementPlanStatus";
+} from "@/lib/constants/procurementPlanStatus";
 import Link from "next/link";
 
 export default function ProcurementPlanCard({
@@ -35,12 +35,12 @@ export default function ProcurementPlanCard({
             plan.status === "Open"
               ? "bg-green-100 text-green-700 border-green-500"
               : plan.status === "Closed"
-              ? "bg-gray-100 text-gray-700 border-gray-500"
-              : plan.status === "Cancelled"
-              ? "bg-rose-100 text-rose-700 border-rose-500"
-              : plan.status === "Draft"
-              ? "bg-blue-100 text-blue-700 border-blue-500"
-              : "bg-red-100 text-red-700 border-red-500"
+                ? "bg-gray-100 text-gray-700 border-gray-500"
+                : plan.status === "Cancelled"
+                  ? "bg-rose-100 text-rose-700 border-rose-500"
+                  : plan.status === "Draft"
+                    ? "bg-blue-100 text-blue-700 border-blue-500"
+                    : "bg-red-100 text-red-700 border-red-500"
           )}
         >
           {ProcurementPlanStatusMap[plan.status as ProcurementPlanStatusValue]

@@ -5,7 +5,7 @@ import FilterBadge from "./FilterBadge";
 import {
   ProcessingStatusMap,
   ProcessingStatus,
-} from "@/lib/constrant/batchStatus";
+} from "@/lib/constants/batchStatus";
 
 interface FilterStatusPanelProps {
   selectedStatus: number | null;

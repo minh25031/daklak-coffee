@@ -4,7 +4,7 @@ import { CropSeasonListItem as CropSeason } from '@/lib/api/cropSeasons';
 import { FaUser, FaTrashAlt, FaEdit, FaEye } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import StatusBadge from './StatusBadge';
-import { CropSeasonStatusMap } from '@/lib/constrant/cropSeasonStatus';
+import { CropSeasonStatusMap } from '@/lib/constants/cropSeasonStatus';
 import { toast } from 'sonner';
 import { deleteCropSeasonById } from '@/lib/api/cropSeasons';
 

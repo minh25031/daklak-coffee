@@ -1,5 +1,5 @@
 import { jwtDecode } from "jwt-decode";
-import { roleSlugMap } from "@/lib/constrant/role";
+import { roleSlugMap } from "@/lib/constants/role";
 import api from "./axios";
 
 export interface DecodedToken {

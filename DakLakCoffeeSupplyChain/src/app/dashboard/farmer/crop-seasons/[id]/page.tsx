@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Leaf } from 'lucide-react';
 import StatusBadge from '@/components/crop-seasons/StatusBadge';
-import { CropSeasonStatusMap } from '@/lib/constrant/cropSeasonStatus';
+import { CropSeasonStatusMap } from '@/lib/constants/cropSeasonStatus';
 import { useAuth } from '@/lib/hooks/useAuth';
 import CropSeasonDetailTable from '@/components/crop-seasons/CropSeasonDetailTable';
 
