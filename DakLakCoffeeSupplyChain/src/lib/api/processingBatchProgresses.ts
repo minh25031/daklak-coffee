@@ -1,6 +1,6 @@
 import api from "./axios";
 
-// Interface chuẩn
+// Dto chuẩn
 export interface ProcessingBatchProgress {
   progressId: string;
   batchId: string;
@@ -18,13 +18,7 @@ export interface ProcessingBatchProgress {
   createdAt: string;
   updatedAt: string;
 }
-export interface UpdateProgressDto {
-  progressDate: string; // yyyy-MM-dd
-  outputQuantity: number;
-  outputUnit: string;
-  photoUrl?: string | null;
-  videoUrl?: string | null;
-}
+
 export interface CreateProgressDto {
   progressDate: string;
   outputQuantity: number;
@@ -32,28 +26,43 @@ export interface CreateProgressDto {
   photoUrl?: string | null;
   videoUrl?: string | null;
 }
+
+export interface UpdateProgressDto extends Partial<CreateProgressDto> {}
+
+export interface CreateProgressWithMediaPayload {
+  progressDate: string;
+  outputQuantity: number;
+  outputUnit: string;
+  photoFile?: File;
+  videoFile?: File;
+}
+
+export interface AdvanceProgressWithMediaPayload {
+  progressDate: string;
+  outputQuantity: number;
+  outputUnit: string;
+  photoFile?: File;
+  videoFile?: File;
+}
 export async function getAllProcessingBatchProgresses(): Promise<ProcessingBatchProgress[]> {
   try {
     const res = await api.get("/ProcessingBatchsProgress");
     return res.data;
   } catch (err) {
-    console.error("Lỗi getAllProcessingBatchProgresses:", err);
+    console.error("❌ getAllProcessingBatchProgresses:", err);
     return [];
   }
 }
 
-//  Lấy tiến trình theo ID
 export async function getProcessingBatchProgressById(id: string): Promise<ProcessingBatchProgress | null> {
   try {
     const res = await api.get(`/ProcessingBatchsProgress/${id}`);
     return res.data;
   } catch (err) {
-    console.error(`Lỗi getProcessingBatchProgressById ${id}:`, err);
+    console.error("❌ getProcessingBatchProgressById:", err);
     return null;
   }
 }
-
-//  Tạo tiến trình mới thủ công (create bước đầu tiên)
 
 export async function createProcessingBatchProgress(
   batchId: string,
@@ -61,51 +70,69 @@ export async function createProcessingBatchProgress(
 ): Promise<void> {
   try {
     await api.post(`/ProcessingBatchsProgress/${batchId}`, payload);
-  } catch (error) {
-    console.error("❌ Lỗi tạo tiến trình:", error);
-    throw error;
-  }
-}
-
-
-//  Cập nhật nội dung tiến trình hiện tại (chỉnh sửa dữ liệu cũ)
-export async function updateProcessingBatchProgress(id: string, payload: Partial<ProcessingBatchProgress>) {
-  try {
-    const res = await api.patch(`/ProcessingBatchsProgress/${id}`, payload);
-    return res.data;
   } catch (err) {
-    console.error("Lỗi updateProcessingBatchProgress:", err);
+    console.error("❌ createProcessingBatchProgress:", err);
     throw err;
   }
 }
 
-//  Tiến sang bước tiếp theo từ tiến trình hiện tại (theo logic UpdateAsync bên backend)
-export const advanceToNextProcessingProgress = async (
+export async function updateProcessingBatchProgress(
+  id: string,
+  payload: UpdateProgressDto
+): Promise<void> {
+  try {
+    await api.patch(`/ProcessingBatchsProgress/${id}`, payload);
+  } catch (err) {
+    console.error("❌ updateProcessingBatchProgress:", err);
+    throw err;
+  }
+}
+
+export async function deleteProcessingBatchProgress(id: string): Promise<void> {
+  try {
+    await api.delete(`/ProcessingBatchsProgress/${id}`);
+  } catch (err) {
+    console.error("❌ deleteProcessingBatchProgress:", err);
+    throw err;
+  }
+}
+export async function createProcessingBatchProgressWithMedia(
   batchId: string,
-  payload: {
-    progressDate: string;
-    outputQuantity?: number;
-    outputUnit?: string;
-    photoUrl?: string | null;
-    videoUrl?: string | null;
-  }
-) => {
+  payload: CreateProgressWithMediaPayload
+): Promise<void> {
+  const formData = new FormData();
+  formData.append("progressDate", payload.progressDate);
+  formData.append("outputQuantity", payload.outputQuantity.toString());
+  formData.append("outputUnit", payload.outputUnit);
+  if (payload.photoFile) formData.append("photoFile", payload.photoFile);
+  if (payload.videoFile) formData.append("videoFile", payload.videoFile);
+
   try {
-    const { data } = await api.post(`/ProcessingBatchsProgress/${batchId}/advance`, payload);
-    return data;
+    await api.post(`/ProcessingBatchsProgress/${batchId}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
   } catch (err) {
-    console.error("Lỗi advanceToNextProcessingProgress:", err);
+    console.error("❌ createProcessingBatchProgressWithMedia:", err);
     throw err;
   }
-};
-
-//  Xóa mềm tiến trình
-export async function deleteProcessingBatchProgress(id: string) {
+}
+export async function advanceToNextProcessingProgress(
+  batchId: string,
+  payload: AdvanceProgressWithMediaPayload
+): Promise<void> {
+  const formData = new FormData();
+  formData.append("progressDate", payload.progressDate);
+  formData.append("outputQuantity", payload.outputQuantity.toString());
+  formData.append("outputUnit", payload.outputUnit);
+  if (payload.photoFile) formData.append("photoFile", payload.photoFile);
+  if (payload.videoFile) formData.append("videoFile", payload.videoFile);
   try {
-    const res = await api.delete(`/ProcessingBatchsProgress/${id}`);
-    return res.data;
+    await api.post(`/ProcessingBatchsProgress/${batchId}/advance`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    
   } catch (err) {
-    console.error("Lỗi deleteProcessingBatchProgress:", err);
+    console.error("❌ advanceToNextProcessingProgress:", err);
     throw err;
   }
 }
