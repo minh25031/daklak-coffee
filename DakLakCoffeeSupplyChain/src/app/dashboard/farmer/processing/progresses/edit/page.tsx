@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   getAllProcessingBatchProgresses,
   ProcessingBatchProgress,
-} from "@/lib/api/processingBatchProgresses";
+} from "@/lib/api/processingBatchProgress";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";

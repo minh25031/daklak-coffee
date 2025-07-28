@@ -6,7 +6,7 @@ import {
   getAllProcessingBatchProgresses,
   advanceToNextProcessingProgress,
   ProcessingBatchProgress,
-} from "@/lib/api/processingBatchProgresses";
+} from "@/lib/api/processingBatchProgress";
 import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
 import { ProcessingStatus } from "@/lib/constrant/batchStatus";
 import { Input } from "@/components/ui/input";

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
 import { ProcessingStatus } from "@/lib/constrant/batchStatus";
-import { createProcessingBatchProgressWithMedia } from "@/lib/api/processingBatchProgresses";
+import { createProcessingBatchProgressWithMedia } from "@/lib/api/processingBatchProgress";
 
 export default function CreateProcessingProgressPage() {
   const router = useRouter();
