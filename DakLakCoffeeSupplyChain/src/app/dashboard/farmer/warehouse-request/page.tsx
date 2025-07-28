@@ -1,158 +1,170 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { PackagePlus } from 'lucide-react';
-import { createWarehouseInboundRequest } from '@/lib/api/warehouseInboundRequest';
-import { getAllProcessingBatches, ProcessingBatch } from '@/lib/api/processingBatches';
+import { useEffect, useState } from "react";
+import {
+  getAllInboundRequestsForFarmer,
+  cancelInboundRequest
+} from "@/lib/api/warehouseInboundRequest";
+import { useRouter } from "next/navigation";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function FarmerWarehouseRequestPage() {
+export default function FarmerInboundRequestListPage() {
+  const [requests, setRequests] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const router = useRouter();
 
-  const [form, setForm] = useState({
-    requestedQuantity: '',
-    preferredDeliveryDate: '',
-    note: '',
-    batchId: '',
-  });
-
-  const [batches, setBatches] = useState<ProcessingBatch[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  useEffect(() => {
-    getAllProcessingBatches()
-      .then((data) => {
-        if (data) {
-          setBatches(data);
-        } else {
-          setBatches([]);
-        }
-      })
-      .catch((err) => alert('Không thể tải danh sách lô xử lý: ' + err.message));
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const { requestedQuantity, preferredDeliveryDate, note, batchId } = form;
-
-      if (!batchId) {
-        throw new Error('Bạn chưa chọn lô xử lý');
-      }
-
-      const message = await createWarehouseInboundRequest({
-        requestedQuantity: Number(requestedQuantity),
-        preferredDeliveryDate,
-        note,
-        batchId,
-      });
-
-      alert('✅ ' + message);
-      router.push('/dashboard/farmer');
-    } catch (err: any) {
-      alert('❌ Lỗi: ' + err.message);
-    } finally {
-      setLoading(false);
+  const fetchRequests = async () => {
+    const res = await getAllInboundRequestsForFarmer();
+    if (res.status === 1) {
+      setRequests(res.data);
+    } else {
+      alert("Lỗi tải danh sách: " + res.message);
     }
   };
 
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const handleCancel = async (id: string) => {
+    if (!confirm("Bạn có chắc muốn huỷ yêu cầu này không?")) return;
+    setLoadingId(id);
+    const res = await cancelInboundRequest(id);
+    alert(res.message);
+    await fetchRequests();
+    setLoadingId(null);
+  };
+
+  const filtered = requests.filter(r =>
+    r.requestCode.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
-    <div className="flex min-h-screen bg-orange-50 p-6 gap-6">
-      {/* Sidebar hỗ trợ */}
+    <div className="flex min-h-screen bg-gray-50 p-6 gap-6">
+      {/* Sidebar */}
       <aside className="w-64 space-y-4">
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
-          <h2 className="text-sm font-medium text-gray-700">Hướng dẫn</h2>
-          <p className="text-sm text-muted-foreground">
-            Điền đầy đủ thông tin để gửi yêu cầu nhập kho. Lô xử lý (Batch) là bắt buộc.
-          </p>
+          <h2 className="text-sm font-medium text-gray-700">Tìm kiếm yêu cầu</h2>
+          <div className="relative">
+            <Input
+              placeholder="Tìm theo mã yêu cầu..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pr-10"
+            />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          </div>
+          <Button
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+            onClick={() => router.push('/dashboard/farmer/warehouse-request/create')}
+          >
+            ➕ Gửi yêu cầu mới
+          </Button>
         </div>
       </aside>
 
       {/* Main content */}
       <main className="flex-1 space-y-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-bold text-center text-orange-700 flex items-center justify-center gap-2">
-            <PackagePlus className="w-5 h-5" />
-            Gửi yêu cầu nhập kho
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="requestedQuantity">Số lượng (kg)</Label>
-                <Input
-                  id="requestedQuantity"
-                  name="requestedQuantity"
-                  type="number"
-                  min={1}
-                  value={form.requestedQuantity}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="preferredDeliveryDate">Ngày giao dự kiến</Label>
-                <Input
-                  id="preferredDeliveryDate"
-                  name="preferredDeliveryDate"
-                  type="date"
-                  value={form.preferredDeliveryDate}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <Label htmlFor="note">Ghi chú</Label>
-                <Input
-                  id="note"
-                  name="note"
-                  placeholder="Thông tin thêm (không bắt buộc)"
-                  value={form.note}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <Label htmlFor="batchId">Chọn lô xử lý</Label>
-                <select
-                  id="batchId"
-                  name="batchId"
-                  value={form.batchId}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-md border px-3 py-2"
+        <Card>
+          <CardHeader>
+            <CardTitle>Danh sách yêu cầu nhập kho</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {paged.length === 0 ? (
+              <p className="text-sm text-gray-500">Không tìm thấy yêu cầu nào.</p>
+            ) : (
+              paged.map((req) => (
+                <div
+                  key={req.inboundRequestId}
+                  className="flex justify-between items-center p-3 border rounded-md"
                 >
-                  <option value="">-- Chọn lô --</option>
-                  {batches.map((b) => (
-                    <option key={b.batchId} value={b.batchId}>
-                      {b.batchCode} ({b.status})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                  <div>
+                    <p className="font-semibold">Mã: {req.requestCode}</p>
+                    <p>Ngày tạo: {new Date(req.createdAt).toLocaleDateString()}</p>
+                    <p>Số lượng: {req.requestedQuantity} kg</p>
+                  </div>
 
+                  <Badge
+                    className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${req.status === "Approved"
+                      ? "bg-green-100 text-green-800"
+                      : req.status === "Rejected"
+                      ? "bg-red-100 text-red-800"
+                      : req.status === "Cancelled"
+                      ? "bg-gray-300 text-gray-600"
+                      : "bg-gray-100 text-gray-800"
+                      }`}
+                  >
+                    {req.status}
+                  </Badge>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push(`/dashboard/farmer/warehouse-request/${req.inboundRequestId}`)}
+                    >
+                      Xem chi tiết
+                    </Button>
+                    {req.status === "Pending" && (
+                      <Button
+                        variant="destructive"
+                        disabled={loadingId === req.inboundRequestId}
+                        onClick={() => handleCancel(req.inboundRequestId)}
+                      >
+                        Huỷ
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pagination */}
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">
+            Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} trong {filtered.length} yêu cầu
+          </span>
+          <div className="flex items-center gap-2">
             <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium"
+              variant="outline"
+              size="icon"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             >
-              {loading ? 'Đang gửi...' : 'Gửi yêu cầu'}
+              <ChevronLeft className="w-4 h-4" />
             </Button>
-          </form>
+            {[...Array(totalPages).keys()].map((_, i) => {
+              const page = i + 1;
+              return (
+                <Button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`rounded-md px-3 py-1 text-sm ${page === currentPage ? 'bg-black text-white' : 'bg-white text-black border'}`}
+                >
+                  {page}
+                </Button>
+              );
+            })}
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </main>
     </div>
