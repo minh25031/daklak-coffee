@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getBusinessStaffById, BusinessStaffListDto } from "@/lib/api/businessStaffs";
+import { getBusinessStaffById } from "@/lib/api/businessStaffs";
+import { getWarehouseById } from "@/lib/api/warehouses"; // ✅ import API lấy chi tiết kho
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-// Dùng đúng DTO backend cung cấp
 interface BusinessStaffDetailDto {
   staffId: string;
   staffCode: string;
@@ -24,30 +24,41 @@ export default function BusinessStaffDetailPage() {
   const router = useRouter();
   const { id } = useParams();
   const [staff, setStaff] = useState<BusinessStaffDetailDto | null>(null);
+  const [warehouseName, setWarehouseName] = useState<string>(""); // ✅ state để hiển thị tên kho
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  async function fetchDetail() {
-    try {
-      const data = await getBusinessStaffById(id as string);
-      if (data) {
-        setStaff(data); // ✅ Không cần .data
-      } else {
-        toast.error("Không tìm thấy nhân viên.");
+    async function fetchDetail() {
+      try {
+        const data = await getBusinessStaffById(id as string);
+        if (data) {
+          setStaff(data);
+
+          // Nếu có assignedWarehouseId thì lấy thêm tên kho
+          if (data.assignedWarehouseId) {
+            const warehouseRes = await getWarehouseById(data.assignedWarehouseId);
+            if (warehouseRes.status === 1 && warehouseRes.data?.name) {
+              setWarehouseName(warehouseRes.data.name);
+            } else {
+              setWarehouseName("Không xác định");
+            }
+          } else {
+            setWarehouseName("Chưa gán");
+          }
+        } else {
+          toast.error("Không tìm thấy nhân viên.");
+        }
+      } catch (err) {
+        toast.error("Lỗi khi tải dữ liệu nhân viên.");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      toast.error("Lỗi khi tải dữ liệu nhân viên.");
-    } finally {
-      setLoading(false);
     }
-  }
 
-  if (id) fetchDetail();
-}, [id]);
-
+    if (id) fetchDetail();
+  }, [id]);
 
   if (loading) return <p className="text-gray-500">Đang tải thông tin nhân viên...</p>;
-
   if (!staff) return <p className="text-red-500">Không có dữ liệu.</p>;
 
   return (
@@ -59,13 +70,11 @@ export default function BusinessStaffDetailPage() {
       <div><strong>Số điện thoại:</strong> {staff.phoneNumber || "Không có"}</div>
       <div><strong>Phòng ban:</strong> {staff.department}</div>
       <div><strong>Vị trí:</strong> {staff.position}</div>
-      <div><strong>Kho phụ trách:</strong> {staff.assignedWarehouseId || "Chưa gán"}</div>
+      <div><strong>Kho phụ trách:</strong> {warehouseName}</div>
       <div><strong>Ngày tạo:</strong> {new Date(staff.createdAt).toLocaleString("vi-VN")}</div>
 
       <div className="flex gap-2 pt-4 justify-end">
-        <Button variant="outline" onClick={() => router.back()}>
-          Quay lại
-        </Button>
+        <Button variant="outline" onClick={() => router.back()}>Quay lại</Button>
         <Button onClick={() => router.push(`/dashboard/manager/business-staffs/${staff.staffId}/edit`)}>
           Chỉnh sửa
         </Button>

@@ -83,3 +83,31 @@ export async function rejectInboundRequest(id: string) {
   });
   return await res.json();
 }
+export async function cancelInboundRequest(id: string) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${ENDPOINT}/${id}/cancel`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await res.json();
+}
+export async function getAllInboundRequestsForFarmer() {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${ENDPOINT}/farmer`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await res.json();
+}
+export async function getInboundRequestDetailForFarmer(id: string) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${ENDPOINT}/farmer/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await res.json();
+}

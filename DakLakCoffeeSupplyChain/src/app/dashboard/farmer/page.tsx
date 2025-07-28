@@ -163,7 +163,7 @@ export default function FarmerDashboard() {
                         <ActionCard
                             icon={<FiPackage className="text-orange-500 text-xl" />}
                             title="Gửi yêu cầu nhập kho"
-                            description="Tạo yêu cầu nhập hàng từ nông trại vào kho."
+                            description="Danh sách yêu cầu nhập kho."
                             href="/dashboard/farmer/warehouse-request"
                         />
                     </div>
