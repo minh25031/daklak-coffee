@@ -9,6 +9,9 @@ export interface ProcessingProgress {
   startedAt?: string;
   endedAt?: string;
   note?: string;
+  photoUrl?: string | null;
+  videoUrl?: string | null;
+  updatedByName: string;
 }
 
 export interface ProcessingProduct {

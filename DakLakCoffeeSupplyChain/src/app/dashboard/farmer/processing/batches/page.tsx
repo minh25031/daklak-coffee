@@ -27,7 +27,7 @@ export default function Batches() {
     if (result) {
       setBatches(result);
     } else {
-      setBatches([]); // fallback to empty array if result is null
+      setBatches([]); 
     }
     setLoading(false);
   };

@@ -26,6 +26,32 @@ export default function ViewProcessingBatch() {
     fetchBatch();
   }, [id]);
 
+  // Format số có dấu phẩy: 1,000
+  const formatNumber = (value: number | string | undefined) => {
+    const number = Number(value);
+    return isNaN(number)
+      ? "-"
+      : new Intl.NumberFormat("vi-VN").format(number);
+  };
+const formatWeight = (kg: number | string | undefined): string => {
+  const number = Number(kg);
+  if (isNaN(number)) return "-";
+
+  if (number >= 1000) {
+    return `${(number / 1000).toFixed(2)} tấn`;
+  } else if (number >= 100) {
+    return `${(number / 100).toFixed(1)} tạ`;
+  } else {
+    return `${new Intl.NumberFormat("vi-VN").format(number)} kg`;
+  }
+};
+  // Tính tổng khối lượng ra từ progresses
+  const totalOutputQuantity =
+    batch?.progresses?.reduce((sum, progress) => {
+      const quantity = Number(progress.outputQuantity?.toString().replace(/[^\d.]/g, ""));
+      return sum + (isNaN(quantity) ? 0 : quantity);
+    }, 0) || 0;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
@@ -43,7 +69,7 @@ export default function ViewProcessingBatch() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-white shadow-md rounded-lg p-6 space-y-6">
+    <div className="max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6 space-y-6">
       <h1 className="text-xl font-semibold text-gray-800">
         Chi tiết lô sơ chế
       </h1>
@@ -76,11 +102,12 @@ export default function ViewProcessingBatch() {
         </div>
         <div>
           <span className="font-medium text-gray-600">Khối lượng vào:</span>{" "}
-          {batch.inputQuantity} {batch.inputUnit}
+          {formatNumber(batch.inputQuantity)} {batch.inputUnit}
         </div>
         <div>
           <span className="font-medium text-gray-600">Khối lượng ra:</span>{" "}
-          {batch.totalOutputQuantity} {batch.inputUnit}
+            {formatWeight(totalOutputQuantity)}
+          
         </div>
         <div>
           <span className="font-medium text-gray-600">Ngày tạo:</span>{" "}
@@ -94,27 +121,54 @@ export default function ViewProcessingBatch() {
           Tiến độ sơ chế
         </h2>
         {batch.progresses && batch.progresses.length > 0 ? (
-          <table className="w-full text-sm table-auto border">
-            <thead className="bg-gray-100 text-gray-700 font-medium">
-              <tr>
-                <th className="px-3 py-2 text-left">Tên giai đoạn</th>
-                <th className="px-3 py-2 text-left">Chi tiết giai đoạn</th>
-                <th className="px-3 py-2 text-left">Khối lượng đầu ra</th>
-                <th className="px-3 py-2 text-left">Người cập nhật</th>
-              </tr>
-            </thead>
-            <tbody>
-              {batch.progresses.map((progress, idx) => (
-                <tr key={idx} className="border-t">
-                  <td className="px-3 py-2">{progress.stageName}</td>
-                  <td className="px-3 py-2">{progress.stageDescription}</td>
-                  <td className="px-3 py-2">
-                    {progress.outputQuantity} {progress.outputUnit}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm table-auto border">
+              <thead className="bg-gray-100 text-gray-700 font-medium">
+                <tr>
+                  <th className="px-3 py-2 text-left">Tên giai đoạn</th>
+                  <th className="px-3 py-2 text-left">Chi tiết giai đoạn</th>
+                  <th className="px-3 py-2 text-left">Khối lượng đầu ra</th>
+                  <th className="px-3 py-2 text-left">Người cập nhật</th>
+                  <th className="px-3 py-2 text-left">Ảnh</th>
+                  <th className="px-3 py-2 text-left">Video</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {batch.progresses.map((progress, idx) => (
+                  <tr key={idx} className="border-t">
+                    <td className="px-3 py-2">{progress.stageName}</td>
+                    <td className="px-3 py-2">{progress.stageDescription}</td>
+                    <td className="px-3 py-2">
+                      {formatWeight(progress.outputQuantity)}{" "}
+                      
+                    </td>
+                    <td className="px-3 py-2">{progress.updatedByName}</td>
+                    <td className="px-3 py-2">
+                      {progress.photoUrl ? (
+                        <img
+                          src={progress.photoUrl}
+                          alt="Ảnh tiến độ"
+                          className="h-14 w-auto rounded shadow"
+                        />
+                      ) : (
+                        <span className="text-gray-400 italic">-</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {progress.videoUrl ? (
+                        <video controls className="h-16 w-auto">
+                          <source src={progress.videoUrl} />
+                          Trình duyệt không hỗ trợ video.
+                        </video>
+                      ) : (
+                        <span className="text-gray-400 italic">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="text-sm text-gray-500 italic">
             Chưa có tiến độ nào
@@ -138,7 +192,7 @@ export default function ViewProcessingBatch() {
               {batch.products.map((product, idx) => (
                 <tr key={idx} className="border-t">
                   <td className="px-3 py-2">{product.name}</td>
-                  <td className="px-3 py-2">{product.quantity}</td>
+                  <td className="px-3 py-2">{formatNumber(product.quantity)}</td>
                   <td className="px-3 py-2">{product.unit}</td>
                 </tr>
               ))}
