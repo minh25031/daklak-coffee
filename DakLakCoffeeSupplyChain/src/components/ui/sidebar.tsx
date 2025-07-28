@@ -134,6 +134,11 @@ export function SidebarGroup() {
         icon: iconMap.crops,
       },
       {
+        title: "Giai đoạn mùa vụ",
+        href: "/dashboard/farmer/crop-stages",
+        icon: iconMap.crops,
+      },
+      {
         title: "Tư vấn",
         href: "/dashboard/farmer/request-feedback",
         icon: iconMap.feedback,

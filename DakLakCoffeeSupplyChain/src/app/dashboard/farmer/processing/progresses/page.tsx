@@ -8,7 +8,7 @@ import {
   ProcessingBatchProgress,
 } from "@/lib/api/processingBatchProgress";
 import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
-import { ProcessingStatus } from "@/lib/constrant/batchStatus";
+import { ProcessingStatus } from "@/lib/constants/batchStatus";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {

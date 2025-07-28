@@ -12,7 +12,7 @@ import { FiEdit, FiTrash2 } from "react-icons/fi";
 import { Separator } from "@/components/ui/separator";
 import { Package } from "lucide-react";
 import StatusBadge from "@/components/crop-seasons/StatusBadge";
-import { ProcurementPlanStatusMap } from "@/lib/constrant/procurementPlanStatus";
+import { ProcurementPlanStatusMap } from "@/lib/constants/procurementPlanStatus";
 import {
   Accordion,
   AccordionItem,
@@ -133,7 +133,7 @@ export default function ProcurementPlanDetailPage() {
           </CardHeader>
           <CardContent>
             {Array.isArray(plan.procurementPlansDetails) &&
-            plan.procurementPlansDetails.length > 0 ? (
+              plan.procurementPlansDetails.length > 0 ? (
               <Accordion type='multiple' className='w-full'>
                 {plan.procurementPlansDetails.map((detail) => (
                   <AccordionItem

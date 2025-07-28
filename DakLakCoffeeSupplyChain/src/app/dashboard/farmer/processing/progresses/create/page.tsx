@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
-import { ProcessingStatus } from "@/lib/constrant/batchStatus";
+import { ProcessingStatus } from "@/lib/constants/batchStatus";
 import { createProcessingBatchProgressWithMedia } from "@/lib/api/processingBatchProgress";
 
 export default function CreateProcessingProgressPage() {

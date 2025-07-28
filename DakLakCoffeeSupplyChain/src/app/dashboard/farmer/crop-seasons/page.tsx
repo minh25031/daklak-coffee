@@ -8,7 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { CropSeasonStatusValue } from "@/lib/constrant/cropSeasonStatus";
+import { CropSeasonStatusValue } from "@/lib/constants/cropSeasonStatus";
 import { cn } from "@/lib/utils";
 import CropSeasonCard from "@/components/crop-seasons/CropSeasonCard";
 import FilterStatusPanel from "@/components/crop-seasons/FilterStatusPanel";

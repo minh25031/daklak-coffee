@@ -11,7 +11,7 @@ import {
   CropSeasonDetailStatusValue,
   CropSeasonDetailStatusNumberToValue,
   CropSeasonDetailStatusValueToNumber,
-} from "@/lib/constrant/cropSeasonDetailStatus";
+} from "@/lib/constants/cropSeasonDetailStatus";
 import {
   getCropSeasonDetailById,
   updateCropSeasonDetail,

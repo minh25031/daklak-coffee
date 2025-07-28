@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { DEFAULT_ERROR_MESSAGE } from "./constrant/httpErrors";
+import { DEFAULT_ERROR_MESSAGE } from "./constants/httpErrors";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

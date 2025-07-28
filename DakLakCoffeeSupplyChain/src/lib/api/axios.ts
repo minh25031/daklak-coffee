@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
-import { HTTP_ERROR_MESSAGES } from "../constrant/httpErrors";
+import { HTTP_ERROR_MESSAGES } from "../constants/httpErrors";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
