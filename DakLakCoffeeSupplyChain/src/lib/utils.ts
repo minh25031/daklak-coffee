@@ -25,3 +25,20 @@ export function getErrorMessage(error: unknown): string {
   // Trường hợp không rõ: fallback mặc định
   return DEFAULT_ERROR_MESSAGE;
 }
+
+// Hàm này format date thành "DD-MM-YYYY" và trả về "Chưa xác định" nếu api date là null
+export function formatDate(dateStr: string | Date | undefined) {
+  if (!dateStr) return "Chưa xác định";
+  // Nếu trả về kiểu số (timestamp) thì xử lý lại cho phù hợp
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime()) || d.getFullYear() === 1970) return "Chưa xác định";
+    // Lấy ngày/tháng/năm, pad số 0
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch {
+    return "Chưa xác định";
+  }
+}

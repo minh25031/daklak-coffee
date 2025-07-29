@@ -1,4 +1,4 @@
-export type ProcurementPlanStatusValue = 'Draft' | 'Open' | 'Closed' | 'Cancelled' | 'Delete';
+export type ProcurementPlanStatusValue = 'Draft' | 'Open' | 'Closed' | 'Cancelled';
 
 export const ProcurementPlanStatusMap: Record<ProcurementPlanStatusValue, {
   label: string;
@@ -24,10 +24,5 @@ export const ProcurementPlanStatusMap: Record<ProcurementPlanStatusValue, {
     label: 'Đã hủy',
     color: 'red',
     icon: 'Đ'
-  },
-  Delete: {
-    label: 'Đã xóa',
-    color: 'red',
-    icon: 'X'
   }
 };
