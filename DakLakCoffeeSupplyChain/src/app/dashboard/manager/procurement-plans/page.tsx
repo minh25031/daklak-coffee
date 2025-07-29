@@ -11,18 +11,28 @@ import {
 import { cn, getErrorMessage } from "@/lib/utils";
 import {
   ProcurementPlan,
+  deleteProcurementPlan,
   getAllProcurementPlans,
+  updateProcurementPlanStatus,
 } from "@/lib/api/procurementPlans";
 import ProcurementPlanCard from "@/components/procurement-plan/ProcurementPlanCard";
 import FilterStatusPanel from "@/components/ui/filterStatusPanel";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { AppToast } from "@/components/ui/AppToast";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 
 export default function BusinessProcurementPlansPage() {
   const [procurementPlans, setProcurementPlans] = useState<ProcurementPlan[]>(
     []
   );
+  const [dialogType, setDialogType] = useState<
+    "cancel" | "delete" | "open" | "closed" | null
+  >(null);
+  const [selectedPlan, setSelectedPlan] = useState<ProcurementPlan | null>(
+    null
+  );
+  const [loadingConfirm, setLoadingConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] =
@@ -32,18 +42,125 @@ export default function BusinessProcurementPlansPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      const data = await getAllProcurementPlans().catch((error) => {
-        AppToast.error(getErrorMessage(error));
-        return [];
-      });
-      // console.log("Fetched Procurement Plans:", data);
-      setProcurementPlans(data);
-    };
     fetchData();
     setIsLoading(false);
   }, []);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    const data = await getAllProcurementPlans().catch((error) => {
+      AppToast.error(getErrorMessage(error));
+      return [];
+    });
+    //console.log("Fetched Procurement Plans:", data);
+    setProcurementPlans(data);
+  };
+
+  async function handleOpenRegister(planId?: string) {
+    if (!planId) return;
+    try {
+      setLoadingConfirm(true);
+      const updatedPlan = await updateProcurementPlanStatus(planId, {
+        status: 0,
+      });
+      if (updatedPlan) {
+        setProcurementPlans((prev) =>
+          prev.map((p) => (p.planId === planId ? updatedPlan : p))
+        );
+        closeDialog();
+        AppToast.success("Kế hoạch đã được mở đăng ký thành công");
+      }
+    } catch (error) {
+      AppToast.error(getErrorMessage(error));
+    } finally {
+      setLoadingConfirm(false);
+    }
+  }
+
+  async function handleClose(planId?: string) {
+    if (!planId) return;
+    try {
+      setLoadingConfirm(true);
+      const updatedPlan = await updateProcurementPlanStatus(planId, {
+        status: 1,
+      });
+      if (updatedPlan) {
+        setProcurementPlans((prev) =>
+          prev.map((p) => (p.planId === planId ? updatedPlan : p))
+        );
+        closeDialog();
+        AppToast.success("Kế hoạch đã được kết thúc đăng ký thành công");
+      }
+    } catch (error) {
+      AppToast.error(getErrorMessage(error));
+    } finally {
+      setLoadingConfirm(false);
+    }
+  }
+
+  async function handleDelete(planId?: string) {
+    if (!planId) return;
+    try {
+      setLoadingConfirm(true);
+      const updatedPlan = await deleteProcurementPlan(planId);
+      if (updatedPlan) {
+        await fetchData();
+        closeDialog();
+        AppToast.success("Kế hoạch đã được xóa thành công");
+        setIsLoading(false);
+      }
+    } catch (error) {
+      AppToast.error(getErrorMessage(error));
+    } finally {
+      setLoadingConfirm(false);
+    }
+  }
+
+  async function handleCancel(planId?: string) {
+    if (!planId) return;
+    try {
+      setLoadingConfirm(true);
+      const updatedPlan = await updateProcurementPlanStatus(planId, {
+        status: 2,
+      });
+      if (updatedPlan) {
+        setProcurementPlans((prev) =>
+          prev.map((p) => (p.planId === planId ? updatedPlan : p))
+        );
+        closeDialog();
+        AppToast.success("Kế hoạch đã được hủy thành công");
+      }
+    } catch (error) {
+      AppToast.error(getErrorMessage(error));
+    } finally {
+      setLoadingConfirm(false);
+    }
+  }
+
+  function openCancelDialog(plan: ProcurementPlan) {
+    setSelectedPlan(plan);
+    setDialogType("cancel");
+  }
+
+  function openOpenRegisterDialog(plan: ProcurementPlan) {
+    setSelectedPlan(plan);
+    setDialogType("open");
+  }
+
+  function openClosedRegisterDialog(plan: ProcurementPlan) {
+    setSelectedPlan(plan);
+    setDialogType("closed");
+  }
+
+  function openDeleteDialog(plan: ProcurementPlan) {
+    setSelectedPlan(plan);
+    setDialogType("delete");
+  }
+
+  function closeDialog() {
+    setDialogType(null);
+    setSelectedPlan(null);
+  }
 
   const filteredPlans = procurementPlans.filter(
     (plan) =>
@@ -70,7 +187,6 @@ export default function BusinessProcurementPlansPage() {
       Closed: 0,
       Draft: 0,
       Cancelled: 0,
-      Delete: 0,
     }
   );
 
@@ -132,7 +248,7 @@ export default function BusinessProcurementPlansPage() {
                 <tr>
                   <th className='px-4 py-3 text-left'>Tên kế hoạch</th>
                   <th className='px-4 py-3 text-left'>Tổng sản lượng</th>
-                  <th className='px-4 py-3 text-left'>Tỷ lệ hoàn thành</th>
+                  <th className='px-4 py-3 text-left'>Tỷ lệ sản lượng đã được đăng ký</th>
                   <th className='px-4 py-3 text-left'>Trạng thái</th>
                   <th className='px-4 py-3 text-left'>
                     Ngày bắt đầu – kết thúc mở đơn
@@ -142,29 +258,97 @@ export default function BusinessProcurementPlansPage() {
               </thead>
               <tbody>
                 {pagedPlans.map((plan) => (
-                  <ProcurementPlanCard key={plan.planId} plan={plan} />
+                  <ProcurementPlanCard
+                    key={plan.planId}
+                    plan={plan}
+                    openOpenRegisterDialog={() => openOpenRegisterDialog(plan)}
+                    openCancelDialog={() => openCancelDialog(plan)}
+                    openDeleteDialog={() => openDeleteDialog(plan)}
+                    openClosedRegisterDialog={() =>
+                      openClosedRegisterDialog(plan)
+                    }
+                  />
                 ))}
               </tbody>
             </table>
           )}
         </div>
 
+        <ConfirmDialog
+          open={dialogType !== null}
+          onOpenChange={(open) => !open && closeDialog()}
+          title={
+            dialogType === "open"
+              ? "Xác nhận mở quá trình nhận đơn đăng ký kế hoạch"
+              : dialogType === "closed"
+              ? "Xác nhận kết thúc quá trình nhận đơn đăng ký kế hoạch"
+              : dialogType === "cancel"
+              ? "Xác nhận hủy kế hoạch"
+              : dialogType === "delete"
+              ? "Xác nhận xóa kế hoạch"
+              : ""
+          }
+          description={
+            dialogType === "open" ? (
+              <>
+              Bạn có chắc chắn muốn mở quá trình nhận đơn đăng ký kế hoạch <b>{selectedPlan?.title}</b>?
+              <br /> Kế hoạch sau khi được mở sẽ tự cập nhật lại thời gian mở đơn đăng ký và sẽ được hiển thị trên sàn thu mua cà phê. Nông hộ sẽ có thể đăng ký kế hoạch này.
+              </>
+            ) : dialogType === "closed" ? (
+              <>
+              Bạn có chắc chắn muốn kết thúc quá trình nhận đơn đăng ký kế hoạch <b>{selectedPlan?.title}</b>?
+              <br /> Kế hoạch sau khi kết thúc sẽ tự cập nhật lại thời gian kết thúc đơn đăng ký. Sau khi kết thúc, kế hoạch sẽ không còn hiển thị trên sàn thu mua cà phê và cũng không thể mở lại. Các cam kết đã được duyệt vẫn sẽ hoạt động bình thường.
+              <br />
+              <br />
+              <b>Lưu ý:</b> kế hoạch có thể tự kết thúc sau khi đã đạt đủ sản lượng dựa trên các cam kết đã được duyệt từ hai phía.
+              </>
+            ) : dialogType === "cancel" ? (
+              <>
+                Bạn có chắc chắn muốn hủy kế hoạch <b>{selectedPlan?.title}</b>?
+                <br />
+                Sau khi hủy, kế hoạch sẽ không còn hoạt động và bị gỡ khỏi sàn
+                thu mua cà phê. Các nông hộ sẽ không thể đăng ký kế hoạch này được nữa. Kế hoạch cũng sẽ không thể mở lại được nữa.
+              </>
+            ) : dialogType === "delete" ? (
+              <>
+              Bạn có chắc chắn muốn xóa kế hoạch <b>{selectedPlan?.title}</b>?<br /> Hành động này không thể hoàn tác.
+              </>
+            ) : (
+              ""
+            )
+          }
+          confirmText='Xác nhận'
+          cancelText='Hủy'
+          loading={loadingConfirm}
+          onConfirm={() => {
+            if (dialogType === "open") {
+              handleOpenRegister(selectedPlan?.planId);
+            } else if (dialogType === "closed") {
+              handleClose(selectedPlan?.planId);
+            } else if (dialogType === "cancel") {
+              handleCancel(selectedPlan?.planId);
+            } else if (dialogType === "delete") {
+              handleDelete(selectedPlan?.planId);
+            }
+          }}
+        />
+
         {/* Pagination */}
         {!isLoading && totalPages > 1 && (
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">
+          <div className='flex justify-between items-center'>
+            <span className='text-sm text-muted-foreground'>
               Hiển thị {(currentPage - 1) * pageSize + 1}–
               {Math.min(currentPage * pageSize, filteredPlans.length)} trong{" "}
               {filteredPlans.length} kế hoạch
             </span>
-            <div className="flex items-center gap-2">
+            <div className='flex items-center gap-2'>
               <Button
-                variant="outline"
-                size="icon"
+                variant='outline'
+                size='icon'
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className='w-4 h-4' />
               </Button>
               {[...Array(totalPages).keys()].map((_, i) => {
                 const page = i + 1;
@@ -184,14 +368,14 @@ export default function BusinessProcurementPlansPage() {
                 );
               })}
               <Button
-                variant="outline"
-                size="icon"
+                variant='outline'
+                size='icon'
                 disabled={currentPage === totalPages}
                 onClick={() =>
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className='w-4 h-4' />
               </Button>
             </div>
           </div>

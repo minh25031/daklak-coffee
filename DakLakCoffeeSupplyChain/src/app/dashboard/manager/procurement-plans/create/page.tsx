@@ -153,7 +153,7 @@ export default function CreateProcurementPlanPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const requiredFields = ["title", "startDate", "endDate"];
+    const requiredFields = ["title", "description"];
     const missing = requiredFields.filter(
       (field) => !form[field as keyof typeof form]
     );
@@ -359,7 +359,7 @@ export default function CreateProcurementPlanPage() {
 
                 <div>
                   <Label htmlFor={`minimumRegistrationQuantity-${index}`}>
-                    Số lượng đăng ký tối thiểu
+                    Số lượng đăng ký tối thiểu (kg)
                   </Label>
                   <Input
                     id={`minimumRegistrationQuantity-${index}`}
