@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
     Dialog,
     DialogTrigger,
@@ -12,15 +13,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
     Select,
-    SelectContent,
-    SelectItem,
     SelectTrigger,
     SelectValue,
+    SelectContent,
+    SelectItem,
 } from "@/components/ui/select";
-import { useEffect, useState } from "react";
+
 import { AppToast } from "@/components/ui/AppToast";
 import { createCropProgress } from "@/lib/api/cropProgress";
-import { CropStage, getCropStages } from "@/lib/api/cropStage";
+import { getCropStages, CropStage } from "@/lib/api/cropStage";
 
 interface Props {
     detailId: string;
@@ -33,15 +34,10 @@ export function CreateProgressDialog({ detailId, onSuccess }: Props) {
     const [stageId, setStageId] = useState<number | null>(null);
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [farmerId, setFarmerId] = useState<string | null>(null);
 
     const selectedStage = stageOptions.find((s) => s.stageId === stageId);
 
     useEffect(() => {
-        const farmerId = localStorage.getItem("farmer_id");
-        console.log("👤 Farmer ID:", farmerId);
-        setFarmerId(farmerId);
-
         const fetchStages = async () => {
             try {
                 const stages = await getCropStages();
@@ -58,14 +54,14 @@ export function CreateProgressDialog({ detailId, onSuccess }: Props) {
     }, []);
 
     const handleSubmit = async () => {
+        if (!stageId || !selectedStage) {
+            AppToast.error("Vui lòng chọn giai đoạn hợp lệ.");
+            return;
+        }
+
+        setLoading(true);
+
         try {
-            setLoading(true);
-
-            if (!stageId || !selectedStage || !farmerId) {
-                AppToast.error("Vui lòng chọn giai đoạn hợp lệ và đảm bảo đã đăng nhập.");
-                return;
-            }
-
             const today = new Date();
             const progressDate = today.toISOString().split("T")[0];
 
@@ -76,12 +72,9 @@ export function CreateProgressDialog({ detailId, onSuccess }: Props) {
                 stepIndex: selectedStage.orderIndex,
                 progressDate,
                 note,
-                updatedBy: farmerId,
                 photoUrl: "",
                 videoUrl: ""
             };
-
-            console.log("📦 Payload gửi lên:", payload);
 
             await createCropProgress(payload);
 
@@ -152,14 +145,8 @@ export function CreateProgressDialog({ detailId, onSuccess }: Props) {
                         />
                     </div>
 
-                    {!farmerId && (
-                        <p className="text-sm text-red-500">
-                            ⚠️ Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.
-                        </p>
-                    )}
-
                     <div className="flex justify-end">
-                        <Button type="submit" disabled={loading || !stageId || !farmerId}>
+                        <Button type="submit" disabled={loading || !stageId}>
                             {loading ? "Đang lưu..." : "Lưu"}
                         </Button>
                     </div>

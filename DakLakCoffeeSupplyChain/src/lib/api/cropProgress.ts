@@ -37,7 +37,6 @@ export async function createCropProgress(data: {
   stepIndex: number;
   progressDate: string;
   note: string;
-  updatedBy: string;
   photoUrl?: string;
   videoUrl?: string;
 }): Promise<CropProgress> {

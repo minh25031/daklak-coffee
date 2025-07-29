@@ -207,7 +207,6 @@ export async function softDeleteUser(id: string) {
 }
 
 export async function getAllRoles(): Promise<RoleItem[]> {
-  // Nếu dùng biến môi trường, có thể thay bằng `${api.defaults.baseURL}/Roles`
   const res = await api.get("/Roles");
   return res.data;
 }
