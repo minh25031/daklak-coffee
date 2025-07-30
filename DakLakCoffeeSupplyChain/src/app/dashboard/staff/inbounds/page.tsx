@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
-import { getAllInboundRequests } from "@/lib/api/warehouseInboundRequest";
 import { useRouter } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { getAllInboundRequests } from "@/lib/api/warehouseInboundRequest";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
+import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import Link from "next/link";
 
 export default function InboundRequestListPage() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -19,16 +19,20 @@ export default function InboundRequestListPage() {
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchData() {
-      const res = await getAllInboundRequests();
-      if (res.status === 1) {
-        setRequests(res.data);
-      } else {
-        alert("Lỗi: " + res.message);
+    async function fetchRequests() {
+      try {
+        const res = await getAllInboundRequests();
+        if (res.status === 1) {
+          setRequests(res.data);
+        } else {
+          toast.error("Không thể tải danh sách yêu cầu.");
+        }
+      } catch (err) {
+        toast.error("Lỗi khi tải dữ liệu.");
       }
     }
 
-    fetchData();
+    fetchRequests();
   }, []);
 
   const filteredRequests = requests.filter((req) =>
@@ -39,61 +43,74 @@ export default function InboundRequestListPage() {
   const pagedRequests = filteredRequests.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <div className="flex min-h-screen bg-gray-50 p-6 gap-6">
-      {/* Sidebar */}
-      <aside className="w-64 space-y-4">
-        <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
-          <h2 className="text-sm font-medium text-gray-700">Tìm kiếm yêu cầu nhập kho</h2>
-          <div className="relative">
-            <Input
-              placeholder="Tìm kiếm..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pr-10"
-            />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          </div>
+    <Card className="p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-bold">Danh sách yêu cầu nhập kho</h1>
+        <div className="relative w-64">
+          <Input
+            placeholder="Tìm mã yêu cầu..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="pr-10"
+          />
+          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         </div>
-      </aside>
+      </div>
 
-      {/* Main content */}
-      <main className="flex-1 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Danh sách yêu cầu nhập kho</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+      <div className="overflow-x-auto">
+        <table className="w-full table-auto border">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-4 py-2 text-left">Mã yêu cầu</th>
+              <th className="px-4 py-2 text-left">Ngày tạo</th>
+              <th className="px-4 py-2 text-left">Trạng thái</th>
+              <th className="px-4 py-2 text-center">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
             {pagedRequests.map((req) => (
-              <div
-                key={req.inboundRequestId}
-                className="flex justify-between items-center p-3 border rounded-md"
-              >
-                <div>
-                  <p className="font-semibold">Mã: {req.requestCode}</p>
-                  <p>Ngày tạo: {new Date(req.createdAt).toLocaleDateString()}</p>
-                </div>
-                <Badge
-                  className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${req.status === "Approved"
-                    ? "bg-green-100 text-green-800"
-                    : req.status === "Rejected"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-800"
+              <tr key={req.inboundRequestId} className="border-t">
+                <td className="px-4 py-2">{req.requestCode}</td>
+                <td className="px-4 py-2">
+                  {new Date(req.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`inline-block px-3 py-1 text-sm font-medium rounded-md ${
+                      req.status === "Approved"
+                        ? "bg-green-100 text-green-800"
+                        : req.status === "Rejected"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-gray-100 text-gray-800"
                     }`}
-                >
-                  {req.status}
-                </Badge>
-                <Link
-                  href={`/dashboard/staff/inbounds/${req.inboundRequestId}`}
-                >
-                  <Button variant="outline">Xem chi tiết</Button>
-                </Link>
-              </div>
+                  >
+                    {req.status}
+                  </span>
+                </td>
+                <td className="px-4 py-2 text-center">
+                  <Link href={`/dashboard/staff/inbounds/${req.inboundRequestId}`}>
+                    <Button size="sm">Xem chi tiết</Button>
+                  </Link>
+                </td>
+              </tr>
             ))}
-          </CardContent>
-        </Card>
+            {pagedRequests.length === 0 && (
+              <tr>
+                <td colSpan={4} className="text-center py-4">
+                  Không có yêu cầu nào phù hợp.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {/* Pagination */}
-        <div className="flex justify-between items-center">
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center mt-4">
           <span className="text-sm text-muted-foreground">
             Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredRequests.length)} trong {filteredRequests.length} yêu cầu
           </span>
@@ -112,7 +129,11 @@ export default function InboundRequestListPage() {
                 <Button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`rounded-md px-3 py-1 text-sm ${page === currentPage ? 'bg-black text-white' : 'bg-white text-black border'}`}
+                  className={`rounded-md px-3 py-1 text-sm ${
+                    page === currentPage
+                      ? "bg-black text-white"
+                      : "bg-white text-black border"
+                  }`}
                 >
                   {page}
                 </Button>
@@ -128,7 +149,7 @@ export default function InboundRequestListPage() {
             </Button>
           </div>
         </div>
-      </main>
-    </div>
+      )}
+    </Card>
   );
 }
