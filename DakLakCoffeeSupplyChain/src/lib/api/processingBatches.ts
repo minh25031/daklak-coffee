@@ -1,5 +1,6 @@
 import api from "./axios";
 import { useRouter } from "next/navigation";
+import { ProcessingBatchProgress } from "./processingBatchProgress";
 
 export interface ProcessingProgress {
   stageName: string;
@@ -12,6 +13,7 @@ export interface ProcessingProgress {
   photoUrl?: string | null;
   videoUrl?: string | null;
   updatedByName: string;
+stepIndex: number;
 }
 
 export interface ProcessingProduct {
@@ -35,8 +37,9 @@ export interface ProcessingBatch {
   inputUnit: string;
   status: number;
   createdAt: string;
-  progresses: ProcessingProgress[];
+  progresses: ProcessingBatchProgress[];
   products: ProcessingProduct[];
+    
 }
 
 export interface CreateProcessingBatchPayload {
