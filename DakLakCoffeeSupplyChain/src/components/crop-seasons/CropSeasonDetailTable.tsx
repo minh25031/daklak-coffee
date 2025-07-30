@@ -14,7 +14,6 @@ import { CropSeasonDetail } from "@/lib/api/cropSeasons";
 import { Edit, Trash, Eye } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import UpdateCropSeasonDetailDialog from "@/app/dashboard/farmer/crop-seasons/[id]/details/edit/page";
-import { deleteCropSeasonDetail } from "@/lib/api/cropSeasonDetail ";
 
 interface Props {
   details: CropSeasonDetail[];
@@ -161,3 +160,7 @@ export default function CropSeasonDetailTable({
     </>
   );
 }
+function deleteCropSeasonDetail(detailId: string) {
+  throw new Error("Function not implemented.");
+}
+

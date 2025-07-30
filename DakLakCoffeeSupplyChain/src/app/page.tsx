@@ -1,9 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#FEFAF4] text-gray-800">
       {/* Hero Section */}
@@ -11,7 +19,8 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-[#6F4E37] leading-tight mb-4">
-              <span className="block md:inline">Liên kết nông dân &</span> <span className="block md:inline">doanh nghiệp, nâng tầm cà phê Việt</span>
+              <span className="block md:inline">Liên kết nông dân &</span>{" "}
+              <span className="block md:inline">doanh nghiệp, nâng tầm cà phê Việt</span>
             </h1>
             <p className="text-lg text-gray-700 mb-8">
               Nền tảng B2B giúp số hóa chuỗi cung ứng cà phê Việt Nam, truy xuất nguồn gốc,
@@ -23,18 +32,24 @@ export default function HomePage() {
                   Khám phá Marketplace
                 </Button>
               </Link>
-              <Link href="/auth/login">
-                <Button
-                  variant="outline"
-                  className="px-6 py-3 rounded-full border-gray-300 hover:bg-gray-100"
-                >
-                  Đăng nhập
-                </Button>
-              </Link>
+              {!isLoggedIn && (
+                <Link href="/auth/login">
+                  <Button
+                    variant="outline"
+                    className="px-6 py-3 rounded-full border-gray-300 hover:bg-gray-100"
+                  >
+                    Đăng nhập
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
           <div className="flex justify-center">
-            <img src="/images/Coffee.png" className="w-full max-w-sm md:max-w-md lg:max-w-lg" alt="Hero Coffee" />
+            <img
+              src="/images/Coffee.png"
+              className="w-full max-w-sm md:max-w-md lg:max-w-lg"
+              alt="Hero Coffee"
+            />
           </div>
         </div>
       </section>
@@ -149,4 +164,4 @@ function BenefitCard({
       </div>
     </div>
   );
-} 
+}

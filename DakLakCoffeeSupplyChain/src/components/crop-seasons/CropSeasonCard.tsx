@@ -79,15 +79,13 @@ export default function CropSeasonCard({ season, onDeleted }: Props) {
                         <FaEdit className="w-4 h-4" />
                     </button>
 
-                    {season.status === 'Cancelled' && (
-                        <button
-                            title="Xoá"
-                            onClick={handleDelete}
-                            className="text-red-600 hover:text-red-800"
-                        >
-                            <FaTrashAlt className="w-4 h-4" />
-                        </button>
-                    )}
+                    <button
+                        title="Xoá"
+                        onClick={handleDelete}
+                        className="text-red-600 hover:text-red-800"
+                    >
+                        <FaTrashAlt className="w-4 h-4" />
+                    </button>
                 </div>
             </td>
         </tr>

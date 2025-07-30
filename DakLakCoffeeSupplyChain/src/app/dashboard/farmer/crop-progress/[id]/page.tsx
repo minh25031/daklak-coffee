@@ -87,12 +87,6 @@ export default function CropProgressPage() {
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4 space-y-6">
-            {/* Quay lại */}
-            <Button variant="ghost" onClick={() => router.back()} className="flex items-center gap-1">
-                <ArrowLeft className="h-4 w-4" />
-                Quay lại
-            </Button>
-
             {/* Tiến độ vùng trồng */}
             <Card className="rounded-2xl shadow-md border bg-white">
                 <CardHeader>

@@ -11,20 +11,29 @@ import {
 } from "react-icons/fi";
 import Link from "next/link";
 
-// 🔥 Chart.js setup
 import {
     Chart as ChartJS,
     LineElement,
     CategoryScale,
     LinearScale,
     PointElement,
+    ArcElement,
     Tooltip,
     Legend,
 } from "chart.js";
-import { Line } from "react-chartjs-2";
+import { Line, Doughnut } from "react-chartjs-2";
 import { getCropSeasonsForCurrentUser } from "@/lib/api/cropSeasons";
+import { getAllCropProgresses, CropProgress } from "@/lib/api/cropProgress";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    ArcElement,
+    Tooltip,
+    Legend
+);
 
 export default function FarmerDashboard() {
     useAuthGuard(["farmer"]);
@@ -37,22 +46,16 @@ export default function FarmerDashboard() {
     } | null>(null);
 
     const [alerts, setAlerts] = useState<string[]>([]);
-
     const [chartData, setChartData] = useState<any>(null);
+    const [overallProgressData, setOverallProgressData] = useState<any>(null);
 
     const chartOptions = {
         responsive: true,
         plugins: {
-            legend: {
-                position: "top" as const,
-            },
-            tooltip: {
-                mode: "index" as const,
-                intersect: false,
-            },
+            legend: { position: "top" as const },
+            tooltip: { mode: "index" as const, intersect: false },
         },
     };
-
 
     useEffect(() => {
         const fetchData = async () => {
@@ -63,12 +66,9 @@ export default function FarmerDashboard() {
                     pageSize: 100,
                 });
 
-                const activeCount = cropSeasons.length;
-
-
                 setStats({
-                    activeSeasons: activeCount,
-                    upcomingHarvests: 5, // tạm giả lập
+                    activeSeasons: cropSeasons.length,
+                    upcomingHarvests: 5,
                     pendingWarehouseRequests: 1,
                     unreadAdvice: 3,
                 });
@@ -100,6 +100,41 @@ export default function FarmerDashboard() {
                         },
                     ],
                 });
+
+                const progresses = await getAllCropProgresses();
+                const grouped: Record<string, CropProgress[]> = {};
+
+                for (const p of progresses) {
+                    if (!grouped[p.cropSeasonDetailId]) {
+                        grouped[p.cropSeasonDetailId] = [];
+                    }
+                    grouped[p.cropSeasonDetailId].push(p);
+                }
+
+                const TOTAL_STAGES = 5;
+                const percentList: number[] = [];
+
+                for (const regionId in grouped) {
+                    const steps = grouped[regionId];
+                    const current = Math.max(...steps.map(s => s.stepIndex ?? 0));
+                    const percent = Math.min(((current + 1) / TOTAL_STAGES) * 100, 100);
+                    percentList.push(percent);
+                }
+
+                const average = percentList.length > 0
+                    ? Math.round(percentList.reduce((a, b) => a + b, 0) / percentList.length)
+                    : 0;
+
+                setOverallProgressData({
+                    labels: ["Hoàn thành", "Còn lại"],
+                    datasets: [
+                        {
+                            data: [average, 100 - average],
+                            backgroundColor: ["#16a34a", "#f3f4f6"],
+                            borderWidth: 1,
+                        },
+                    ],
+                });
             } catch (error) {
                 console.error("Lỗi lấy dữ liệu dashboard:", error);
             }
@@ -111,8 +146,6 @@ export default function FarmerDashboard() {
     return (
         <div className="w-full bg-orange-50 min-h-screen">
             <div className="p-6 space-y-10">
-
-                {/* 📊 Summary Cards */}
                 {stats && (
                     <section>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -124,21 +157,28 @@ export default function FarmerDashboard() {
                     </section>
                 )}
 
-                {/* 📈 Biểu đồ Chart.js */}
-                {chartData && (
+                {chartData && overallProgressData && (
                     <section>
-                        <DashboardSectionTitle title="Sản lượng theo tháng" />
-                        <div className="bg-white rounded-xl shadow p-4 w-[50%] ">
-                            <div className="relative h-[250px] w-full">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-white rounded-xl shadow p-4">
+                                <DashboardSectionTitle title="Sản lượng theo tháng" />
                                 <Line data={chartData} options={chartOptions} />
                             </div>
+                            <div className="bg-white rounded-xl shadow p-4">
+                                <DashboardSectionTitle title="Tiến độ mùa vụ tổng thể" />
+                                <div className="relative h-[200px] w-[200px] mx-auto">
+                                    <Doughnut data={overallProgressData} />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <span className="text-2xl font-bold text-green-700">
+                                            {overallProgressData.datasets[0].data[0]}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-
                     </section>
                 )}
 
-                {/* 🚨 Cảnh báo */}
                 {alerts.length > 0 && (
                     <section>
                         <DashboardSectionTitle title="Cảnh báo" />
@@ -150,7 +190,6 @@ export default function FarmerDashboard() {
                     </section>
                 )}
 
-                {/* 🚀 Hành động nhanh */}
                 <section>
                     <DashboardSectionTitle title="Hành động nhanh" />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -173,17 +212,7 @@ export default function FarmerDashboard() {
     );
 }
 
-// 🧩 Subcomponents
-
-function StatCard({
-    icon,
-    label,
-    value,
-}: {
-    icon: React.ReactNode;
-    label: string;
-    value: number;
-}) {
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number; }) {
     return (
         <div className="bg-white rounded-xl shadow p-5 flex items-center gap-4">
             <div className="text-orange-500 text-2xl">{icon}</div>
@@ -204,17 +233,7 @@ function AlertCard({ message }: { message: string }) {
     );
 }
 
-function ActionCard({
-    icon,
-    title,
-    description,
-    href,
-}: {
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-    href: string;
-}) {
+function ActionCard({ icon, title, description, href }: { icon: React.ReactNode; title: string; description: string; href: string; }) {
     return (
         <Link href={href} className="p-5 bg-white rounded-xl shadow-md hover:shadow-lg transition block">
             <div className="flex items-center gap-3 mb-2">

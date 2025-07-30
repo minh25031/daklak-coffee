@@ -11,12 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CalendarDays, Pencil } from "lucide-react";
+import { Pencil, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import { AppToast } from "@/components/ui/AppToast";
 import { CropProgress, updateCropProgress } from "@/lib/api/cropProgress";
+
+// ✅ Import đúng Calendar + Popover chuẩn
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -24,7 +25,6 @@ type Props = {
     progress: CropProgress;
     onSuccess: () => void;
     triggerButton?: React.ReactNode;
-
 };
 
 export function EditProgressDialog({ progress, onSuccess }: Props) {
@@ -48,14 +48,12 @@ export function EditProgressDialog({ progress, onSuccess }: Props) {
                 cropSeasonDetailId: progress.cropSeasonDetailId,
                 stageId: progress.stageId,
                 stageDescription: progress.stageName,
-                progressDate: progressDate.toISOString().split("T")[0], // ✅ DateOnly format
+                progressDate: progressDate.toISOString().split("T")[0],
                 note,
                 photoUrl: progress.photoUrl,
                 videoUrl: progress.videoUrl,
-                stepIndex: progress.stepIndex ?? 0
+                stepIndex: progress.stepIndex ?? 0,
             });
-
-
 
             AppToast.success("Cập nhật tiến độ thành công!");
             setOpen(false);
@@ -66,9 +64,11 @@ export function EditProgressDialog({ progress, onSuccess }: Props) {
             setLoading(false);
         }
     };
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
+                {/** Bạn có thể truyền triggerButton nếu muốn */}
                 <Button variant="outline" size="sm" className="gap-1">
                     <Pencil className="w-4 h-4" />
                     Sửa
@@ -79,24 +79,24 @@ export function EditProgressDialog({ progress, onSuccess }: Props) {
                 <DialogTitle>Chỉnh sửa tiến độ</DialogTitle>
 
                 <div className="space-y-4 pt-2">
+                    {/* Giai đoạn */}
                     <div>
                         <Label>Giai đoạn</Label>
                         <Input value={progress.stageName} disabled />
                     </div>
 
+                    {/* Ngày ghi nhận */}
                     <div>
                         <Label>Ngày ghi nhận</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
-                                    className={cn("w-full text-left font-normal", {
-                                        "text-muted-foreground": !progressDate,
-                                    })}
+                                    className="w-full justify-start text-left font-normal"
                                 >
                                     <CalendarDays className="mr-2 h-4 w-4" />
                                     {progressDate
-                                        ? format(progressDate, "PPP", { locale: vi })
+                                        ? format(progressDate, "dd/MM/yyyy", { locale: vi })
                                         : "Chọn ngày"}
                                 </Button>
                             </PopoverTrigger>
@@ -104,14 +104,22 @@ export function EditProgressDialog({ progress, onSuccess }: Props) {
                                 <Calendar
                                     mode="single"
                                     selected={progressDate}
-                                    onSelect={setProgressDate}
+                                    onSelect={(date) => {
+                                        if (date instanceof Date) setProgressDate(date);
+                                    }}
                                     locale={vi}
-                                    disabled={(date) => date > new Date()}
+                                    captionLayout="dropdown"
+                                    defaultMonth={progressDate ?? new Date()}
+                                    hidden={{
+                                        before: new Date(2015, 0, 1),
+                                        after: new Date(2030, 11, 31),
+                                    }}
                                 />
                             </PopoverContent>
                         </Popover>
                     </div>
 
+                    {/* Ghi chú */}
                     <div>
                         <Label>Ghi chú</Label>
                         <Textarea
@@ -122,6 +130,7 @@ export function EditProgressDialog({ progress, onSuccess }: Props) {
                         />
                     </div>
 
+                    {/* Nút lưu */}
                     <div className="flex justify-end pt-2">
                         <Button onClick={handleSubmit} disabled={loading}>
                             {loading ? "Đang lưu..." : "Lưu thay đổi"}
