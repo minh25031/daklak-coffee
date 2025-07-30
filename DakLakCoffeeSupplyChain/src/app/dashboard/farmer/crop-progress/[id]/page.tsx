@@ -18,6 +18,8 @@ import {
     Coffee,
     NotebookPen,
     ArrowLeft,
+    Pencil,
+    Trash,
 } from "lucide-react";
 import { AppToast } from "@/components/ui/AppToast";
 import {
@@ -112,40 +114,47 @@ export default function CropProgressPage() {
                             Chưa có ghi nhận tiến độ.
                         </p>
                     ) : (
-                        <ul className="relative border-l-2 border-emerald-200 ml-4 space-y-6">
+                        <ul className="relative border-l-[3px] border-emerald-400 ml-5 pl-2 space-y-8">
                             {progressList.map((progress) => (
-                                <li key={progress.progressId} className="relative pl-6 group">
-                                    <span className="absolute left-[-14px] top-2 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white shadow" />
+                                <li key={progress.progressId} className="relative group">
+                                    {/* Dot timeline */}
+                                    <div className="absolute -left-[21px] top-3 w-5 h-5 bg-white border-[3px] border-emerald-500 rounded-full z-10 shadow-md" />
 
-                                    <div className="bg-white p-4 rounded-xl shadow group-hover:shadow-md transition">
-                                        <div className="flex items-center justify-between mb-2">
+                                    {/* Nội dung tiến độ */}
+                                    <div className="bg-gray-50 p-5 rounded-2xl border shadow-sm hover:shadow-md transition-all">
+                                        {/* Tiêu đề */}
+                                        <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-2">
                                                 {getStageIcon(progress.stageName)}
-                                                <h3 className="font-semibold text-slate-800">{progress.stageName}</h3>
+                                                <h3 className="font-semibold text-lg text-emerald-700">{progress.stageName}</h3>
                                             </div>
-                                            <Badge variant="outline" className="text-xs">
+                                            <Badge className="text-xs bg-emerald-100 text-emerald-700">
                                                 <CalendarDays className="inline w-4 h-4 mr-1" />
                                                 {formatDate(progress.progressDate)}
                                             </Badge>
                                         </div>
 
-                                        <p className="text-sm text-gray-600 mb-2 whitespace-pre-line">
-                                            {progress.note}
-                                        </p>
+                                        {/* Ghi chú */}
+                                        {progress.note && (
+                                            <p className="text-sm text-gray-700 mb-4 whitespace-pre-line">
+                                                {progress.note}
+                                            </p>
+                                        )}
 
+                                        {/* Media */}
                                         {(progress.photoUrl || progress.videoUrl) && (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 {progress.photoUrl && (
                                                     <Dialog>
                                                         <DialogTrigger asChild>
                                                             <img
                                                                 src={progress.photoUrl}
                                                                 alt="Ảnh tiến độ"
-                                                                className="rounded-lg border object-cover h-36 w-full cursor-pointer hover:opacity-90"
+                                                                className="rounded-xl border object-cover h-40 w-full cursor-pointer hover:brightness-95 transition"
                                                             />
                                                         </DialogTrigger>
                                                         <DialogContent className="p-0 w-fit max-w-full">
-                                                            <DialogTitle className="sr-only">Xem ảnh tiến độ</DialogTitle>
+                                                            <DialogTitle className="sr-only">Xem ảnh</DialogTitle>
                                                             <img src={progress.photoUrl} alt="Ảnh lớn" className="max-h-[80vh] rounded-md" />
                                                         </DialogContent>
                                                     </Dialog>
@@ -154,14 +163,14 @@ export default function CropProgressPage() {
                                                     <Dialog>
                                                         <DialogTrigger asChild>
                                                             <video
-                                                                className="rounded-lg border object-cover h-36 w-full cursor-pointer hover:opacity-90"
+                                                                className="rounded-xl border object-cover h-40 w-full cursor-pointer hover:brightness-95 transition"
                                                                 muted
                                                             >
                                                                 <source src={progress.videoUrl} />
                                                             </video>
                                                         </DialogTrigger>
                                                         <DialogContent className="p-0 w-fit max-w-full">
-                                                            <DialogTitle className="sr-only">Xem video tiến độ</DialogTitle>
+                                                            <DialogTitle className="sr-only">Xem video</DialogTitle>
                                                             <video className="max-h-[80vh] rounded-md" controls autoPlay>
                                                                 <source src={progress.videoUrl} />
                                                             </video>
@@ -170,15 +179,30 @@ export default function CropProgressPage() {
                                                 )}
                                             </div>
                                         )}
+
+                                        {/* Nút hành động */}
                                         <div className="flex gap-2 mt-4">
-                                            <EditProgressDialog progress={progress} onSuccess={reloadData} />
+                                            {/* Icon sửa */}
+                                            <EditProgressDialog
+                                                progress={progress}
+                                                onSuccess={reloadData}
+                                                triggerButton={
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Chỉnh sửa tiến độ">
+                                                        <Pencil className="h-4 w-4 text-red-600" />
+                                                    </Button>
+                                                }
+                                            />
+
+
+                                            {/* Icon xoá */}
                                             <Button
-                                                variant="destructive"
-                                                size="sm"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 hover:bg-red-100"
+                                                title="Xoá tiến độ"
                                                 onClick={async () => {
                                                     const confirmDelete = confirm("Bạn chắc chắn muốn xoá tiến độ này?");
                                                     if (!confirmDelete) return;
-
                                                     try {
                                                         await deleteCropProgress(progress.progressId);
                                                         AppToast.success("Xoá tiến độ thành công!");
@@ -188,10 +212,9 @@ export default function CropProgressPage() {
                                                     }
                                                 }}
                                             >
-                                                Xoá
+                                                <Trash className="h-4 w-4 text-red-600" />
                                             </Button>
                                         </div>
-
                                     </div>
                                 </li>
                             ))}

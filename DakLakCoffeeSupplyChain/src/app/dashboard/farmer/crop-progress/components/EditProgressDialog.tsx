@@ -23,6 +23,8 @@ import { Calendar } from "@/components/ui/calendar";
 type Props = {
     progress: CropProgress;
     onSuccess: () => void;
+    triggerButton?: React.ReactNode;
+
 };
 
 export function EditProgressDialog({ progress, onSuccess }: Props) {
