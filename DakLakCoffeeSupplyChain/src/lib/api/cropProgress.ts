@@ -9,6 +9,8 @@ export type CropProgress = {
   note: string;
   photoUrl?: string;
   videoUrl?: string;
+    stepIndex?: number;
+
 };
 
 // Lấy tất cả tiến độ (nếu cần)
@@ -17,10 +19,15 @@ export async function getAllCropProgresses(): Promise<CropProgress[]> {
   return response.data;
 }
 
+export type CropProgressViewByDetail = {
+  cropSeasonDetailId: string;
+  progresses: CropProgress[];
+};
+
 export async function getCropProgressesByDetailId(id: string): Promise<CropProgress[]> {
   try {
     const response = await api.get(`/CropProgresses/by-detail/${id}`);
-    return response.data;
+    return response.data.progresses;
   } catch (error: any) {
     if (error.response?.status === 404) {
       return [];
@@ -46,19 +53,22 @@ export async function createCropProgress(data: {
 
 // Cập nhật tiến độ
 export async function updateCropProgress(progressId: string, data: {
+  progressId: string; 
   cropSeasonDetailId: string;
   stageId: number;
+  stageDescription: string; 
   progressDate: string;
   note: string;
   photoUrl?: string;
   videoUrl?: string;
-  updatedBy: string;
+  stepIndex?: number; 
 }): Promise<CropProgress> {
   const response = await api.put(`/CropProgresses/${progressId}`, data);
   return response.data;
 }
 
+
 // Xoá mềm tiến độ
 export async function deleteCropProgress(progressId: string): Promise<void> {
-  await api.delete(`/CropProgresses/${progressId}`);
+  await api.patch(`/CropProgresses/soft-delete/${progressId}`);
 }
