@@ -7,10 +7,9 @@ if (!apiUrl) {
   throw new Error("API URL is not defined in environment variables.");
 }
 
-
 const api: AxiosInstance = axios.create({
   baseURL: apiUrl,
-  timeout: 10000,
+  timeout: 10000, // 10 giây timeout
   headers: {
     "Content-Type": "application/json",
   },
@@ -28,28 +27,37 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response;
-  },
+  (response: AxiosResponse) => response,
   (error) => {
+    // ❌ TIMEOUT
+    if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+      return Promise.reject(new Error("Yêu cầu mất quá nhiều thời gian, vui lòng thử lại sau."));
+    }
+
+    // ❌ KHÔNG CÓ PHẢN HỒI TỪ SERVER (mạng / SSL / CORS)
+    if (error.request && !error.response) {
+      return Promise.reject(new Error("Không nhận được phản hồi từ máy chủ."));
+    }
+
+    // ❌ LỖI TỪ BACKEND CÓ RESPONSE
     if (error.response) {
       const status = error.response.status;
       let message = "";
-       if (typeof error.response.data === "string" && error.response.data.trim() !== "") {
+
+      if (typeof error.response.data === "string" && error.response.data.trim() !== "") {
         message = error.response.data;
       } else {
         message =
           error.response.data?.message ||
-          HTTP_ERROR_MESSAGES[status] || `Lỗi HTTP status ${status}`;
+          HTTP_ERROR_MESSAGES[status] ||
+          `Lỗi HTTP status ${status}`;
       }
+
       return Promise.reject(new Error(message));
-    } else if (error.request) {
-      return Promise.reject(
-        new Error("Không nhận được phản hồi từ máy chủ")
-      );
-    } else {
-      return Promise.reject(error);
     }
+
+    // ❌ LỖI KHÔNG XÁC ĐỊNH
+    return Promise.reject(error);
   }
 );
 

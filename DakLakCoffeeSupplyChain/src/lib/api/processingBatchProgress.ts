@@ -137,4 +137,3 @@ export async function advanceToNextProcessingProgress(
     throw err;
   }
 }
-
