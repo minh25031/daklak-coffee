@@ -1,4 +1,3 @@
-// ViewProcessingBatch.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,8 +8,6 @@ import {
 } from "@/lib/api/processingBatches";
 import StatusBadge from "@/components/processing-batches/StatusBadge";
 import { Loader, PlusCircle } from "lucide-react";
-
-
 import {
   Dialog,
   DialogContent,
@@ -20,7 +17,8 @@ import {
 import { ProcessingBatchProgress } from "@/lib/api/processingBatchProgress";
 import CreateProcessingProgressForm from "@/components/processing-batches/CreateProcessingProgressForm";
 import AdvanceProcessingProgressForm from "@/components/processing-batches/AdvanceProcessingProgressForm";
-import { ProcessingStatus } from "@/lib/constrant/batchStatus";
+import { ProcessingStatus } from "@/lib/constants/batchStatus";
+
 
 export default function ViewProcessingBatch() {
   const { id } = useParams();

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -45,42 +45,95 @@ export default function InboundRequestDetailPage() {
     router.push("/dashboard/staff/inbounds");
   };
 
+  const formatDate = (value: string | Date) => {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? "Không xác định" : d.toLocaleString("vi-VN");
+  };
+
+  const getStatusBadge = (status: string) => {
+  const base = "capitalize px-3 py-1 rounded-md font-medium text-sm";
+
+  switch (status) {
+    case "Pending":
+      return <Badge className={`${base} bg-gray-100 text-gray-800`}>⏳ Đang chờ duyệt</Badge>;
+    case "Approved":
+      return <Badge className={`${base} bg-blue-100 text-blue-800`}>📝 Đã duyệt</Badge>;
+    case "Completed":
+      return <Badge className={`${base} bg-green-100 text-green-800`}>✅ Hoàn tất</Badge>;
+    case "Rejected":
+      return <Badge className={`${base} bg-red-100 text-red-800`}>❌ Đã từ chối</Badge>;
+    case "Cancelled":
+      return <Badge className={`${base} bg-yellow-100 text-yellow-800`}>🚫 Đã huỷ</Badge>;
+    default:
+      return <Badge className={`${base} bg-muted text-muted-foreground`}>{status}</Badge>;
+  }
+};
+
   if (!request) return <div className="p-6">Đang tải...</div>;
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Chi tiết yêu cầu nhập kho</CardTitle>
+          <CardTitle className="text-xl font-bold">📥 Chi tiết yêu cầu nhập kho</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p><strong>Mã yêu cầu:</strong> {request.requestCode}</p>
-          <p><strong>Số lượng:</strong> {request.requestedQuantity} kg</p>
-          <p><strong>Ngày giao dự kiến:</strong> {request.preferredDeliveryDate}</p>
-          <p><strong>Ghi chú:</strong> {request.note || "Không có"}</p>
-          <p><strong>Trạng thái:</strong>
-            <Badge
-              className={`ml-2 capitalize px-3 py-1 rounded-md font-medium text-sm ${request.status === "Approved"
-                  ? "bg-green-100 text-green-800"
-                  : request.status === "Rejected"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-            >
-              {request.status}
-            </Badge>
-          </p>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-800">
+          <div><strong>Mã yêu cầu:</strong> {request.requestCode}</div>
+          <div><strong>Trạng thái:</strong> {getStatusBadge(request.status)}</div>
+
+          <div><strong>Ngày tạo:</strong> {formatDate(request.createdAt)}</div>
+          <div><strong>Ngày giao dự kiến:</strong> {formatDate(request.preferredDeliveryDate)}</div>
+
+          {request.actualDeliveryDate && (
+            <div><strong>Ngày giao thực tế:</strong> {formatDate(request.actualDeliveryDate)}</div>
+          )}
+
+          <div><strong>Số lượng:</strong> {request.requestedQuantity} kg</div>
+          <div><strong>Ghi chú:</strong> {request.note || "Không có"}</div>
+
+          <div><strong>Nông dân:</strong> {request.farmerName}</div>
+          <div><strong>Điện thoại:</strong> {request.farmerPhone}</div>
+
+          {request.businessStaffName && (
+            <div><strong>Nhân viên phụ trách:</strong> {request.businessStaffName}</div>
+          )}
+
+          {request.batchCode && (
+            <div><strong>Mã lô hàng:</strong> {request.batchCode}</div>
+          )}
+          {request.coffeeType && (
+            <div><strong>Loại cà phê:</strong> {request.coffeeType}</div>
+          )}
+          {request.seasonCode && (
+            <div><strong>Mùa vụ:</strong> {request.seasonCode}</div>
+          )}
 
           {request.status === "Pending" && (
-            <div className="flex gap-4 mt-4">
-              <Button onClick={handleApprove} disabled={loading} className="bg-green-600 hover:bg-green-700">
-                ✅ Duyệt
+            <div className="md:col-span-2 pt-4 flex gap-4">
+              <Button
+                onClick={handleApprove}
+                disabled={loading}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                ✅ Duyệt yêu cầu
               </Button>
-              <Button onClick={handleReject} disabled={loading} className="bg-red-600 hover:bg-red-700">
-                ❌ Từ chối
+              <Button
+                onClick={handleReject}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                ❌ Từ chối yêu cầu
               </Button>
             </div>
           )}
+          <div className="md:col-span-2 pt-4">
+  <Button
+    variant="outline"
+    onClick={() => router.push("/dashboard/staff/inbounds")}
+  >
+    ← Quay lại danh sách
+  </Button>
+</div>
         </CardContent>
       </Card>
     </div>

@@ -11,6 +11,19 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const router = useRouter();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem("user_role"); // đã là slug (e.g. "farmer", "manager")
+    if (role) {
+      setUserRole(role);
+    }
+  }, []);
+
+  const handleGoToDashboard = () => {
+    const dashboardPath = userRole ? `/dashboard/${userRole}` : "/dashboard";
+    router.push(dashboardPath);
+  };
 
   useEffect(() => {
     const storedName = localStorage.getItem("user_name");
@@ -61,10 +74,17 @@ export default function Header() {
                 >
                   <DropdownMenu.Item
                     className="px-3 py-2 hover:bg-gray-100 rounded cursor-pointer"
-                    onClick={() => router.push("/profile")}
+                    onClick={() => router.push("/dashboard/profile")}
                   >
                     Hồ sơ cá nhân
                   </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    className="px-3 py-2 hover:bg-gray-100 rounded cursor-pointer"
+                    onClick={handleGoToDashboard}
+                  >
+                    Tổng quan
+                  </DropdownMenu.Item>
+
                   <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
                   <DropdownMenu.Item
                     className="px-3 py-2 text-red-600 hover:bg-red-50 rounded cursor-pointer"

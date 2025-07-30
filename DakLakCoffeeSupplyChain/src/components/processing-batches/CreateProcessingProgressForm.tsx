@@ -8,7 +8,8 @@ import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBa
 
 import { createProcessingBatchProgressWithMedia } from "@/lib/api/processingBatchProgress";
 import imageCompression from "browser-image-compression";
-import { ProcessingStatus } from "@/lib/constrant/batchStatus";
+import { ProcessingStatus } from "@/lib/constants/batchStatus";
+
 
 type Props = {
   defaultBatchId?: string; // nếu muốn preselect lô (ví dụ khi dùng trong View)

@@ -11,7 +11,7 @@ import {
   getAllRoles,
   RoleItem,
 } from "@/lib/api/users";
-import { roleNameToVietnamese } from "@/lib/constrant/role";
+import { roleNameToVietnamese } from "@/lib/constants/role";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
@@ -222,8 +222,8 @@ export default function UserForm({ mode, userId }: UserFormProps) {
                       typeof form.dateOfBirth === "string"
                         ? form.dateOfBirth
                         : form.dateOfBirth
-                        ? form.dateOfBirth.toISOString().slice(0, 10)
-                        : ""
+                          ? form.dateOfBirth.toISOString().slice(0, 10)
+                          : ""
                     }
                     onChange={handleChange}
                     className="border rounded px-3 py-2 w-full"

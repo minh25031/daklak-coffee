@@ -134,6 +134,11 @@ export function SidebarGroup() {
         icon: iconMap.crops,
       },
       {
+        title: "Giai đoạn mùa vụ",
+        href: "/dashboard/farmer/crop-stages",
+        icon: iconMap.crops,
+      },
+      {
         title: "Tư vấn",
         href: "/dashboard/farmer/request-feedback",
         icon: iconMap.feedback,
@@ -186,30 +191,47 @@ export function SidebarGroup() {
     ],
     staff: [
       {
-        title: "Yêu cầu nhập kho",
-        href: "/dashboard/staff/inbounds",
-        icon: <FiClipboard />,
+        title: "Tổng quan",
+        href: "/dashboard/staff",
+        icon: iconMap.dashboard,
       },
-      {
-        title: "Phiếu nhập kho",
-        href: "/dashboard/staff/receipts",
-        icon: <FiFileText />,
-      },
-      {
-        title: "Tồn kho",
-        href: "/dashboard/staff/inventories",
-        icon: <FiPieChart />,
-      },
+      // {
+      //   title: "Yêu cầu nhập kho",
+      //   href: "/dashboard/staff/inbounds",
+      //   icon: <FiClipboard />,
+      // },
+      // {
+      //   title: "Phiếu nhập kho",
+      //   href: "/dashboard/staff/receipts",
+      //   icon: <FiFileText />,
+      // },
+      // {
+      //   title: "Tồn kho",
+      //   href: "/dashboard/staff/inventories",
+      //   icon: <FiPieChart />,
+      // },
       {
         title: "Lô hàng",
         href: "/dashboard/staff/batches",
         icon: <FiBookOpen />,
       },
-      {
-        title: "Kho hàng",
-        href: "/dashboard/staff/warehouses",
-        icon: <FiSettings />,
-      },
+      // {
+      //   title: "Kho hàng",
+      //   href: "/dashboard/staff/warehouses",
+      //   icon: <FiSettings />,
+      // },
+      // {
+      //   title: "Yêu cầu xuất kho",
+      //   href: "/dashboard/staff/outbounds",
+      //   icon: <FiClipboard />,
+      // },
+
+      // {
+      //   title: "Phiếu xuất kho",
+      //   href: "/dashboard/staff/outbound-receipts",
+      //   icon: <FiFileText />,
+      // },
+    
     ],
     manager: [
       {
@@ -247,6 +269,17 @@ export function SidebarGroup() {
         href: "/dashboard/manager/reports",
         icon: iconMap.reports,
       },
+      {
+        title: "Kho hàng",
+        href: "/dashboard/manager/warehouses",
+        icon: <FiSettings />,
+      },
+      {
+        title: "Yêu cầu xuất kho",
+        href: "/dashboard/manager/warehouse-request",
+        icon: <FiClipboard />,
+      },
+      
     ],
   };
 
@@ -508,6 +541,149 @@ export function SidebarGroup() {
           )}
         </div>
       )}
+    {role === "staff" && (
+  <>
+    {/* --- Dropdown: VẬN HÀNH KHO --- */}
+    {(() => {
+      const operationLinks = [
+        {
+          label: "Yêu cầu nhập kho",
+          href: "/dashboard/staff/inbounds",
+          activeMatch: (path: string) => path === "/dashboard/staff/inbounds",
+        },
+        {
+          label: "Phiếu nhập kho",
+          href: "/dashboard/staff/receipts",
+          activeMatch: (path: string) => path === "/dashboard/staff/receipts",
+        },
+        {
+          label: "Yêu cầu xuất kho",
+          href: "/dashboard/staff/outbounds",
+          activeMatch: (path: string) => path === "/dashboard/staff/outbounds",
+        },
+        {
+          label: "Phiếu xuất kho",
+          href: "/dashboard/staff/outbound-receipts",
+          activeMatch: (path: string) => path === "/dashboard/staff/outbound-receipts",
+        },
+      ];
+
+      const isOperationActive = operationLinks.some((item) => item.activeMatch(pathname));
+
+      return (
+        <div>
+          <button
+            className={cn(
+              "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+              isOperationActive
+                ? "bg-orange-100 text-orange-700"
+                : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+            )}
+            onClick={() => setProcessingOpen((v) => !v)}
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="shrink-0 w-5 text-center">
+                <FiClipboard />
+              </span>
+              <span className="truncate">Vận hành kho</span>
+            </div>
+            <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
+          </button>
+
+          {processingOpen && (
+            <div className="pl-8 space-y-1">
+              {operationLinks.map(({ label, href, activeMatch }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    activeMatch(pathname)
+                      ? "bg-orange-100 text-orange-700"
+                      : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                  )}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })()}
+
+    {/* --- Dropdown: QUẢN LÝ KHO --- */}
+    {(() => {
+      const warehouseLinks = [
+        {
+          label: "Tồn kho",
+          href: "/dashboard/staff/inventories",
+          activeMatch: (path: string) => path === "/dashboard/staff/inventories",
+        },
+        {
+          label: "Nhật ký tồn kho",
+          href: "/dashboard/staff/inventory-logs",
+          activeMatch: (path: string) => path.startsWith("/dashboard/staff/inventory-logs"),
+        },
+        {
+          label: "Kho hàng",
+          href: "/dashboard/staff/warehouses",
+          activeMatch: (path: string) => path.startsWith("/dashboard/staff/warehouses"),
+        },
+      ];
+
+      const isDropdownActive = warehouseLinks.some((item) => item.activeMatch(pathname));
+
+      return (
+        <div>
+          <button
+            className={cn(
+              "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+              isDropdownActive
+                ? "bg-orange-100 text-orange-700"
+                : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+            )}
+            onClick={() => setProcessingOpen((v) => !v)}
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="shrink-0 w-5 text-center">
+                <FiSettings />
+              </span>
+              <span className="truncate">Quản lý kho</span>
+            </div>
+            <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
+          </button>
+
+          {processingOpen && (
+            <div className="pl-8 space-y-1">
+              {warehouseLinks.map(({ label, href, activeMatch }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    activeMatch(pathname)
+                      ? "bg-orange-100 text-orange-700"
+                      : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                  )}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })()}
+  </>
+)}
+
+
+
+  
+
+
+      
     </div>
   );
 }

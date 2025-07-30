@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/crop-seasons/StatusBadge";
 import {
   CropSeasonDetailStatusEnum,
   CropSeasonDetailStatusMap,
-} from "@/lib/constrant/cropSeasonDetailStatus";
+} from "@/lib/constants/cropSeasonDetailStatus";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { toast } from "sonner";
 import { CropSeasonDetail } from "@/lib/api/cropSeasons";
-import { Edit, Trash } from "lucide-react";
+import { Edit, Trash, Eye } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import UpdateCropSeasonDetailDialog from "@/app/dashboard/farmer/crop-seasons/[id]/details/edit/page";
-import { deleteCropSeasonDetail } from "@/lib/api/cropSeasonDetail ";
 
 interface Props {
   details: CropSeasonDetail[];
@@ -28,6 +28,7 @@ export default function CropSeasonDetailTable({
 }: Props) {
   const { user } = useAuth();
   const [editingDetailId, setEditingDetailId] = useState<string | null>(null);
+  const router = useRouter();
 
   const formatDate = (date?: string) => {
     if (!date) return "Chưa cập nhật";
@@ -110,7 +111,7 @@ export default function CropSeasonDetailTable({
                   map={CropSeasonDetailStatusMap}
                 />
               </td>
-              <td className="px-3 py-2 space-x-1">
+              <td className="px-3 py-2 space-x-1 flex">
                 <Dialog
                   open={editingDetailId === detail.detailId}
                   onOpenChange={(open) =>
@@ -131,6 +132,19 @@ export default function CropSeasonDetailTable({
                     />
                   </DialogContent>
                 </Dialog>
+
+                {/* Nút xem tiến độ */}
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  onClick={() =>
+                    router.push(`/dashboard/farmer/crop-progress/${detail.detailId}`)
+
+                  }
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+
                 <Button
                   size="icon"
                   variant="destructive"
@@ -142,7 +156,11 @@ export default function CropSeasonDetailTable({
             </tr>
           ))}
         </tbody>
-      </table>
+      </table >
     </>
   );
 }
+function deleteCropSeasonDetail(detailId: string) {
+  throw new Error("Function not implemented.");
+}
+

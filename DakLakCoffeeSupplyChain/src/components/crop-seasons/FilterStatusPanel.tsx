@@ -1,4 +1,4 @@
-import { CropSeasonStatusMap, CropSeasonStatusValue } from '@/lib/constrant/cropSeasonStatus';
+import { CropSeasonStatusMap, CropSeasonStatusValue } from '@/lib/constants/cropSeasonStatus';
 import FilterBadge from './FilterBadge';
 
 interface FilterStatusPanelProps {

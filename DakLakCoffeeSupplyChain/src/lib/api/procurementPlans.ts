@@ -1,4 +1,5 @@
 import api from "./axios";
+import { FarmingCommitmentItem } from "./farmingCommitments";
 
 export type ProcurementPlan = {
   planId: string;
@@ -20,8 +21,9 @@ export type ProcurementPlan = {
   progressPercentage: number;
   createdAt: string;
   updatedAt: string;
-  status: string;
+  status: string | number;
   procurementPlansDetails: Partial<ProcurementPlansDetails>[];
+  commitments: Partial<FarmingCommitmentItem>[];
 };
 
 export type ProcurementPlansDetails = {
@@ -46,7 +48,7 @@ export type ProcurementPlansDetails = {
   expectedYieldPerHectare: number;
   note: string;
   progressPercentage: number;
-  status: string;
+  status: string | number;
   createdAt: string;
   updatedAt: string;
 };
@@ -64,4 +66,17 @@ export async function getProcurementPlanById(planId: string): Promise<Procuremen
 export async function createProcurementPlan(data: Partial<ProcurementPlan>): Promise<ProcurementPlan | null> {
   const response = await api.post(`/ProcurementPlans`, data)
   return response.data
+}
+
+export async function updateProcurementPlanStatus(
+  planId: string,
+  data: Partial<ProcurementPlan>
+): Promise<ProcurementPlan | null> {
+  const response = await api.patch(`/ProcurementPlans/UpdateStatus/${planId}`, data);
+  return response.data;
+}
+
+export async function deleteProcurementPlan(planId: string): Promise<ProcurementPlan | null> {
+  const response = await api.patch(`/ProcurementPlans/soft-delete/${planId}`);
+  return response.data;
 }

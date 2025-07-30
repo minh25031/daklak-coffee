@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { roleRawToDisplayName } from "@/lib/constrant/role";
+import { roleRawToDisplayName } from "@/lib/constants/role";
 
 export default function UserInfoPage() {
     const [userInfo, setUserInfo] = useState({

@@ -27,7 +27,7 @@ export default function OutboundReceiptDetailPage() {
       const data = await getOutboundReceiptById(id as string);
       setDetail(data);
       setConfirmedQuantity(data?.quantity?.toString() || '');
-      setDestinationNote(data?.destination || '');
+      setDestinationNote(data?.destinationNote || '');
     } catch (err: any) {
       alert('❌ Lỗi khi tải chi tiết: ' + err.message);
       router.push('/dashboard/staff/outbound-receipts');
@@ -75,6 +75,8 @@ export default function OutboundReceiptDetailPage() {
   if (loading) return <div className="p-6">⏳ Đang tải chi tiết phiếu...</div>;
   if (!detail) return null;
 
+  const exportedAt = detail.exportedAt ? new Date(detail.exportedAt) : null;
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold text-orange-600">
@@ -84,10 +86,20 @@ export default function OutboundReceiptDetailPage() {
       <div className="space-y-2 text-gray-700">
         <p><strong>📦 Kho:</strong> {detail.warehouseName}</p>
         <p><strong>🧾 Mẻ hàng:</strong> {detail.batchCode}</p>
-        <p><strong>⚖️ Ghi nhận:</strong> {detail.quantity} {detail.unit}</p>
+        <p><strong>⚖️ Ghi nhận:</strong> {detail.quantity} {detail.unit || 'kg'}</p>
         <p><strong>🗒️ Ghi chú:</strong> {detail.note || '(Không có)'}</p>
-        <p><strong>📍 Đích đến:</strong> {detail.destination || '(Không có)'}</p>
-        <p><strong>⏰ Tạo lúc:</strong> {detail.createdAt ? new Date(detail.createdAt).toLocaleString() : '(Không rõ)'}</p>
+        <p><strong>📍 Đích đến:</strong> {detail.destinationNote || '(Không có)'}</p>
+        <p>
+          <strong>⏰ Tạo lúc:</strong>{' '}
+          {exportedAt ? (
+            <>
+              {exportedAt.toLocaleDateString('vi-VN')} lúc{' '}
+              {exportedAt.toLocaleTimeString('vi-VN')}
+            </>
+          ) : (
+            '(Không rõ)'
+          )}
+        </p>
         <p>
           <strong>📌 Trạng thái:</strong>{' '}
           {isConfirmed ? (

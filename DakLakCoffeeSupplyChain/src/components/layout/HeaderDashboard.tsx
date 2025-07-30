@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useEffect, useState } from "react";
 import { FiBell, FiMail, FiSmile } from "react-icons/fi";
 import { Input } from "@/components/ui/input";
-import { roleRawToDisplayName } from "@/lib/constrant/role";
+import { roleRawToDisplayName } from "@/lib/constants/role";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { LogOut, User } from "lucide-react";
 
@@ -13,6 +13,13 @@ const pathTitleMap: Record<string, string> = {
     farmer: "Tổng quan",
     admin: "Tổng quan",
     manager: "Tổng quan",
+    staff: "Tổng quan",
+    "warehouse-request": "Yêu cầu kho",
+    "outbound-requests": "Yêu cầu xuất kho",
+    "inbound-requests": "Yêu cầu nhập kho",
+    "outbound-receipts": "Biên bản xuất kho",
+    "inbound-receipts": "Biên bản nhập kho",
+    
     "crop-seasons": "Mùa vụ",
     batches: "Danh sách lô sơ chế",
     evaluations: "Đánh giá lô sơ chế",
@@ -55,7 +62,7 @@ export default function HeaderDashboard() {
         userName ?? "U"
     )}&background=FD7622&color=fff`;
 
-  return (
+    return (
         <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
             {/* Title */}
             <h1 className="text-2xl font-bold text-gray-800">{currentTitle}</h1>
