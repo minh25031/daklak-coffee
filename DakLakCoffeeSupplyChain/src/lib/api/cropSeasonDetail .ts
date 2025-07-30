@@ -74,17 +74,18 @@ export async function updateCropSeasonDetail(
   }
 }
 
-export async function deleteCropSeasonDetail(
+export async function softDeleteCropSeasonDetail(
   detailId: string
 ): Promise<{ success: boolean }> {
   try {
-    await api.delete(`${baseUrl}/${detailId}`);
+    await api.put(`${baseUrl}/soft-delete/${detailId}`);
     return { success: true };
   } catch (err) {
-    console.error('Lỗi deleteCropSeasonDetail:', err);
+    console.error('Lỗi softDeleteCropSeasonDetail:', err);
     throw new Error(getErrorMessage(err) || 'Xoá vùng trồng thất bại');
   }
 }
+
 
 export async function getCropSeasonDetailById(
   detailId: string
