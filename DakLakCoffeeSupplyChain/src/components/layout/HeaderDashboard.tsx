@@ -13,6 +13,13 @@ const pathTitleMap: Record<string, string> = {
     farmer: "Tổng quan",
     admin: "Tổng quan",
     manager: "Tổng quan",
+    staff: "Tổng quan",
+    "warehouse-request": "Yêu cầu kho",
+    "outbound-requests": "Yêu cầu xuất kho",
+    "inbound-requests": "Yêu cầu nhập kho",
+    "outbound-receipts": "Biên bản xuất kho",
+    "inbound-receipts": "Biên bản nhập kho",
+    
     "crop-seasons": "Mùa vụ",
     batches: "Danh sách lô sơ chế",
     evaluations: "Đánh giá lô sơ chế",

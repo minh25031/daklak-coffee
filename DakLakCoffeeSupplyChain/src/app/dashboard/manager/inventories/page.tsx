@@ -116,52 +116,55 @@ export default function ManagerInventoryListPage() {
               </tr>
             </thead>
             <tbody>
-              {paged.map((inv) => (
-                <tr key={inv.inventoryId} className="border-t">
-                  <td className="px-4 py-2">{inv.inventoryCode}</td>
-                  <td className="px-4 py-2">{inv.warehouseName}</td>
-                  <td className="px-4 py-2">{inv.productName}</td>
-                  <td className="px-4 py-2 text-green-700 font-medium">{inv.coffeeTypeName}</td>
-                  <td className="px-4 py-2 text-center">{inv.quantity}</td>
-                  <td className="px-4 py-2 text-center">
-                    <Badge
-                      className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${
-                        inv.quantity > 0
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {inv.quantity > 0 ? "Còn hàng" : "Hết hàng"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2 text-center space-x-2">
-                    <Link href={`/dashboard/manager/inventories/${inv.inventoryId}`}>
-                      <Button variant="outline" size="sm">Xem</Button>
-                    </Link>
-                    <Link href={`/dashboard/manager/inventories/${inv.inventoryId}/logs`}>
-                      <Button variant="secondary" size="sm">
-                        <HistoryIcon className="w-4 h-4 mr-1" />
-                        Lịch sử
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleSoftDelete(inv.inventoryId)}
-                    >
-                      Xoá
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {paged.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center py-4 text-gray-500">
-                    Không có tồn kho phù hợp.
-                  </td>
-                </tr>
-              )}
-            </tbody>
+  {paged.map((inv) => (
+    <tr key={inv.inventoryId} className="border-t align-top text-sm">
+      <td className="px-4 py-2 whitespace-normal break-words">{inv.inventoryCode}</td>
+      <td className="px-4 py-2 whitespace-normal break-words max-w-[200px]">{inv.warehouseName}</td>
+      <td className="px-4 py-2 whitespace-normal break-words max-w-[220px]">{inv.productName}</td>
+      <td className="px-4 py-2 whitespace-normal break-words text-green-700 font-medium max-w-[160px]">{inv.coffeeTypeName}</td>
+      <td className="px-4 py-2 text-center">{inv.quantity.toLocaleString()}</td>
+      <td className="px-4 py-2 text-center">
+        <Badge
+          className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${
+            inv.quantity > 0
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {inv.quantity > 0 ? "Còn hàng" : "Hết hàng"}
+        </Badge>
+      </td>
+      <td className="px-2 py-2 text-center align-middle">
+  <div className="flex flex-wrap justify-center gap-2">
+    <Link href={`/dashboard/manager/inventories/${inv.inventoryId}`}>
+      <Button variant="outline" size="sm">Xem</Button>
+    </Link>
+    <Link href={`/dashboard/manager/inventories/${inv.inventoryId}/logs`}>
+      <Button variant="secondary" size="sm">
+        <HistoryIcon className="w-4 h-4 mr-1" />
+        Lịch sử
+      </Button>
+    </Link>
+    <Button
+      variant="destructive"
+      size="sm"
+      onClick={() => handleSoftDelete(inv.inventoryId)}
+    >
+      Xoá
+    </Button>
+  </div>
+</td>
+    </tr>
+  ))}
+  {paged.length === 0 && (
+    <tr>
+      <td colSpan={7} className="text-center py-4 text-gray-500">
+        Không có tồn kho phù hợp.
+      </td>
+    </tr>
+  )}
+</tbody>
+
           </table>
         </div>
       )}

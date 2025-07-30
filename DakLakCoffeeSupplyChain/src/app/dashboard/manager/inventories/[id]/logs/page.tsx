@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -19,7 +19,6 @@ export default function InventoryLogsPage() {
       try {
         const result = await getLogsByInventoryId(id as string);
 
-        // ✅ Không kiểm tra status nữa, vì trả về trực tiếp là mảng
         if (Array.isArray(result) && result.length > 0) {
           setLogs(result);
         } else {
@@ -36,37 +35,53 @@ export default function InventoryLogsPage() {
   }, [id]);
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 max-w-4xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>Lịch sử thay đổi tồn kho</CardTitle>
+          <CardTitle className="text-xl font-semibold">📑 Lịch sử thay đổi tồn kho</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading && <p>⏳ Đang tải dữ liệu...</p>}
+          {loading && (
+            <p className="text-gray-600 italic">⏳ Đang tải dữ liệu...</p>
+          )}
 
           {!loading && error && (
             <p className="text-red-500">{error}</p>
           )}
 
           {!loading && !error && logs.length > 0 && (
-            <ul className="space-y-3">
-              {logs.map((log) => (
+            <ul className="space-y-4 mt-4">
+              {logs.map((log, index) => (
                 <li
                   key={log.logId}
-                  className="border p-4 rounded-md bg-white shadow-sm space-y-1"
+                  className="border-l-4 border-blue-600 bg-gray-50 p-4 rounded-md shadow-sm relative"
                 >
-                  <p><strong>🔄 Hành động:</strong> {log.actionType}</p>
-                  <p><strong>📦 Số lượng thay đổi:</strong> {log.quantityChanged} kg</p>
-                  <p><strong>📝 Ghi chú:</strong> {log.note || "Không có"}</p>
-                  <p><strong>👤 Người cập nhật:</strong> {log.updatedByName || "Hệ thống"}</p>
-                  <p><strong>🕒 Thời gian:</strong> {new Date(log.loggedAt).toLocaleString("vi-VN")}</p>
+                  <div className="absolute -left-2 top-4 w-4 h-4 bg-blue-600 rounded-full"></div>
+                  <div className="space-y-1 ml-2">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold">🔄 Hành động:</span> {log.actionType}
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold">📦 Số lượng:</span> {log.quantityChanged} kg
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold">📝 Ghi chú:</span> {log.note || "Không có"}
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold">👤 Người cập nhật:</span> {log.updatedByName || "Hệ thống"}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      <span className="font-semibold">🕒 Thời gian:</span>{" "}
+                      {new Date(log.loggedAt).toLocaleString("vi-VN")}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
 
           {!loading && !error && logs.length === 0 && (
-            <p>Không có lịch sử tồn kho.</p>
+            <p className="text-gray-600 italic">Không có lịch sử tồn kho.</p>
           )}
 
           <div className="mt-6">
