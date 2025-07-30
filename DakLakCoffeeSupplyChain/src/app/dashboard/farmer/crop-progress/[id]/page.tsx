@@ -22,11 +22,13 @@ import {
 import { AppToast } from "@/components/ui/AppToast";
 import {
     CropProgress,
+    deleteCropProgress,
     getCropProgressesByDetailId,
 } from "@/lib/api/cropProgress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
 import { CreateProgressDialog } from "../components/CreateProgressDialog";
+import { EditProgressDialog } from "../components/EditProgressDialog";
 
 export default function CropProgressPage() {
     const router = useRouter();
@@ -41,25 +43,17 @@ export default function CropProgressPage() {
             setLoading(true);
             const data = await getCropProgressesByDetailId(cropSeasonDetailId);
 
-            // Không có dữ liệu thì set rỗng (hiện 'Chưa có ghi nhận tiến độ.')
             setProgressList(data.sort((a, b) => new Date(a.progressDate).getTime() - new Date(b.progressDate).getTime()));
         } catch (error: any) {
-            // ❌ Không show lỗi nếu là 404 vì bạn đã xử lý ở API rồi
-            // ✅ Chỉ show nếu là lỗi khác (ví dụ 500, network, lỗi không xác định)
+
             if (error.response?.status !== 404) {
                 AppToast.error("Đã xảy ra lỗi khi tải dữ liệu tiến độ.");
             }
-            setProgressList([]); // fallback nếu lỗi
+            setProgressList([]);
         } finally {
             setLoading(false);
         }
     };
-
-
-
-
-
-
     useEffect(() => {
         if (cropSeasonDetailId) {
             reloadData();
@@ -176,6 +170,28 @@ export default function CropProgressPage() {
                                                 )}
                                             </div>
                                         )}
+                                        <div className="flex gap-2 mt-4">
+                                            <EditProgressDialog progress={progress} onSuccess={reloadData} />
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={async () => {
+                                                    const confirmDelete = confirm("Bạn chắc chắn muốn xoá tiến độ này?");
+                                                    if (!confirmDelete) return;
+
+                                                    try {
+                                                        await deleteCropProgress(progress.progressId);
+                                                        AppToast.success("Xoá tiến độ thành công!");
+                                                        reloadData();
+                                                    } catch (error: any) {
+                                                        AppToast.error(error.response?.data?.message || "Xoá thất bại.");
+                                                    }
+                                                }}
+                                            >
+                                                Xoá
+                                            </Button>
+                                        </div>
+
                                     </div>
                                 </li>
                             ))}
