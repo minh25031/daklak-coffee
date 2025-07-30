@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export default function InboundRequestListPage() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -40,12 +41,34 @@ export default function InboundRequestListPage() {
   );
 
   const totalPages = Math.ceil(filteredRequests.length / pageSize);
-  const pagedRequests = filteredRequests.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pagedRequests = filteredRequests.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const getStatusBadge = (status: string) => {
+    const base = "capitalize px-3 py-1 rounded-md font-medium text-sm";
+
+    switch (status) {
+      case "Pending":
+        return <Badge className={`${base} bg-gray-100 text-gray-800`}>⏳ Đang chờ duyệt</Badge>;
+      case "Approved":
+        return <Badge className={`${base} bg-blue-100 text-blue-800`}>📝 Đã duyệt</Badge>;
+      case "Completed":
+        return <Badge className={`${base} bg-green-100 text-green-800`}>✅ Hoàn tất</Badge>;
+      case "Rejected":
+        return <Badge className={`${base} bg-red-100 text-red-800`}>❌ Đã từ chối</Badge>;
+      case "Cancelled":
+        return <Badge className={`${base} bg-yellow-100 text-yellow-800`}>🚫 Đã huỷ</Badge>;
+      default:
+        return <Badge className={`${base} bg-muted text-muted-foreground`}>{status}</Badge>;
+    }
+  };
 
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Danh sách yêu cầu nhập kho</h1>
+        <h1 className="text-xl font-bold">📥 Danh sách yêu cầu nhập kho</h1>
         <div className="relative w-64">
           <Input
             placeholder="Tìm mã yêu cầu..."
@@ -75,21 +98,9 @@ export default function InboundRequestListPage() {
               <tr key={req.inboundRequestId} className="border-t">
                 <td className="px-4 py-2">{req.requestCode}</td>
                 <td className="px-4 py-2">
-                  {new Date(req.createdAt).toLocaleDateString()}
+                  {new Date(req.createdAt).toLocaleDateString("vi-VN")}
                 </td>
-                <td className="px-4 py-2">
-                  <span
-                    className={`inline-block px-3 py-1 text-sm font-medium rounded-md ${
-                      req.status === "Approved"
-                        ? "bg-green-100 text-green-800"
-                        : req.status === "Rejected"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {req.status}
-                  </span>
-                </td>
+                <td className="px-4 py-2">{getStatusBadge(req.status)}</td>
                 <td className="px-4 py-2 text-center">
                   <Link href={`/dashboard/staff/inbounds/${req.inboundRequestId}`}>
                     <Button size="sm">Xem chi tiết</Button>

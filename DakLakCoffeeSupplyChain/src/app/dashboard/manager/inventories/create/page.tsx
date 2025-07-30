@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { createInventory } from "@/lib/api/inventory";
 import { getAllWarehouses } from "@/lib/api/warehouses";
+import { getAllProcessingBatches } from "@/lib/api/processingBatches";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,21 +14,32 @@ import { useRouter } from "next/navigation";
 export default function CreateInventoryPage() {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [batches, setBatches] = useState<any[]>([]);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchWarehouses() {
-      const res = await getAllWarehouses();
-      if (res && res.status === 1 && Array.isArray(res.data)) {
-        setWarehouses(res.data);
+    async function fetchInitialData() {
+      const [warehouseRes, batchRes] = await Promise.all([
+        getAllWarehouses(),
+        getAllProcessingBatches()
+      ]);
+
+      if (warehouseRes?.status === 1) {
+        setWarehouses(warehouseRes.data);
       } else {
-        console.error("❌ Failed to fetch warehouses:", res?.message || res);
+        console.error("❌ Không thể tải kho:", warehouseRes?.message || warehouseRes);
+      }
+
+      if (Array.isArray(batchRes)) {
+        setBatches(batchRes);
+      } else {
+        console.error("❌ Không thể tải mẻ hàng:", batchRes);
       }
     }
 
-    fetchWarehouses();
+    fetchInitialData();
   }, []);
 
   const onSubmit = async (data: any) => {
@@ -38,7 +50,7 @@ export default function CreateInventoryPage() {
       const res = await createInventory(data);
 
       if (res && (res.status === 1 || res.status === 200 || res.status === 201)) {
-        setSuccessMessage("✅ Inventory created successfully");
+        setSuccessMessage("✅ Tạo tồn kho thành công");
         setTimeout(() => {
           router.push("/dashboard/manager/inventories");
         }, 1500);
@@ -46,18 +58,13 @@ export default function CreateInventoryPage() {
         const fallbackMessage = typeof res?.message === "string"
           ? res.message
           : "Đã có lỗi xảy ra khi tạo tồn kho.";
-        setErrorMessage(`❌ Failed: ${fallbackMessage}`);
+        setErrorMessage(`❌ Thất bại: ${fallbackMessage}`);
       }
 
     } catch (err: any) {
-      console.error("❌ System Error:", err);
-      const fallback =
-        typeof err === "string"
-          ? err
-          : typeof err?.message === "string"
-          ? err.message
-          : "Lỗi không xác định từ hệ thống.";
-      setErrorMessage(`❌ System Error: ${fallback}`);
+      console.error("❌ Lỗi hệ thống:", err);
+      const fallback = typeof err?.message === "string" ? err.message : "Lỗi không xác định từ hệ thống.";
+      setErrorMessage(`❌ Lỗi hệ thống: ${fallback}`);
     }
   };
 
@@ -65,7 +72,7 @@ export default function CreateInventoryPage() {
     <div className="p-6 max-w-2xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>Create New Inventory</CardTitle>
+          <CardTitle>Tạo tồn kho mới</CardTitle>
         </CardHeader>
         <CardContent>
           {successMessage && (
@@ -80,14 +87,14 @@ export default function CreateInventoryPage() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Warehouse dropdown */}
+            {/* Kho */}
             <div>
-              <Label>Warehouse</Label>
+              <Label>Kho</Label>
               <select
                 {...register("warehouseId", { required: true })}
                 className="w-full border p-2 rounded"
               >
-                <option value="">-- Select warehouse --</option>
+                <option value="">-- Chọn kho --</option>
                 {warehouses.map((w) => (
                   <option key={w.warehouseId} value={w.warehouseId}>
                     {w.name} - {w.location} ({w.capacity?.toLocaleString()} kg)
@@ -95,49 +102,56 @@ export default function CreateInventoryPage() {
                 ))}
               </select>
               {errors.warehouseId && (
-                <p className="text-red-500 text-sm mt-1">Warehouse is required.</p>
+                <p className="text-red-500 text-sm mt-1">Vui lòng chọn kho.</p>
               )}
             </div>
 
-            {/* Batch input (manual) */}
+            {/* Mẻ hàng */}
             <div>
-              <Label>Batch ID</Label>
-              <Input
+              <Label>Mẻ hàng</Label>
+              <select
                 {...register("batchId", { required: true })}
-                placeholder="Enter batchId manually..."
-              />
+                className="w-full border p-2 rounded"
+              >
+                <option value="">-- Chọn mẻ hàng --</option>
+                {batches.map((b) => (
+                  <option key={b.batchId} value={b.batchId}>
+                    {b.batchCode} - {b.methodName} ({b.totalOutputQuantity} kg)
+                  </option>
+                ))}
+              </select>
               {errors.batchId && (
-                <p className="text-red-500 text-sm mt-1">Batch ID is required.</p>
+                <p className="text-red-500 text-sm mt-1">Vui lòng chọn mẻ hàng.</p>
               )}
             </div>
 
-            {/* Quantity */}
+            {/* Số lượng */}
             <div>
-              <Label>Quantity</Label>
+              <Label>Số lượng</Label>
               <Input
                 {...register("quantity", { required: true, min: 1 })}
                 type="number"
-                placeholder="Enter quantity..."
+                placeholder="Nhập số lượng..."
               />
               {errors.quantity && (
-                <p className="text-red-500 text-sm mt-1">Quantity must be &gt; 0.</p>
+                <p className="text-red-500 text-sm mt-1">Số lượng phải lớn hơn 0.</p>
               )}
             </div>
 
-            {/* Unit */}
+            {/* Đơn vị */}
             <div>
-              <Label>Unit</Label>
+              <Label>Đơn vị</Label>
               <Input
                 {...register("unit", { required: true })}
-                placeholder="e.g., kg, tons..."
+                placeholder="VD: kg, tấn..."
               />
               {errors.unit && (
-                <p className="text-red-500 text-sm mt-1">Unit is required.</p>
+                <p className="text-red-500 text-sm mt-1">Vui lòng nhập đơn vị.</p>
               )}
             </div>
 
             <div className="pt-4">
-              <Button type="submit" className="w-full">Create Inventory</Button>
+              <Button type="submit" className="w-full">Tạo tồn kho</Button>
             </div>
           </form>
         </CardContent>
