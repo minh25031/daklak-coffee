@@ -199,7 +199,13 @@ export async function rejectFarmerApplication(contractId: string, farmerId: stri
   return true;
 }
 
+// Gọi API để lấy chi tiết một hợp đồng
 export async function getContractDetails(contractId: string): Promise<ContractViewDetailsDto> {
   const response = await api.get<ContractViewDetailsDto>(`/Contracts/${contractId}`);
   return response.data;
+}
+
+// Gọi API để xoá mềm hợp đồng
+export async function softDeleteContract(contractId: string): Promise<void> {
+  await api.patch(`/Contracts/soft-delete/${contractId}`);
 } 

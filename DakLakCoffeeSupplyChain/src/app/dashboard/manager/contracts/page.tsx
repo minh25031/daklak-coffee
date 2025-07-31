@@ -1,7 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAllContracts, ContractViewAllDto } from "@/lib/api/contracts";
+import {
+  getAllContracts,
+  ContractViewAllDto,
+  softDeleteContract,
+} from "@/lib/api/contracts";
 import {
   Table,
   TableHeader,
@@ -34,11 +38,44 @@ export default function ContractsPage() {
   useEffect(() => {
     getAllContracts()
       .then((data) => {
-        setContracts(data);
-        setLoading(false);
+        if (Array.isArray(data)) {
+          setContracts(data);
+          setError(null); // reset error nếu có dữ liệu
+        } else if (
+          typeof data === "string" ||
+          Object.prototype.toString.call(data) === "[object String]"
+        ) {
+          const str = (data as string).trim().toLowerCase();
+          if (str === "no data") {
+            setContracts([]);
+            setError(null); // reset error nếu đúng "no data"
+          } else {
+            setError("Dữ liệu trả về không hợp lệ");
+          }
+        } else {
+          setError("Dữ liệu trả về không hợp lệ");
+        }
       })
-      .catch((err) => {
+      .catch((err: any) => {
+        const message = err?.response?.data;
+        const status = err?.response?.status;
+
+        const isString =
+          typeof message === "string" ||
+          Object.prototype.toString.call(message) === "[object String]";
+
+        if (status === 404 && isString) {
+          const str = (message as string).trim().toLowerCase();
+          if (str === "no data") {
+            setContracts([]);
+            setError(null); // reset error nếu đúng "no data"
+            return;
+          }
+        }
+
         setError(err.message || "Đã xảy ra lỗi khi tải hợp đồng");
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, []);
@@ -61,24 +98,44 @@ export default function ContractsPage() {
 
   // Handlers
   const handleAdd = () => router.push("/dashboard/manager/contracts/create");
-  const handleDetail = (id: string) => router.push(`/dashboard/manager/contracts/${id}`);
-  const handleEdit = (id: string) => router.push(`/dashboard/manager/contracts/${id}/edit`);
+  const handleDetail = (id: string) =>
+    router.push(`/dashboard/manager/contracts/${id}`);
+  const handleEdit = (id: string) =>
+    router.push(`/dashboard/manager/contracts/${id}/edit`);
   const handleDelete = async () => {
     if (!deleteId) return;
     setDeleting(true);
-    // TODO: Call delete API here
-    setTimeout(() => {
+    try {
+      await softDeleteContract(deleteId);
       setContracts((prev) => prev.filter((c) => c.contractId !== deleteId));
-      setDeleting(false);
       setDeleteId(null);
-    }, 800);
+    } catch (err: any) {
+      alert(err?.message || "Xoá hợp đồng thất bại");
+    } finally {
+      setDeleting(false);
+    }
   };
 
-  const contractStatusMap: Record<string, { label: string; className: string }> = {
-    NotStarted: { label: "Chưa bắt đầu", className: "bg-gray-200 text-gray-700" },
-    PreparingDelivery: { label: "Chuẩn bị giao", className: "bg-blue-100 text-blue-700" },
-    InProgress: { label: "Đang thực hiện", className: "bg-yellow-100 text-yellow-800" },
-    Completed: { label: "Hoàn thành", className: "bg-green-100 text-green-700" },
+  const contractStatusMap: Record<
+    string,
+    { label: string; className: string }
+  > = {
+    NotStarted: {
+      label: "Chưa bắt đầu",
+      className: "bg-gray-200 text-gray-700",
+    },
+    PreparingDelivery: {
+      label: "Chuẩn bị giao",
+      className: "bg-blue-100 text-blue-700",
+    },
+    InProgress: {
+      label: "Đang thực hiện",
+      className: "bg-yellow-100 text-yellow-800",
+    },
+    Completed: {
+      label: "Hoàn thành",
+      className: "bg-green-100 text-green-700",
+    },
     Cancelled: { label: "Đã huỷ", className: "bg-red-100 text-red-700" },
     // ... các trạng thái khác nếu có
   };
@@ -104,7 +161,7 @@ export default function ContractsPage() {
           </div>
           {loading ? (
             <div className="text-center py-8">Đang tải...</div>
-          ) : error ? (
+          ) : error && error.toLowerCase() !== "no data" ? (
             <div className="text-red-500 text-center mb-2">{error}</div>
           ) : (
             <div className="overflow-x-auto">
@@ -124,9 +181,21 @@ export default function ContractsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredContracts.length === 0 ? (
+                  {contracts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center text-gray-500">
+                      <TableCell
+                        colSpan={10}
+                        className="text-center text-gray-500"
+                      >
+                        Không có hợp đồng nào.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredContracts.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={10}
+                        className="text-center text-gray-500"
+                      >
                         Không có hợp đồng nào phù hợp.
                       </TableCell>
                     </TableRow>
@@ -134,31 +203,60 @@ export default function ContractsPage() {
                     filteredContracts.map((contract) => (
                       <TableRow key={contract.contractId}>
                         <TableCell>{contract.contractCode}</TableCell>
-                        <TableCell className="max-w-[220px] truncate" title={contract.contractTitle}>
+                        <TableCell
+                          className="max-w-[220px] truncate"
+                          title={contract.contractTitle}
+                        >
                           {contract.contractTitle}
                         </TableCell>
-                        <TableCell className="max-w-[180px] truncate" title={contract.buyerName}>
+                        <TableCell
+                          className="max-w-[180px] truncate"
+                          title={contract.buyerName}
+                        >
                           {contract.buyerName}
                         </TableCell>
                         <TableCell>{contract.deliveryRounds ?? "-"}</TableCell>
-                        <TableCell>{contract.totalQuantity?.toLocaleString() ?? "-"}</TableCell>
-                        <TableCell>{contract.totalValue?.toLocaleString() ?? "-"}</TableCell>
+                        <TableCell>
+                          {contract.totalQuantity?.toLocaleString() ?? "-"}
+                        </TableCell>
+                        <TableCell>
+                          {contract.totalValue?.toLocaleString() ?? "-"}
+                        </TableCell>
                         <TableCell>{contract.startDate ?? "-"}</TableCell>
                         <TableCell>{contract.endDate ?? "-"}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${contractStatusMap[contract.status]?.className || "bg-gray-100 text-gray-600"}`}>
-                            {contractStatusMap[contract.status]?.label || contract.status}
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-semibold ${
+                              contractStatusMap[contract.status]?.className ||
+                              "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {contractStatusMap[contract.status]?.label ||
+                              contract.status}
                           </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleDetail(contract.contractId)}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDetail(contract.contractId)}
+                            >
                               Chi tiết
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(contract.contractId)}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(contract.contractId)}
+                            >
                               Sửa
                             </Button>
-                            <Dialog open={deleteId === contract.contractId} onOpenChange={(open) => setDeleteId(open ? contract.contractId : null)}>
+                            <Dialog
+                              open={deleteId === contract.contractId}
+                              onOpenChange={(open) =>
+                                setDeleteId(open ? contract.contractId : null)
+                              }
+                            >
                               <DialogTrigger asChild>
                                 <Button size="sm" variant="destructive">
                                   Xoá
@@ -166,13 +264,23 @@ export default function ContractsPage() {
                               </DialogTrigger>
                               <DialogContent title="Xác nhận xoá hợp đồng">
                                 <DialogHeader>
-                                  <DialogTitle>Bạn có chắc chắn muốn xoá hợp đồng này?</DialogTitle>
+                                  <DialogTitle className="text-red-600 text-lg font-semibold">
+                                    ⚠️ Bạn có chắc chắn muốn xoá hợp đồng này?
+                                  </DialogTitle>
                                 </DialogHeader>
                                 <div className="flex justify-end gap-2 mt-4">
-                                  <Button variant="outline" onClick={() => setDeleteId(null)} disabled={deleting}>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setDeleteId(null)}
+                                    disabled={deleting}
+                                  >
                                     Huỷ
                                   </Button>
-                                  <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={handleDelete}
+                                    disabled={deleting}
+                                  >
                                     {deleting ? "Đang xoá..." : "Xoá"}
                                   </Button>
                                 </div>
