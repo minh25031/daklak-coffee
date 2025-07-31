@@ -34,6 +34,38 @@ export interface ContractViewAllDto {
   status: string; // ContractStatus as string
 }
 
+export interface ContractItemViewDto {
+  contractItemId: string;
+  contractItemCode: string;
+  coffeeTypeId: string;
+  coffeeTypeName: string;
+  quantity?: number;
+  unitPrice?: number;
+  discountAmount?: number;
+  note: string;
+}
+
+export interface ContractViewDetailsDto {
+  contractId: string;
+  contractCode: string;
+  contractNumber: string;
+  contractTitle: string;
+  contractFileUrl: string;
+  sellerName: string;
+  buyerName: string;
+  deliveryRounds?: number;
+  totalQuantity?: number;
+  totalValue?: number;
+  startDate?: string;
+  endDate?: string;
+  signedAt?: string;
+  status: string;
+  cancelReason: string;
+  createdAt: string;
+  updatedAt: string;
+  contractItems: ContractItemViewDto[];
+}
+
 // Mock data for contracts
 export const mockContracts: Contract[] = [
   {
@@ -165,4 +197,9 @@ export async function rejectFarmerApplication(contractId: string, farmerId: stri
   // TODO: Replace with actual API call
   console.log(`Business rejected farmer ${farmerId} for contract ${contractId}`);
   return true;
+}
+
+export async function getContractDetails(contractId: string): Promise<ContractViewDetailsDto> {
+  const response = await api.get<ContractViewDetailsDto>(`/Contracts/${contractId}`);
+  return response.data;
 } 
