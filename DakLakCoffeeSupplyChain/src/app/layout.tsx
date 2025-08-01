@@ -4,6 +4,7 @@ import "@/styles/globals.css";
 import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import Script from "next/script";
 
 export default function RootLayout({
   children,
@@ -16,9 +17,12 @@ export default function RootLayout({
     pathname === "/" || pathname.startsWith("/marketplace");
 
   return (
-    <html lang="vi">
+    <html lang="vi" className="scroll-smooth">
+      <meta charSet="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="description" content="DakLak Coffee Supply Chain Platform" />
       <head>
-        <script src="https://cdn.lordicon.com/lordicon.js"></script>
+        <Script src="https://cdn.lordicon.com/lordicon.js" strategy="afterInteractive" />
       </head>
       <body className="bg-white text-black">
         {showHeaderFooter && <Header />}
