@@ -68,6 +68,11 @@ export async function getProcurementPlanById(planId: string): Promise<Procuremen
   return response.data;
 }
 
+export async function getProcurementPlanDetailById(planId: string): Promise<ProcurementPlan | null> {
+  const response = await api.get(`/ProcurementPlans/Available/${planId}`);
+  return response.data;
+}
+
 export async function createProcurementPlan(data: Partial<ProcurementPlan>): Promise<ProcurementPlan | null> {
   const response = await api.post(`/ProcurementPlans`, data)
   return response.data
