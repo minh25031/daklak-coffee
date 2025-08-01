@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -39,7 +39,7 @@ export default function Header() {
         {/* Logo */}
         <div className="flex items-center gap-3">
           <Link href="/">
-            <img src="/logo_bg.png" alt="Logo" className="h-10 w-auto" />
+            <Image src="/logo_bg.png" alt="Logo" width={40} height={40} className="h-10 w-auto" priority />
           </Link>
           <h1 className="text-xl md:text-2xl font-bold text-orange-700">
             DakLak SupplyChain
@@ -55,7 +55,7 @@ export default function Header() {
             href="/marketplace"
             className="hover:text-orange-600 transition"
           >
-            Marketplace
+            Sàn giao dịch thu mua cà phê
           </Link>
 
           {isLoggedIn && userName ? (

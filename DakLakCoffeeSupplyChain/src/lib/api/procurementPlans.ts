@@ -58,6 +58,11 @@ export async function getAllProcurementPlans(): Promise<ProcurementPlan[]> {
   return response.data;
 }
 
+export async function getAllAvailableProcurementPlans(): Promise<ProcurementPlan[]> {
+  const response = await api.get("/ProcurementPlans/Available");
+  return response.data;
+}
+
 export async function getProcurementPlanById(planId: string): Promise<ProcurementPlan | null> {
   const response = await api.get(`/ProcurementPlans/${planId}`);
   return response.data;
