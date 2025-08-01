@@ -100,7 +100,7 @@ export default function UpdateCropSeasonDetailDialog({
       plannedQuality,
       status: parsedStatus,
     };
-
+    console.log("Submitting payload:", payload);
     setIsSubmitting(true);
     try {
       await updateCropSeasonDetail(detailId, payload);
