@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Home } from "lucide-react";
 import { resendVerificationEmail, signUp } from "@/lib/api/auth";
 import { getErrorMessage } from "@/lib/utils";
+import { AppToast } from "@/components/ui/AppToast";
 
 export default function RegisterPage() {
   const [showResendBox, setShowResendBox] = useState(false);
@@ -99,9 +100,9 @@ export default function RegisterPage() {
     try {
       await signUp(payload);
       setTimeout(() => setShowResendBox(true), 10000);
-      alert("Bạn hãy kiểm tra email đã được đăng ký để xác thực.");
+      AppToast.success("Bạn hãy kiểm tra email đã được đăng ký để xác thực.");
     } catch (err) {
-      alert(getErrorMessage(err));
+      AppToast.error(getErrorMessage(err));
     }
   };
 

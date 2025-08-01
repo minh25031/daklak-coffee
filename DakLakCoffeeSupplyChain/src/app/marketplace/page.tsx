@@ -203,7 +203,7 @@ export default function MarketplacePage() {
                   {/* Nút xem chi tiết (dẫn đến trang chi tiết kế hoạch) */}
                   <div className='mt-4 text-right'>
                     <Link
-                      href={`/marketplace/plans/${plan.planId}`}
+                      href={`/marketplace/${plan.planId}`}
                       className='inline-block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition'
                     >
                       Xem chi tiết
