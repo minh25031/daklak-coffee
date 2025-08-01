@@ -78,7 +78,7 @@ export async function softDeleteCropSeasonDetail(
   detailId: string
 ): Promise<{ success: boolean }> {
   try {
-    await api.put(`${baseUrl}/soft-delete/${detailId}`);
+    await api.patch(`${baseUrl}/soft-delete/${detailId}`); 
     return { success: true };
   } catch (err) {
     console.error('Lỗi softDeleteCropSeasonDetail:', err);
