@@ -35,6 +35,18 @@ ChartJS.register(
     Legend
 );
 
+// Default data for when no progress exists
+const DEFAULT_PROGRESS_DATA = {
+    labels: ["Hoàn thành", "Còn lại"],
+    datasets: [
+        {
+            data: [0, 100],
+            backgroundColor: ["#16a34a", "#f3f4f6"],
+            borderWidth: 1,
+        },
+    ],
+};
+
 export default function FarmerDashboard() {
     useAuthGuard(["farmer"]);
 
@@ -47,7 +59,8 @@ export default function FarmerDashboard() {
 
     const [alerts, setAlerts] = useState<string[]>([]);
     const [chartData, setChartData] = useState<any>(null);
-    const [overallProgressData, setOverallProgressData] = useState<any>(null);
+    const [overallProgressData, setOverallProgressData] = useState<any>(DEFAULT_PROGRESS_DATA);
+    const [loading, setLoading] = useState(true);
 
     const chartOptions = {
         responsive: true,
@@ -60,6 +73,9 @@ export default function FarmerDashboard() {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                setLoading(true);
+
+                // Fetch crop seasons
                 const cropSeasons = await getCropSeasonsForCurrentUser({
                     status: "Đang hoạt động",
                     page: 1,
@@ -78,6 +94,7 @@ export default function FarmerDashboard() {
                     "Vùng Cư M'gar có sản lượng thấp hơn kế hoạch.",
                 ]);
 
+                // Set monthly production chart (unchanged)
                 setChartData({
                     labels: ["T1", "T2", "T3", "T4", "T5"],
                     datasets: [
@@ -101,47 +118,67 @@ export default function FarmerDashboard() {
                     ],
                 });
 
-                const progresses = await getAllCropProgresses();
-                const grouped: Record<string, CropProgress[]> = {};
+                // Handle crop progress data with error catching
+                try {
+                    const progresses = await getAllCropProgresses();
+                    const grouped: Record<string, CropProgress[]> = {};
 
-                for (const p of progresses) {
-                    if (!grouped[p.cropSeasonDetailId]) {
-                        grouped[p.cropSeasonDetailId] = [];
+                    for (const p of progresses) {
+                        if (!grouped[p.cropSeasonDetailId]) {
+                            grouped[p.cropSeasonDetailId] = [];
+                        }
+                        grouped[p.cropSeasonDetailId].push(p);
                     }
-                    grouped[p.cropSeasonDetailId].push(p);
+
+                    const TOTAL_STAGES = 5;
+                    const percentList: number[] = [];
+
+                    for (const regionId in grouped) {
+                        const steps = grouped[regionId];
+                        const current = Math.max(...steps.map(s => s.stepIndex ?? 0));
+                        const percent = Math.min(((current + 1) / TOTAL_STAGES) * 100, 100);
+                        percentList.push(percent);
+                    }
+
+                    const average = percentList.length > 0
+                        ? Math.round(percentList.reduce((a, b) => a + b, 0) / percentList.length)
+                        : 0;
+
+                    setOverallProgressData({
+                        labels: ["Hoàn thành", "Còn lại"],
+                        datasets: [
+                            {
+                                data: [average, 100 - average],
+                                backgroundColor: ["#16a34a", "#f3f4f6"],
+                                borderWidth: 1,
+                            },
+                        ],
+                    });
+                } catch (progressError) {
+                    console.log("Không có dữ liệu tiến trình, sử dụng giá trị mặc định");
+                    setOverallProgressData(DEFAULT_PROGRESS_DATA);
                 }
 
-                const TOTAL_STAGES = 5;
-                const percentList: number[] = [];
-
-                for (const regionId in grouped) {
-                    const steps = grouped[regionId];
-                    const current = Math.max(...steps.map(s => s.stepIndex ?? 0));
-                    const percent = Math.min(((current + 1) / TOTAL_STAGES) * 100, 100);
-                    percentList.push(percent);
-                }
-
-                const average = percentList.length > 0
-                    ? Math.round(percentList.reduce((a, b) => a + b, 0) / percentList.length)
-                    : 0;
-
-                setOverallProgressData({
-                    labels: ["Hoàn thành", "Còn lại"],
-                    datasets: [
-                        {
-                            data: [average, 100 - average],
-                            backgroundColor: ["#16a34a", "#f3f4f6"],
-                            borderWidth: 1,
-                        },
-                    ],
-                });
             } catch (error) {
                 console.error("Lỗi lấy dữ liệu dashboard:", error);
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchData();
     }, []);
+
+    if (loading) {
+        return (
+            <div className="w-full bg-orange-50 min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full bg-orange-50 min-h-screen">
@@ -157,27 +194,31 @@ export default function FarmerDashboard() {
                     </section>
                 )}
 
-                {chartData && overallProgressData && (
-                    <section>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-white rounded-xl shadow p-4">
-                                <DashboardSectionTitle title="Sản lượng theo tháng" />
+                <section>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white rounded-xl shadow p-4">
+                            <DashboardSectionTitle title="Sản lượng theo tháng" />
+                            {chartData ? (
                                 <Line data={chartData} options={chartOptions} />
-                            </div>
-                            <div className="bg-white rounded-xl shadow p-4">
-                                <DashboardSectionTitle title="Tiến độ mùa vụ tổng thể" />
-                                <div className="relative h-[200px] w-[200px] mx-auto">
-                                    <Doughnut data={overallProgressData} />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-2xl font-bold text-green-700">
-                                            {overallProgressData.datasets[0].data[0]}%
-                                        </span>
-                                    </div>
+                            ) : (
+                                <div className="h-[300px] flex items-center justify-center text-gray-500">
+                                    Đang tải dữ liệu biểu đồ...
+                                </div>
+                            )}
+                        </div>
+                        <div className="bg-white rounded-xl shadow p-4">
+                            <DashboardSectionTitle title="Tiến độ mùa vụ tổng thể" />
+                            <div className="relative h-[200px] w-[200px] mx-auto">
+                                <Doughnut data={overallProgressData} />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-2xl font-bold text-green-700">
+                                        {overallProgressData.datasets[0].data[0]}%
+                                    </span>
                                 </div>
                             </div>
                         </div>
-                    </section>
-                )}
+                    </div>
+                </section>
 
                 {alerts.length > 0 && (
                     <section>

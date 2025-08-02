@@ -90,6 +90,7 @@ export default function EditCropSeasonPage() {
                 commitmentId: form.commitmentId,
                 status: CropSeasonStatusValueToNumber[form.status as keyof typeof CropSeasonStatusValueToNumber]
             };
+            console.log('Submit payload:', payload);
 
             const result = await updateCropSeason(id as string, payload);
 
