@@ -426,12 +426,129 @@ export function SidebarGroup() {
           )}
         </div>
       )}
-      {role === "manager" && (
+     {role === "manager" && (
+  <div>
+    <button
+      className={cn(
+        "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+        pathname.startsWith("/dashboard/manager/processing")
+          ? "bg-orange-100 text-orange-700"
+          : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+      )}
+      onClick={() => setProcessingOpen((v) => !v)}
+    >
+      <div className="flex items-center gap-2 overflow-hidden">
+        <span className="shrink-0 w-5 text-center">
+          <FiBookOpen />
+        </span>
+        <span className="truncate">Chế biến</span>
+      </div>
+      <FiChevronDown
+        className={cn("transition", processingOpen && "rotate-180")}
+      />
+    </button>
+    {processingOpen && (
+      <div className="pl-8 space-y-1">
+        <Link href="/dashboard/manager/processing/batches" className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          pathname === "/dashboard/manager/processing/batches"
+            ? "bg-orange-100 text-orange-700"
+            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+        )}>
+          Danh sách lô chế biến
+        </Link>
+        <Link href="/dashboard/manager/processing/evaluations" className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          pathname.startsWith("/dashboard/manager/processing/evaluations")
+            ? "bg-orange-100 text-orange-700"
+            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+        )}>
+          Đánh giá lô chế biến
+        </Link>
+        <Link href="/dashboard/manager/processing/progresses" className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          pathname.startsWith("/dashboard/manager/processing/progresses")
+            ? "bg-orange-100 text-orange-700"
+            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+        )}>
+          Tiến trình lô chế biến
+        </Link>
+        <Link href="/dashboard/manager/processing/wastes" className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          pathname.startsWith("/dashboard/manager/processing/wastes")
+            ? "bg-orange-100 text-orange-700"
+            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+        )}>
+          Chất thải lô chế biến
+        </Link>
+        <Link href="/dashboard/manager/processing/methods" className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          pathname.startsWith("/dashboard/manager/processing/methods")
+            ? "bg-orange-100 text-orange-700"
+            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+        )}>
+          Phương pháp chế biến
+        </Link>
+        <Link href="/dashboard/manager/processing/parameters" className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          pathname.startsWith("/dashboard/manager/processing/parameters")
+            ? "bg-orange-100 text-orange-700"
+            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+        )}>
+          Tham số chế biến
+        </Link>
+        <Link href="/dashboard/manager/processing/stages" className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          pathname.startsWith("/dashboard/manager/processing/stages")
+            ? "bg-orange-100 text-orange-700"
+            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+        )}>
+          Công đoạn chế biến
+        </Link>
+        <Link href="/dashboard/manager/processing/waste-disposals" className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          pathname.startsWith("/dashboard/manager/processing/waste-disposals")
+            ? "bg-orange-100 text-orange-700"
+            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+        )}>
+          Xử lý chất thải lô chế biến
+        </Link>
+      </div>
+    )}
+  </div>
+)}
+
+{/* Dropdown: VẬN HÀNH KHO cho MANAGER */}
+{role === "manager" && (
+  <>
+    {(() => {
+      const links = [
+        {
+          label: "Yêu cầu xuất kho",
+          href: "/dashboard/manager/warehouse-request",
+          activeMatch: (path: string) => path === "/dashboard/manager/warehouse-request",
+        },
+        {
+          label: "Kho hàng",
+          href: "/dashboard/manager/warehouses",
+          activeMatch: (path: string) => path === "/dashboard/manager/warehouses",
+        },
+        {
+          label: "Lịch sử tồn kho",
+          href: "/dashboard/manager/inventory-logs",
+          activeMatch: (path: string) => path === "/dashboard/manager/warehouse-request",
+        },
+
+      ];
+
+      const isActive = links.some((item) => item.activeMatch(pathname));
+
+      return (
         <div>
           <button
             className={cn(
               "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
-              pathname.startsWith("/dashboard/manager/processing")
+              isActive
                 ? "bg-orange-100 text-orange-700"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
@@ -439,108 +556,37 @@ export function SidebarGroup() {
           >
             <div className="flex items-center gap-2 overflow-hidden">
               <span className="shrink-0 w-5 text-center">
-                <FiBookOpen />
+                <FiClipboard />
               </span>
-              <span className="truncate">Chế biến</span>
+              <span className="truncate">Vận hành kho</span>
             </div>
-            <FiChevronDown
-              className={cn("transition", processingOpen && "rotate-180")}
-            />
+            <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
           </button>
+
           {processingOpen && (
             <div className="pl-8 space-y-1">
-              <Link
-                href="/dashboard/manager/processing/batches"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname === "/dashboard/manager/processing/batches"
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Danh sách lô chế biến
-              </Link>
-              <Link
-                href="/dashboard/manager/processing/evaluations"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith("/dashboard/manager/processing/evaluations")
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Đánh giá lô chế biến
-              </Link>
-              <Link
-                href="/dashboard/manager/processing/progresses"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith("/dashboard/manager/processing/progresses")
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Tiến trình lô chế biến
-              </Link>
-              <Link
-                href="/dashboard/manager/processing/wastes"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith("/dashboard/manager/processing/wastes")
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Chất thải lô chế biến
-              </Link>
-              <Link
-                href="/dashboard/manager/processing/methods"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith("/dashboard/manager/processing/methods")
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Phương pháp chế biến
-              </Link>
-              <Link
-                href="/dashboard/manager/processing/parameters"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith("/dashboard/manager/processing/parameters")
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Tham số chế biến
-              </Link>
-              <Link
-                href="/dashboard/manager/processing/stages"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith("/dashboard/manager/processing/stages")
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Công đoạn chế biến
-              </Link>
-              <Link
-                href="/dashboard/manager/processing/waste-disposals"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith("/dashboard/manager/processing/waste-disposals")
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Xử lý chất thải lô chế biến
-              </Link>
+              {links.map(({ label, href, activeMatch }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    activeMatch(pathname)
+                      ? "bg-orange-100 text-orange-700"
+                      : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                  )}
+                >
+                  {label}
+                </Link>
+              ))}
             </div>
           )}
         </div>
-      )}
+      );
+    })()}
+  </>
+)}
+
     {role === "staff" && (
   <>
     {/* --- Dropdown: VẬN HÀNH KHO --- */}
