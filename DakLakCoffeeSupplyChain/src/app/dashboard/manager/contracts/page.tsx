@@ -18,6 +18,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { softDeleteContract } from "@/lib/api/contracts";
+import { Tooltip } from "@/components/ui/tooltip";
 
 export default function ContractsPage() {
   const [contracts, setContracts] = useState<ContractViewAllDto[]>([]);
@@ -148,9 +149,9 @@ export default function ContractsPage() {
                 <tr>
                   <th className="px-4 py-2 text-left">Tên hợp đồng</th>
                   <th className="px-4 py-2 text-left">Đối tác</th>
-                  <th className="px-4 py-2 text-left">Trạng thái</th>
-                  <th className="px-4 py-2 text-left">Thời gian</th>
-                  <th className="px-4 py-2 text-left">Hành động</th>
+                  <th className="px-4 py-2 text-center">Trạng thái</th>
+                  <th className="px-4 py-2 text-center">Thời gian</th>
+                  <th className="px-4 py-2 text-center">Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,7 +199,8 @@ export default function ContractsPage() {
                           : ""}
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-0">
+                          <Tooltip content="Xem chi tiết">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -210,6 +212,8 @@ export default function ContractsPage() {
                           >
                             <Eye className="w-4 h-4 text-blue-500" />
                           </Button>
+                          </Tooltip>
+                          <Tooltip content="Chỉnh sửa">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -221,6 +225,8 @@ export default function ContractsPage() {
                           >
                             <Pencil className="w-4 h-4 text-yellow-500" />
                           </Button>
+                          </Tooltip>
+                          <Tooltip content="Xoá">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -231,6 +237,7 @@ export default function ContractsPage() {
                           >
                             <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>
