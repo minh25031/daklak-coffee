@@ -46,9 +46,7 @@ export interface CropSeasonListItem {
 }
 export interface CropSeasonUpdatePayload {
   cropSeasonId: string;
-  commitmentId: string;
   seasonName: string;
-  area?: number | null;
   startDate: string;
   endDate: string;   
   note?: string | null;
