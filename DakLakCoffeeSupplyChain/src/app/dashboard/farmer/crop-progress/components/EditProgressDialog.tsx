@@ -16,8 +16,6 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { AppToast } from "@/components/ui/AppToast";
 import { CropProgress, updateCropProgress } from "@/lib/api/cropProgress";
-
-// ✅ Import đúng Calendar + Popover chuẩn
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -27,18 +25,34 @@ type Props = {
     triggerButton?: React.ReactNode;
 };
 
-export function EditProgressDialog({ progress, onSuccess }: Props) {
+export function EditProgressDialog({ progress, onSuccess, triggerButton }: Props) {
+
     const [open, setOpen] = useState(false);
     const [note, setNote] = useState(progress.note || "");
     const [progressDate, setProgressDate] = useState<Date | undefined>(
         progress.progressDate ? new Date(progress.progressDate) : undefined
     );
+    const [actualYield, setActualYield] = useState<number | undefined>(
+        progress.actualYield
+    );
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
+        console.log("Sending:", {
+            actualYield,
+            willSend: progress.stageCode === "HARVESTING" ? actualYield : undefined
+        });
+
         if (!progressDate) {
             AppToast.error("Vui lòng chọn ngày ghi nhận.");
             return;
+        }
+
+        if (progress.stageCode === "HARVESTING") {
+            if (!actualYield || actualYield <= 0) {
+                AppToast.error("Vui lòng nhập sản lượng hợp lệ (> 0) cho giai đoạn thu hoạch.");
+                return;
+            }
         }
 
         try {
@@ -53,6 +67,7 @@ export function EditProgressDialog({ progress, onSuccess }: Props) {
                 photoUrl: progress.photoUrl,
                 videoUrl: progress.videoUrl,
                 stepIndex: progress.stepIndex ?? 0,
+                actualYield: progress.stageCode === "HARVESTING" ? actualYield : undefined,
             });
 
             AppToast.success("Cập nhật tiến độ thành công!");
@@ -68,11 +83,12 @@ export function EditProgressDialog({ progress, onSuccess }: Props) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                {/** Bạn có thể truyền triggerButton nếu muốn */}
-                <Button variant="outline" size="sm" className="gap-1">
-                    <Pencil className="w-4 h-4" />
-                    Sửa
-                </Button>
+                {triggerButton ?? (
+                    <Button variant="outline" size="sm" className="gap-1">
+                        <Pencil className="w-4 h-4" />
+                        Sửa
+                    </Button>
+                )}
             </DialogTrigger>
 
             <DialogContent className="max-w-md">
@@ -129,6 +145,24 @@ export function EditProgressDialog({ progress, onSuccess }: Props) {
                             placeholder="Nhập ghi chú..."
                         />
                     </div>
+
+                    {/* Sản lượng thực tế nếu là HARVESTING */}
+                    {progress.stageCode === "HARVESTING" && (
+                        <div>
+                            <Label>Sản lượng thực tế (kg / tấn)</Label>
+                            <Input
+                                type="number"
+                                min={0}
+                                step={0.1}
+                                placeholder="Nhập sản lượng..."
+                                value={actualYield ?? ""}
+                                onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    setActualYield(isNaN(value) ? undefined : value);
+                                }}
+                            />
+                        </div>
+                    )}
 
                     {/* Nút lưu */}
                     <div className="flex justify-end pt-2">

@@ -15,7 +15,7 @@ import {
 import {
   getCropSeasonDetailById,
   updateCropSeasonDetail,
-} from "@/lib/api/cropSeasonDetail ";
+} from "@/lib/api/cropSeasonDetail";
 
 interface Props {
   detailId: string;
@@ -42,6 +42,13 @@ export default function UpdateCropSeasonDetailDialog({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const QUALITY_OPTIONS = [
+    { label: "Cà phê đặc sản (SCA 80+)", value: "SCA 80+" },
+    { label: "Robusta chất lượng cao (Fine Robusta)", value: "Fine Robusta" },
+    { label: "Loại A", value: "Grade A" },
+    { label: "Hữu cơ (Organic)", value: "Organic" },
+    { label: "Tiêu chuẩn cơ bản", value: "Standard" },
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -141,12 +148,21 @@ export default function UpdateCropSeasonDetailDialog({
 
       <div>
         <Label>Chất lượng dự kiến</Label>
-        <Input
+        <select
           name="plannedQuality"
           value={form.plannedQuality}
           onChange={handleChange}
-        />
+          className="w-full border rounded px-2 py-2"
+        >
+          <option value="">-- Chọn chất lượng --</option>
+          {QUALITY_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
+
 
       <div className="grid grid-cols-2 gap-4">
         <div>
