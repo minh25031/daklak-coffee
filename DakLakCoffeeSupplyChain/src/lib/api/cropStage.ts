@@ -8,8 +8,8 @@ export type CropStage = {
   orderIndex: number;
 };
 
-// GET all crop stages
 export async function getCropStages(): Promise<CropStage[]> {
   const response = await api.get("/CropStages");
+  console.log("DEBUG:: CropStages response", response.data); // 👈 xem thử data là gì
   return response.data;
 }

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { AppToast } from "@/components/ui/AppToast";
 import { getErrorMessage } from "@/lib/utils";
-import { createCropSeasonDetail } from "@/lib/api/cropSeasonDetail ";
+import { createCropSeasonDetail } from "@/lib/api/cropSeasonDetail";
 
 export default function CreateCropSeasonDetailPage() {
   const params = useParams();

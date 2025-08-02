@@ -14,7 +14,7 @@ import { CropSeasonDetail } from "@/lib/api/cropSeasons";
 import { Edit, Trash, Eye } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import UpdateCropSeasonDetailDialog from "@/app/dashboard/farmer/crop-seasons/[id]/details/edit/page";
-import { softDeleteCropSeasonDetail } from "@/lib/api/cropSeasonDetail ";
+import { softDeleteCropSeasonDetail } from "@/lib/api/cropSeasonDetail";
 
 interface Props {
   details: CropSeasonDetail[];
@@ -37,6 +37,20 @@ export default function CropSeasonDetailTable({
     return isNaN(d.getTime()) ? "Chưa cập nhật" : d.toLocaleDateString("vi-VN");
   };
 
+  const calculateYieldPercentage = (
+    actual?: number | null,
+    estimated?: number | null
+  ) => {
+    if (!actual || !estimated || estimated === 0) return null;
+    return Math.round((actual / estimated) * 100);
+  };
+
+  const getYieldColor = (percent: number) => {
+    if (percent < 70) return "text-red-500";
+    if (percent < 90) return "text-yellow-500";
+    return "text-green-600";
+  };
+
   const handleDelete = async (detailId: string, name: string) => {
     const confirmDelete = window.confirm(
       `Bạn có chắc muốn xoá vùng trồng: ${name}?`
@@ -51,7 +65,6 @@ export default function CropSeasonDetailTable({
       toast.error(err.message || "Xoá vùng trồng thất bại");
     }
   };
-
 
   if (details.length === 0) {
     return (
@@ -71,6 +84,7 @@ export default function CropSeasonDetailTable({
             <th className="text-left px-3 py-2">Chất lượng</th>
             <th className="text-left px-3 py-2">Năng suất (dự kiến)</th>
             <th className="text-left px-3 py-2">Năng suất thực</th>
+            <th className="text-left px-3 py-2">% đạt</th>
             <th className="text-left px-3 py-2">Thời gian thu hoạch</th>
             <th className="text-left px-3 py-2">Trạng thái</th>
             <th className="text-left px-3 py-2">Hành động</th>
@@ -99,6 +113,19 @@ export default function CropSeasonDetailTable({
                     Chưa thu hoạch
                   </span>
                 )}
+              </td>
+              <td className="px-3 py-2">
+                {(() => {
+                  const percent = calculateYieldPercentage(detail.actualYield, detail.estimatedYield);
+                  if (percent === null) {
+                    return <span className="italic text-muted-foreground">-</span>;
+                  }
+                  return (
+                    <span className={getYieldColor(percent)}>
+                      {percent}%
+                    </span>
+                  );
+                })()}
               </td>
               <td className="px-3 py-2">
                 {detail.expectedHarvestStart
@@ -135,13 +162,13 @@ export default function CropSeasonDetailTable({
                   </DialogContent>
                 </Dialog>
 
-                {/* Nút xem tiến độ */}
                 <Button
                   size="icon"
                   variant="secondary"
                   onClick={() =>
-                    router.push(`/dashboard/farmer/crop-progress/${detail.detailId}`)
-
+                    router.push(
+                      `/dashboard/farmer/crop-progress/${detail.detailId}`
+                    )
                   }
                 >
                   <Eye className="w-4 h-4" />
@@ -150,7 +177,9 @@ export default function CropSeasonDetailTable({
                 <Button
                   size="icon"
                   variant="destructive"
-                  onClick={() => handleDelete(detail.detailId, detail.typeName)}
+                  onClick={() =>
+                    handleDelete(detail.detailId, detail.typeName)
+                  }
                 >
                   <Trash className="w-4 h-4" />
                 </Button>
@@ -158,7 +187,7 @@ export default function CropSeasonDetailTable({
             </tr>
           ))}
         </tbody>
-      </table >
+      </table>
     </>
   );
 }

@@ -94,7 +94,11 @@ export default function CropProgressPage() {
                         <CardTitle className="text-xl font-bold text-emerald-700">
                             📈 Tiến độ vùng trồng
                         </CardTitle>
-                        <CreateProgressDialog detailId={cropSeasonDetailId} onSuccess={reloadData} />
+                        <CreateProgressDialog
+                            detailId={cropSeasonDetailId}
+                            existingProgress={progressList.map(p => ({ stageCode: p.stageCode }))}
+                            onSuccess={reloadData}
+                        />
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -132,6 +136,13 @@ export default function CropProgressPage() {
                                         {progress.note && (
                                             <p className="text-sm text-gray-700 mb-4 whitespace-pre-line">
                                                 {progress.note}
+                                            </p>
+                                        )}
+
+                                        {/* Sản lượng thực tế chỉ hiển thị nếu là giai đoạn Thu hoạch */}
+                                        {progress.stageName === "Thu hoạch" && progress.actualYield && (
+                                            <p className="text-sm text-gray-700 mt-2">
+                                                <strong>Sản lượng thực tế:</strong> {progress.actualYield} kg
                                             </p>
                                         )}
 
@@ -187,7 +198,6 @@ export default function CropProgressPage() {
                                                 }
                                             />
 
-
                                             {/* Icon xoá */}
                                             <Button
                                                 variant="ghost"
@@ -217,5 +227,6 @@ export default function CropProgressPage() {
                 </CardContent>
             </Card>
         </div>
+
     );
 }

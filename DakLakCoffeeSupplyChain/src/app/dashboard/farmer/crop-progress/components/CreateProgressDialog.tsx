@@ -18,38 +18,53 @@ import {
     SelectContent,
     SelectItem,
 } from "@/components/ui/select";
-
+import { Input } from "@/components/ui/input";
 import { AppToast } from "@/components/ui/AppToast";
+
 import { createCropProgress } from "@/lib/api/cropProgress";
 import { getCropStages, CropStage } from "@/lib/api/cropStage";
 
 interface Props {
     detailId: string;
     onSuccess?: () => void;
+    existingProgress?: { stageCode: string }[]; // <-- optional to be safe
 }
 
-export function CreateProgressDialog({ detailId, onSuccess }: Props) {
+export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: Props) {
     const [note, setNote] = useState("");
     const [stageOptions, setStageOptions] = useState<CropStage[]>([]);
     const [stageId, setStageId] = useState<number | null>(null);
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [actualYield, setActualYield] = useState<number | undefined>(undefined);
+
+    const STAGE_ORDER = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "HARVESTING"];
+
+    // ✅ Safe fallback even if existingProgress is undefined
+    const createdStageCodes = (existingProgress ?? []).map((p) => p.stageCode);
+
+    const canCreateStage = (stageCode: string) => {
+        const currentIndex = STAGE_ORDER.indexOf(stageCode);
+        const requiredPrevious = STAGE_ORDER.slice(0, currentIndex);
+        const hasAllPrevious = requiredPrevious.every((code) => createdStageCodes.includes(code));
+        const alreadyExists = createdStageCodes.includes(stageCode);
+        return hasAllPrevious && !alreadyExists;
+    };
 
     const selectedStage = stageOptions.find((s) => s.stageId === stageId);
+    const isHarvestingStage = selectedStage?.stageCode === "HARVESTING";
 
     useEffect(() => {
         const fetchStages = async () => {
             try {
                 const stages = await getCropStages();
                 setStageOptions(stages);
-                if (stages.length > 0) {
-                    setStageId(stages[0].stageId);
-                }
+                const next = stages.find((s) => canCreateStage(s.stageCode));
+                if (next) setStageId(next.stageId);
             } catch {
                 AppToast.error("Không thể tải danh sách giai đoạn.");
             }
         };
-
         fetchStages();
     }, []);
 
@@ -59,13 +74,17 @@ export function CreateProgressDialog({ detailId, onSuccess }: Props) {
             return;
         }
 
-        setLoading(true);
+        if (isHarvestingStage && (actualYield === undefined || actualYield <= 0)) {
+            AppToast.error("Vui lòng nhập sản lượng thực tế hợp lệ.");
+            return;
+        }
 
+        setLoading(true);
         try {
             const today = new Date();
             const progressDate = today.toISOString().split("T")[0];
 
-            const payload = {
+            const payload: any = {
                 cropSeasonDetailId: detailId,
                 stageId: selectedStage.stageId,
                 stageDescription: selectedStage.stageName,
@@ -73,20 +92,25 @@ export function CreateProgressDialog({ detailId, onSuccess }: Props) {
                 progressDate,
                 note,
                 photoUrl: "",
-                videoUrl: ""
+                videoUrl: "",
             };
 
-            console.log("📦 Gửi tiến độ:", payload);
+            if (isHarvestingStage) {
+                payload.actualYield = actualYield;
+            }
+
+            console.log("📤 Gửi tiến độ:", payload);
             await createCropProgress(payload);
 
             AppToast.success("Ghi nhận tiến độ thành công.");
             setOpen(false);
             setNote("");
+            setActualYield(undefined);
             if (onSuccess) onSuccess();
         } catch (err: any) {
             const msg = err?.response?.data?.message;
             if (msg?.includes("đã tồn tại")) {
-                AppToast.error("Tiến độ cho giai đoạn này đã được ghi nhận hôm nay.");
+                AppToast.error("Tiến độ hôm nay cho giai đoạn này đã được ghi nhận.");
             } else {
                 AppToast.error(msg || "Lỗi khi ghi nhận tiến độ.");
             }
@@ -103,7 +127,7 @@ export function CreateProgressDialog({ detailId, onSuccess }: Props) {
             <DialogContent className="max-w-md">
                 <DialogTitle>Ghi nhận tiến độ</DialogTitle>
                 <DialogDescription>
-                    Chọn giai đoạn và nhập nội dung tiến độ cho ngày hôm nay.
+                    Chọn giai đoạn và nhập nội dung tiến độ cho hôm nay.
                 </DialogDescription>
 
                 <form
@@ -124,7 +148,11 @@ export function CreateProgressDialog({ detailId, onSuccess }: Props) {
                             </SelectTrigger>
                             <SelectContent>
                                 {stageOptions.map((s) => (
-                                    <SelectItem key={s.stageId} value={String(s.stageId)}>
+                                    <SelectItem
+                                        key={s.stageId}
+                                        value={String(s.stageId)}
+                                        disabled={!canCreateStage(s.stageCode)}
+                                    >
                                         {s.stageName}
                                     </SelectItem>
                                 ))}
@@ -136,6 +164,23 @@ export function CreateProgressDialog({ detailId, onSuccess }: Props) {
                             </p>
                         )}
                     </div>
+
+                    {isHarvestingStage && (
+                        <div>
+                            <Label>Năng suất thực tế (kg)</Label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={actualYield ?? ""}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setActualYield(val === "" ? undefined : parseFloat(val));
+                                }}
+                                placeholder="Nhập năng suất thu hoạch..."
+                            />
+                        </div>
+                    )}
 
                     <div>
                         <Label>Ghi chú</Label>

@@ -1,7 +1,7 @@
 'use client';
 
 import { CropSeasonListItem as CropSeason } from '@/lib/api/cropSeasons';
-import { FaUser, FaTrashAlt, FaEdit, FaEye } from 'react-icons/fa';
+import { FaUser, FaTrashAlt, FaEdit, FaEye, FaSeedling } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import StatusBadge from './StatusBadge';
 import { CropSeasonStatusMap } from '@/lib/constants/cropSeasonStatus';
@@ -38,8 +38,7 @@ export default function CropSeasonCard({ season, onDeleted }: Props) {
             <td className="px-4 py-3 text-left align-middle">
                 <div className="font-medium text-gray-900">{season.seasonName}</div>
                 <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <FaUser className="w-4 h-4 text-gray-400" />
-                    {season.farmerName}
+                    <FaSeedling className="w-4 h-4 text-gray-400" />
                 </div>
             </td>
 
