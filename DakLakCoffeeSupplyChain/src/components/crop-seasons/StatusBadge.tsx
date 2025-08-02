@@ -10,7 +10,7 @@ type StatusInfo = {
 };
 
 type Props = {
-    status: string;
+    status: string | number;
     map: Record<string, StatusInfo>;
 };
 

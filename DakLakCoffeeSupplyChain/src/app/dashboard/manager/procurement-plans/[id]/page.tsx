@@ -19,11 +19,22 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { AppToast } from "@/components/ui/AppToast";
+import { getErrorMessage } from "@/lib/utils";
+import {
+  CultivationRegistration,
+  getCultivationRegistrationsByPlanId,
+} from "@/lib/api/cultivationRegistrations";
+import { ParamValue } from "next/dist/server/request/params";
+import RegistrationCard from "@/components/cultivation-registrations/RegistrationCard";
 
 export default function ProcurementPlanDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [plan, setPlan] = useState<ProcurementPlan | null>(null);
+  const [registrations, setRegistrations] = useState<CultivationRegistration[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -32,7 +43,27 @@ export default function ProcurementPlanDetailPage() {
       .then(setPlan)
       .catch((err) => setError(err.message || "Không thể tải dữ liệu kế hoạch"))
       .finally(() => setLoading(false));
+
+    fetchRegistration(id);
   }, [id]);
+
+  const fetchRegistration = async (planId: ParamValue) => {
+    setLoading(true);
+    const data = await getCultivationRegistrationsByPlanId(planId).catch(
+      (error) => {
+        AppToast.error(getErrorMessage(error));
+        return [];
+      }
+    );
+    //console.log("Fetched Procurement Plans:", data);
+    setRegistrations(data);
+    console.log("Fetched Registrations:", data);
+    setLoading(false);
+  };
+
+  const handleUpdateRegistration = () => {
+    fetchRegistration(id);
+  };
 
   const formatDate = (date?: string) => {
     if (!date) return "Chưa cập nhật";
@@ -59,6 +90,7 @@ export default function ProcurementPlanDetailPage() {
 
         <Separator />
 
+        {/* Card thông tin chính */}
         <Card>
           <CardHeader>
             <div className='flex justify-between items-center'>
@@ -92,7 +124,8 @@ export default function ProcurementPlanDetailPage() {
               <strong>Mã kế hoạch:</strong> {plan.planCode}
             </div>
             <div>
-              <strong>Tổng sản lượng:</strong> {plan.totalQuantity} kg
+              <strong>Tổng sản lượng:</strong>{" "}
+              {plan.totalQuantity.toLocaleString()} kg
             </div>
             <div>
               <strong>Tỷ lệ hoàn thành:</strong> {plan.progressPercentage}%
@@ -115,6 +148,8 @@ export default function ProcurementPlanDetailPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Card chi tiết kế hoạch */}
         <Card>
           <CardHeader className='flex justify-between items-center'>
             <CardTitle>Chi tiết kế hoạch</CardTitle>
@@ -133,12 +168,12 @@ export default function ProcurementPlanDetailPage() {
           </CardHeader>
           <CardContent>
             {Array.isArray(plan.procurementPlansDetails) &&
-              plan.procurementPlansDetails.length > 0 ? (
+            plan.procurementPlansDetails.length > 0 ? (
               <Accordion type='multiple' className='w-full'>
                 {plan.procurementPlansDetails.map((detail) => (
                   <AccordionItem
                     key={detail.planDetailsId}
-                    value={detail.planDetailsId}
+                    value={detail.planDetailsId ?? ""}
                   >
                     <AccordionTrigger className='text-left font-medium text-base'>
                       {detail.coffeeType?.typeName}
@@ -166,15 +201,17 @@ export default function ProcurementPlanDetailPage() {
                         </div>
                         <div>
                           <strong>Sản lượng mục tiêu:</strong>{" "}
-                          {detail.targetQuantity} kg
+                          {detail.targetQuantity?.toLocaleString()} kg
                         </div>
                         <div>
                           <strong>Đăng ký tối thiểu:</strong>{" "}
-                          {detail.minimumRegistrationQuantity} kg
+                          {detail.minimumRegistrationQuantity?.toLocaleString()}{" "}
+                          kg
                         </div>
                         <div>
-                          <strong>Giá cả thương lượng:</strong> {detail.minPriceRange} –{" "}
-                          {detail.maxPriceRange} VNĐ/kg
+                          <strong>Giá cả thương lượng:</strong>{" "}
+                          {detail.minPriceRange?.toLocaleString()} –{" "}
+                          {detail.maxPriceRange?.toLocaleString()} VNĐ/kg
                         </div>
                         <div>
                           <strong>Trạng thái:</strong> {detail.status}
@@ -225,6 +262,38 @@ export default function ProcurementPlanDetailPage() {
               </p>
             )}
           </CardContent>
+        </Card>
+
+        {/* Card danh sách đăng ký của kế hoạch này */}
+        <Card className='space-y-4 max-h-[600px] overflow-y-auto'>
+          <CardHeader className='flex justify-between items-center'>
+            <CardTitle>Danh sách đăng ký</CardTitle>
+            <CardTitle>
+              Đang có {registrations.length} đơn đăng ký ở kế hoạch này
+            </CardTitle>
+          </CardHeader>
+          {registrations.length === 0 && (
+            <p className='text-gray-500 text-center py-4'>
+              Chưa có đơn đăng ký nào.
+            </p>
+          )}
+
+          {registrations.map((reg) => (
+            <RegistrationCard
+              key={reg.registrationId}
+              registrationId={reg.registrationId}
+              registrationCode={reg.registrationCode}
+              farmerName={reg.farmerName}
+              farmerAvatarURL={reg.farmerAvatarURL}
+              farmerLocation={reg.farmerLocation}
+              registeredArea={reg.registeredArea}
+              registeredAt={reg.registeredAt}
+              cultivationRegistrationViewDetailsDtos={
+                reg.cultivationRegistrationViewDetailsDtos
+              }
+              onUpdate={handleUpdateRegistration}
+            />
+          ))}
         </Card>
       </div>
     </div>
