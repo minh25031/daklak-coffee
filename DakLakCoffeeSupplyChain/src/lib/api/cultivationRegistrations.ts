@@ -27,6 +27,7 @@ export type CultivationRegistrationDetail = {
   //processingMethod: string; // e.g. "Washed", "Natural"
   expectedYield: number; // in kg per hectare
   note: string;
+  status: string | number; // e.g. "Pending", "Approved", "Rejected"
 };
 
 export async function getCultivationRegistrationsByPlanId(planId: ParamValue): Promise<CultivationRegistration[]> {
@@ -38,5 +39,21 @@ export async function createCultivationRegistration(
   data: Partial<CultivationRegistration>
 ): Promise<CultivationRegistration | null> {
   const response = await api.post(`/CultivationRegistration`, data);
+  return response.data;
+}
+
+export async function updateCultivationRegistration(
+  registrationId: string,
+  data: Partial<CultivationRegistration>
+): Promise<CultivationRegistration | null> {
+  const response = await api.put(`/CultivationRegistration/${registrationId}`, data);
+  return response.data;
+}
+
+export async function updateCultivationRegistrationDetailStatus(
+  registrationDetailId: string,
+  data: Partial<CultivationRegistrationDetail>
+): Promise<CultivationRegistrationDetail | null> {
+  const response = await api.patch(`/CultivationRegistration/Detail/UpdateStatus/${registrationDetailId}`, data);
   return response.data;
 }

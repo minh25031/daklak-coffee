@@ -5,9 +5,7 @@ import { useParams } from "next/navigation"; // hoặc next/router nếu old rou
 import { differenceInCalendarDays, format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
-//import Link from "next/link";
 
-// Giả sử bạn import hàm API từ lớp khác của bạn
 import {
   ProcurementPlan,
   getProcurementPlanDetailById,
