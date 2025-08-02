@@ -127,23 +127,22 @@ export async function deleteCropSeasonById(id: string): Promise<{ code: any; mes
     };
   }
 }
-
 export async function updateCropSeason(
   id: string,
   data: CropSeasonUpdatePayload
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await api.put(`/CropSeasons/${id}`, data);
-    return { success: response.status === 200 };
+    return { success: true };
   } catch (err: any) {
+    const full = err.response?.data;
+    console.error("Chi tiết lỗi updateCropSeason:", full); 
     const message =
-      err?.response?.data?.message || err?.response?.data || err.message || 'Lỗi không xác định';
-    console.error("Lỗi updateCropSeason:", message);
+      full?.message || full?.error || full?.title || err.message || 'Lỗi không xác định';
     return { success: false, error: message };
   }
 }
 
-// Tạo mới mùa vụ
 
 export async function createCropSeason(data: Partial<CropSeason>): Promise<ServiceResult> {
   try {
