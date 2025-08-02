@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAllOutboundRequests, acceptOutboundRequest } from '@/lib/api/warehouseOutboundRequest';
+import {
+  getAllOutboundRequests,
+  acceptOutboundRequest,
+  rejectOutboundRequest,
+} from '@/lib/api/warehouseOutboundRequest';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -41,6 +45,32 @@ export default function StaffOutboundRequestList() {
     }
   };
 
+ const handleReject = async (id: string) => {
+  const reason = prompt('Nhập lý do từ chối yêu cầu:');
+  if (!reason || !reason.trim()) return;
+
+  try {
+    const result = await rejectOutboundRequest(id, reason);
+    if (result.status === 1) {
+      alert('✅ ' + result.message);
+
+      // 🧠 Cập nhật lại trạng thái và rejectReason cho item tương ứng
+      setData((prev) =>
+        prev.map((item) =>
+          item.outboundRequestId === id
+            ? { ...item, status: 'Rejected', rejectReason: reason }
+            : item
+        )
+      );
+    } else {
+      alert('❌ ' + result.message);
+    }
+  } catch (err: any) {
+    alert('❌ ' + err.message);
+  }
+};
+
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Pending':
@@ -51,6 +81,8 @@ export default function StaffOutboundRequestList() {
         return <Badge className="bg-green-100 text-green-800">✅ Hoàn tất</Badge>;
       case 'Cancelled':
         return <Badge className="bg-yellow-100 text-yellow-800">🚫 Đã huỷ</Badge>;
+      case 'Rejected':
+        return <Badge className="bg-red-100 text-red-800">❌ Từ chối</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -94,12 +126,20 @@ export default function StaffOutboundRequestList() {
                         Xem
                       </Button>
                       {item.status === 'Pending' && (
-                        <Button
-                          onClick={() => handleAccept(item.outboundRequestId)}
-                          className="bg-green-600 text-white"
-                        >
-                          Duyệt
-                        </Button>
+                        <>
+                          <Button
+                            onClick={() => handleAccept(item.outboundRequestId)}
+                            className="bg-green-600 text-white"
+                          >
+                            Duyệt
+                          </Button>
+                          <Button
+                            onClick={() => handleReject(item.outboundRequestId)}
+                            className="bg-red-600 text-white"
+                          >
+                            Từ chối
+                          </Button>
+                        </>
                       )}
                     </td>
                   </tr>

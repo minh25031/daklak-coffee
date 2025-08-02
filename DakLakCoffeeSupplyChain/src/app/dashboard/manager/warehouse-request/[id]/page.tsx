@@ -86,7 +86,6 @@ export default function ViewOutboundRequestDetail() {
       <h1 className="text-2xl font-bold">Chi tiết yêu cầu xuất kho</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-        {/* Thông tin kho & hàng */}
         <div><strong>Mã yêu cầu:</strong> {data.outboundRequestCode || 'Không rõ'}</div>
         <div><strong>Kho:</strong> {data.warehouseName || 'Không rõ'}</div>
 
@@ -108,6 +107,12 @@ export default function ViewOutboundRequestDetail() {
 
         <div><strong>Ngày tạo:</strong> {formatDate(data.createdAt)}</div>
         <div><strong>Ngày cập nhật:</strong> {formatDate(data.updatedAt)}</div>
+
+        {data.status === 'Rejected' && (
+          <div className="md:col-span-2 text-red-600">
+            <strong>Lý do từ chối:</strong> {data.reason || 'Không có'}
+          </div>
+        )}
       </div>
 
       <div className="pt-6 flex gap-4">

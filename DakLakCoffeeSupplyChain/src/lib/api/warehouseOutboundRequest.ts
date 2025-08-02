@@ -92,3 +92,16 @@ export async function cancelOutboundRequest(id: string): Promise<ServiceResult<a
 
   return await res.json();
 }
+export async function rejectOutboundRequest(id: string, reason: string): Promise<ServiceResult<any>> {
+  const token = getToken();
+  const res = await fetch(`${ENDPOINT}/${id}/reject`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ rejectReason: reason }),
+  });
+
+  return await res.json();
+}
