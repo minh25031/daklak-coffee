@@ -9,10 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { AppToast } from '@/components/ui/AppToast';
 import { getCropSeasonById, updateCropSeason } from '@/lib/api/cropSeasons';
-import { getFarmerCommitments, FarmingCommitmentItem } from '@/lib/api/farmingCommitments';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuthGuard } from '@/lib/auth/useAuthGuard';
 import { CropSeasonStatusValueToNumber } from '@/lib/constants/cropSeasonStatus';
+import { CropSeason } from '@/lib/api/cropSeasons';
 
 export default function EditCropSeasonPage() {
     useAuthGuard(['farmer']);
@@ -20,15 +20,13 @@ export default function EditCropSeasonPage() {
     const { id } = useParams();
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [availableCommitments, setAvailableCommitments] = useState<FarmingCommitmentItem[]>([]);
+    const [season, setSeason] = useState<CropSeason | null>(null);
 
     const [form, setForm] = useState({
         seasonName: '',
-        area: '',
         startDate: '',
         endDate: '',
         note: '',
-        commitmentId: '',
         status: 'Active',
     });
 
@@ -37,21 +35,17 @@ export default function EditCropSeasonPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const season = await getCropSeasonById(id as string);
-                const commitments = await getFarmerCommitments();
-                if (season) {
-                    setForm({
-                        seasonName: season.seasonName,
-                        area: season.area.toString(),
-                        startDate: formatDate(season.startDate),
-                        endDate: formatDate(season.endDate),
-                        note: season.note || '',
-                        commitmentId: season.commitmentId,
-                        status: season.status,
-                    });
-                }
-                setAvailableCommitments(commitments);
-            } catch (err) {
+                const data = await getCropSeasonById(id as string);
+                if (!data) throw new Error();
+                setSeason(data);
+                setForm({
+                    seasonName: data.seasonName,
+                    startDate: formatDate(data.startDate),
+                    endDate: formatDate(data.endDate),
+                    note: data.note || '',
+                    status: data.status,
+                });
+            } catch {
                 AppToast.error('Không thể tải dữ liệu mùa vụ.');
             } finally {
                 setIsLoading(false);
@@ -70,7 +64,7 @@ export default function EditCropSeasonPage() {
 
     const handleSubmit = async () => {
         setIsSubmitting(true);
-        const requiredFields = ['seasonName', 'area', 'startDate', 'endDate', 'commitmentId'];
+        const requiredFields = ['seasonName', 'startDate', 'endDate'];
         const missing = requiredFields.filter((field) => !form[field as keyof typeof form]);
 
         if (missing.length > 0) {
@@ -83,14 +77,11 @@ export default function EditCropSeasonPage() {
             const payload = {
                 cropSeasonId: id as string,
                 seasonName: form.seasonName,
-                area: parseFloat(form.area),
                 startDate: form.startDate,
                 endDate: form.endDate,
                 note: form.note,
-                commitmentId: form.commitmentId,
-                status: CropSeasonStatusValueToNumber[form.status as keyof typeof CropSeasonStatusValueToNumber]
+                status: CropSeasonStatusValueToNumber[form.status as keyof typeof CropSeasonStatusValueToNumber],
             };
-            console.log('Submit payload:', payload);
 
             const result = await updateCropSeason(id as string, payload);
 
@@ -107,7 +98,9 @@ export default function EditCropSeasonPage() {
         }
     };
 
-    if (isLoading) return <p>Đang tải dữ liệu...</p>;
+    if (isLoading) return <p className="text-center py-10">Đang tải dữ liệu mùa vụ...</p>;
+
+    if (!season) return <p className="text-center py-10 text-red-500">Không tìm thấy mùa vụ.</p>;
 
     return (
         <div className="max-w-2xl mx-auto py-10 px-4">
@@ -120,10 +113,7 @@ export default function EditCropSeasonPage() {
                         <Label htmlFor="seasonName">Tên mùa vụ</Label>
                         <Input name="seasonName" value={form.seasonName} onChange={handleChange} />
                     </div>
-                    <div>
-                        <Label htmlFor="area">Diện tích (ha)</Label>
-                        <Input type="number" name="area" value={form.area} onChange={handleChange} />
-                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label htmlFor="startDate">Ngày bắt đầu</Label>
@@ -134,26 +124,12 @@ export default function EditCropSeasonPage() {
                             <Input type="date" name="endDate" value={form.endDate} onChange={handleChange} />
                         </div>
                     </div>
+
                     <div>
                         <Label htmlFor="note">Ghi chú</Label>
                         <Textarea name="note" value={form.note} onChange={handleChange} />
                     </div>
-                    <div>
-                        <Label htmlFor="commitmentId">Cam kết</Label>
-                        <select
-                            name="commitmentId"
-                            value={form.commitmentId}
-                            onChange={handleChange}
-                            className="w-full border rounded px-2 py-2"
-                        >
-                            <option value="">-- Chọn cam kết --</option>
-                            {availableCommitments.map((c) => (
-                                <option key={c.commitmentId} value={c.commitmentId}>
-                                    {c.commitmentCode} ({c.commitmentName})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+
                     <div>
                         <Label htmlFor="status">Trạng thái</Label>
                         <select
@@ -168,7 +144,14 @@ export default function EditCropSeasonPage() {
                             <option value="Cancelled">Đã huỷ</option>
                         </select>
                     </div>
-                    <div className="flex justify-end">
+
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-muted-foreground mb-1">Thông tin cam kết</p>
+                        <p><strong>Mã cam kết:</strong> {season.commitmentName}</p>
+                        <p><strong>Diện tích đã đăng ký:</strong> {season.area} ha</p>
+                    </div>
+
+                    <div className="flex justify-end pt-4">
                         <Button onClick={handleSubmit} disabled={isSubmitting}>
                             {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật'}
                         </Button>
