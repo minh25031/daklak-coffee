@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
     Card,
     CardHeader,
@@ -36,6 +36,7 @@ export default function CropProgressPage() {
     const router = useRouter();
     const params = useParams();
     const cropSeasonDetailId = params.id as string;
+    const searchParams = useSearchParams();
 
     const [progressList, setProgressList] = useState<CropProgress[]>([]);
     const [loading, setLoading] = useState(true);
@@ -47,7 +48,6 @@ export default function CropProgressPage() {
 
             setProgressList(data.sort((a, b) => new Date(a.progressDate).getTime() - new Date(b.progressDate).getTime()));
         } catch (error: any) {
-
             if (error.response?.status !== 404) {
                 AppToast.error("Đã xảy ra lỗi khi tải dữ liệu tiến độ.");
             }
@@ -56,6 +56,7 @@ export default function CropProgressPage() {
             setLoading(false);
         }
     };
+
     useEffect(() => {
         if (cropSeasonDetailId) {
             reloadData();
@@ -87,7 +88,6 @@ export default function CropProgressPage() {
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4 space-y-6">
-            {/* Tiến độ vùng trồng */}
             <Card className="rounded-2xl shadow-md border bg-white">
                 <CardHeader>
                     <div className="flex items-center justify-between">
@@ -115,12 +115,9 @@ export default function CropProgressPage() {
                         <ul className="relative border-l-[3px] border-emerald-400 ml-5 pl-2 space-y-8">
                             {progressList.map((progress) => (
                                 <li key={progress.progressId} className="relative group">
-                                    {/* Dot timeline */}
                                     <div className="absolute -left-[21px] top-3 w-5 h-5 bg-white border-[3px] border-emerald-500 rounded-full z-10 shadow-md" />
 
-                                    {/* Nội dung tiến độ */}
                                     <div className="bg-gray-50 p-5 rounded-2xl border shadow-sm hover:shadow-md transition-all">
-                                        {/* Tiêu đề */}
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-2">
                                                 {getStageIcon(progress.stageName)}
@@ -132,21 +129,18 @@ export default function CropProgressPage() {
                                             </Badge>
                                         </div>
 
-                                        {/* Ghi chú */}
                                         {progress.note && (
                                             <p className="text-sm text-gray-700 mb-4 whitespace-pre-line">
                                                 {progress.note}
                                             </p>
                                         )}
 
-                                        {/* Sản lượng thực tế chỉ hiển thị nếu là giai đoạn Thu hoạch */}
                                         {progress.stageName === "Thu hoạch" && progress.actualYield && (
                                             <p className="text-sm text-gray-700 mt-2">
                                                 <strong>Sản lượng thực tế:</strong> {progress.actualYield} kg
                                             </p>
                                         )}
 
-                                        {/* Media */}
                                         {(progress.photoUrl || progress.videoUrl) && (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 {progress.photoUrl && (
@@ -185,9 +179,18 @@ export default function CropProgressPage() {
                                             </div>
                                         )}
 
-                                        {/* Nút hành động */}
                                         <div className="flex gap-2 mt-4">
-                                            {/* Icon sửa */}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-emerald-700 border-emerald-500 hover:bg-emerald-50"
+                                                onClick={() => router.push(
+                                                    `/dashboard/farmer/request-feedback/create?progressId=${progress.progressId}&stageName=${encodeURIComponent(progress.stageName)}`
+                                                )}
+                                            >
+                                                📝 Gửi báo cáo
+                                            </Button>
+
                                             <EditProgressDialog
                                                 progress={progress}
                                                 onSuccess={reloadData}
@@ -198,7 +201,6 @@ export default function CropProgressPage() {
                                                 }
                                             />
 
-                                            {/* Icon xoá */}
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -226,7 +228,6 @@ export default function CropProgressPage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
-
+        </div >
     );
 }

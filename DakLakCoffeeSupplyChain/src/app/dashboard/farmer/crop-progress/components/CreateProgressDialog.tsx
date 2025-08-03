@@ -27,7 +27,7 @@ import { getCropStages, CropStage } from "@/lib/api/cropStage";
 interface Props {
     detailId: string;
     onSuccess?: () => void;
-    existingProgress?: { stageCode: string }[]; // <-- optional to be safe
+    existingProgress?: { stageCode: string }[];
 }
 
 export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: Props) {
@@ -39,8 +39,6 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
     const [actualYield, setActualYield] = useState<number | undefined>(undefined);
 
     const STAGE_ORDER = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "HARVESTING"];
-
-    // ✅ Safe fallback even if existingProgress is undefined
     const createdStageCodes = (existingProgress ?? []).map((p) => p.stageCode);
 
     const canCreateStage = (stageCode: string) => {
@@ -53,6 +51,8 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
 
     const selectedStage = stageOptions.find((s) => s.stageId === stageId);
     const isHarvestingStage = selectedStage?.stageCode === "HARVESTING";
+
+    const allStagesCompleted = STAGE_ORDER.every((code) => createdStageCodes.includes(code));
 
     useEffect(() => {
         const fetchStages = async () => {
@@ -121,82 +121,88 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>Ghi nhận tiến độ</Button>
-            </DialogTrigger>
+            {!allStagesCompleted && (
+                <DialogTrigger asChild>
+                    <Button>Ghi nhận tiến độ</Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="max-w-md">
                 <DialogTitle>Ghi nhận tiến độ</DialogTitle>
                 <DialogDescription>
-                    Chọn giai đoạn và nhập nội dung tiến độ cho hôm nay.
+                    {allStagesCompleted
+                        ? "Tất cả các giai đoạn đã được ghi nhận. Không thể tạo mới."
+                        : "Chọn giai đoạn và nhập nội dung tiến độ cho hôm nay."}
                 </DialogDescription>
 
-                <form
-                    className="space-y-4 mt-2"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSubmit();
-                    }}
-                >
-                    <div>
-                        <Label>Giai đoạn</Label>
-                        <Select
-                            value={stageId ? String(stageId) : ""}
-                            onValueChange={(value) => setStageId(Number(value))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Chọn giai đoạn" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {stageOptions.map((s) => (
-                                    <SelectItem
-                                        key={s.stageId}
-                                        value={String(s.stageId)}
-                                        disabled={!canCreateStage(s.stageCode)}
-                                    >
-                                        {s.stageName}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {selectedStage?.description && (
-                            <p className="text-sm text-gray-500 italic mt-1">
-                                {selectedStage.description}
-                            </p>
-                        )}
-                    </div>
-
-                    {isHarvestingStage && (
+                {!allStagesCompleted && (
+                    <form
+                        className="space-y-4 mt-2"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSubmit();
+                        }}
+                    >
                         <div>
-                            <Label>Năng suất thực tế (kg)</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={actualYield ?? ""}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setActualYield(val === "" ? undefined : parseFloat(val));
-                                }}
-                                placeholder="Nhập năng suất thu hoạch..."
+                            <Label>Giai đoạn</Label>
+                            <Select
+                                value={stageId ? String(stageId) : ""}
+                                onValueChange={(value) => setStageId(Number(value))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn giai đoạn" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {stageOptions.map((s) => (
+                                        <SelectItem
+                                            key={s.stageId}
+                                            value={String(s.stageId)}
+                                            disabled={!canCreateStage(s.stageCode)}
+                                        >
+                                            {s.stageName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {selectedStage?.description && (
+                                <p className="text-sm text-gray-500 italic mt-1">
+                                    {selectedStage.description}
+                                </p>
+                            )}
+                        </div>
+
+                        {isHarvestingStage && (
+                            <div>
+                                <Label>Năng suất thực tế (kg)</Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={actualYield ?? ""}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setActualYield(val === "" ? undefined : parseFloat(val));
+                                    }}
+                                    placeholder="Nhập năng suất thu hoạch..."
+                                />
+                            </div>
+                        )}
+
+                        <div>
+                            <Label>Ghi chú</Label>
+                            <Textarea
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                placeholder="Nhập nội dung tiến độ..."
                             />
                         </div>
-                    )}
 
-                    <div>
-                        <Label>Ghi chú</Label>
-                        <Textarea
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            placeholder="Nhập nội dung tiến độ..."
-                        />
-                    </div>
-
-                    <div className="flex justify-end">
-                        <Button type="submit" disabled={loading || !stageId}>
-                            {loading ? "Đang lưu..." : "Lưu"}
-                        </Button>
-                    </div>
-                </form>
+                        <div className="flex justify-end">
+                            <Button type="submit" disabled={loading || !stageId}>
+                                {loading ? "Đang lưu..." : "Lưu"}
+                            </Button>
+                        </div>
+                    </form>
+                )}
             </DialogContent>
         </Dialog>
     );
