@@ -16,6 +16,7 @@ import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { toast } from "sonner";
+import CropStagesDialog from "../crop-stages/page";
 
 export default function FarmerCropSeasonsPage() {
   useAuthGuard(["farmer"]);
@@ -108,19 +109,22 @@ export default function FarmerCropSeasonsPage() {
           setSelectedStatus={setSelectedStatus}
           statusCounts={statusCounts}
         />
+
       </aside>
 
       <main className="flex-1 space-y-6">
         <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-between items-center mb-4">
+            <CropStagesDialog />
+
             <Button
-              onClick={() =>
-                router.push("/dashboard/farmer/crop-seasons/create")
-              }
+              className="ml-auto"
+              onClick={() => router.push("/dashboard/farmer/crop-seasons/create")}
             >
               + Tạo mùa vụ mới
             </Button>
           </div>
+
           {isLoading ? (
             <LoadingSpinner />
           ) : pagedSeasons.length === 0 ? (

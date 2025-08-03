@@ -104,10 +104,10 @@ export default function CropSeasonDetailTable({
                   ? detail.plannedQuality
                   : <span className="italic text-muted-foreground">Chưa có</span>}
               </td>
-              <td className="px-3 py-2">{detail.estimatedYield ?? "-"} tấn</td>
+              <td className="px-3 py-2">{detail.estimatedYield ?? "-"} Kg</td>
               <td className="px-3 py-2">
                 {detail.actualYield !== null ? (
-                  `${detail.actualYield} tấn`
+                  `${detail.actualYield} Kg`
                 ) : (
                   <span className="italic text-muted-foreground">
                     Chưa thu hoạch
