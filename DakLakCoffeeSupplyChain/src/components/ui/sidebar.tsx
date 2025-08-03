@@ -134,11 +134,6 @@ export function SidebarGroup() {
         icon: iconMap.crops,
       },
       {
-        title: "Giai đoạn mùa vụ",
-        href: "/dashboard/farmer/crop-stages",
-        icon: iconMap.crops,
-      },
-      {
         title: "Tư vấn",
         href: "/dashboard/farmer/request-feedback",
         icon: iconMap.feedback,
@@ -231,7 +226,7 @@ export function SidebarGroup() {
       //   href: "/dashboard/staff/outbound-receipts",
       //   icon: <FiFileText />,
       // },
-    
+
     ],
     manager: [
       {
@@ -279,7 +274,7 @@ export function SidebarGroup() {
         href: "/dashboard/manager/warehouse-request",
         icon: <FiClipboard />,
       },
-      
+
     ],
   };
 
@@ -426,310 +421,310 @@ export function SidebarGroup() {
           )}
         </div>
       )}
-     {role === "manager" && (
-  <div>
-    <button
-      className={cn(
-        "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
-        pathname.startsWith("/dashboard/manager/processing")
-          ? "bg-orange-100 text-orange-700"
-          : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+      {role === "manager" && (
+        <div>
+          <button
+            className={cn(
+              "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+              pathname.startsWith("/dashboard/manager/processing")
+                ? "bg-orange-100 text-orange-700"
+                : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+            )}
+            onClick={() => setProcessingOpen((v) => !v)}
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="shrink-0 w-5 text-center">
+                <FiBookOpen />
+              </span>
+              <span className="truncate">Chế biến</span>
+            </div>
+            <FiChevronDown
+              className={cn("transition", processingOpen && "rotate-180")}
+            />
+          </button>
+          {processingOpen && (
+            <div className="pl-8 space-y-1">
+              <Link href="/dashboard/manager/processing/batches" className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname === "/dashboard/manager/processing/batches"
+                  ? "bg-orange-100 text-orange-700"
+                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+              )}>
+                Danh sách lô chế biến
+              </Link>
+              <Link href="/dashboard/manager/processing/evaluations" className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith("/dashboard/manager/processing/evaluations")
+                  ? "bg-orange-100 text-orange-700"
+                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+              )}>
+                Đánh giá lô chế biến
+              </Link>
+              <Link href="/dashboard/manager/processing/progresses" className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith("/dashboard/manager/processing/progresses")
+                  ? "bg-orange-100 text-orange-700"
+                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+              )}>
+                Tiến trình lô chế biến
+              </Link>
+              <Link href="/dashboard/manager/processing/wastes" className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith("/dashboard/manager/processing/wastes")
+                  ? "bg-orange-100 text-orange-700"
+                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+              )}>
+                Chất thải lô chế biến
+              </Link>
+              <Link href="/dashboard/manager/processing/methods" className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith("/dashboard/manager/processing/methods")
+                  ? "bg-orange-100 text-orange-700"
+                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+              )}>
+                Phương pháp chế biến
+              </Link>
+              <Link href="/dashboard/manager/processing/parameters" className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith("/dashboard/manager/processing/parameters")
+                  ? "bg-orange-100 text-orange-700"
+                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+              )}>
+                Tham số chế biến
+              </Link>
+              <Link href="/dashboard/manager/processing/stages" className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith("/dashboard/manager/processing/stages")
+                  ? "bg-orange-100 text-orange-700"
+                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+              )}>
+                Công đoạn chế biến
+              </Link>
+              <Link href="/dashboard/manager/processing/waste-disposals" className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith("/dashboard/manager/processing/waste-disposals")
+                  ? "bg-orange-100 text-orange-700"
+                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+              )}>
+                Xử lý chất thải lô chế biến
+              </Link>
+            </div>
+          )}
+        </div>
       )}
-      onClick={() => setProcessingOpen((v) => !v)}
-    >
-      <div className="flex items-center gap-2 overflow-hidden">
-        <span className="shrink-0 w-5 text-center">
-          <FiBookOpen />
-        </span>
-        <span className="truncate">Chế biến</span>
-      </div>
-      <FiChevronDown
-        className={cn("transition", processingOpen && "rotate-180")}
-      />
-    </button>
-    {processingOpen && (
-      <div className="pl-8 space-y-1">
-        <Link href="/dashboard/manager/processing/batches" className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          pathname === "/dashboard/manager/processing/batches"
-            ? "bg-orange-100 text-orange-700"
-            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-        )}>
-          Danh sách lô chế biến
-        </Link>
-        <Link href="/dashboard/manager/processing/evaluations" className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          pathname.startsWith("/dashboard/manager/processing/evaluations")
-            ? "bg-orange-100 text-orange-700"
-            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-        )}>
-          Đánh giá lô chế biến
-        </Link>
-        <Link href="/dashboard/manager/processing/progresses" className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          pathname.startsWith("/dashboard/manager/processing/progresses")
-            ? "bg-orange-100 text-orange-700"
-            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-        )}>
-          Tiến trình lô chế biến
-        </Link>
-        <Link href="/dashboard/manager/processing/wastes" className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          pathname.startsWith("/dashboard/manager/processing/wastes")
-            ? "bg-orange-100 text-orange-700"
-            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-        )}>
-          Chất thải lô chế biến
-        </Link>
-        <Link href="/dashboard/manager/processing/methods" className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          pathname.startsWith("/dashboard/manager/processing/methods")
-            ? "bg-orange-100 text-orange-700"
-            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-        )}>
-          Phương pháp chế biến
-        </Link>
-        <Link href="/dashboard/manager/processing/parameters" className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          pathname.startsWith("/dashboard/manager/processing/parameters")
-            ? "bg-orange-100 text-orange-700"
-            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-        )}>
-          Tham số chế biến
-        </Link>
-        <Link href="/dashboard/manager/processing/stages" className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          pathname.startsWith("/dashboard/manager/processing/stages")
-            ? "bg-orange-100 text-orange-700"
-            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-        )}>
-          Công đoạn chế biến
-        </Link>
-        <Link href="/dashboard/manager/processing/waste-disposals" className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          pathname.startsWith("/dashboard/manager/processing/waste-disposals")
-            ? "bg-orange-100 text-orange-700"
-            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-        )}>
-          Xử lý chất thải lô chế biến
-        </Link>
-      </div>
-    )}
-  </div>
-)}
 
-{/* Dropdown: VẬN HÀNH KHO cho MANAGER */}
-{role === "manager" && (
-  <>
-    {(() => {
-      const links = [
-        {
-          label: "Yêu cầu xuất kho",
-          href: "/dashboard/manager/warehouse-request",
-          activeMatch: (path: string) => path === "/dashboard/manager/warehouse-request",
-        },
-        {
-          label: "Kho hàng",
-          href: "/dashboard/manager/warehouses",
-          activeMatch: (path: string) => path === "/dashboard/manager/warehouses",
-        },
-        {
-          label: "Lịch sử tồn kho",
-          href: "/dashboard/manager/inventory-logs",
-          activeMatch: (path: string) => path === "/dashboard/manager/warehouse-request",
-        },
+      {/* Dropdown: VẬN HÀNH KHO cho MANAGER */}
+      {role === "manager" && (
+        <>
+          {(() => {
+            const links = [
+              {
+                label: "Yêu cầu xuất kho",
+                href: "/dashboard/manager/warehouse-request",
+                activeMatch: (path: string) => path === "/dashboard/manager/warehouse-request",
+              },
+              {
+                label: "Kho hàng",
+                href: "/dashboard/manager/warehouses",
+                activeMatch: (path: string) => path === "/dashboard/manager/warehouses",
+              },
+              {
+                label: "Lịch sử tồn kho",
+                href: "/dashboard/manager/inventory-logs",
+                activeMatch: (path: string) => path === "/dashboard/manager/warehouse-request",
+              },
 
-      ];
+            ];
 
-      const isActive = links.some((item) => item.activeMatch(pathname));
+            const isActive = links.some((item) => item.activeMatch(pathname));
 
-      return (
-        <div>
-          <button
-            className={cn(
-              "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
-              isActive
-                ? "bg-orange-100 text-orange-700"
-                : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-            )}
-            onClick={() => setProcessingOpen((v) => !v)}
-          >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <span className="shrink-0 w-5 text-center">
-                <FiClipboard />
-              </span>
-              <span className="truncate">Vận hành kho</span>
-            </div>
-            <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
-          </button>
-
-          {processingOpen && (
-            <div className="pl-8 space-y-1">
-              {links.map(({ label, href, activeMatch }) => (
-                <Link
-                  key={href}
-                  href={href}
+            return (
+              <div>
+                <button
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    activeMatch(pathname)
+                    "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+                    isActive
                       ? "bg-orange-100 text-orange-700"
                       : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                   )}
+                  onClick={() => setProcessingOpen((v) => !v)}
                 >
-                  {label}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    })()}
-  </>
-)}
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <span className="shrink-0 w-5 text-center">
+                      <FiClipboard />
+                    </span>
+                    <span className="truncate">Vận hành kho</span>
+                  </div>
+                  <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
+                </button>
 
-    {role === "staff" && (
-  <>
-    {/* --- Dropdown: VẬN HÀNH KHO --- */}
-    {(() => {
-      const operationLinks = [
-        {
-          label: "Yêu cầu nhập kho",
-          href: "/dashboard/staff/inbounds",
-          activeMatch: (path: string) => path === "/dashboard/staff/inbounds",
-        },
-        {
-          label: "Phiếu nhập kho",
-          href: "/dashboard/staff/receipts",
-          activeMatch: (path: string) => path === "/dashboard/staff/receipts",
-        },
-        {
-          label: "Yêu cầu xuất kho",
-          href: "/dashboard/staff/outbounds",
-          activeMatch: (path: string) => path === "/dashboard/staff/outbounds",
-        },
-        {
-          label: "Phiếu xuất kho",
-          href: "/dashboard/staff/outbound-receipts",
-          activeMatch: (path: string) => path === "/dashboard/staff/outbound-receipts",
-        },
-      ];
+                {processingOpen && (
+                  <div className="pl-8 space-y-1">
+                    {links.map(({ label, href, activeMatch }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                          activeMatch(pathname)
+                            ? "bg-orange-100 text-orange-700"
+                            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                        )}
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </>
+      )}
 
-      const isOperationActive = operationLinks.some((item) => item.activeMatch(pathname));
+      {role === "staff" && (
+        <>
+          {/* --- Dropdown: VẬN HÀNH KHO --- */}
+          {(() => {
+            const operationLinks = [
+              {
+                label: "Yêu cầu nhập kho",
+                href: "/dashboard/staff/inbounds",
+                activeMatch: (path: string) => path === "/dashboard/staff/inbounds",
+              },
+              {
+                label: "Phiếu nhập kho",
+                href: "/dashboard/staff/receipts",
+                activeMatch: (path: string) => path === "/dashboard/staff/receipts",
+              },
+              {
+                label: "Yêu cầu xuất kho",
+                href: "/dashboard/staff/outbounds",
+                activeMatch: (path: string) => path === "/dashboard/staff/outbounds",
+              },
+              {
+                label: "Phiếu xuất kho",
+                href: "/dashboard/staff/outbound-receipts",
+                activeMatch: (path: string) => path === "/dashboard/staff/outbound-receipts",
+              },
+            ];
 
-      return (
-        <div>
-          <button
-            className={cn(
-              "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
-              isOperationActive
-                ? "bg-orange-100 text-orange-700"
-                : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-            )}
-            onClick={() => setProcessingOpen((v) => !v)}
-          >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <span className="shrink-0 w-5 text-center">
-                <FiClipboard />
-              </span>
-              <span className="truncate">Vận hành kho</span>
-            </div>
-            <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
-          </button>
+            const isOperationActive = operationLinks.some((item) => item.activeMatch(pathname));
 
-          {processingOpen && (
-            <div className="pl-8 space-y-1">
-              {operationLinks.map(({ label, href, activeMatch }) => (
-                <Link
-                  key={href}
-                  href={href}
+            return (
+              <div>
+                <button
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    activeMatch(pathname)
+                    "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+                    isOperationActive
                       ? "bg-orange-100 text-orange-700"
                       : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                   )}
+                  onClick={() => setProcessingOpen((v) => !v)}
                 >
-                  {label}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    })()}
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <span className="shrink-0 w-5 text-center">
+                      <FiClipboard />
+                    </span>
+                    <span className="truncate">Vận hành kho</span>
+                  </div>
+                  <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
+                </button>
 
-    {/* --- Dropdown: QUẢN LÝ KHO --- */}
-    {(() => {
-      const warehouseLinks = [
-        {
-          label: "Tồn kho",
-          href: "/dashboard/staff/inventories",
-          activeMatch: (path: string) => path === "/dashboard/staff/inventories",
-        },
-        {
-          label: "Nhật ký tồn kho",
-          href: "/dashboard/staff/inventory-logs",
-          activeMatch: (path: string) => path.startsWith("/dashboard/staff/inventory-logs"),
-        },
-        {
-          label: "Kho hàng",
-          href: "/dashboard/staff/warehouses",
-          activeMatch: (path: string) => path.startsWith("/dashboard/staff/warehouses"),
-        },
-      ];
+                {processingOpen && (
+                  <div className="pl-8 space-y-1">
+                    {operationLinks.map(({ label, href, activeMatch }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                          activeMatch(pathname)
+                            ? "bg-orange-100 text-orange-700"
+                            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                        )}
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
-      const isDropdownActive = warehouseLinks.some((item) => item.activeMatch(pathname));
+          {/* --- Dropdown: QUẢN LÝ KHO --- */}
+          {(() => {
+            const warehouseLinks = [
+              {
+                label: "Tồn kho",
+                href: "/dashboard/staff/inventories",
+                activeMatch: (path: string) => path === "/dashboard/staff/inventories",
+              },
+              {
+                label: "Nhật ký tồn kho",
+                href: "/dashboard/staff/inventory-logs",
+                activeMatch: (path: string) => path.startsWith("/dashboard/staff/inventory-logs"),
+              },
+              {
+                label: "Kho hàng",
+                href: "/dashboard/staff/warehouses",
+                activeMatch: (path: string) => path.startsWith("/dashboard/staff/warehouses"),
+              },
+            ];
 
-      return (
-        <div>
-          <button
-            className={cn(
-              "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
-              isDropdownActive
-                ? "bg-orange-100 text-orange-700"
-                : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-            )}
-            onClick={() => setProcessingOpen((v) => !v)}
-          >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <span className="shrink-0 w-5 text-center">
-                <FiSettings />
-              </span>
-              <span className="truncate">Quản lý kho</span>
-            </div>
-            <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
-          </button>
+            const isDropdownActive = warehouseLinks.some((item) => item.activeMatch(pathname));
 
-          {processingOpen && (
-            <div className="pl-8 space-y-1">
-              {warehouseLinks.map(({ label, href, activeMatch }) => (
-                <Link
-                  key={href}
-                  href={href}
+            return (
+              <div>
+                <button
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    activeMatch(pathname)
+                    "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+                    isDropdownActive
                       ? "bg-orange-100 text-orange-700"
                       : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                   )}
+                  onClick={() => setProcessingOpen((v) => !v)}
                 >
-                  {label}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    })()}
-  </>
-)}
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <span className="shrink-0 w-5 text-center">
+                      <FiSettings />
+                    </span>
+                    <span className="truncate">Quản lý kho</span>
+                  </div>
+                  <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
+                </button>
+
+                {processingOpen && (
+                  <div className="pl-8 space-y-1">
+                    {warehouseLinks.map(({ label, href, activeMatch }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                          activeMatch(pathname)
+                            ? "bg-orange-100 text-orange-700"
+                            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                        )}
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </>
+      )}
 
 
 
-  
 
 
-      
+
+
     </div>
   );
 }
