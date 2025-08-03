@@ -23,6 +23,7 @@ export interface Contract {
 export interface ContractViewAllDto {
   contractId: string;
   contractCode: string;
+  contractNumber: string;
   contractTitle: string;
   sellerName: string;
   buyerName: string;

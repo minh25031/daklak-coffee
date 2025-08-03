@@ -27,6 +27,8 @@ export default function ContractsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
   const pageSize = 6;
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   useEffect(() => {
     getAllContracts().then((data) => {
@@ -34,15 +36,24 @@ export default function ContractsPage() {
     });
   }, []);
 
-  const filtered = contracts.filter(
-    (c) =>
-      (!selectedStatus || c.status === selectedStatus) &&
-      (!search ||
-        [c.contractCode, c.contractTitle, c.buyerName]
-          .join(" ")
-          .toLowerCase()
-          .includes(search.toLowerCase()))
-  );
+  const filtered = contracts.filter((c) => {
+    const matchesStatus = !selectedStatus || c.status === selectedStatus;
+    const matchesSearch =
+      !search ||
+      [c.contractCode, c.contractNumber, c.contractTitle, c.buyerName]
+        .join(" ")
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+    const contractStart = c.startDate ? new Date(c.startDate) : null;
+    const contractEnd = c.endDate ? new Date(c.endDate) : null;
+
+    const matchesStartDate =
+      !startDate || (contractStart && contractStart >= startDate);
+    const matchesEndDate = !endDate || (contractEnd && contractEnd <= endDate);
+
+    return matchesStatus && matchesSearch && matchesStartDate && matchesEndDate;
+  });
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const pagedContracts = filtered.slice(
@@ -54,6 +65,15 @@ export default function ContractsPage() {
     acc[c.status] = (acc[c.status] || 0) + 1;
     return acc;
   }, {});
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
+  };
 
   const getStatusDisplay = (status: string) => {
     switch (status) {
@@ -135,7 +155,34 @@ export default function ContractsPage() {
 
       <main className="flex-1 space-y-6">
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center gap-4 flex-wrap">
+            <div className="flex gap-4 items-center">
+              <div className="flex flex-col">
+                <label className="text-sm text-gray-600">Từ ngày</label>
+                <Input
+                  type="date"
+                  value={startDate ? startDate.toISOString().split("T")[0] : ""}
+                  onChange={(e) =>
+                    setStartDate(
+                      e.target.value ? new Date(e.target.value) : null
+                    )
+                  }
+                  className="w-[150px]"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-sm text-gray-600">Đến ngày</label>
+                <Input
+                  type="date"
+                  value={endDate ? endDate.toISOString().split("T")[0] : ""}
+                  onChange={(e) =>
+                    setEndDate(e.target.value ? new Date(e.target.value) : null)
+                  }
+                  className="w-[150px]"
+                />
+              </div>
+            </div>
+
             <Button
               onClick={() => router.push("/dashboard/manager/contracts/create")}
             >
@@ -147,6 +194,7 @@ export default function ContractsPage() {
             <table className="min-w-full table-auto">
               <thead className="bg-gray-100 text-sm text-gray-600">
                 <tr>
+                  <th className="px-4 py-2 text-left">Số hợp đồng</th>
                   <th className="px-4 py-2 text-left">Tên hợp đồng</th>
                   <th className="px-4 py-2 text-left">Đối tác</th>
                   <th className="px-4 py-2 text-center">Trạng thái</th>
@@ -170,6 +218,7 @@ export default function ContractsPage() {
                       key={contract.contractId}
                       className="border-t text-sm hover:bg-gray-50"
                     >
+                      <td className="px-4 py-2">{contract.contractNumber}</td>
                       <td className="px-4 py-2">{contract.contractTitle}</td>
                       <td className="px-4 py-2">{contract.buyerName}</td>
                       <td className="px-4 py-2 whitespace-nowrap">
@@ -189,54 +238,56 @@ export default function ContractsPage() {
                           );
                         })()}
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {contract.startDate && contract.endDate
-                          ? `${new Date(contract.startDate).toLocaleDateString(
-                              "vi-VN"
-                            )} – ${new Date(
-                              contract.endDate
-                            ).toLocaleDateString("vi-VN")}`
-                          : ""}
+                      <td className="px-2 py-2 whitespace-nowrap">
+                        {contract.startDate && contract.endDate ? (
+                          <div className="flex justify-center items-center text-sm font-mono">
+                            <span>{formatDate(contract.startDate)}</span>
+                            <span className="mx-1 text-gray-500">–</span>
+                            <span>{formatDate(contract.endDate)}</span>
+                          </div>
+                        ) : (
+                          ""
+                        )}
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="flex items-center gap-0">
+                        <div className="flex items-center gap-[2px]">
                           <Tooltip content="Xem chi tiết">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/manager/contracts/${contract.contractId}`
-                              )
-                            }
-                          >
-                            <Eye className="w-4 h-4 text-blue-500" />
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              className="p-[2px] w-7 h-7"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/manager/contracts/${contract.contractId}`
+                                )
+                              }
+                            >
+                              <Eye className="w-4 h-4 text-blue-500" />
+                            </Button>
                           </Tooltip>
                           <Tooltip content="Chỉnh sửa">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/manager/contracts/${contract.contractId}/edit`
-                              )
-                            }
-                          >
-                            <Pencil className="w-4 h-4 text-yellow-500" />
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              className="p-[2px] w-7 h-7"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/manager/contracts/${contract.contractId}/edit`
+                                )
+                              }
+                            >
+                              <Pencil className="w-4 h-4 text-yellow-500" />
+                            </Button>
                           </Tooltip>
                           <Tooltip content="Xoá">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setContractToDelete(contract);
-                              setShowDeleteDialog(true);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              className="p-[2px] w-7 h-7"
+                              onClick={() => {
+                                setContractToDelete(contract);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
                           </Tooltip>
                         </div>
                       </td>
