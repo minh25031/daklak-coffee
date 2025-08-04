@@ -18,6 +18,9 @@ import {
   FiFeather,
   FiTruck,
   FiChevronDown,
+  FiPackage,
+  FiCalendar,
+  FiShoppingCart,
 } from "react-icons/fi";
 
 const iconMap = {
@@ -226,7 +229,6 @@ export function SidebarGroup() {
       //   href: "/dashboard/staff/outbound-receipts",
       //   icon: <FiFileText />,
       // },
-
     ],
     manager: [
       {
@@ -235,9 +237,14 @@ export function SidebarGroup() {
         icon: iconMap.dashboard,
       },
       {
-        title: "Hợp đồng",
+        title: "Hợp đồng cung ứng",
         href: "/dashboard/manager/contracts",
         icon: iconMap.contracts,
+      },
+      {
+        title: "Lịch giao hàng",
+        href: "/dashboard/manager/contract-deliveries",
+        icon: <FiCalendar />,
       },
       {
         title: "Kế hoạch thu mua",
@@ -248,6 +255,26 @@ export function SidebarGroup() {
         title: "Cam kết với nông dân",
         href: "/dashboard/manager/farming-commitments",
         icon: iconMap.contracts,
+      },
+      {
+        title: "Đơn hàng",
+        href: "/dashboard/manager/orders",
+        icon: <FiShoppingCart />,
+      },
+      {
+        title: "Lô giao hàng",
+        href: "/dashboard/manager/shipments",
+        icon: <FiTruck />,
+      },
+      {
+        title: "Khách hàng doanh nghiệp",
+        href: "/dashboard/manager/business-buyers",
+        icon: <FiUsers />,
+      },
+      {
+        title: "Sản phẩm",
+        href: "/dashboard/manager/products",
+        icon: <FiPackage />,
       },
       {
         title: "Nông dân",
@@ -274,7 +301,6 @@ export function SidebarGroup() {
         href: "/dashboard/manager/warehouse-request",
         icon: <FiClipboard />,
       },
-
     ],
   };
 
@@ -444,68 +470,100 @@ export function SidebarGroup() {
           </button>
           {processingOpen && (
             <div className="pl-8 space-y-1">
-              <Link href="/dashboard/manager/processing/batches" className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                pathname === "/dashboard/manager/processing/batches"
-                  ? "bg-orange-100 text-orange-700"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-              )}>
+              <Link
+                href="/dashboard/manager/processing/batches"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname === "/dashboard/manager/processing/batches"
+                    ? "bg-orange-100 text-orange-700"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
                 Danh sách lô chế biến
               </Link>
-              <Link href="/dashboard/manager/processing/evaluations" className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                pathname.startsWith("/dashboard/manager/processing/evaluations")
-                  ? "bg-orange-100 text-orange-700"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-              )}>
+              <Link
+                href="/dashboard/manager/processing/evaluations"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname.startsWith(
+                    "/dashboard/manager/processing/evaluations"
+                  )
+                    ? "bg-orange-100 text-orange-700"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
                 Đánh giá lô chế biến
               </Link>
-              <Link href="/dashboard/manager/processing/progresses" className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                pathname.startsWith("/dashboard/manager/processing/progresses")
-                  ? "bg-orange-100 text-orange-700"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-              )}>
+              <Link
+                href="/dashboard/manager/processing/progresses"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname.startsWith(
+                    "/dashboard/manager/processing/progresses"
+                  )
+                    ? "bg-orange-100 text-orange-700"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
                 Tiến trình lô chế biến
               </Link>
-              <Link href="/dashboard/manager/processing/wastes" className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                pathname.startsWith("/dashboard/manager/processing/wastes")
-                  ? "bg-orange-100 text-orange-700"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-              )}>
+              <Link
+                href="/dashboard/manager/processing/wastes"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname.startsWith("/dashboard/manager/processing/wastes")
+                    ? "bg-orange-100 text-orange-700"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
                 Chất thải lô chế biến
               </Link>
-              <Link href="/dashboard/manager/processing/methods" className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                pathname.startsWith("/dashboard/manager/processing/methods")
-                  ? "bg-orange-100 text-orange-700"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-              )}>
+              <Link
+                href="/dashboard/manager/processing/methods"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname.startsWith("/dashboard/manager/processing/methods")
+                    ? "bg-orange-100 text-orange-700"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
                 Phương pháp chế biến
               </Link>
-              <Link href="/dashboard/manager/processing/parameters" className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                pathname.startsWith("/dashboard/manager/processing/parameters")
-                  ? "bg-orange-100 text-orange-700"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-              )}>
+              <Link
+                href="/dashboard/manager/processing/parameters"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname.startsWith(
+                    "/dashboard/manager/processing/parameters"
+                  )
+                    ? "bg-orange-100 text-orange-700"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
                 Tham số chế biến
               </Link>
-              <Link href="/dashboard/manager/processing/stages" className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                pathname.startsWith("/dashboard/manager/processing/stages")
-                  ? "bg-orange-100 text-orange-700"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-              )}>
+              <Link
+                href="/dashboard/manager/processing/stages"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname.startsWith("/dashboard/manager/processing/stages")
+                    ? "bg-orange-100 text-orange-700"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
                 Công đoạn chế biến
               </Link>
-              <Link href="/dashboard/manager/processing/waste-disposals" className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                pathname.startsWith("/dashboard/manager/processing/waste-disposals")
-                  ? "bg-orange-100 text-orange-700"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-              )}>
+              <Link
+                href="/dashboard/manager/processing/waste-disposals"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname.startsWith(
+                    "/dashboard/manager/processing/waste-disposals"
+                  )
+                    ? "bg-orange-100 text-orange-700"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
                 Xử lý chất thải lô chế biến
               </Link>
             </div>
@@ -521,19 +579,21 @@ export function SidebarGroup() {
               {
                 label: "Yêu cầu xuất kho",
                 href: "/dashboard/manager/warehouse-request",
-                activeMatch: (path: string) => path === "/dashboard/manager/warehouse-request",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/manager/warehouse-request",
               },
               {
                 label: "Kho hàng",
                 href: "/dashboard/manager/warehouses",
-                activeMatch: (path: string) => path === "/dashboard/manager/warehouses",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/manager/warehouses",
               },
               {
                 label: "Lịch sử tồn kho",
                 href: "/dashboard/manager/inventory-logs",
-                activeMatch: (path: string) => path === "/dashboard/manager/warehouse-request",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/manager/warehouse-request",
               },
-
             ];
 
             const isActive = links.some((item) => item.activeMatch(pathname));
@@ -555,7 +615,9 @@ export function SidebarGroup() {
                     </span>
                     <span className="truncate">Vận hành kho</span>
                   </div>
-                  <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
+                  <FiChevronDown
+                    className={cn("transition", processingOpen && "rotate-180")}
+                  />
                 </button>
 
                 {processingOpen && (
@@ -590,26 +652,32 @@ export function SidebarGroup() {
               {
                 label: "Yêu cầu nhập kho",
                 href: "/dashboard/staff/inbounds",
-                activeMatch: (path: string) => path === "/dashboard/staff/inbounds",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/staff/inbounds",
               },
               {
                 label: "Phiếu nhập kho",
                 href: "/dashboard/staff/receipts",
-                activeMatch: (path: string) => path === "/dashboard/staff/receipts",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/staff/receipts",
               },
               {
                 label: "Yêu cầu xuất kho",
                 href: "/dashboard/staff/outbounds",
-                activeMatch: (path: string) => path === "/dashboard/staff/outbounds",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/staff/outbounds",
               },
               {
                 label: "Phiếu xuất kho",
                 href: "/dashboard/staff/outbound-receipts",
-                activeMatch: (path: string) => path === "/dashboard/staff/outbound-receipts",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/staff/outbound-receipts",
               },
             ];
 
-            const isOperationActive = operationLinks.some((item) => item.activeMatch(pathname));
+            const isOperationActive = operationLinks.some((item) =>
+              item.activeMatch(pathname)
+            );
 
             return (
               <div>
@@ -628,7 +696,9 @@ export function SidebarGroup() {
                     </span>
                     <span className="truncate">Vận hành kho</span>
                   </div>
-                  <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
+                  <FiChevronDown
+                    className={cn("transition", processingOpen && "rotate-180")}
+                  />
                 </button>
 
                 {processingOpen && (
@@ -659,21 +729,26 @@ export function SidebarGroup() {
               {
                 label: "Tồn kho",
                 href: "/dashboard/staff/inventories",
-                activeMatch: (path: string) => path === "/dashboard/staff/inventories",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/staff/inventories",
               },
               {
                 label: "Nhật ký tồn kho",
                 href: "/dashboard/staff/inventory-logs",
-                activeMatch: (path: string) => path.startsWith("/dashboard/staff/inventory-logs"),
+                activeMatch: (path: string) =>
+                  path.startsWith("/dashboard/staff/inventory-logs"),
               },
               {
                 label: "Kho hàng",
                 href: "/dashboard/staff/warehouses",
-                activeMatch: (path: string) => path.startsWith("/dashboard/staff/warehouses"),
+                activeMatch: (path: string) =>
+                  path.startsWith("/dashboard/staff/warehouses"),
               },
             ];
 
-            const isDropdownActive = warehouseLinks.some((item) => item.activeMatch(pathname));
+            const isDropdownActive = warehouseLinks.some((item) =>
+              item.activeMatch(pathname)
+            );
 
             return (
               <div>
@@ -692,7 +767,9 @@ export function SidebarGroup() {
                     </span>
                     <span className="truncate">Quản lý kho</span>
                   </div>
-                  <FiChevronDown className={cn("transition", processingOpen && "rotate-180")} />
+                  <FiChevronDown
+                    className={cn("transition", processingOpen && "rotate-180")}
+                  />
                 </button>
 
                 {processingOpen && (
@@ -718,13 +795,6 @@ export function SidebarGroup() {
           })()}
         </>
       )}
-
-
-
-
-
-
-
     </div>
   );
 }
@@ -764,6 +834,5 @@ export function SidebarFooter({ isCollapsed }: SidebarFooterProps) {
         Đăng xuất
       </button>
     </div>
-
   );
 }
