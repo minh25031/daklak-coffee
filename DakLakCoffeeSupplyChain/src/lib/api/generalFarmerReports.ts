@@ -32,6 +32,7 @@ export interface GeneralFarmerReportViewDetailsDto {
 export type ReportType = "Crop" | "Processing";
 
 export interface GeneralFarmerReportCreateDto {
+   cropSeasonDetailId: string;
   reportType: ReportType;
   cropProgressId?: string;
   processingProgressId?: string;

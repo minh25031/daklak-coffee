@@ -25,11 +25,12 @@ export default function CreateReportPage() {
     const [cropProgressOptions, setCropProgressOptions] = useState<CropProgress[]>([]);
 
     const [form, setForm] = useState<GeneralFarmerReportCreateDto>({
+        cropSeasonDetailId: detailIdFromUrl,
         reportType: 'Crop',
         severityLevel: SeverityLevelEnum.Medium,
         title: '',
         description: '',
-        cropProgressId: '',
+        cropProgressId: '', // nên là undefined chứ không phải ''
         processingProgressId: '',
         imageUrl: '',
         videoUrl: '',
@@ -69,8 +70,8 @@ export default function CreateReportPage() {
         }
 
         if (
-            form.reportType === 'Crop' && !form.cropProgressId ||
-            form.reportType === 'Processing' && !form.processingProgressId
+            (form.reportType === 'Crop' && !form.cropProgressId) ||
+            (form.reportType === 'Processing' && !form.processingProgressId)
         ) {
             AppToast.error('Vui lòng chọn tiến độ phù hợp với loại báo cáo.');
             return;
@@ -78,12 +79,23 @@ export default function CreateReportPage() {
 
         setIsSubmitting(true);
         try {
-            const payload: GeneralFarmerReportCreateDto = {
-                ...form,
-                cropProgressId: form.reportType === 'Crop' ? form.cropProgressId : undefined,
-                processingProgressId: form.reportType === 'Processing' ? form.processingProgressId : undefined,
+            const payload: any = {
+                cropSeasonDetailId: detailIdFromUrl,
+                reportType: form.reportType,
+                title: form.title,
+                description: form.description,
+                severityLevel: form.severityLevel,
+                imageUrl: form.imageUrl || undefined,
+                videoUrl: form.videoUrl || undefined,
             };
 
+            if (form.reportType === "Crop") {
+                payload.cropProgressId = form.cropProgressId;
+            }
+
+            if (form.reportType === "Processing" && form.processingProgressId) {
+                payload.processingProgressId = form.processingProgressId;
+            }
             const res = await createFarmerReport(payload);
             AppToast.success('Tạo báo cáo thành công!');
             router.push(`/dashboard/farmer/request-feedback/${res.reportId}`);
