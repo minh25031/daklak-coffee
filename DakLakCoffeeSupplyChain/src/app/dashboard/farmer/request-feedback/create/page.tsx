@@ -60,8 +60,12 @@ export default function CreateReportPage() {
     };
 
     const handleSubmit = async () => {
-        const requiredFields = ['title', 'description', 'reportType'];
+        if (!detailIdFromUrl) {
+            AppToast.error("Thiếu mã chi tiết mùa vụ.");
+            return;
+        }
 
+        const requiredFields = ['title', 'description', 'reportType'];
         for (const field of requiredFields) {
             if (!form[field as keyof typeof form]) {
                 AppToast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
@@ -89,22 +93,26 @@ export default function CreateReportPage() {
                 videoUrl: form.videoUrl || undefined,
             };
 
-            if (form.reportType === "Crop") {
+            if (form.reportType === "Crop" && form.cropProgressId) {
                 payload.cropProgressId = form.cropProgressId;
             }
 
             if (form.reportType === "Processing" && form.processingProgressId) {
                 payload.processingProgressId = form.processingProgressId;
             }
+
+            console.log("📦 Final Payload:", JSON.stringify(payload, null, 2));
             const res = await createFarmerReport(payload);
             AppToast.success('Tạo báo cáo thành công!');
             router.push(`/dashboard/farmer/request-feedback/${res.reportId}`);
         } catch (err: any) {
-            AppToast.error(err.message || 'Tạo báo cáo thất bại');
+            console.error("❌ Raw error:", err.response?.data || err);
+            AppToast.error(err.response?.data?.message || 'Tạo báo cáo thất bại');
         } finally {
             setIsSubmitting(false);
         }
     };
+
 
     return (
         <div className="max-w-2xl mx-auto py-10 px-4">
@@ -200,9 +208,10 @@ export default function CreateReportPage() {
                             onChange={(e) =>
                                 setForm((prev) => ({
                                     ...prev,
-                                    severityLevel: Number(e.target.value) as SeverityLevelEnum,
+                                    severityLevel: parseInt(e.target.value, 10) as SeverityLevelEnum,
                                 }))
                             }
+
                             className="w-full border rounded px-3 py-2"
                         >
                             {Object.values(SeverityLevelEnum)
