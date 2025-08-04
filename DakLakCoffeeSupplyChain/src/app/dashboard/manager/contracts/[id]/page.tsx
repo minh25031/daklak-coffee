@@ -71,6 +71,9 @@ export default function ContractDetailPage() {
   >(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  const ITEMS_PER_PAGE = 5;
+  const [currentPage, setCurrentPage] = useState(1);
+
   const reloadContract = () => {
     setLoading(true);
     getContractDetails(contractId)
@@ -134,6 +137,14 @@ export default function ContractDetailPage() {
       </div>
     );
   }
+
+  const totalItems = contract.contractItems.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  const paginatedItems = contract.contractItems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="w-full min-h-screen bg-orange-50 px-4 py-6 lg:px-20 flex justify-center">
@@ -265,7 +276,7 @@ export default function ContractDetailPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    contract.contractItems.map((item) => (
+                    paginatedItems.map((item) => (
                       <TableRow key={item.contractItemId}>
                         <TableCell>{item.coffeeTypeName}</TableCell>
                         <TableCell>
@@ -313,6 +324,46 @@ export default function ContractDetailPage() {
                   )}
                 </TableBody>
               </Table>
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border-t rounded-b-md text-sm text-gray-700">
+                  <div className="mb-2 sm:mb-0">
+                    Đang hiển thị{" "}
+                    <span className="font-medium">
+                      {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}
+                    </span>{" "}
+                    / <span className="font-medium">{totalItems}</span> mặt hàng
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="px-3"
+                      disabled={currentPage === 1}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                    >
+                      ← Trước
+                    </Button>
+                    <span className="flex items-center px-2">
+                      Trang{" "}
+                      <span className="mx-1 font-semibold">{currentPage}</span>{" "}
+                      / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="px-3"
+                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
+                    >
+                      Sau →
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
