@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +9,22 @@ import { Label } from "@/components/ui/label";
 import { AppToast } from "@/components/ui/AppToast";
 import { getErrorMessage } from "@/lib/utils";
 import { createCropSeasonDetail } from "@/lib/api/cropSeasonDetail";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { getFarmerCommitments } from "@/lib/api/farmingCommitments";
 
 export default function CreateCropSeasonDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
+
   const cropSeasonId = params.id as string;
+  const commitmentId = searchParams.get("commitmentId") || "";
 
   const [form, setForm] = useState({
     commitmentDetailId: "",
@@ -26,6 +37,55 @@ export default function CreateCropSeasonDetailPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commitmentDetailOptions, setCommitmentDetailOptions] = useState<
+    {
+      commitmentDetailId: string;
+      commitmentDetailCode: string;
+      note: string;
+      committedQuantity: number;
+    }[]
+  >([]);
+
+  const QUALITY_OPTIONS = [
+    { label: "Cà phê đặc sản (SCA 80+)", value: "SCA 80+" },
+    { label: "Robusta chất lượng cao (Fine Robusta)", value: "Fine Robusta" },
+    { label: "Loại A", value: "Grade A" },
+    { label: "Hữu cơ (Organic)", value: "Organic" },
+    { label: "Tiêu chuẩn cơ bản", value: "Standard" },
+  ];
+
+  useEffect(() => {
+    const fetchCommitmentDetails = async () => {
+      if (!commitmentId) {
+        AppToast.error("Thiếu thông tin commitmentId.");
+        return;
+      }
+
+      try {
+        const allCommitments = await getFarmerCommitments();
+        const matched = allCommitments.find(c => c.commitmentId === commitmentId);
+
+        if (!matched || !matched.farmingCommitmentsDetailsDTOs) {
+          AppToast.error("Không tìm thấy dòng cam kết.");
+          return;
+        }
+
+        const details = matched.farmingCommitmentsDetailsDTOs.map((detail: any) => ({
+          commitmentDetailId: detail.commitmentDetailId,
+          commitmentDetailCode: detail.commitmentDetailCode,
+          note: detail.note,
+          committedQuantity: detail.committedQuantity,
+        }));
+
+        setCommitmentDetailOptions(details);
+        console.log("✅ commitmentDetailOptions:", details);
+      } catch (err) {
+        AppToast.error("Không thể tải dòng cam kết.");
+      }
+    };
+
+    fetchCommitmentDetails();
+  }, [commitmentId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -77,14 +137,25 @@ export default function CreateCropSeasonDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>ID dòng cam kết (commitmentDetailId)</Label>
-            <Input
-              name="commitmentDetailId"
+            <Label>Chọn dòng cam kết</Label>
+            <Select
+              disabled={commitmentDetailOptions.length === 0}
               value={form.commitmentDetailId}
-              onChange={handleChange}
-              placeholder="Nhập ID dòng cam kết"
-              required
-            />
+              onValueChange={(value) =>
+                setForm((prev) => ({ ...prev, commitmentDetailId: value }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn dòng cam kết" />
+              </SelectTrigger>
+              <SelectContent>
+                {commitmentDetailOptions.map((item) => (
+                  <SelectItem key={item.commitmentDetailId} value={item.commitmentDetailId}>
+                    {`${item.commitmentDetailCode} – ${item.note} (${item.committedQuantity} kg)`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -100,12 +171,23 @@ export default function CreateCropSeasonDetailPage() {
 
           <div>
             <Label>Chất lượng dự kiến</Label>
-            <Input
-              name="plannedQuality"
+            <Select
               value={form.plannedQuality}
-              onChange={handleChange}
-              required
-            />
+              onValueChange={(value) =>
+                setForm((prev) => ({ ...prev, plannedQuality: value }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="-- Chọn chất lượng --" />
+              </SelectTrigger>
+              <SelectContent>
+                {QUALITY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
