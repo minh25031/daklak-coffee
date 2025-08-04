@@ -11,18 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Pencil, CalendarDays } from "lucide-react";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { Pencil } from "lucide-react";
 import { AppToast } from "@/components/ui/AppToast";
 import { CropProgress, updateCropProgress } from "@/lib/api/cropProgress";
 import { getCropSeasonDetailById } from "@/lib/api/cropSeasonDetail";
-import {
-    Popover,
-    PopoverTrigger,
-    PopoverContent,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 
 type Props = {
     progress: CropProgress;
@@ -37,8 +29,10 @@ export function EditProgressDialog({
 }: Props) {
     const [open, setOpen] = useState(false);
     const [note, setNote] = useState(progress.note || "");
-    const [progressDate, setProgressDate] = useState<Date | undefined>(
-        progress.progressDate ? new Date(progress.progressDate) : undefined
+    const [progressDate, setProgressDate] = useState<string>(
+        progress.progressDate
+            ? new Date(progress.progressDate).toISOString().split("T")[0]
+            : ""
     );
     const [actualYield, setActualYield] = useState<number | undefined>(
         progress.actualYield
@@ -48,7 +42,6 @@ export function EditProgressDialog({
     );
     const [loading, setLoading] = useState(false);
 
-    // ✅ Lấy lại actualYield thật sự từ bảng CropSeasonDetail khi mở dialog
     useEffect(() => {
         if (open && progress.stageCode === "HARVESTING") {
             getCropSeasonDetailById(progress.cropSeasonDetailId)
@@ -84,7 +77,7 @@ export function EditProgressDialog({
                 cropSeasonDetailId: progress.cropSeasonDetailId,
                 stageId: progress.stageId,
                 stageDescription: progress.stageName,
-                progressDate: progressDate.toISOString().split("T")[0],
+                progressDate,
                 note,
                 photoUrl: progress.photoUrl,
                 videoUrl: progress.videoUrl,
@@ -126,35 +119,13 @@ export function EditProgressDialog({
                     {/* Ngày ghi nhận */}
                     <div>
                         <Label>Ngày ghi nhận</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-start text-left font-normal"
-                                >
-                                    <CalendarDays className="mr-2 h-4 w-4" />
-                                    {progressDate
-                                        ? format(progressDate, "dd/MM/yyyy", { locale: vi })
-                                        : "Chọn ngày"}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={progressDate}
-                                    onSelect={(date) => {
-                                        if (date instanceof Date) setProgressDate(date);
-                                    }}
-                                    locale={vi}
-                                    captionLayout="dropdown"
-                                    defaultMonth={progressDate ?? new Date()}
-                                    hidden={{
-                                        before: new Date(2015, 0, 1),
-                                        after: new Date(2030, 11, 31),
-                                    }}
-                                />
-                            </PopoverContent>
-                        </Popover>
+                        <Input
+                            type="date"
+                            value={progressDate}
+                            onChange={(e) => setProgressDate(e.target.value)}
+                            max={new Date().toISOString().split("T")[0]}
+                            required
+                        />
                     </div>
 
                     {/* Ghi chú */}
