@@ -78,7 +78,6 @@ export default function CreateCropSeasonDetailPage() {
         }));
 
         setCommitmentDetailOptions(details);
-        console.log("✅ commitmentDetailOptions:", details);
       } catch (err) {
         AppToast.error("Không thể tải dòng cam kết.");
       }

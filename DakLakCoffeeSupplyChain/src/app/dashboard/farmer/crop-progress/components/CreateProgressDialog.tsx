@@ -99,7 +99,6 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
                 payload.actualYield = actualYield;
             }
 
-            console.log("📤 Gửi tiến độ:", payload);
             await createCropProgress(payload);
 
             AppToast.success("Ghi nhận tiến độ thành công.");

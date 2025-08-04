@@ -52,7 +52,6 @@ export default function BusinessProcurementPlansPage() {
       AppToast.error(getErrorMessage(error));
       return [];
     });
-    //console.log("Fetched Procurement Plans:", data);
     setProcurementPlans(data);
   };
 
@@ -281,26 +280,26 @@ export default function BusinessProcurementPlansPage() {
             dialogType === "open"
               ? "Xác nhận mở quá trình nhận đơn đăng ký kế hoạch"
               : dialogType === "closed"
-              ? "Xác nhận kết thúc quá trình nhận đơn đăng ký kế hoạch"
-              : dialogType === "cancel"
-              ? "Xác nhận hủy kế hoạch"
-              : dialogType === "delete"
-              ? "Xác nhận xóa kế hoạch"
-              : ""
+                ? "Xác nhận kết thúc quá trình nhận đơn đăng ký kế hoạch"
+                : dialogType === "cancel"
+                  ? "Xác nhận hủy kế hoạch"
+                  : dialogType === "delete"
+                    ? "Xác nhận xóa kế hoạch"
+                    : ""
           }
           description={
             dialogType === "open" ? (
               <>
-              Bạn có chắc chắn muốn mở quá trình nhận đơn đăng ký kế hoạch <b>{selectedPlan?.title}</b>?
-              <br /> Kế hoạch sau khi được mở sẽ tự cập nhật lại thời gian mở đơn đăng ký và sẽ được hiển thị trên sàn thu mua cà phê. Nông hộ sẽ có thể đăng ký kế hoạch này.
+                Bạn có chắc chắn muốn mở quá trình nhận đơn đăng ký kế hoạch <b>{selectedPlan?.title}</b>?
+                <br /> Kế hoạch sau khi được mở sẽ tự cập nhật lại thời gian mở đơn đăng ký và sẽ được hiển thị trên sàn thu mua cà phê. Nông hộ sẽ có thể đăng ký kế hoạch này.
               </>
             ) : dialogType === "closed" ? (
               <>
-              Bạn có chắc chắn muốn kết thúc quá trình nhận đơn đăng ký kế hoạch <b>{selectedPlan?.title}</b>?
-              <br /> Kế hoạch sau khi kết thúc sẽ tự cập nhật lại thời gian kết thúc đơn đăng ký. Sau khi kết thúc, kế hoạch sẽ không còn hiển thị trên sàn thu mua cà phê và cũng không thể mở lại. Các cam kết đã được duyệt vẫn sẽ hoạt động bình thường.
-              <br />
-              <br />
-              <b>Lưu ý:</b> kế hoạch có thể tự kết thúc sau khi đã đạt đủ sản lượng dựa trên các cam kết đã được duyệt từ hai phía.
+                Bạn có chắc chắn muốn kết thúc quá trình nhận đơn đăng ký kế hoạch <b>{selectedPlan?.title}</b>?
+                <br /> Kế hoạch sau khi kết thúc sẽ tự cập nhật lại thời gian kết thúc đơn đăng ký. Sau khi kết thúc, kế hoạch sẽ không còn hiển thị trên sàn thu mua cà phê và cũng không thể mở lại. Các cam kết đã được duyệt vẫn sẽ hoạt động bình thường.
+                <br />
+                <br />
+                <b>Lưu ý:</b> kế hoạch có thể tự kết thúc sau khi đã đạt đủ sản lượng dựa trên các cam kết đã được duyệt từ hai phía.
               </>
             ) : dialogType === "cancel" ? (
               <>
@@ -311,7 +310,7 @@ export default function BusinessProcurementPlansPage() {
               </>
             ) : dialogType === "delete" ? (
               <>
-              Bạn có chắc chắn muốn xóa kế hoạch <b>{selectedPlan?.title}</b>?<br /> Hành động này không thể hoàn tác.
+                Bạn có chắc chắn muốn xóa kế hoạch <b>{selectedPlan?.title}</b>?<br /> Hành động này không thể hoàn tác.
               </>
             ) : (
               ""
