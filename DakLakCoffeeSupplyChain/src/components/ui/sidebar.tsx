@@ -178,7 +178,7 @@ export function SidebarGroup() {
       },
       {
         title: "Tư vấn",
-        href: "/dashboard/expert/consultations",
+        href: "/dashboard/expert/anomalies",
         icon: iconMap.consultation,
       },
       {
