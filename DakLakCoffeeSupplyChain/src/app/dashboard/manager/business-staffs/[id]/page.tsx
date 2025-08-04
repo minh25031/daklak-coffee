@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getBusinessStaffById } from "@/lib/api/businessStaffs";
-import { getWarehouseById } from "@/lib/api/warehouses"; // ✅ import API lấy chi tiết kho
+import { getWarehouseById } from "@/lib/api/warehouses";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 interface BusinessStaffDetailDto {
@@ -24,7 +25,7 @@ export default function BusinessStaffDetailPage() {
   const router = useRouter();
   const { id } = useParams();
   const [staff, setStaff] = useState<BusinessStaffDetailDto | null>(null);
-  const [warehouseName, setWarehouseName] = useState<string>(""); // ✅ state để hiển thị tên kho
+  const [warehouseName, setWarehouseName] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,7 +35,6 @@ export default function BusinessStaffDetailPage() {
         if (data) {
           setStaff(data);
 
-          // Nếu có assignedWarehouseId thì lấy thêm tên kho
           if (data.assignedWarehouseId) {
             const warehouseRes = await getWarehouseById(data.assignedWarehouseId);
             if (warehouseRes.status === 1 && warehouseRes.data?.name) {
@@ -58,25 +58,75 @@ export default function BusinessStaffDetailPage() {
     if (id) fetchDetail();
   }, [id]);
 
-  if (loading) return <p className="text-gray-500">Đang tải thông tin nhân viên...</p>;
-  if (!staff) return <p className="text-red-500">Không có dữ liệu.</p>;
+  if (loading) return <p className="text-gray-500 px-6">Đang tải thông tin nhân viên...</p>;
+  if (!staff) return <p className="text-red-500 px-6">Không có dữ liệu.</p>;
 
   return (
-    <Card className="p-6 max-w-2xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold mb-4">Thông tin nhân viên</h1>
-      <div><strong>Mã nhân viên:</strong> {staff.staffCode}</div>
-      <div><strong>Họ tên:</strong> {staff.fullName}</div>
-      <div><strong>Email:</strong> {staff.email}</div>
-      <div><strong>Số điện thoại:</strong> {staff.phoneNumber || "Không có"}</div>
-      <div><strong>Phòng ban:</strong> {staff.department}</div>
-      <div><strong>Vị trí:</strong> {staff.position}</div>
-      <div><strong>Kho phụ trách:</strong> {warehouseName}</div>
-      <div><strong>Ngày tạo:</strong> {new Date(staff.createdAt).toLocaleString("vi-VN")}</div>
+    <Card className="p-8 max-w-3xl mx-auto space-y-6 shadow-md">
+      <h1 className="text-3xl font-semibold text-orange-600 border-b pb-4">
+        🧾 Thông tin nhân viên
+      </h1>
 
-      <div className="flex gap-2 pt-4 justify-end">
-        <Button variant="outline" onClick={() => router.back()}>Quay lại</Button>
-        <Button onClick={() => router.push(`/dashboard/manager/business-staffs/${staff.staffId}/edit`)}>
-          Chỉnh sửa
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5 text-[15px]">
+        <div>
+          <span className="font-medium text-gray-600">Mã nhân viên:</span>
+          <div className="text-gray-800">{staff.staffCode}</div>
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Họ tên:</span>
+          <div className="text-gray-800">{staff.fullName}</div>
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Email:</span>
+          <div className="text-gray-800">{staff.email}</div>
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Số điện thoại:</span>
+          <div>
+            {staff.phoneNumber ? (
+              <span className="text-gray-800">{staff.phoneNumber}</span>
+            ) : (
+              <Badge variant="outline" className="text-gray-500">Không có</Badge>
+            )}
+          </div>
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Phòng ban:</span>
+          <div className="text-gray-800">{staff.department}</div>
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Vị trí:</span>
+          <div className="text-gray-800">{staff.position}</div>
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Kho phụ trách:</span>
+          <div>
+            {warehouseName === "Chưa gán" ? (
+              <Badge variant="secondary" className="text-gray-600">{warehouseName}</Badge>
+            ) : (
+              <span className="text-gray-800">{warehouseName}</span>
+            )}
+          </div>
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Ngày tạo:</span>
+          <div className="text-gray-800">
+            {new Date(staff.createdAt).toLocaleString("vi-VN")}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-6">
+        <Button variant="outline" onClick={() => router.back()}>
+          Quay lại
+        </Button>
+        <Button
+          className="bg-orange-600 hover:bg-orange-700 text-white"
+          onClick={() =>
+            router.push(`/dashboard/manager/business-staffs/${staff.staffId}/edit`)
+          }
+        >
+          ✏️ Chỉnh sửa
         </Button>
       </div>
     </Card>

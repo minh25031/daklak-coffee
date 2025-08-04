@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { getAllWarehouses, deleteWarehouse } from "@/lib/api/warehouses";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { useEffect, useState } from 'react';
+import { getAllWarehouses, deleteWarehouse } from '@/lib/api/warehouses';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import {
   Trash2,
   Eye,
@@ -12,9 +12,9 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
+} from 'lucide-react';
+import Link from 'next/link';
+import { toast } from 'sonner';
 
 type Warehouse = {
   warehouseId: string;
@@ -25,7 +25,7 @@ type Warehouse = {
 
 export default function WarehouseListPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const pageSize = 10;
@@ -34,16 +34,15 @@ export default function WarehouseListPage() {
     const fetchData = async () => {
       try {
         const res = await getAllWarehouses();
-
         if (Array.isArray(res)) {
           setWarehouses(res);
         } else if (res.status === 1 && Array.isArray(res.data)) {
           setWarehouses(res.data);
         } else {
-          toast.error("❌ Không thể tải danh sách kho");
+          toast.error('❌ Không thể tải danh sách kho');
         }
       } catch (error) {
-        toast.error("❌ Đã xảy ra lỗi khi tải danh sách kho");
+        toast.error('❌ Đã xảy ra lỗi khi tải danh sách kho');
       } finally {
         setLoading(false);
       }
@@ -63,15 +62,13 @@ export default function WarehouseListPage() {
   );
 
   const handleDelete = async (id: string) => {
-    if (confirm("Bạn chắc chắn muốn xoá kho này?")) {
+    if (confirm('Bạn chắc chắn muốn xoá kho này?')) {
       const res = await deleteWarehouse(id);
       if (res.status === 1) {
-        toast.success("✅ Xoá thành công");
-        setWarehouses((prev) =>
-          prev.filter((w) => w.warehouseId !== id)
-        );
+        toast.success('✅ Xoá thành công');
+        setWarehouses((prev) => prev.filter((w) => w.warehouseId !== id));
       } else {
-        toast.error("❌ " + res.message);
+        toast.error('❌ ' + res.message);
       }
     }
   };
@@ -80,22 +77,24 @@ export default function WarehouseListPage() {
     <div className="min-h-screen bg-amber-100/30 p-6">
       <Card className="p-6">
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-xl font-bold">Danh sách kho</h1>
-          <div className="flex items-center gap-3">
-            <Input
-              placeholder="Tìm theo tên kho..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-64 pr-10"
-            />
-            <Search className="absolute right-[120px] top-[38px] h-4 w-4 text-gray-400" />
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+          <h1 className="text-xl font-bold">📦 Danh sách kho</h1>
+          <div className="flex items-center gap-3 relative">
+            <div className="relative">
+              <Input
+                placeholder="Tìm theo tên kho..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-64 pr-10"
+              />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
             <Link href="/dashboard/manager/warehouses/create">
               <Button className="bg-amber-900 text-white hover:bg-amber-800">
-                <Plus className="w-4 h-4 mr-1" />
+                <Plus className="w-4 h-4 mr-2" />
                 Tạo kho mới
               </Button>
             </Link>
@@ -118,31 +117,24 @@ export default function WarehouseListPage() {
               </thead>
               <tbody>
                 {paged.map((w) => (
-                  <tr
-                    key={w.warehouseId}
-                    className="border-t hover:bg-gray-50"
-                  >
+                  <tr key={w.warehouseId} className="border-t hover:bg-gray-50">
                     <td className="px-4 py-2">{w.name}</td>
                     <td className="px-4 py-2">{w.location}</td>
                     <td className="px-4 py-2">
-                      {w.capacity?.toLocaleString() ?? "-"} kg
+                      {w.capacity?.toLocaleString() ?? '-'} kg
                     </td>
-                    <td className="px-4 py-2 text-center space-x-2">
-                      <Link
-                        href={`/dashboard/manager/warehouses/${w.warehouseId}`}
-                      >
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4 mr-1" />
-                          Xem
+                    <td className="px-4 py-2 text-center space-x-1">
+                      <Link href={`/dashboard/manager/warehouses/${w.warehouseId}`}>
+                        <Button size="icon" variant="outline">
+                          <Eye className="w-4 h-4" />
                         </Button>
                       </Link>
                       <Button
+                        size="icon"
                         variant="destructive"
-                        size="sm"
                         onClick={() => handleDelete(w.warehouseId)}
                       >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Xoá
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </td>
                   </tr>
@@ -163,7 +155,8 @@ export default function WarehouseListPage() {
         {!loading && filtered.length > 0 && (
           <div className="flex justify-between items-center mt-4">
             <span className="text-sm text-muted-foreground">
-              Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} trong {filtered.length} kho
+              Hiển thị {(currentPage - 1) * pageSize + 1}–
+              {Math.min(currentPage * pageSize, filtered.length)} trong {filtered.length} kho
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -182,8 +175,8 @@ export default function WarehouseListPage() {
                     onClick={() => setCurrentPage(page)}
                     className={`rounded-md px-3 py-1 text-sm ${
                       page === currentPage
-                        ? "bg-black text-white"
-                        : "bg-white text-black border"
+                        ? 'bg-black text-white'
+                        : 'bg-white text-black border'
                     }`}
                   >
                     {page}

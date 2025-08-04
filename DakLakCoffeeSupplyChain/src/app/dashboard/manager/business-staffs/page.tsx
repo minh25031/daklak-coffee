@@ -7,9 +7,14 @@ import {
   softDeleteBusinessStaff,
   BusinessStaffListDto,
 } from "@/lib/api/businessStaffs";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import {
+  Eye,
+  Pencil,
+  Trash2,
+  Plus,
+} from "lucide-react";
 
 export default function BusinessStaffListPage() {
   const [staffs, setStaffs] = useState<BusinessStaffListDto[]>([]);
@@ -39,7 +44,7 @@ export default function BusinessStaffListPage() {
       const res = await softDeleteBusinessStaff(id);
       if (res.status === 200) {
         toast.success("Xoá thành công.");
-        setStaffs(prev => prev.filter(s => s.staffId !== id));
+        setStaffs((prev) => prev.filter((s) => s.staffId !== id));
       } else {
         toast.error(res.message || "Xoá thất bại.");
       }
@@ -52,9 +57,13 @@ export default function BusinessStaffListPage() {
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">Danh sách nhân viên</h1>
-        <Button onClick={() => router.push("/dashboard/manager/business-staffs/create")}>
-          + Tạo nhân viên
-        </Button>
+        <button
+          onClick={() => router.push("/dashboard/manager/business-staffs/create")}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Thêm nhân viên
+        </button>
       </div>
 
       {loading ? (
@@ -73,38 +82,41 @@ export default function BusinessStaffListPage() {
               </tr>
             </thead>
             <tbody>
-              {staffs.map(staff => (
+              {staffs.map((staff) => (
                 <tr key={staff.staffId} className="border-t">
                   <td className="px-4 py-2">{staff.staffCode}</td>
                   <td className="px-4 py-2">{staff.fullName}</td>
                   <td className="px-4 py-2">{staff.email}</td>
                   <td className="px-4 py-2">{staff.department}</td>
                   <td className="px-4 py-2">{staff.position}</td>
-                  <td className="px-4 py-2 text-center space-x-2">
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        router.push(`/dashboard/manager/business-staffs/${staff.staffId}`)
-                      }
-                    >
-                      Xem
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        router.push(`/dashboard/manager/business-staffs/${staff.staffId}/edit`)
-                      }
-                    >
-                      Sửa
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(staff.staffId)}
-                    >
-                      Xoá
-                    </Button>
+                  <td className="px-4 py-2 text-center">
+                    <div className="flex justify-center items-center gap-3">
+                      <span
+                        title="Xem"
+                        onClick={() =>
+                          router.push(`/dashboard/manager/business-staffs/${staff.staffId}`)
+                        }
+                        className="cursor-pointer text-gray-600 hover:text-black"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </span>
+                      <span
+                        title="Sửa"
+                        onClick={() =>
+                          router.push(`/dashboard/manager/business-staffs/${staff.staffId}/edit`)
+                        }
+                        className="cursor-pointer text-blue-600 hover:text-blue-800"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </span>
+                      <span
+                        title="Xoá"
+                        onClick={() => handleDelete(staff.staffId)}
+                        className="cursor-pointer text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))}
