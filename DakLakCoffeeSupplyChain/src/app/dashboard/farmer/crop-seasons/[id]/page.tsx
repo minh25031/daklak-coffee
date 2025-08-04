@@ -70,9 +70,6 @@ export default function CropSeasonDetail() {
             </div>
         );
     }
-    console.log(season.commitmentName);
-
-
     return (
         <div className="w-full min-h-screen bg-orange-50 p-6 lg:px-20 flex justify-center items-start">
             <div className="w-full max-w-6xl space-y-6">
@@ -129,7 +126,7 @@ export default function CropSeasonDetail() {
                             <Button
                                 size="sm"
                                 onClick={() =>
-                                    router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/create`)
+                                    router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/create?commitmentId=${season.commitmentId}`)
                                 }
                             >
                                 + Thêm vùng trồng
