@@ -39,6 +39,8 @@ export default function CropProgressPage() {
     const searchParams = useSearchParams();
 
     const [progressList, setProgressList] = useState<CropProgress[]>([]);
+    console.log("📦 Danh sách progress đang hiển thị:", progressList);
+
     const [loading, setLoading] = useState(true);
 
     const reloadData = async () => {
@@ -94,11 +96,22 @@ export default function CropProgressPage() {
                         <CardTitle className="text-xl font-bold text-emerald-700">
                             📈 Tiến độ vùng trồng
                         </CardTitle>
-                        <CreateProgressDialog
-                            detailId={cropSeasonDetailId}
-                            existingProgress={progressList.map(p => ({ stageCode: p.stageCode }))}
-                            onSuccess={reloadData}
-                        />
+
+                        <div className="flex gap-2">
+                            <Button
+                                variant="default"
+                                className="bg-orange-600 hover:bg-orange-700 text-white"
+                                onClick={() => router.push(`/dashboard/farmer/request-feedback/create?detailId=${cropSeasonDetailId}`)}
+                            >
+                                📝 Gửi báo cáo tiến độ
+                            </Button>
+
+                            <CreateProgressDialog
+                                detailId={cropSeasonDetailId}
+                                existingProgress={progressList.map(p => ({ stageCode: p.stageCode }))}
+                                onSuccess={reloadData}
+                            />
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -180,16 +193,6 @@ export default function CropProgressPage() {
                                         )}
 
                                         <div className="flex gap-2 mt-4">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-emerald-700 border-emerald-500 hover:bg-emerald-50"
-                                                onClick={() => router.push(
-                                                    `/dashboard/farmer/request-feedback/create?progressId=${progress.progressId}&stageName=${encodeURIComponent(progress.stageName)}`
-                                                )}
-                                            >
-                                                📝 Gửi báo cáo
-                                            </Button>
 
                                             <EditProgressDialog
                                                 progress={progress}
