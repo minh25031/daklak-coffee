@@ -42,3 +42,17 @@ export function formatDate(dateStr: string | Date | undefined) {
     return "Chưa xác định";
   }
 }
+export function formatDateTimeVN(dateStr: string | Date | undefined) {
+  if (!dateStr) return "Chưa xác định";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime()) || d.getFullYear() === 1970) return "Chưa xác định";
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(d);
+}
