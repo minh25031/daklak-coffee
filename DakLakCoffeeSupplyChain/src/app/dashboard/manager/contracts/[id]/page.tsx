@@ -6,7 +6,11 @@ import {
   getContractDetails,
   ContractViewDetailsDto,
 } from "@/lib/api/contracts";
-import { softDeleteContractItem } from "@/lib/api/contractItems";
+import {
+  ContractItemCreateDto,
+  ContractItemUpdateDto,
+  softDeleteContractItem,
+} from "@/lib/api/contractItems";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -29,6 +33,13 @@ import {
   DialogContent,
   DialogFooter,
 } from "@/components/ui/dialog";
+import ContractItemFormDialog from "@/components/contracts/ContractItemFormDialog";
+import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
+import {
+  formatQuantity,
+  formatUnitPriceByQuantity,
+  formatDiscount,
+} from "@/lib/utils";
 
 const contractStatusMap: Record<string, { label: string; className: string }> =
   {
@@ -71,10 +82,37 @@ export default function ContractDetailPage() {
   >(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  const ITEMS_PER_PAGE = 5;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [showItemFormDialog, setShowItemFormDialog] = useState(false);
+  const [editingItem, setEditingItem] = useState<
+    ContractViewDetailsDto["contractItems"][number] | null
+  >(null);
+
+  const [coffeeTypes, setCoffeeTypes] = useState<CoffeeType[]>([]);
+
+  useEffect(() => {
+    getCoffeeTypes().then(setCoffeeTypes).catch(console.error);
+  }, []);
+
+  const enrichItems = (items: ContractViewDetailsDto["contractItems"]) => {
+    return items.map((item) => {
+      return {
+        ...item,
+        coffeeTypeName:
+          coffeeTypes.find((c) => c.coffeeTypeId === item.coffeeTypeId)
+            ?.typeName ?? item.coffeeTypeName,
+      };
+    });
+  };
+
   const reloadContract = () => {
     setLoading(true);
     getContractDetails(contractId)
       .then((data) => {
+        console.log("Dữ liệu sau update:", data);
+        data.contractItems = enrichItems(data.contractItems);
         setContract(data);
         setLoading(false);
       })
@@ -134,6 +172,14 @@ export default function ContractDetailPage() {
       </div>
     );
   }
+
+  const totalItems = contract.contractItems.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  const paginatedItems = contract.contractItems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="w-full min-h-screen bg-orange-50 px-4 py-6 lg:px-20 flex justify-center">
@@ -232,11 +278,10 @@ export default function ContractDetailPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Danh sách mặt hàng</CardTitle>
             <Button
-              onClick={() =>
-                router.push(
-                  `/dashboard/manager/contracts/${contract.contractId}/items/create`
-                )
-              }
+              onClick={() => {
+                setEditingItem(null); // create mode
+                setShowItemFormDialog(true);
+              }}
             >
               + Thêm mặt hàng
             </Button>
@@ -265,17 +310,22 @@ export default function ContractDetailPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    contract.contractItems.map((item) => (
+                    paginatedItems.map((item) => (
                       <TableRow key={item.contractItemId}>
                         <TableCell>{item.coffeeTypeName}</TableCell>
                         <TableCell>
-                          {item.quantity?.toLocaleString() ?? "-"}
+                          {item.quantity !== undefined
+                            ? formatQuantity(item.quantity)
+                            : "-"}
                         </TableCell>
                         <TableCell>
-                          {item.unitPrice?.toLocaleString() ?? "-"}
+                          {item.unitPrice?.toLocaleString()}{" "}
+                          <span className="text-muted-foreground">VNĐ/kg</span>
                         </TableCell>
                         <TableCell>
-                          {item.discountAmount?.toLocaleString() ?? "-"}
+                          {item.discountAmount !== undefined
+                            ? `${item.discountAmount}%`
+                            : "-"}
                         </TableCell>
                         <TableCell>{item.note}</TableCell>
                         <TableCell>
@@ -284,11 +334,10 @@ export default function ContractDetailPage() {
                               <Button
                                 variant="ghost"
                                 className="w-8 h-8"
-                                onClick={() =>
-                                  router.push(
-                                    `/dashboard/manager/contracts/items/${item.contractItemId}/edit`
-                                  )
-                                }
+                                onClick={() => {
+                                  setEditingItem(item); // edit mode
+                                  setShowItemFormDialog(true);
+                                }}
                               >
                                 <Pencil className="w-4 h-4 text-yellow-500" />
                               </Button>
@@ -313,6 +362,46 @@ export default function ContractDetailPage() {
                   )}
                 </TableBody>
               </Table>
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border-t rounded-b-md text-sm text-gray-700">
+                  <div className="mb-2 sm:mb-0">
+                    Đang hiển thị{" "}
+                    <span className="font-medium">
+                      {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}
+                    </span>{" "}
+                    / <span className="font-medium">{totalItems}</span> mặt hàng
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="px-3"
+                      disabled={currentPage === 1}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                    >
+                      ← Trước
+                    </Button>
+                    <span className="flex items-center px-2">
+                      Trang{" "}
+                      <span className="mx-1 font-semibold">{currentPage}</span>{" "}
+                      / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="px-3"
+                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
+                    >
+                      Sau →
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -322,6 +411,29 @@ export default function ContractDetailPage() {
             ← Quay lại
           </Button>
         </div>
+        <ContractItemFormDialog
+          open={showItemFormDialog}
+          onOpenChange={setShowItemFormDialog}
+          contractId={contract.contractId}
+          initialData={
+            editingItem
+              ? ({
+                  contractItemId: editingItem.contractItemId,
+                  contractId: contract.contractId,
+                  coffeeTypeId: editingItem.coffeeTypeId,
+                  quantity: editingItem.quantity,
+                  unitPrice: editingItem.unitPrice,
+                  discountAmount: editingItem.discountAmount,
+                  note: editingItem.note,
+                } as ContractItemUpdateDto)
+              : undefined
+          }
+          mode={editingItem ? "edit" : "create"}
+          onSuccess={() => {
+            setShowItemFormDialog(false);
+            reloadContract();
+          }}
+        />
       </div>
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>

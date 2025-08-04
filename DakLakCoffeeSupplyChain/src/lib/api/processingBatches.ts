@@ -2,6 +2,7 @@ import api from "./axios";
 import { useRouter } from "next/navigation";
 import { ProcessingBatchProgress } from "./processingBatchProgress";
 
+
 export interface ProcessingProgress {
   stageName: string;
   stageDescription: string;
@@ -21,7 +22,20 @@ export interface ProcessingProduct {
   quantity: number;
   unit: string;
 }
+export interface CoffeeType {
+  coffeeTypeId: string;
+  typeCode: string;
+  typeName: string;
+  botanicalName: string;
+  description: string;
+  typicalRegion: string;
+  specialtyLevel: string;
+  expectedYield: number;
+}
+
+
 export interface ProcessingBatch {
+  coffeeTypeId: string ;
   batchId: string;
   batchCode: string;
   systemBatchCode: string;
@@ -41,16 +55,12 @@ export interface ProcessingBatch {
   products: ProcessingProduct[];
     
 }
-
 export interface CreateProcessingBatchPayload {
   coffeeTypeId: string;
   cropSeasonId: string;
   batchCode: string;
   methodId: number;
-  inputQuantity: number;
-  inputUnit: string;
 }
-
 export async function getAllProcessingBatches(): Promise<ProcessingBatch[] | null> {
   try {
     const res = await api.get("/ProcessingBatch");
@@ -64,6 +74,17 @@ export async function getAllProcessingBatches(): Promise<ProcessingBatch[] | nul
 
     console.error("❌ Lỗi getAllProcessingBatches:", err);
     return []; // các lỗi khác vẫn trả rỗng
+  }
+}
+export async function getAvailableCoffeeTypes(cropSeasonId: string): Promise<CoffeeType[]> {
+  try {
+    const res = await api.get(`/ProcessingBatch/available-coffee-types`, {
+      params: { cropSeasonId },
+    });
+    return res.data;
+  } catch (err) {
+    console.error("❌ Lỗi getAvailableCoffeeTypes:", err);
+    return [];
   }
 }
 

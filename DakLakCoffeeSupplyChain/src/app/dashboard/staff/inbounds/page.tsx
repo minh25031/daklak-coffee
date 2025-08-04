@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
-import Link from "next/link";
+import { ChevronLeft, ChevronRight, Search, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function InboundRequestListPage() {
@@ -16,7 +15,6 @@ export default function InboundRequestListPage() {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-
   const router = useRouter();
 
   useEffect(() => {
@@ -48,7 +46,6 @@ export default function InboundRequestListPage() {
 
   const getStatusBadge = (status: string) => {
     const base = "capitalize px-3 py-1 rounded-md font-medium text-sm";
-
     switch (status) {
       case "Pending":
         return <Badge className={`${base} bg-gray-100 text-gray-800`}>⏳ Đang chờ duyệt</Badge>;
@@ -68,7 +65,7 @@ export default function InboundRequestListPage() {
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">📥 Danh sách yêu cầu nhập kho</h1>
+        <h1 className="text-xl font-bold text-orange-600">📥 Danh sách yêu cầu nhập kho</h1>
         <div className="relative w-64">
           <Input
             placeholder="Tìm mã yêu cầu..."
@@ -77,15 +74,15 @@ export default function InboundRequestListPage() {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="pr-10"
+            className="pr-10 border-orange-300 focus:ring-orange-400"
           />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-orange-400" />
         </div>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full table-auto border">
-          <thead className="bg-gray-100">
+          <thead className="bg-orange-50 text-orange-800 font-semibold">
             <tr>
               <th className="px-4 py-2 text-left">Mã yêu cầu</th>
               <th className="px-4 py-2 text-left">Ngày tạo</th>
@@ -95,22 +92,25 @@ export default function InboundRequestListPage() {
           </thead>
           <tbody>
             {pagedRequests.map((req) => (
-              <tr key={req.inboundRequestId} className="border-t">
+              <tr key={req.inboundRequestId} className="border-t hover:bg-orange-50 transition">
                 <td className="px-4 py-2">{req.requestCode}</td>
-                <td className="px-4 py-2">
-                  {new Date(req.createdAt).toLocaleDateString("vi-VN")}
-                </td>
+                <td className="px-4 py-2">{new Date(req.createdAt).toLocaleDateString("vi-VN")}</td>
                 <td className="px-4 py-2">{getStatusBadge(req.status)}</td>
                 <td className="px-4 py-2 text-center">
-                  <Link href={`/dashboard/staff/inbounds/${req.inboundRequestId}`}>
-                    <Button size="sm">Xem chi tiết</Button>
-                  </Link>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => router.push(`/dashboard/staff/inbounds/${req.inboundRequestId}`)}
+                    className="hover:bg-orange-100 text-orange-600"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
                 </td>
               </tr>
             ))}
             {pagedRequests.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center py-4">
+                <td colSpan={4} className="text-center py-4 italic text-gray-500">
                   Không có yêu cầu nào phù hợp.
                 </td>
               </tr>
@@ -140,10 +140,10 @@ export default function InboundRequestListPage() {
                 <Button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`rounded-md px-3 py-1 text-sm ${
+                  className={`rounded-full px-3 py-1 text-sm ${
                     page === currentPage
-                      ? "bg-black text-white"
-                      : "bg-white text-black border"
+                      ? "bg-orange-600 text-white"
+                      : "bg-white text-orange-600 border border-orange-400"
                   }`}
                 >
                   {page}

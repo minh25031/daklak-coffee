@@ -72,7 +72,9 @@ export default function CreateInventoryPage() {
     <div className="p-6 max-w-2xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>Tạo tồn kho mới</CardTitle>
+          <CardTitle className="text-2xl font-bold text-orange-600 flex items-center gap-2">
+      📦 Tạo tồn kho mới
+    </CardTitle>
         </CardHeader>
         <CardContent>
           {successMessage && (

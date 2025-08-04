@@ -5,6 +5,7 @@ import { DEFAULT_ERROR_MESSAGE } from "./constants/httpErrors";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
 export function getErrorMessage(error: unknown): string {
   // Ưu tiên: lỗi trong response.message (thường là ServiceResult)
   const axiosMsg = (error as any)?.response?.data?.message;
@@ -42,17 +43,19 @@ export function formatDate(dateStr: string | Date | undefined) {
     return "Chưa xác định";
   }
 }
-export function formatDateTimeVN(dateStr: string | Date | undefined) {
-  if (!dateStr) return "Chưa xác định";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime()) || d.getFullYear() === 1970) return "Chưa xác định";
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).format(d);
+
+export function formatQuantity(value: number): string {
+  return value >= 1000
+    ? `${(value / 1000).toLocaleString()} tấn`
+    : `${value.toLocaleString()} kg`;
+}
+
+export function formatUnitPriceByQuantity(unitPrice: number, quantity: number): string {
+  return quantity >= 1000
+    ? `${(unitPrice * 1000).toLocaleString()} VND/tấn`
+    : `${unitPrice.toLocaleString()} VND/kg`;
+}
+
+export function formatDiscount(value: number): string {
+  return `${value.toLocaleString()} VND`;
 }
