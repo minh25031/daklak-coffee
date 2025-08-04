@@ -12,6 +12,8 @@ import {
   Search,
   Plus,
   History as HistoryIcon,
+  Eye,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -98,7 +100,7 @@ export default function ManagerInventoryListPage() {
         </div>
       </div>
 
-      {/* Table content */}
+      {/* Table */}
       {loading ? (
         <p className="text-gray-500">Đang tải dữ liệu...</p>
       ) : (
@@ -116,55 +118,57 @@ export default function ManagerInventoryListPage() {
               </tr>
             </thead>
             <tbody>
-  {paged.map((inv) => (
-    <tr key={inv.inventoryId} className="border-t align-top text-sm">
-      <td className="px-4 py-2 whitespace-normal break-words">{inv.inventoryCode}</td>
-      <td className="px-4 py-2 whitespace-normal break-words max-w-[200px]">{inv.warehouseName}</td>
-      <td className="px-4 py-2 whitespace-normal break-words max-w-[220px]">{inv.productName}</td>
-      <td className="px-4 py-2 whitespace-normal break-words text-green-700 font-medium max-w-[160px]">{inv.coffeeTypeName}</td>
-      <td className="px-4 py-2 text-center">{inv.quantity.toLocaleString()}</td>
-      <td className="px-4 py-2 text-center">
-        <Badge
-          className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${
-            inv.quantity > 0
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {inv.quantity > 0 ? "Còn hàng" : "Hết hàng"}
-        </Badge>
-      </td>
-      <td className="px-2 py-2 text-center align-middle">
-  <div className="flex flex-wrap justify-center gap-2">
+              {paged.map((inv) => (
+                <tr key={inv.inventoryId} className="border-t align-top text-sm">
+                  <td className="px-4 py-2 whitespace-normal break-words">{inv.inventoryCode}</td>
+                  <td className="px-4 py-2 whitespace-normal break-words max-w-[200px]">{inv.warehouseName}</td>
+                  <td className="px-4 py-2 whitespace-normal break-words max-w-[220px]">{inv.productName}</td>
+                  <td className="px-4 py-2 whitespace-normal break-words text-green-700 font-medium max-w-[160px]">{inv.coffeeTypeName}</td>
+                  <td className="px-4 py-2 text-center">{inv.quantity.toLocaleString()}</td>
+                  <td className="px-4 py-2 text-center">
+                    <Badge
+                      className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${
+                        inv.quantity > 0
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {inv.quantity > 0 ? "Còn hàng" : "Hết hàng"}
+                    </Badge>
+                  </td>
+                  <td className="px-2 py-2 text-center align-middle">
+  <div className="flex justify-center gap-3">
     <Link href={`/dashboard/manager/inventories/${inv.inventoryId}`}>
-      <Button variant="outline" size="sm">Xem</Button>
+      <span title="Xem tồn kho">
+        <Eye className="w-5 h-5 text-gray-600 hover:text-black cursor-pointer" />
+      </span>
     </Link>
+
     <Link href={`/dashboard/manager/inventories/${inv.inventoryId}/logs`}>
-      <Button variant="secondary" size="sm">
-        <HistoryIcon className="w-4 h-4 mr-1" />
-        Lịch sử
-      </Button>
+      <span title="Lịch sử">
+        <HistoryIcon className="w-5 h-5 text-blue-600 hover:text-blue-800 cursor-pointer" />
+      </span>
     </Link>
-    <Button
-      variant="destructive"
-      size="sm"
-      onClick={() => handleSoftDelete(inv.inventoryId)}
-    >
-      Xoá
-    </Button>
+
+    <span title="Xoá">
+      <XCircle
+        className="w-5 h-5 text-red-600 hover:text-red-800 cursor-pointer"
+        onClick={() => handleSoftDelete(inv.inventoryId)}
+      />
+    </span>
   </div>
 </td>
-    </tr>
-  ))}
-  {paged.length === 0 && (
-    <tr>
-      <td colSpan={7} className="text-center py-4 text-gray-500">
-        Không có tồn kho phù hợp.
-      </td>
-    </tr>
-  )}
-</tbody>
 
+                </tr>
+              ))}
+              {paged.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center py-4 text-gray-500">
+                    Không có tồn kho phù hợp.
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
       )}

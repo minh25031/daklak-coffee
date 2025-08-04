@@ -1,21 +1,20 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { getAllWarehouseReceipts } from "@/lib/api/warehouseReceipt";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { toast } from "sonner";
-import Link from "next/link";
+import { useEffect, useState } from 'react';
+import { getAllWarehouseReceipts } from '@/lib/api/warehouseReceipt';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { ChevronLeft, ChevronRight, Eye, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function ReceiptListPage() {
   const [receipts, setReceipts] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-
   const pageSize = 10;
 
   useEffect(() => {
@@ -25,10 +24,10 @@ export default function ReceiptListPage() {
         if (res.status === 1) {
           setReceipts(Array.isArray(res.data) ? res.data : []);
         } else {
-          toast.error(res.message || "Không thể tải danh sách phiếu nhập kho");
+          toast.error(res.message || 'Không thể tải danh sách phiếu nhập kho');
         }
-      } catch (err) {
-        toast.error("Lỗi khi tải dữ liệu từ server.");
+      } catch {
+        toast.error('Lỗi khi tải dữ liệu từ server.');
       } finally {
         setLoading(false);
       }
@@ -51,8 +50,8 @@ export default function ReceiptListPage() {
     <Card className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Danh sách phiếu nhập kho</h1>
-        <div className="flex items-center gap-3">
+        <h1 className="text-xl font-bold">📄 Danh sách phiếu nhập kho</h1>
+        <div className="relative flex items-center gap-2">
           <Input
             placeholder="Tìm theo mã phiếu..."
             value={search}
@@ -62,9 +61,11 @@ export default function ReceiptListPage() {
             }}
             className="w-64 pr-10"
           />
-          <Search className="absolute right-5 top-[40px] h-4 w-4 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Link href="/dashboard/staff/receipts/create">
-            <Button className="bg-blue-500 text-white">+ Tạo mới</Button>
+            <Button className="bg-blue-600 text-white hover:bg-blue-700">
+              + Tạo mới
+            </Button>
           </Link>
         </div>
       </div>
@@ -84,42 +85,39 @@ export default function ReceiptListPage() {
                 <th className="px-4 py-2 text-left">Ngày nhập</th>
                 <th className="px-4 py-2 text-left">Nhân viên</th>
                 <th className="px-4 py-2 text-center">Trạng thái</th>
-                <th className="px-4 py-2 text-center">Hành động</th>
+                <th className="px-4 py-2 text-center">Xem</th>
               </tr>
             </thead>
             <tbody>
               {pagedReceipts.map((receipt) => {
-                const note = receipt?.note ?? "";
+                const note = receipt?.note ?? '';
                 const isConfirmed = /\[?confirmed at/i.test(note);
-
                 return (
                   <tr key={receipt.receiptId} className="border-t">
-                    <td className="px-4 py-2">{receipt.receiptCode || "?"}</td>
-                    <td className="px-4 py-2">{receipt.warehouseName || "?"}</td>
-                    <td className="px-4 py-2">{receipt.batchCode || "?"}</td>
-                    <td className="px-4 py-2">{receipt.receivedQuantity ?? "?"}</td>
+                    <td className="px-4 py-2">{receipt.receiptCode || '?'}</td>
+                    <td className="px-4 py-2">{receipt.warehouseName || '?'}</td>
+                    <td className="px-4 py-2">{receipt.batchCode || '?'}</td>
+                    <td className="px-4 py-2">{receipt.receivedQuantity ?? '?'}</td>
                     <td className="px-4 py-2">
                       {receipt.receivedAt
                         ? new Date(receipt.receivedAt).toLocaleDateString()
-                        : "?"}
+                        : '?'}
                     </td>
-                    <td className="px-4 py-2">{receipt.staffName || "Không rõ"}</td>
+                    <td className="px-4 py-2">{receipt.staffName || 'Không rõ'}</td>
                     <td className="px-4 py-2 text-center">
                       <Badge
-                        className={`capitalize px-3 py-1 rounded-md font-medium text-sm text-center ${
+                        className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${
                           isConfirmed
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
                         }`}
                       >
-                        {isConfirmed ? "Đã xác nhận" : "Chưa xác nhận"}
+                        {isConfirmed ? 'Đã xác nhận' : 'Chưa xác nhận'}
                       </Badge>
                     </td>
                     <td className="px-4 py-2 text-center">
                       <Link href={`/dashboard/staff/receipts/${receipt.receiptId}`}>
-                        <Button variant="outline" size="sm">
-                          Xem
-                        </Button>
+                        <Eye className="w-4 h-4 text-blue-600 hover:text-blue-800 cursor-pointer inline-block" />
                       </Link>
                     </td>
                   </tr>
@@ -159,7 +157,9 @@ export default function ReceiptListPage() {
                   key={page}
                   onClick={() => setCurrentPage(page)}
                   className={`rounded-md px-3 py-1 text-sm ${
-                    page === currentPage ? "bg-black text-white" : "bg-white text-black border"
+                    page === currentPage
+                      ? 'bg-black text-white'
+                      : 'bg-white text-black border'
                   }`}
                 >
                   {page}

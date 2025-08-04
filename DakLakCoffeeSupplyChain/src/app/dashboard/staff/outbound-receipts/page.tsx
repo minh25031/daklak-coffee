@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Eye } from 'lucide-react';
 
 interface OutboundReceiptItem {
   outboundReceiptId: string;
@@ -26,14 +27,9 @@ export default function OutboundReceiptListPage() {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('Not authenticated');
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/WarehouseOutboundReceipts`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/WarehouseOutboundReceipts`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (!res.ok) throw new Error(await res.text());
 
@@ -82,7 +78,7 @@ export default function OutboundReceiptListPage() {
                   <th className="p-2 border text-left">Mẻ hàng</th>
                   <th className="p-2 border text-left">Số lượng</th>
                   <th className="p-2 border text-left">Ngày xuất</th>
-                  <th className="p-2 border text-center">Thao tác</th>
+                  <th className="p-2 border text-center">Xem</th>
                 </tr>
               </thead>
               <tbody>
@@ -95,7 +91,9 @@ export default function OutboundReceiptListPage() {
                       <td className="p-2 border">{r.outboundReceiptCode}</td>
                       <td className="p-2 border">{r.warehouseName || 'Không rõ'}</td>
                       <td className="p-2 border">{r.batchCode || 'Không rõ'}</td>
-                      <td className="p-2 border">{r.quantity} {r.unit || 'kg'}</td>
+                      <td className="p-2 border">
+                        {r.quantity} {r.unit || 'kg'}
+                      </td>
                       <td className="p-2 border">
                         {isValidDate ? (
                           <>
@@ -110,14 +108,12 @@ export default function OutboundReceiptListPage() {
                         )}
                       </td>
                       <td className="p-2 border text-center">
-                        <Button
-                          variant="outline"
+                        <Eye
+                          className="w-4 h-4 text-blue-600 hover:text-blue-800 cursor-pointer inline-block"
                           onClick={() =>
                             router.push(`/dashboard/staff/outbound-receipts/${r.outboundReceiptId}`)
                           }
-                        >
-                          Xem
-                        </Button>
+                        />
                       </td>
                     </tr>
                   );

@@ -25,9 +25,7 @@ export default function EditBusinessStaffPage() {
     assignedWarehouseId: "",
   });
 
-  const [warehouses, setWarehouses] = useState<
-    { warehouseId: string; name: string }[]
-  >([]);
+  const [warehouses, setWarehouses] = useState<{ warehouseId: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -91,44 +89,46 @@ export default function EditBusinessStaffPage() {
     }
   };
 
-  if (loading) return <p className="text-gray-500">Đang tải dữ liệu...</p>;
+  if (loading) return <p className="text-gray-500 px-6">Đang tải dữ liệu...</p>;
 
   return (
-    <Card className="p-6 max-w-2xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold mb-4">Chỉnh sửa nhân viên</h1>
+    <Card className="p-8 max-w-3xl mx-auto space-y-6 shadow-md">
+      <h1 className="text-3xl font-semibold text-blue-700 border-b pb-4">
+        ✏️ Chỉnh sửa nhân viên
+      </h1>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
-          <Label>Mã nhân viên</Label>
+          <Label className="text-sm text-gray-600">Mã nhân viên</Label>
           <Input value={form.staffCode} disabled />
         </div>
         <div>
-          <Label>Họ tên</Label>
+          <Label className="text-sm text-gray-600">Họ tên</Label>
           <Input value={form.fullName} disabled />
         </div>
         <div>
-          <Label>Email</Label>
+          <Label className="text-sm text-gray-600">Email</Label>
           <Input value={form.email} disabled />
         </div>
         <div>
-          <Label>Số điện thoại</Label>
+          <Label className="text-sm text-gray-600">Số điện thoại</Label>
           <Input value={form.phoneNumber} disabled />
         </div>
         <div>
-          <Label>Phòng ban</Label>
+          <Label className="text-sm text-gray-600">Phòng ban</Label>
           <Input name="department" value={form.department} onChange={handleChange} />
         </div>
         <div>
-          <Label>Vị trí</Label>
+          <Label className="text-sm text-gray-600">Vị trí</Label>
           <Input name="position" value={form.position} onChange={handleChange} />
         </div>
-        <div>
-          <Label>Kho phụ trách (nếu có)</Label>
+        <div className="sm:col-span-2">
+          <Label className="text-sm text-gray-600">Kho phụ trách (nếu có)</Label>
           <select
             name="assignedWarehouseId"
             value={form.assignedWarehouseId}
             onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
+            className="w-full border rounded px-3 py-2 bg-white text-gray-800"
           >
             <option value="">-- Không chọn --</option>
             {warehouses.map((w) => (
@@ -140,11 +140,13 @@ export default function EditBusinessStaffPage() {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4">
+      <div className="flex justify-end gap-3 pt-6">
         <Button variant="outline" onClick={() => router.back()}>
           Quay lại
         </Button>
-        <Button onClick={handleSubmit}>Lưu thay đổi</Button>
+        <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white">
+          Lưu thay đổi
+        </Button>
       </div>
     </Card>
   );
