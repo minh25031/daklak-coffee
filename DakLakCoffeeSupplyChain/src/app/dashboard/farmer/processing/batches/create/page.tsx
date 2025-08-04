@@ -48,9 +48,6 @@ export default function CreateProcessingBatchPage() {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         const userId = payload?.userId || payload?.UserId || payload?.sub;
-
-        console.log("✅ User ID lấy từ token:", userId);
-
         if (userId) {
           setForm((prev) => ({ ...prev, farmerId: userId }));
         }

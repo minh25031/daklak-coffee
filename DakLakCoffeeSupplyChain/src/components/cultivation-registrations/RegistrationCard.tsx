@@ -178,7 +178,7 @@ export default function RegistrationCard({
                 </p>
                 <p>
                   <strong>Thời gian thu hoạch:</strong>{" "}
-                  {detail.expectedHarvestStart} - {detail.expectedHarvestEnd}
+                  {detail.expectedHarvestStart} {detail.expectedHarvestEnd}
                 </p>
                 {detail.note && (
                   <p>

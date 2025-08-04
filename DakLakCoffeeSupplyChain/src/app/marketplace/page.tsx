@@ -22,14 +22,13 @@ export default function MarketplacePage() {
   useEffect(() => {
     fetchData();
   }, []);
-
+  ``
   const fetchData = async () => {
     setLoading(true);
     const data = await getAllAvailableProcurementPlans().catch((error) => {
       AppToast.error(getErrorMessage(error));
       return [];
     });
-    console.log("Fetched Procurement Plans:", data);
     setPlans(data);
     setLoading(false);
   };

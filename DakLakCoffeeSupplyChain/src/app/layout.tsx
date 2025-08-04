@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Script from "next/script";
+import { Toaster, toast } from "sonner";
+import { useEffect } from "react";
 
 export default function RootLayout({
   children,
@@ -14,7 +16,16 @@ export default function RootLayout({
   const pathname = usePathname();
 
   const showHeaderFooter =
-    pathname === "/" || pathname.startsWith("/marketplace");
+    pathname === "/" ||
+    pathname.startsWith("/marketplace") ||
+    pathname.startsWith("/markplace");
+
+  useEffect(() => {
+    // Example: Show a toast when the user visits the homepage
+    if (pathname === "/") {
+      toast.success("Welcome to DakLak Coffee Supply Chain Platform!");
+    }
+  }, [pathname]);
 
   return (
     <html lang="vi" className="scroll-smooth">
@@ -26,7 +37,10 @@ export default function RootLayout({
       </head>
       <body className="bg-white text-black">
         {showHeaderFooter && <Header />}
-        <main className="min-h-screen">{children}</main>
+        <main className="min-h-screen">
+          {children}
+          <Toaster richColors />
+        </main>
         {showHeaderFooter && <Footer />}
       </body>
     </html>
