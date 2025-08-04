@@ -14,27 +14,43 @@ import {
     createFarmerReport,
 } from '@/lib/api/generalFarmerReports';
 import { SeverityLevelEnum, SeverityLevelLabel } from '@/lib/constants/SeverityLevelEnum';
+import { getCropProgressesByDetailId, CropProgress } from '@/lib/api/cropProgress';
 
 export default function CreateReportPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const progressIdFromUrl = searchParams.get('progressId') ?? '';
-    const stageNameFromUrl = searchParams.get('stageName') ?? '';
-    const reportTypeFromUrl = progressIdFromUrl ? 'Crop' : 'Processing';
+    const detailIdFromUrl = searchParams.get("detailId") ?? "";
+
+    const [cropProgressOptions, setCropProgressOptions] = useState<CropProgress[]>([]);
 
     const [form, setForm] = useState<GeneralFarmerReportCreateDto>({
-        reportType: reportTypeFromUrl,
+        cropSeasonDetailId: detailIdFromUrl,
+        reportType: 'Crop',
         severityLevel: SeverityLevelEnum.Medium,
         title: '',
         description: '',
-        cropProgressId: reportTypeFromUrl === 'Crop' ? progressIdFromUrl : '',
-        processingProgressId: reportTypeFromUrl === 'Processing' ? progressIdFromUrl : '',
+        cropProgressId: '', // nên là undefined chứ không phải ''
+        processingProgressId: '',
         imageUrl: '',
         videoUrl: '',
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const fetchProgressList = async () => {
+            if (!detailIdFromUrl) return;
+            try {
+                const data = await getCropProgressesByDetailId(detailIdFromUrl);
+                setCropProgressOptions(data);
+            } catch (err) {
+                AppToast.error("Không thể tải danh sách tiến độ mùa vụ.");
+            }
+        };
+
+        fetchProgressList();
+    }, [detailIdFromUrl]);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -54,21 +70,32 @@ export default function CreateReportPage() {
         }
 
         if (
-            form.reportType === 'Crop' && !form.cropProgressId ||
-            form.reportType === 'Processing' && !form.processingProgressId
+            (form.reportType === 'Crop' && !form.cropProgressId) ||
+            (form.reportType === 'Processing' && !form.processingProgressId)
         ) {
-            AppToast.error('Vui lòng nhập ID phù hợp với loại báo cáo.');
+            AppToast.error('Vui lòng chọn tiến độ phù hợp với loại báo cáo.');
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const payload: GeneralFarmerReportCreateDto = {
-                ...form,
-                cropProgressId: form.reportType === 'Crop' ? form.cropProgressId : undefined,
-                processingProgressId: form.reportType === 'Processing' ? form.processingProgressId : undefined,
+            const payload: any = {
+                cropSeasonDetailId: detailIdFromUrl,
+                reportType: form.reportType,
+                title: form.title,
+                description: form.description,
+                severityLevel: form.severityLevel,
+                imageUrl: form.imageUrl || undefined,
+                videoUrl: form.videoUrl || undefined,
             };
 
+            if (form.reportType === "Crop") {
+                payload.cropProgressId = form.cropProgressId;
+            }
+
+            if (form.reportType === "Processing" && form.processingProgressId) {
+                payload.processingProgressId = form.processingProgressId;
+            }
             const res = await createFarmerReport(payload);
             AppToast.success('Tạo báo cáo thành công!');
             router.push(`/dashboard/farmer/request-feedback/${res.reportId}`);
@@ -93,8 +120,15 @@ export default function CreateReportPage() {
                         <select
                             name="reportType"
                             value={form.reportType}
-                            onChange={handleChange}
-                            disabled={!!progressIdFromUrl}
+                            onChange={(e) => {
+                                const reportType = e.target.value as 'Crop' | 'Processing';
+                                setForm((prev) => ({
+                                    ...prev,
+                                    reportType,
+                                    cropProgressId: '',
+                                    processingProgressId: '',
+                                }));
+                            }}
                             className="w-full border rounded px-3 py-2"
                         >
                             <option value="Crop">Mùa vụ</option>
@@ -103,11 +137,28 @@ export default function CreateReportPage() {
                     </div>
 
                     {form.reportType === 'Crop' && (
-                        <div className="space-y-1">
-                            <Label>Tiến độ mùa vụ</Label>
-                            <div className="bg-gray-100 rounded px-3 py-2 text-sm">
-                                🌿 {stageNameFromUrl || 'Không rõ'}
-                            </div>
+                        <div className="space-y-2">
+                            <Label>Chọn tiến độ mùa vụ</Label>
+                            <select
+                                name="cropProgressId"
+                                value={form.cropProgressId}
+                                onChange={(e) => {
+                                    const selectedId = e.target.value;
+                                    const selected = cropProgressOptions.find(p => p.progressId === selectedId);
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        cropProgressId: selectedId,
+                                    }));
+                                }}
+                                className="w-full border rounded px-3 py-2"
+                            >
+                                <option value="">-- Chọn giai đoạn --</option>
+                                {cropProgressOptions.map(p => (
+                                    <option key={p.progressId} value={p.progressId}>
+                                        {p.stageName} – {new Date(p.progressDate).toLocaleDateString("vi-VN")}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     )}
 
@@ -118,8 +169,6 @@ export default function CreateReportPage() {
                                 name="processingProgressId"
                                 value={form.processingProgressId}
                                 onChange={handleChange}
-                                readOnly={!!progressIdFromUrl}
-                                className={progressIdFromUrl ? 'bg-gray-100' : ''}
                             />
                         </div>
                     )}

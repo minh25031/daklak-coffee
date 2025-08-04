@@ -46,6 +46,25 @@ export default function CreateProcessingBatchPage() {
 
   useEffect(() => {
     async function fetchInitial() {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const userId = payload?.userId || payload?.UserId || payload?.sub;
+        if (userId) {
+          setForm((prev) => ({ ...prev, farmerId: userId }));
+        }
+      } catch (err) {
+        console.error("❌ Lỗi giải mã token:", err);
+      }
+    }
+  } fetchInitial();
+},
+  []);
+
+  // ✅ Load các dropdown cần thiết
+  useEffect(() => {
+    async function fetchData() {
       try {
         const [cropSeasons, methods] = await Promise.all([
           getCropSeasonsForCurrentUser({ page: 1, pageSize: 100 }),
@@ -60,7 +79,7 @@ export default function CreateProcessingBatchPage() {
       }
     }
 
-    fetchInitial();
+    fetchData();
   }, []);
 
   useEffect(() => {

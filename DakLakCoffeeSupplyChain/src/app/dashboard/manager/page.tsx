@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   FiFileText,
@@ -7,21 +7,33 @@ import {
   FiBarChart2,
   FiHome,
   FiTruck,
-  FiClock, // 🚚 Biểu tượng phù hợp cho Xuất kho
-} from 'react-icons/fi';
-import Link from 'next/link';
-import React from 'react';
+  FiClock, // Biểu tượng phù hợp cho Xuất kho
+  FiClipboard,
+} from "react-icons/fi";
+import Link from "next/link";
+import React from "react";
 
 export default function ManagerDashboard() {
   return (
     <div className="w-full bg-orange-50 min-h-screen">
       <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <DashboardCard
-            icon={<FiFileText className="text-orange-500 text-xl" />}
-            title="Hợp đồng thu mua"
-            description="Theo dõi và quản lý các hợp đồng với nông hộ và doanh nghiệp."
-          />
+          <Link href="/dashboard/manager/contracts">
+            <DashboardCard
+              icon={<FiFileText className="text-orange-500 text-xl" />}
+              title="Hợp đồng cung ứng"
+              description="Quản lý các hợp đồng bán hàng ký kết với doanh nghiệp."
+              isLink
+            />
+          </Link>
+          <Link href="/dashboard/manager/procurement-plans">
+            <DashboardCard
+              icon={<FiClipboard className="text-orange-500 text-xl" />}
+              title="Kế hoạch thu mua"
+              description="Tạo và theo dõi kế hoạch thu mua từ nông dân để đáp ứng hợp đồng cung ứng."
+              isLink
+            />
+          </Link>
           <DashboardCard
             icon={<FiUsers className="text-orange-500 text-xl" />}
             title="Danh sách nông dân"
@@ -38,7 +50,7 @@ export default function ManagerDashboard() {
             description="Thống kê về sản lượng, chất lượng và tiến độ."
           />
 
-          {/* ✅ Kho hàng */}
+          {/* Kho hàng */}
           <Link href="/dashboard/manager/warehouses">
             <DashboardCard
               icon={<FiHome className="text-orange-500 text-xl" />}
@@ -48,7 +60,7 @@ export default function ManagerDashboard() {
             />
           </Link>
 
-          {/* ✅ Thêm nút Yêu cầu xuất kho */}
+          {/* Thêm nút Yêu cầu xuất kho */}
           <Link href="/dashboard/manager/warehouse-request">
             <DashboardCard
               icon={<FiTruck className="text-orange-500 text-xl" />}
@@ -57,16 +69,16 @@ export default function ManagerDashboard() {
               isLink
             />
           </Link>
-          {/* ✅ Tồn kho (Inventory) */}
+          {/* Tồn kho (Inventory) */}
           <Link href="/dashboard/manager/inventories">
             <DashboardCard
-              icon={<FiPackage className="text-orange-500 text-xl" />} // 📦 dùng icon cũ cho nhất quán
+              icon={<FiPackage className="text-orange-500 text-xl" />} // dùng icon cũ cho nhất quán
               title="Tồn kho"
               description="Xem danh sách hàng tồn trong các kho do bạn quản lý."
               isLink
             />
           </Link>
-          {/* ✅ Lịch sử tồn kho */}
+          {/* Lịch sử tồn kho */}
           <Link href="/dashboard/manager/inventory-logs">
             <DashboardCard
               icon={<FiClock className="text-orange-500 text-xl" />}
@@ -75,7 +87,7 @@ export default function ManagerDashboard() {
               isLink
             />
           </Link>
-          {/* ✅ Quản lý nhân viên (BusinessStaffs) */}
+          {/* Quản lý nhân viên (BusinessStaffs) */}
           <Link href="/dashboard/manager/business-staffs">
             <DashboardCard
               icon={<FiUsers className="text-orange-500 text-xl" />}
@@ -104,7 +116,7 @@ function DashboardCard({
   return (
     <div
       className={`p-5 bg-white rounded-xl shadow-md hover:shadow-lg transition ${
-        isLink ? 'cursor-pointer' : ''
+        isLink ? "cursor-pointer" : ""
       }`}
     >
       <div className="flex items-center gap-3 mb-2">

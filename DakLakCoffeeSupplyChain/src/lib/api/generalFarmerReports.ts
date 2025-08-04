@@ -32,6 +32,7 @@ export interface GeneralFarmerReportViewDetailsDto {
 export type ReportType = "Crop" | "Processing";
 
 export interface GeneralFarmerReportCreateDto {
+   cropSeasonDetailId: string;
   reportType: ReportType;
   cropProgressId?: string;
   processingProgressId?: string;
@@ -71,6 +72,7 @@ export async function getFarmerReportById(reportId: string): Promise<GeneralFarm
 export async function createFarmerReport(
   payload: GeneralFarmerReportCreateDto
 ): Promise<GeneralFarmerReportViewDetailsDto> {
+  
   try {
     const res = await api.post<GeneralFarmerReportViewDetailsDto>(
       "/GeneralFarmerReports",
@@ -82,10 +84,14 @@ export async function createFarmerReport(
     }
 
     return res.data;
-  } catch (err: any) {
-    console.error("❌ Lỗi createFarmerReport:", err);
-    throw err;
-  }
+ } catch (err: any) {
+  console.error("❌ Lỗi createFarmerReport:");
+  console.error("📦 Status:", err.response?.status);
+  console.error("📨 Message:", err.response?.data?.message || err.message);
+  console.error("🧾 Errors:", err.response?.data?.errors || err.response?.data);
+  throw err;
+}
+
 }
 export interface GeneralFarmerReportUpdateDto {
   reportId: string;

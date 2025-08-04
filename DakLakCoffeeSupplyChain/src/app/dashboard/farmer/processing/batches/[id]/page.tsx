@@ -56,7 +56,7 @@ export default function ViewProcessingBatch() {
     if (number >= 100) return `${(number / 100).toFixed(1)} tạ`;
     return `${new Intl.NumberFormat("vi-VN").format(number)} kg`;
   };
-const formatNumber = (value: number | string | undefined) => {
+  const formatNumber = (value: number | string | undefined) => {
     const number = Number(value);
     return isNaN(number)
       ? "-"
@@ -93,7 +93,7 @@ const formatNumber = (value: number | string | undefined) => {
     <div className="max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6 space-y-6">
       <h1 className="text-xl font-semibold">Chi tiết lô sơ chế</h1>
 
- <div className="grid grid-cols-2 gap-4 text-sm">
+      <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
           <span className="font-medium text-gray-600">Tên lô:</span>{" "}
           {batch.batchCode}
@@ -124,8 +124,8 @@ const formatNumber = (value: number | string | undefined) => {
         </div>
         <div>
           <span className="font-medium text-gray-600">Khối lượng ra:</span>{" "}
-            {formatWeight(totalOutputQuantity)}
-          
+          {formatWeight(totalOutputQuantity)}
+
         </div>
         <div>
           <span className="font-medium text-gray-600">Ngày tạo:</span>{" "}
@@ -178,7 +178,7 @@ const formatNumber = (value: number | string | undefined) => {
                   <td className="px-3 py-2">{progress.updatedByName ?? "-"}</td>
                   <td className="px-3 py-2">
                     {progress.photoUrl ? (
-                      <img src={progress.photoUrl} className="h-14 w-auto rounded shadow" />
+                      <img src={progress.photoUrl} alt={`Photo of ${progress.stageName}`} className="h-14 w-auto rounded shadow" />
                     ) : (
                       <span className="text-gray-400 italic">-</span>
                     )}
@@ -266,6 +266,6 @@ const formatNumber = (value: number | string | undefined) => {
       </div>
 
     </div>
-    
+
   );
 } 

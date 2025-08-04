@@ -18,18 +18,16 @@ export default function MarketplacePage() {
   const [plans, setPlans] = useState<ProcurementPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fake fetching data - replace by your real API endpoint
   useEffect(() => {
     fetchData();
   }, []);
-
+  ``
   const fetchData = async () => {
     setLoading(true);
     const data = await getAllAvailableProcurementPlans().catch((error) => {
       AppToast.error(getErrorMessage(error));
       return [];
     });
-    console.log("Fetched Procurement Plans:", data);
     setPlans(data);
     setLoading(false);
   };

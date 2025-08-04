@@ -34,6 +34,7 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
     const [note, setNote] = useState("");
     const [stageOptions, setStageOptions] = useState<CropStage[]>([]);
     const [stageId, setStageId] = useState<number | null>(null);
+    const [progressDate, setProgressDate] = useState<string>("");
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [actualYield, setActualYield] = useState<number | undefined>(undefined);
@@ -74,6 +75,11 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
             return;
         }
 
+        if (!progressDate) {
+            AppToast.error("Vui lòng chọn ngày ghi nhận.");
+            return;
+        }
+
         if (isHarvestingStage && (actualYield === undefined || actualYield <= 0)) {
             AppToast.error("Vui lòng nhập sản lượng thực tế hợp lệ.");
             return;
@@ -81,9 +87,6 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
 
         setLoading(true);
         try {
-            const today = new Date();
-            const progressDate = today.toISOString().split("T")[0];
-
             const payload: any = {
                 cropSeasonDetailId: detailId,
                 stageId: selectedStage.stageId,
@@ -99,13 +102,13 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
                 payload.actualYield = actualYield;
             }
 
-            console.log("📤 Gửi tiến độ:", payload);
             await createCropProgress(payload);
 
             AppToast.success("Ghi nhận tiến độ thành công.");
             setOpen(false);
             setNote("");
             setActualYield(undefined);
+            setProgressDate("");
             if (onSuccess) onSuccess();
         } catch (err: any) {
             const msg = err?.response?.data?.message;
@@ -168,6 +171,17 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
                                     {selectedStage.description}
                                 </p>
                             )}
+                        </div>
+
+                        <div>
+                            <Label>Ngày ghi nhận</Label>
+                            <Input
+                                type="date"
+                                value={progressDate}
+                                onChange={(e) => setProgressDate(e.target.value)}
+                                max={new Date().toISOString().split("T")[0]}
+                                required
+                            />
                         </div>
 
                         {isHarvestingStage && (

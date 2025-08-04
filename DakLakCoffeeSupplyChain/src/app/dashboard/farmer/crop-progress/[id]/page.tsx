@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
 import { CreateProgressDialog } from "../components/CreateProgressDialog";
 import { EditProgressDialog } from "../components/EditProgressDialog";
+import { CropSeasonDetail, getCropSeasonDetailById } from "@/lib/api/cropSeasonDetail";
 
 export default function CropProgressPage() {
     const router = useRouter();
@@ -39,6 +40,8 @@ export default function CropProgressPage() {
     const searchParams = useSearchParams();
 
     const [progressList, setProgressList] = useState<CropProgress[]>([]);
+    const [seasonDetail, setSeasonDetail] = useState<CropSeasonDetail | null>(null);
+
     const [loading, setLoading] = useState(true);
 
     const reloadData = async () => {
@@ -62,6 +65,21 @@ export default function CropProgressPage() {
             reloadData();
         }
     }, [cropSeasonDetailId]);
+    useEffect(() => {
+        if (cropSeasonDetailId) {
+            reloadData();
+            loadSeasonDetail();
+        }
+    }, [cropSeasonDetailId]);
+
+    const loadSeasonDetail = async () => {
+        try {
+            const detail = await getCropSeasonDetailById(cropSeasonDetailId);
+            setSeasonDetail(detail);
+        } catch (err) {
+            AppToast.error("Không thể lấy thông tin vùng trồng.");
+        }
+    };
 
     const getStageIcon = (stage: string) => {
         switch (stage) {
@@ -94,11 +112,22 @@ export default function CropProgressPage() {
                         <CardTitle className="text-xl font-bold text-emerald-700">
                             📈 Tiến độ vùng trồng
                         </CardTitle>
-                        <CreateProgressDialog
-                            detailId={cropSeasonDetailId}
-                            existingProgress={progressList.map(p => ({ stageCode: p.stageCode }))}
-                            onSuccess={reloadData}
-                        />
+
+                        <div className="flex gap-2">
+                            <Button
+                                variant="default"
+                                className="bg-orange-600 hover:bg-orange-700 text-white"
+                                onClick={() => router.push(`/dashboard/farmer/request-feedback/create?detailId=${cropSeasonDetailId}`)}
+                            >
+                                📝 Gửi báo cáo tiến độ
+                            </Button>
+
+                            <CreateProgressDialog
+                                detailId={cropSeasonDetailId}
+                                existingProgress={progressList.map(p => ({ stageCode: p.stageCode }))}
+                                onSuccess={reloadData}
+                            />
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -123,10 +152,20 @@ export default function CropProgressPage() {
                                                 {getStageIcon(progress.stageName)}
                                                 <h3 className="font-semibold text-lg text-emerald-700">{progress.stageName}</h3>
                                             </div>
-                                            <Badge className="text-xs bg-emerald-100 text-emerald-700">
-                                                <CalendarDays className="inline w-4 h-4 mr-1" />
-                                                {formatDate(progress.progressDate)}
-                                            </Badge>
+                                            <div className="flex flex-col items-end text-right space-y-1">
+                                                <Badge className="text-xs bg-emerald-100 text-emerald-700">
+                                                    <CalendarDays className="inline w-4 h-4 mr-1" />
+                                                    {formatDate(progress.progressDate)}
+                                                </Badge>
+
+                                                {progress.stageName === "Thu hoạch" && (
+                                                    <span className="text-xs text-orange-600 font-semibold">
+                                                        Tổng thu hoạch: {seasonDetail?.actualYield ?? "?"} kg
+                                                    </span>
+                                                )}
+                                            </div>
+
+
                                         </div>
 
                                         {progress.note && (
@@ -136,10 +175,20 @@ export default function CropProgressPage() {
                                         )}
 
                                         {progress.stageName === "Thu hoạch" && progress.actualYield && (
-                                            <p className="text-sm text-gray-700 mt-2">
-                                                <strong>Sản lượng thực tế:</strong> {progress.actualYield} kg
-                                            </p>
+                                            <>
+                                                <p className="text-sm text-gray-700 mt-2">
+                                                    <strong>Sản lượng thực tế:</strong> {progress.actualYield} kg
+                                                </p>
+                                                <p className="text-sm text-emerald-700 mt-1 font-semibold">
+                                                    👉 Tổng đã thu hoạch đến nay: {
+                                                        progressList
+                                                            .filter(p => p.stageName === "Thu hoạch" && p.actualYield)
+                                                            .reduce((sum, p) => sum + (p.actualYield || 0), 0)
+                                                    } kg
+                                                </p>
+                                            </>
                                         )}
+
 
                                         {(progress.photoUrl || progress.videoUrl) && (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -180,26 +229,20 @@ export default function CropProgressPage() {
                                         )}
 
                                         <div className="flex gap-2 mt-4">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-emerald-700 border-emerald-500 hover:bg-emerald-50"
-                                                onClick={() => router.push(
-                                                    `/dashboard/farmer/request-feedback/create?progressId=${progress.progressId}&stageName=${encodeURIComponent(progress.stageName)}`
-                                                )}
-                                            >
-                                                📝 Gửi báo cáo
-                                            </Button>
 
                                             <EditProgressDialog
                                                 progress={progress}
-                                                onSuccess={reloadData}
+                                                onSuccess={() => {
+                                                    reloadData();         // Cập nhật danh sách tiến độ
+                                                    loadSeasonDetail();   // ✅ Tải lại sản lượng mới
+                                                }}
                                                 triggerButton={
                                                     <Button variant="ghost" size="icon" className="h-8 w-8" title="Chỉnh sửa tiến độ">
                                                         <Pencil className="h-4 w-4 text-red-600" />
                                                     </Button>
                                                 }
                                             />
+
 
                                             <Button
                                                 variant="ghost"
@@ -231,3 +274,4 @@ export default function CropProgressPage() {
         </div >
     );
 }
+

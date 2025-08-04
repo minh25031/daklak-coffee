@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Eye, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function FarmerInboundRequestListPage() {
@@ -19,7 +19,7 @@ export default function FarmerInboundRequestListPage() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const pageSize = 10;
+  const pageSize = 7;
   const router = useRouter();
 
   const fetchRequests = async () => {
@@ -50,6 +50,40 @@ export default function FarmerInboundRequestListPage() {
     setLoadingId(null);
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return "Chờ duyệt";
+      case "Approved":
+        return "Đã duyệt";
+      case "Rejected":
+        return "Từ chối";
+      case "Cancelled":
+        return "Đã huỷ";
+      case "Completed":
+        return "Hoàn thành";
+      default:
+        return status;
+    }
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case "Approved":
+        return "bg-green-100 text-green-800";
+      case "Rejected":
+        return "bg-red-100 text-red-800";
+      case "Cancelled":
+        return "bg-gray-200 text-gray-700";
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "Completed":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-yellow-100 text-yellow-800";
+    }
+  };
+
   const filtered = requests.filter((r) =>
     r.requestCode.toLowerCase().includes(search.toLowerCase())
   );
@@ -64,27 +98,33 @@ export default function FarmerInboundRequestListPage() {
     <Card className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Yêu cầu nhập kho đã gửi</h1>
+        <h1 className="text-xl font-bold text-orange-700">
+          📥 Yêu cầu nhập kho đã gửi
+        </h1>
         <div className="flex items-center gap-3">
-          <Input
-            placeholder="Tìm theo mã yêu cầu..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-64 pr-10"
-          />
-          <Search className="absolute right-[120px] top-[38px] h-4 w-4 text-gray-400" />
-          <Button
-            className="bg-orange-600 hover:bg-orange-700 text-white"
-            onClick={() =>
-              router.push("/dashboard/farmer/warehouse-request/create")
-            }
-          >
-            ➕ Gửi yêu cầu mới
-          </Button>
-        </div>
+  <div className="relative w-64">
+    <Input
+      placeholder="Tìm theo mã yêu cầu..."
+      value={search}
+      onChange={(e) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+      }}
+      className="pr-10 border-orange-300 focus:ring-orange-400"
+    />
+    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-400" />
+  </div>
+
+  <Button
+    className="bg-orange-600 hover:bg-orange-700 text-white"
+    onClick={() =>
+      router.push("/dashboard/farmer/warehouse-request/create")
+    }
+  >
+    ➕ Gửi yêu cầu mới
+  </Button>
+</div>
+
       </div>
 
       {/* Table */}
@@ -92,8 +132,8 @@ export default function FarmerInboundRequestListPage() {
         <p className="text-gray-500">Đang tải dữ liệu...</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full table-auto border">
-            <thead className="bg-gray-100 text-gray-700 font-medium">
+          <table className="w-full table-auto border text-sm bg-white">
+            <thead className="bg-orange-50 text-orange-800 font-semibold">
               <tr>
                 <th className="text-left px-4 py-2">Mã yêu cầu</th>
                 <th className="text-left px-4 py-2">Ngày tạo</th>
@@ -105,51 +145,52 @@ export default function FarmerInboundRequestListPage() {
             </thead>
             <tbody>
               {paged.map((req) => (
-                <tr key={req.inboundRequestId} className="border-t">
+                <tr
+                  key={req.inboundRequestId}
+                  className="border-t hover:bg-orange-50 transition"
+                >
                   <td className="px-4 py-2">{req.requestCode}</td>
                   <td className="px-4 py-2">
-                    {new Date(req.createdAt).toLocaleDateString()}
+                    {new Date(req.createdAt).toLocaleDateString("vi-VN")}
                   </td>
                   <td className="px-4 py-2">{req.requestedQuantity}</td>
                   <td className="px-4 py-2">
                     <div className="font-medium">{req.batchCode || "N/A"}</div>
-                    <div className="text-xs text-muted-foreground">{req.coffeeType || "Không rõ"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {req.coffeeType || "Không rõ"}
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-center">
                     <Badge
-                      className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${
-                        req.status === "Approved"
-                          ? "bg-green-100 text-green-800"
-                          : req.status === "Rejected"
-                          ? "bg-red-100 text-red-800"
-                          : req.status === "Cancelled"
-                          ? "bg-gray-300 text-gray-600"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
+                      className={`capitalize px-3 py-1 rounded-md font-medium ${getStatusStyle(
+                        req.status
+                      )}`}
                     >
-                      {req.status}
+                      {getStatusLabel(req.status)}
                     </Badge>
                   </td>
-                  <td className="px-4 py-2 text-center space-x-2">
+                  <td className="px-4 py-2 text-center space-x-1">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="icon"
                       onClick={() =>
                         router.push(
                           `/dashboard/farmer/warehouse-request/${req.inboundRequestId}`
                         )
                       }
+                      title="Xem chi tiết"
                     >
-                      Xem
+                      <Eye className="w-4 h-4" />
                     </Button>
                     {req.status === "Pending" && (
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="destructive"
                         disabled={loadingId === req.inboundRequestId}
                         onClick={() => handleCancel(req.inboundRequestId)}
+                        title="Huỷ yêu cầu"
                       >
-                        Huỷ
+                        <XCircle className="w-4 h-4" />
                       </Button>
                     )}
                   </td>

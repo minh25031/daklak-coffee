@@ -129,7 +129,7 @@ export default function CropSeasonDetailTable({
               </td>
               <td className="px-3 py-2">
                 {detail.expectedHarvestStart
-                  ? `${formatDate(detail.expectedHarvestStart)} – ${formatDate(
+                  ? `${formatDate(detail.expectedHarvestStart)} ${formatDate(
                     detail.expectedHarvestEnd
                   )}`
                   : "-"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Dialog,
     DialogTrigger,
@@ -11,13 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Pencil, CalendarDays } from "lucide-react";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { Pencil } from "lucide-react";
 import { AppToast } from "@/components/ui/AppToast";
 import { CropProgress, updateCropProgress } from "@/lib/api/cropProgress";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { getCropSeasonDetailById } from "@/lib/api/cropSeasonDetail";
 
 type Props = {
     progress: CropProgress;
@@ -25,24 +22,42 @@ type Props = {
     triggerButton?: React.ReactNode;
 };
 
-export function EditProgressDialog({ progress, onSuccess, triggerButton }: Props) {
-
+export function EditProgressDialog({
+    progress,
+    onSuccess,
+    triggerButton,
+}: Props) {
     const [open, setOpen] = useState(false);
     const [note, setNote] = useState(progress.note || "");
-    const [progressDate, setProgressDate] = useState<Date | undefined>(
-        progress.progressDate ? new Date(progress.progressDate) : undefined
+    const [progressDate, setProgressDate] = useState<string>(
+        progress.progressDate
+            ? new Date(progress.progressDate).toISOString().split("T")[0]
+            : ""
     );
     const [actualYield, setActualYield] = useState<number | undefined>(
         progress.actualYield
     );
+    const [seasonDetailYield, setSeasonDetailYield] = useState<number | undefined>(
+        undefined
+    );
     const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async () => {
-        console.log("Sending:", {
-            actualYield,
-            willSend: progress.stageCode === "HARVESTING" ? actualYield : undefined
-        });
+    useEffect(() => {
+        if (open && progress.stageCode === "HARVESTING") {
+            getCropSeasonDetailById(progress.cropSeasonDetailId)
+                .then((detail) => {
+                    if (detail?.actualYield != null) {
+                        setActualYield(detail.actualYield);
+                        setSeasonDetailYield(detail.actualYield);
+                    }
+                })
+                .catch(() => {
+                    AppToast.error("Không thể tải sản lượng hiện có.");
+                });
+        }
+    }, [open, progress]);
 
+    const handleSubmit = async () => {
         if (!progressDate) {
             AppToast.error("Vui lòng chọn ngày ghi nhận.");
             return;
@@ -62,7 +77,7 @@ export function EditProgressDialog({ progress, onSuccess, triggerButton }: Props
                 cropSeasonDetailId: progress.cropSeasonDetailId,
                 stageId: progress.stageId,
                 stageDescription: progress.stageName,
-                progressDate: progressDate.toISOString().split("T")[0],
+                progressDate,
                 note,
                 photoUrl: progress.photoUrl,
                 videoUrl: progress.videoUrl,
@@ -104,35 +119,13 @@ export function EditProgressDialog({ progress, onSuccess, triggerButton }: Props
                     {/* Ngày ghi nhận */}
                     <div>
                         <Label>Ngày ghi nhận</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-start text-left font-normal"
-                                >
-                                    <CalendarDays className="mr-2 h-4 w-4" />
-                                    {progressDate
-                                        ? format(progressDate, "dd/MM/yyyy", { locale: vi })
-                                        : "Chọn ngày"}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={progressDate}
-                                    onSelect={(date) => {
-                                        if (date instanceof Date) setProgressDate(date);
-                                    }}
-                                    locale={vi}
-                                    captionLayout="dropdown"
-                                    defaultMonth={progressDate ?? new Date()}
-                                    hidden={{
-                                        before: new Date(2015, 0, 1),
-                                        after: new Date(2030, 11, 31),
-                                    }}
-                                />
-                            </PopoverContent>
-                        </Popover>
+                        <Input
+                            type="date"
+                            value={progressDate}
+                            onChange={(e) => setProgressDate(e.target.value)}
+                            max={new Date().toISOString().split("T")[0]}
+                            required
+                        />
                     </div>
 
                     {/* Ghi chú */}
@@ -161,6 +154,11 @@ export function EditProgressDialog({ progress, onSuccess, triggerButton }: Props
                                     setActualYield(isNaN(value) ? undefined : value);
                                 }}
                             />
+                            {seasonDetailYield !== undefined && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Sản lượng đã ghi trước đó: <strong>{seasonDetailYield} kg</strong>
+                                </p>
+                            )}
                         </div>
                     )}
 

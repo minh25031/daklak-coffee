@@ -1,7 +1,5 @@
 export async function getLogsByInventoryId(inventoryId: string) {
   const token = localStorage.getItem("token");
-  console.log("🔑 Gửi token:", token);
-
   const res = await fetch(`https://localhost:7163/api/InventoryLogs/by-inventory/${inventoryId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -41,7 +39,6 @@ export async function getAllInventoryLogs() {
   }
 
   const data = await res.json();
-  console.log("📦 Tất cả logs từ API:", data); // debug
   return data;
 }
 export async function getInventoryLogById(logId: string) {
