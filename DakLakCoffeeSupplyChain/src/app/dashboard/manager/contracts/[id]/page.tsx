@@ -6,7 +6,11 @@ import {
   getContractDetails,
   ContractViewDetailsDto,
 } from "@/lib/api/contracts";
-import { ContractItemCreateDto, ContractItemUpdateDto, softDeleteContractItem } from "@/lib/api/contractItems";
+import {
+  ContractItemCreateDto,
+  ContractItemUpdateDto,
+  softDeleteContractItem,
+} from "@/lib/api/contractItems";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -30,6 +34,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import ContractItemFormDialog from "@/components/contracts/ContractItemFormDialog";
+import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
+import {
+  formatQuantity,
+  formatUnitPriceByQuantity,
+  formatDiscount,
+} from "@/lib/utils";
 
 const contractStatusMap: Record<string, { label: string; className: string }> =
   {
@@ -76,12 +86,33 @@ export default function ContractDetailPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [showItemFormDialog, setShowItemFormDialog] = useState(false);
-const [editingItem, setEditingItem] = useState<ContractViewDetailsDto["contractItems"][number] | null>(null);
+  const [editingItem, setEditingItem] = useState<
+    ContractViewDetailsDto["contractItems"][number] | null
+  >(null);
+
+  const [coffeeTypes, setCoffeeTypes] = useState<CoffeeType[]>([]);
+
+  useEffect(() => {
+    getCoffeeTypes().then(setCoffeeTypes).catch(console.error);
+  }, []);
+
+  const enrichItems = (items: ContractViewDetailsDto["contractItems"]) => {
+    return items.map((item) => {
+      return {
+        ...item,
+        coffeeTypeName:
+          coffeeTypes.find((c) => c.coffeeTypeId === item.coffeeTypeId)
+            ?.typeName ?? item.coffeeTypeName,
+      };
+    });
+  };
 
   const reloadContract = () => {
     setLoading(true);
     getContractDetails(contractId)
       .then((data) => {
+        console.log("Dữ liệu sau update:", data);
+        data.contractItems = enrichItems(data.contractItems);
         setContract(data);
         setLoading(false);
       })
@@ -247,13 +278,13 @@ const [editingItem, setEditingItem] = useState<ContractViewDetailsDto["contractI
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Danh sách mặt hàng</CardTitle>
             <Button
-  onClick={() => {
-    setEditingItem(null); // create mode
-    setShowItemFormDialog(true);
-  }}
->
-  + Thêm mặt hàng
-</Button>
+              onClick={() => {
+                setEditingItem(null); // create mode
+                setShowItemFormDialog(true);
+              }}
+            >
+              + Thêm mặt hàng
+            </Button>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto rounded border bg-white">
@@ -283,13 +314,18 @@ const [editingItem, setEditingItem] = useState<ContractViewDetailsDto["contractI
                       <TableRow key={item.contractItemId}>
                         <TableCell>{item.coffeeTypeName}</TableCell>
                         <TableCell>
-                          {item.quantity?.toLocaleString() ?? "-"}
+                          {item.quantity !== undefined
+                            ? formatQuantity(item.quantity)
+                            : "-"}
                         </TableCell>
                         <TableCell>
-                          {item.unitPrice?.toLocaleString() ?? "-"}
+                          {item.unitPrice?.toLocaleString()}{" "}
+                          <span className="text-muted-foreground">VNĐ/kg</span>
                         </TableCell>
                         <TableCell>
-                          {item.discountAmount?.toLocaleString() ?? "-"}
+                          {item.discountAmount !== undefined
+                            ? `${item.discountAmount}%`
+                            : "-"}
                         </TableCell>
                         <TableCell>{item.note}</TableCell>
                         <TableCell>
@@ -299,9 +335,9 @@ const [editingItem, setEditingItem] = useState<ContractViewDetailsDto["contractI
                                 variant="ghost"
                                 className="w-8 h-8"
                                 onClick={() => {
-  setEditingItem(item); // edit mode
-  setShowItemFormDialog(true);
-}}
+                                  setEditingItem(item); // edit mode
+                                  setShowItemFormDialog(true);
+                                }}
                               >
                                 <Pencil className="w-4 h-4 text-yellow-500" />
                               </Button>
@@ -376,28 +412,28 @@ const [editingItem, setEditingItem] = useState<ContractViewDetailsDto["contractI
           </Button>
         </div>
         <ContractItemFormDialog
-  open={showItemFormDialog}
-  onOpenChange={setShowItemFormDialog}
-  contractId={contract.contractId}
-  initialData={
-    editingItem
-      ? ({
-          contractItemId: editingItem.contractItemId,
-          contractId: contract.contractId,
-          coffeeTypeId: editingItem.coffeeTypeId,
-          quantity: editingItem.quantity,
-          unitPrice: editingItem.unitPrice,
-          discountAmount: editingItem.discountAmount,
-          note: editingItem.note,
-        } as ContractItemUpdateDto)
-      : undefined
-  }
-  mode={editingItem ? "edit" : "create"}
-  onSuccess={() => {
-    setShowItemFormDialog(false);
-    reloadContract();
-  }}
-/>
+          open={showItemFormDialog}
+          onOpenChange={setShowItemFormDialog}
+          contractId={contract.contractId}
+          initialData={
+            editingItem
+              ? ({
+                  contractItemId: editingItem.contractItemId,
+                  contractId: contract.contractId,
+                  coffeeTypeId: editingItem.coffeeTypeId,
+                  quantity: editingItem.quantity,
+                  unitPrice: editingItem.unitPrice,
+                  discountAmount: editingItem.discountAmount,
+                  note: editingItem.note,
+                } as ContractItemUpdateDto)
+              : undefined
+          }
+          mode={editingItem ? "edit" : "create"}
+          onSuccess={() => {
+            setShowItemFormDialog(false);
+            reloadContract();
+          }}
+        />
       </div>
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
