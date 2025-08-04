@@ -18,6 +18,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
 
 interface ContractItemFormDialogProps {
   open: boolean;
@@ -47,22 +55,38 @@ export default function ContractItemFormDialog({
     note: "",
   });
 
+  const [coffeeTypes, setCoffeeTypes] = useState<CoffeeType[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (mode === "edit" && initialData) {
-      setFormData(initialData);
-    } else {
-      setFormData({
-        contractId,
-        coffeeTypeId: "",
-        quantity: 0,
-        unitPrice: 0,
-        discountAmount: 0,
-        note: "",
-      });
+    const fetchCoffeeTypes = async () => {
+      try {
+        const data = await getCoffeeTypes();
+        setCoffeeTypes(data);
+      } catch (error) {
+        console.error("Lỗi khi tải danh sách loại cà phê:", error);
+      }
+    };
+
+    fetchCoffeeTypes();
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      if (mode === "edit" && initialData) {
+        setFormData({ ...initialData });
+      } else {
+        setFormData({
+          contractId,
+          coffeeTypeId: "",
+          quantity: 0,
+          unitPrice: 0,
+          discountAmount: 0,
+          note: "",
+        });
+      }
     }
-  }, [mode, initialData, contractId]);
+  }, [open, JSON.stringify(initialData)]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -79,6 +103,8 @@ export default function ContractItemFormDialog({
 
   const handleSubmit = async () => {
     setLoading(true);
+    //  Thêm log ở đây
+    console.log("Dữ liệu gửi update:", formData);
     try {
       if (mode === "create") {
         await createContractItem(formData as ContractItemCreateDto);
@@ -106,14 +132,29 @@ export default function ContractItemFormDialog({
 
         <div className="grid gap-4 py-4">
           <div className="grid gap-1">
-            <Label htmlFor="coffeeTypeId">Loại cà phê (CoffeeTypeId)</Label>
-            <Input
-              id="coffeeTypeId"
-              name="coffeeTypeId"
+            <Label htmlFor="coffeeTypeId">Loại cà phê</Label>
+            <Select
               value={formData.coffeeTypeId}
-              onChange={handleChange}
-              placeholder="Nhập ID loại cà phê"
-            />
+              onValueChange={(value) => {
+                console.log("Coffee type selected:", value);
+                setFormData((prev) => ({ ...prev, coffeeTypeId: value }));
+              }}
+            >
+              <SelectTrigger id="coffeeTypeId" className="w-full">
+                <SelectValue>
+                  {coffeeTypes.find(
+                    (ct) => ct.coffeeTypeId === formData.coffeeTypeId
+                  )?.typeName ?? "Chọn loại cà phê"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="w-full">
+                {coffeeTypes.map((type) => (
+                  <SelectItem key={type.coffeeTypeId} value={type.coffeeTypeId}>
+                    {type.typeName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-1">
