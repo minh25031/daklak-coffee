@@ -50,9 +50,7 @@ export default function ManagerOutboundRequestList() {
       const result = await cancelOutboundRequest(id);
       toast(result.message);
       if (result.status === 1) {
-        setData((prev) =>
-          prev.filter((r) => r.outboundRequestId !== id)
-        );
+        setData((prev) => prev.filter((r) => r.outboundRequestId !== id));
       }
     } catch (err: any) {
       toast.error("❌ " + err.message);
@@ -60,9 +58,7 @@ export default function ManagerOutboundRequestList() {
   };
 
   const filtered = data.filter((item) =>
-    item.outboundRequestCode
-      .toLowerCase()
-      .includes(search.toLowerCase())
+    item.outboundRequestCode.toLowerCase().includes(search.toLowerCase())
   );
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paged = filtered.slice(
@@ -71,21 +67,41 @@ export default function ManagerOutboundRequestList() {
   );
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "Approved":
-        return "bg-blue-100 text-blue-800";
-      case "Rejected":
-        return "bg-red-100 text-red-800";
-      case "Cancelled":
-        return "bg-gray-200 text-gray-700";
-      case "Completed":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  switch (status) {
+    case "Pending":
+      return "bg-yellow-100 text-yellow-800";        // Chờ Duyệt
+    case "Approved":
+      return "bg-blue-100 text-blue-800";            // Đã Duyệt
+    case "Rejected":
+      return "bg-red-200 text-red-900";              // Từ Chối (đậm hơn)
+    case "Cancelled":
+      return "bg-gray-100 text-gray-500 border border-gray-300"; // Đã Hủy (nhẹ hơn, có viền)
+    case "Completed":
+      return "bg-green-100 text-green-800";          // Hoàn tất
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+
+  const getStatusLabel = (status: string) => {
+  switch (status) {
+    case "Pending":
+      return "Chờ Duyệt";
+    case "Approved":
+    case "Accepted": // nếu backend trả Accepted thay vì Approved
+      return "Đã Duyệt";
+    case "Rejected":
+      return "Từ Chối";
+    case "Cancelled":
+      return "Đã Hủy";
+    case "Completed":
+      return "Hoàn Tất";
+    default:
+      return status;
+  }
+};
+
 
   return (
     <Card className="p-6">
@@ -152,7 +168,7 @@ export default function ManagerOutboundRequestList() {
                         item.status
                       )}`}
                     >
-                      {item.status}
+                      {getStatusLabel(item.status)}
                     </Badge>
                   </td>
                   <td className="px-4 py-2 text-center space-x-2">
@@ -193,9 +209,7 @@ export default function ManagerOutboundRequestList() {
               variant="outline"
               size="icon"
               disabled={currentPage === 1}
-              onClick={() =>
-                setCurrentPage((p) => Math.max(1, p - 1))
-              }
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -219,9 +233,7 @@ export default function ManagerOutboundRequestList() {
               variant="outline"
               size="icon"
               disabled={currentPage === totalPages}
-              onClick={() =>
-                setCurrentPage((p) => Math.min(totalPages, p + 1))
-              }
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             >
               <ChevronRight className="w-4 h-4" />
             </Button>

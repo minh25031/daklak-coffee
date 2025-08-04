@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { getAllInventoryLogs, softDeleteInventoryLog } from "@/lib/api/inventoryLogs";
@@ -6,8 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search } from "lucide-react";
+import { Search, Eye, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function ManagerInventoryLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -16,17 +17,14 @@ export default function ManagerInventoryLogsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [actionFilter, setActionFilter] = useState("All");
 
-  const logsPerPage = 2;
+  const logsPerPage = 5;
 
   useEffect(() => {
     async function fetchLogs() {
       try {
         const data = await getAllInventoryLogs();
-        if (Array.isArray(data)) {
-          setLogs(data);
-        } else {
-          setError("Không có log tồn kho nào.");
-        }
+        if (Array.isArray(data)) setLogs(data);
+        else setError("Không có log tồn kho nào.");
       } catch (err: any) {
         setError(err.message || "Lỗi khi tải danh sách log.");
       }
@@ -40,10 +38,7 @@ export default function ManagerInventoryLogsPage() {
       log.inventoryCode?.toLowerCase().includes(keyword) ||
       log.warehouseName?.toLowerCase().includes(keyword) ||
       log.coffeeTypeName?.toLowerCase().includes(keyword);
-
-    const matchesAction =
-      actionFilter === "All" || log.actionType === actionFilter;
-
+    const matchesAction = actionFilter === "All" || log.actionType === actionFilter;
     return matchesSearch && matchesAction;
   });
 
@@ -56,12 +51,12 @@ export default function ManagerInventoryLogsPage() {
   const handleDelete = async (logId: string) => {
     const confirmed = confirm("Bạn có chắc chắn muốn xoá log này?");
     if (!confirmed) return;
-
     try {
       await softDeleteInventoryLog(logId);
       setLogs(prev => prev.filter(log => log.logId !== logId));
+      toast.success("✅ Xoá log thành công.");
     } catch (err: any) {
-      alert(err.message || "Không thể xoá log.");
+      toast.error(err.message || "❌ Không thể xoá log.");
     }
   };
 
@@ -69,7 +64,7 @@ export default function ManagerInventoryLogsPage() {
     <div className="p-6 space-y-6">
       {/* Header + Search */}
       <div className="flex justify-between items-center flex-wrap gap-3">
-        <h1 className="text-2xl font-semibold">Lịch sử thay đổi tồn kho</h1>
+        <h1 className="text-2xl font-bold text-orange-700">📋 Lịch sử thay đổi tồn kho</h1>
         <div className="relative w-72">
           <Input
             placeholder="Tìm theo mã kho, loại cà phê..."
@@ -107,9 +102,9 @@ export default function ManagerInventoryLogsPage() {
       {/* Danh sách log */}
       <Card>
         <CardHeader>
-          <CardTitle>Danh sách log</CardTitle>
+          <CardTitle className="text-lg font-semibold">📄 Danh sách log</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           {error && <p className="text-red-500">{error}</p>}
 
           {!error && filteredLogs.length === 0 && (
@@ -119,45 +114,46 @@ export default function ManagerInventoryLogsPage() {
           {!error && paginatedLogs.length > 0 && (
             <ul className="space-y-4">
               {paginatedLogs.map((log) => (
-                <li key={log.logId} className="border rounded-md p-4 shadow-sm bg-white">
-                  <div className="flex justify-between flex-wrap gap-4">
-                    {/* Thông tin log */}
-                    <div className="space-y-1 text-sm text-gray-700">
-                      <p><strong>Mã tồn kho:</strong> {log.inventoryCode}</p>
-                      <p><strong>Kho:</strong> {log.warehouseName}</p>
-                      <p><strong>Loại cà phê:</strong> {log.coffeeTypeName}</p>
-                      <p><strong>Số lượng:</strong> {log.quantityChanged} kg</p>
-                      <p><strong>Ghi chú:</strong> {log.note || "Không có"}</p>
-                      <p><strong>Người cập nhật:</strong> {log.updatedByName || "Hệ thống"}</p>
-                      <p><strong>Thời gian:</strong> {new Date(log.loggedAt).toLocaleString("vi-VN")}</p>
+                <li
+                  key={log.logId}
+                  className="border rounded-xl p-5 shadow-sm bg-white hover:shadow-md transition"
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-1 text-sm text-gray-700 leading-relaxed">
+                      <div><span className="font-medium">📦 Mã tồn kho:</span> {log.inventoryCode}</div>
+                      <div><span className="font-medium">🏠 Kho:</span> {log.warehouseName}</div>
+                      <div><span className="font-medium">☕ Loại cà phê:</span> {log.coffeeTypeName}</div>
+                      <div><span className="font-medium">⚖️ Số lượng:</span> {log.quantityChanged} kg</div>
+                      <div><span className="font-medium">📝 Ghi chú:</span> {log.note || "Không có"}</div>
+                      <div><span className="font-medium">👤 Người cập nhật:</span> {log.updatedByName || "Hệ thống"}</div>
+                      <div><span className="font-medium">🕒 Thời gian:</span> {new Date(log.loggedAt).toLocaleString("vi-VN")}</div>
                       <div>
-                        <strong>Hành động:</strong>{" "}
+                        <span className="font-medium">🔁 Hành động:</span>{" "}
                         <Badge
-                          className={
+                          className={`capitalize px-3 py-1 text-sm font-medium rounded ${
                             log.actionType === "increase"
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
-                          }
+                          }`}
                         >
                           {log.actionType === "increase" ? "Nhập kho" : "Xuất kho"}
                         </Badge>
                       </div>
                     </div>
 
-                    {/* Nút hành động bên phải */}
-                    <div className="flex flex-col items-end gap-2 min-w-[120px]">
-                      <Link href={`/dashboard/manager/inventory-logs/${log.logId}`}>
-                        <Button variant="outline" size="sm" className="w-full">
-                          👁️ Xem chi tiết
+                    <div className="flex gap-2">
+                      <Link href={`/dashboard/manager/inventory-logs/${log.logId}`} title="Xem chi tiết">
+                        <Button variant="outline" size="icon">
+                          <Eye className="w-4 h-4" />
                         </Button>
                       </Link>
                       <Button
                         variant="destructive"
-                        size="sm"
-                        className="w-full"
+                        size="icon"
                         onClick={() => handleDelete(log.logId)}
+                        title="Xoá log"
                       >
-                        🗑️ Xoá
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
@@ -166,25 +162,27 @@ export default function ManagerInventoryLogsPage() {
             </ul>
           )}
 
-          {/* Phân trang */}
+          {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center gap-4 mt-6">
+            <div className="flex justify-center items-center gap-4 pt-6">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
-                ← Trang trước
+                ← Trước
               </Button>
-              <span className="text-sm text-muted-foreground pt-2">
+              <span className="text-sm text-muted-foreground">
                 Trang {currentPage} / {totalPages}
               </span>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
               >
-                Trang sau →
+                Sau →
               </Button>
             </div>
           )}
