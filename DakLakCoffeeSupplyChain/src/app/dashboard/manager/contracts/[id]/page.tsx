@@ -6,7 +6,7 @@ import {
   getContractDetails,
   ContractViewDetailsDto,
 } from "@/lib/api/contracts";
-import { softDeleteContractItem } from "@/lib/api/contractItems";
+import { ContractItemCreateDto, ContractItemUpdateDto, softDeleteContractItem } from "@/lib/api/contractItems";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -29,6 +29,7 @@ import {
   DialogContent,
   DialogFooter,
 } from "@/components/ui/dialog";
+import ContractItemFormDialog from "@/components/contracts/ContractItemFormDialog";
 
 const contractStatusMap: Record<string, { label: string; className: string }> =
   {
@@ -73,6 +74,9 @@ export default function ContractDetailPage() {
 
   const ITEMS_PER_PAGE = 5;
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [showItemFormDialog, setShowItemFormDialog] = useState(false);
+const [editingItem, setEditingItem] = useState<ContractViewDetailsDto["contractItems"][number] | null>(null);
 
   const reloadContract = () => {
     setLoading(true);
@@ -243,14 +247,13 @@ export default function ContractDetailPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Danh sách mặt hàng</CardTitle>
             <Button
-              onClick={() =>
-                router.push(
-                  `/dashboard/manager/contracts/${contract.contractId}/items/create`
-                )
-              }
-            >
-              + Thêm mặt hàng
-            </Button>
+  onClick={() => {
+    setEditingItem(null); // create mode
+    setShowItemFormDialog(true);
+  }}
+>
+  + Thêm mặt hàng
+</Button>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto rounded border bg-white">
@@ -295,11 +298,10 @@ export default function ContractDetailPage() {
                               <Button
                                 variant="ghost"
                                 className="w-8 h-8"
-                                onClick={() =>
-                                  router.push(
-                                    `/dashboard/manager/contracts/items/${item.contractItemId}/edit`
-                                  )
-                                }
+                                onClick={() => {
+  setEditingItem(item); // edit mode
+  setShowItemFormDialog(true);
+}}
                               >
                                 <Pencil className="w-4 h-4 text-yellow-500" />
                               </Button>
@@ -373,6 +375,29 @@ export default function ContractDetailPage() {
             ← Quay lại
           </Button>
         </div>
+        <ContractItemFormDialog
+  open={showItemFormDialog}
+  onOpenChange={setShowItemFormDialog}
+  contractId={contract.contractId}
+  initialData={
+    editingItem
+      ? ({
+          contractItemId: editingItem.contractItemId,
+          contractId: contract.contractId,
+          coffeeTypeId: editingItem.coffeeTypeId,
+          quantity: editingItem.quantity,
+          unitPrice: editingItem.unitPrice,
+          discountAmount: editingItem.discountAmount,
+          note: editingItem.note,
+        } as ContractItemUpdateDto)
+      : undefined
+  }
+  mode={editingItem ? "edit" : "create"}
+  onSuccess={() => {
+    setShowItemFormDialog(false);
+    reloadContract();
+  }}
+/>
       </div>
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
