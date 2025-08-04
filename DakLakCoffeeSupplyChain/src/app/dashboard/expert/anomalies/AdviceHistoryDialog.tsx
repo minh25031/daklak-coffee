@@ -206,7 +206,7 @@ export default function AdviceHistoryDialog({ advices, onClose }: Props) {
                                                     href={advice.attachedFileUrl}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-blue-600 underline block mt-2 flex items-center gap-1"
+                                                    className="text-blue-600 underline flex mt-2 items-center gap-1"
                                                 >
                                                     <Paperclip size={14} /> Tệp đính kèm
                                                 </a>
