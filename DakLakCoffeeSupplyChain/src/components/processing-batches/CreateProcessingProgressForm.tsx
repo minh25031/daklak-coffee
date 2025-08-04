@@ -12,7 +12,7 @@ import { ProcessingStatus } from "@/lib/constants/batchStatus";
 
 
 type Props = {
-  defaultBatchId?: string; // nếu muốn preselect lô (ví dụ khi dùng trong View)
+  defaultBatchId?: string; 
   onSuccess?: () => void;
 };
 
@@ -62,11 +62,14 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
     try {
       let compressedPhoto: File | undefined;
       if (form.photoFile) {
+        console.log("📷 Kích thước ảnh gốc:", form.photoFile.size / 1024 / 1024, "MB");
         compressedPhoto = await imageCompression(form.photoFile, {
           maxSizeMB: 0.5,
           maxWidthOrHeight: 1000,
           useWebWorker: true,
+          
         });
+         console.log("📷 Kích thước ảnh sau nén:", compressedPhoto.size / 1024 / 1024, "MB");
       }
 
       await createProcessingBatchProgressWithMedia(form.batchId, {

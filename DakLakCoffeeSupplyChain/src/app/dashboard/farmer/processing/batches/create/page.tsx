@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AppToast } from "@/components/ui/AppToast";
-import { createProcessingBatch } from "@/lib/api/processingBatches";
-import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
+import {
+  createProcessingBatch,
+  getAvailableCoffeeTypes,
+  CoffeeType,
+} from "@/lib/api/processingBatches";
 import {
   getCropSeasonsForCurrentUser,
   CropSeasonListItem,
@@ -25,63 +28,58 @@ import {
 
 export default function CreateProcessingBatchPage() {
   const router = useRouter();
+
   const [form, setForm] = useState({
     coffeeTypeId: "",
     cropSeasonId: "",
     batchCode: "",
     methodId: "",
-    inputQuantity: 0,
-    inputUnit: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loadingCoffeeTypes, setLoadingCoffeeTypes] = useState(false);
+
   const [coffeeTypes, setCoffeeTypes] = useState<CoffeeType[]>([]);
   const [cropSeasons, setCropSeasons] = useState<CropSeasonListItem[]>([]);
   const [methods, setMethods] = useState<ProcessingMethod[]>([]);
 
-  // ✅ Lấy userId từ access_token và set farmerId một lần duy nhất
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
+    async function fetchInitial() {
       try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        const userId = payload?.userId || payload?.UserId || payload?.sub;
-
-        console.log("✅ User ID lấy từ token:", userId);
-
-        if (userId) {
-          setForm((prev) => ({ ...prev, farmerId: userId }));
-        }
-      } catch (err) {
-        console.error("❌ Lỗi giải mã token:", err);
-      }
-    }
-  }, []);
-
-  // ✅ Load các dropdown cần thiết
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [coffeeTypes, cropSeasons, methods] = await Promise.all([
-          getCoffeeTypes(),
+        const [cropSeasons, methods] = await Promise.all([
           getCropSeasonsForCurrentUser({ page: 1, pageSize: 100 }),
           getAllProcessingMethods(),
         ]);
-        setCoffeeTypes(coffeeTypes);
         setCropSeasons(cropSeasons);
         setMethods(methods);
       } catch (err) {
-        console.error("❌ Lỗi fetchData:", err);
-        setError("Lỗi tải dữ liệu. Vui lòng thử lại!");
+        console.error("❌ Lỗi tải dữ liệu:", err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchData();
+    fetchInitial();
   }, []);
+
+  useEffect(() => {
+    async function fetchCoffeeTypes() {
+      if (!form.cropSeasonId) return;
+      setLoadingCoffeeTypes(true);
+      try {
+        const types = await getAvailableCoffeeTypes(form.cropSeasonId);
+        setCoffeeTypes(types);
+      } catch (err) {
+        console.error("❌ Lỗi load loại cà phê:", err);
+        setCoffeeTypes([]);
+      } finally {
+        setLoadingCoffeeTypes(false);
+      }
+    }
+
+    fetchCoffeeTypes();
+  }, [form.cropSeasonId]);
 
   const handleChange = (name: string, value: string | number) => {
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -89,26 +87,17 @@ export default function CreateProcessingBatchPage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    console.log("🚀 Dữ liệu form gửi lên:", form);
 
-    const {
-      coffeeTypeId,
-      cropSeasonId,
-      batchCode,
-      methodId,
-      inputQuantity,
-      inputUnit,
-    } = form;
+    const { coffeeTypeId, cropSeasonId, batchCode, methodId } = form;
 
-    if (
-      !coffeeTypeId ||
-      !cropSeasonId ||
-      !batchCode.trim() ||
-      Number(methodId) <= 0 ||
-      Number(inputQuantity) <= 0 ||
-      !inputUnit.trim()
-    ) {
-      AppToast.error("Vui lòng điền đầy đủ thông tin!");
+    const missingFields: string[] = [];
+    if (!coffeeTypeId) missingFields.push("Loại cà phê");
+    if (!cropSeasonId) missingFields.push("Mùa vụ");
+    if (!batchCode.trim()) missingFields.push("Mã lô");
+    if (Number(methodId) <= 0) missingFields.push("Phương pháp sơ chế");
+
+    if (missingFields.length > 0) {
+      AppToast.error("Vui lòng nhập: " + missingFields.join(", "));
       setIsSubmitting(false);
       return;
     }
@@ -118,15 +107,16 @@ export default function CreateProcessingBatchPage() {
         coffeeTypeId,
         cropSeasonId,
         batchCode: batchCode.trim(),
-        methodId: Number(methodId),
-        inputQuantity: Number(inputQuantity),
-        inputUnit: inputUnit.trim(),
+        methodId: Number(methodId)
       });
+
       AppToast.success("Tạo lô sơ chế thành công!");
       router.push("/dashboard/farmer/processing/batches");
-    } catch (err) {
+    } catch (err: any) {
       console.error("❌ Lỗi tạo batch:", err);
-      AppToast.error("Tạo lô sơ chế thất bại!");
+      const errorMessage =
+        err?.response?.data?.message || "Tạo lô sơ chế thất bại!";
+      AppToast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -134,30 +124,12 @@ export default function CreateProcessingBatchPage() {
 
   if (loading)
     return <div className="p-8 text-center">Đang tải dữ liệu...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
       <h1 className="text-2xl font-bold mb-6">Tạo lô sơ chế mới</h1>
       <div className="space-y-4 bg-white rounded-xl shadow p-6">
-        <div>
-          <label className="block mb-1 font-medium">Loại cà phê *</label>
-          <Select
-            value={form.coffeeTypeId}
-            onValueChange={(v) => handleChange("coffeeTypeId", v)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Chọn loại cà phê" />
-            </SelectTrigger>
-            <SelectContent>
-              {coffeeTypes.map((ct) => (
-                <SelectItem key={ct.coffeeTypeId} value={ct.coffeeTypeId}>
-                  {ct.typeName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Mùa vụ */}
         <div>
           <label className="block mb-1 font-medium">Mùa vụ *</label>
           <Select
@@ -176,15 +148,43 @@ export default function CreateProcessingBatchPage() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Loại cà phê */}
+        <div>
+          <label className="block mb-1 font-medium">Loại cà phê *</label>
+          <Select
+            value={form.coffeeTypeId}
+            onValueChange={(v) => handleChange("coffeeTypeId", v)}
+            disabled={!form.cropSeasonId || loadingCoffeeTypes}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Chọn loại cà phê" />
+            </SelectTrigger>
+            <SelectContent>
+              {coffeeTypes.map((ct) => (
+                <SelectItem key={ct.coffeeTypeId} value={ct.coffeeTypeId}>
+                  {ct.typeName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {form.cropSeasonId && coffeeTypes.length === 0 && (
+            <p className="text-sm text-yellow-600 mt-2">
+              Không có loại cà phê nào khả dụng trong mùa vụ này.
+            </p>
+          )}
+        </div>
+
+        {/* Mã lô */}
         <div>
           <label className="block mb-1 font-medium">Mã lô *</label>
           <Input
-            name="batchCode"
             value={form.batchCode}
             onChange={(e) => handleChange("batchCode", e.target.value)}
-            required
           />
         </div>
+
+        {/* Phương pháp */}
         <div>
           <label className="block mb-1 font-medium">Phương pháp sơ chế *</label>
           <Select
@@ -196,35 +196,14 @@ export default function CreateProcessingBatchPage() {
             </SelectTrigger>
             <SelectContent>
               {methods.map((m) => (
-                <SelectItem
-                  key={m.methodId.toString()}
-                  value={m.methodId.toString()}
-                >
+                <SelectItem key={m.methodId.toString()} value={m.methodId.toString()}>
                   {m.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <label className="block mb-1 font-medium">Số lượng đầu vào *</label>
-          <Input
-            name="inputQuantity"
-            type="number"
-            value={form.inputQuantity}
-            onChange={(e) => handleChange("inputQuantity", e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1 font-medium">Đơn vị đầu vào *</label>
-          <Input
-            name="inputUnit"
-            value={form.inputUnit}
-            onChange={(e) => handleChange("inputUnit", e.target.value)}
-            required
-          />
-        </div>
+
         <div className="flex justify-end">
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? "Đang tạo..." : "Tạo lô sơ chế"}
