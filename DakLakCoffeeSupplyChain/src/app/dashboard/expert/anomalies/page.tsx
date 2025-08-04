@@ -112,13 +112,15 @@ export default function ReportResponsePage() {
                                 setFilteredAdvices([]);
 
                                 // Load lại danh sách phản hồi mới
-                                getAllExpertAdvices()
-                                    .then((all) => {
-                                        setAllAdvices(all);
-                                        const filtered = all.filter((a) => a.reportId === selectedReportId);
+                                Promise.all([getAllExpertAdvices(), getAllFarmerReports()])
+                                    .then(([advices, reports]) => {
+                                        setAllAdvices(advices);
+                                        setReports(reports); // 👈 cập nhật lại trạng thái báo cáo
+
+                                        const filtered = advices.filter((a) => a.reportId === selectedReportId);
                                         setFilteredAdvices(filtered);
                                     })
-                                    .catch(() => toast.error('Không thể tải lại phản hồi sau khi gửi'));
+                                    .catch(() => toast.error('Không thể tải lại dữ liệu sau khi gửi phản hồi'));
                             }}
                         />
 
