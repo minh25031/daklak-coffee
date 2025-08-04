@@ -42,7 +42,7 @@ export default function AdminLayout({
         <div className="flex-1 p-5 bg-orange-50 overflow-auto ">{children}</div>
       </div>
 
-      <Toaster richColors /> {/* ✅ thêm Toaster ở cuối cùng */}
+      <Toaster richColors />
     </div>
   );
 }

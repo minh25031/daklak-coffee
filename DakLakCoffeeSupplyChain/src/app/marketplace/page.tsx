@@ -18,7 +18,6 @@ export default function MarketplacePage() {
   const [plans, setPlans] = useState<ProcurementPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fake fetching data - replace by your real API endpoint
   useEffect(() => {
     fetchData();
   }, []);

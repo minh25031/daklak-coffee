@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Dialog,
     DialogTrigger,
@@ -16,7 +16,12 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { AppToast } from "@/components/ui/AppToast";
 import { CropProgress, updateCropProgress } from "@/lib/api/cropProgress";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { getCropSeasonDetailById } from "@/lib/api/cropSeasonDetail";
+import {
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 
 type Props = {
@@ -25,8 +30,11 @@ type Props = {
     triggerButton?: React.ReactNode;
 };
 
-export function EditProgressDialog({ progress, onSuccess, triggerButton }: Props) {
-
+export function EditProgressDialog({
+    progress,
+    onSuccess,
+    triggerButton,
+}: Props) {
     const [open, setOpen] = useState(false);
     const [note, setNote] = useState(progress.note || "");
     const [progressDate, setProgressDate] = useState<Date | undefined>(
@@ -35,14 +43,28 @@ export function EditProgressDialog({ progress, onSuccess, triggerButton }: Props
     const [actualYield, setActualYield] = useState<number | undefined>(
         progress.actualYield
     );
+    const [seasonDetailYield, setSeasonDetailYield] = useState<number | undefined>(
+        undefined
+    );
     const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async () => {
-        console.log("Sending:", {
-            actualYield,
-            willSend: progress.stageCode === "HARVESTING" ? actualYield : undefined
-        });
+    // ✅ Lấy lại actualYield thật sự từ bảng CropSeasonDetail khi mở dialog
+    useEffect(() => {
+        if (open && progress.stageCode === "HARVESTING") {
+            getCropSeasonDetailById(progress.cropSeasonDetailId)
+                .then((detail) => {
+                    if (detail?.actualYield != null) {
+                        setActualYield(detail.actualYield);
+                        setSeasonDetailYield(detail.actualYield);
+                    }
+                })
+                .catch(() => {
+                    AppToast.error("Không thể tải sản lượng hiện có.");
+                });
+        }
+    }, [open, progress]);
 
+    const handleSubmit = async () => {
         if (!progressDate) {
             AppToast.error("Vui lòng chọn ngày ghi nhận.");
             return;
@@ -161,6 +183,11 @@ export function EditProgressDialog({ progress, onSuccess, triggerButton }: Props
                                     setActualYield(isNaN(value) ? undefined : value);
                                 }}
                             />
+                            {seasonDetailYield !== undefined && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Sản lượng đã ghi trước đó: <strong>{seasonDetailYield} kg</strong>
+                                </p>
+                            )}
                         </div>
                     )}
 
