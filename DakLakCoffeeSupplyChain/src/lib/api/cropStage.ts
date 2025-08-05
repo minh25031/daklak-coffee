@@ -10,6 +10,8 @@ export type CropStage = {
 
 export async function getCropStages(): Promise<CropStage[]> {
   const response = await api.get("/CropStages");
-  console.log("DEBUG:: CropStages response", response.data); // 👈 xem thử data là gì
-  return response.data;
+  return response.data.map((s: CropStage) => ({
+    ...s,
+    stageCode: s.stageCode.toUpperCase(),
+  }));
 }
