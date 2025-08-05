@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, Search, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Eye, History } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -78,7 +78,7 @@ export default function InventoryListPage() {
                 <th className="px-4 py-2 text-left">Loại cà phê</th>
                 <th className="px-4 py-2 text-right">Số lượng (kg)</th>
                 <th className="px-4 py-2 text-center">Trạng thái</th>
-                <th className="px-4 py-2 text-center">Xem</th>
+                <th className="px-4 py-2 text-center">Hành động</th>
               </tr>
             </thead>
             <tbody>
@@ -102,9 +102,16 @@ export default function InventoryListPage() {
                       {inv.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
                     </Badge>
                   </td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="px-4 py-2 text-center space-x-2">
                     <Link href={`/dashboard/staff/inventories/${inv.inventoryId}`}>
-                      <Eye className="w-4 h-4 text-orange-600 hover:text-orange-800 cursor-pointer inline-block" />
+                      <Button size="icon" variant="outline" className="text-orange-600 hover:text-orange-800">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                    <Link href={`/dashboard/staff/inventories/${inv.inventoryId}/logs`}>
+                      <Button size="icon" variant="outline" className="text-blue-600 hover:text-blue-800">
+                        <History className="w-4 h-4" />
+                      </Button>
                     </Link>
                   </td>
                 </tr>
