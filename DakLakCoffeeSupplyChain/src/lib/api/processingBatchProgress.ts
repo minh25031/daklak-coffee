@@ -19,6 +19,7 @@ export interface ProcessingBatchProgress {
   updatedByName?: string;
   createdAt: string;
   updatedAt: string;
+   mediaFiles?: MediaFile[];
 }
 
 export interface CreateProgressDto {
@@ -35,10 +36,16 @@ export interface CreateProgressWithMediaPayload {
   progressDate: string;
   outputQuantity: number;
   outputUnit: string;
-  photoFile?: File;
-  videoFile?: File;
+  photoFiles?: File[];
+  videoFiles?: File[];
 }
-
+export interface MediaFile {
+  mediaId: string;
+  mediaType: "image" | "video";
+  mediaUrl: string;
+  caption: string;
+  uploadedAt: string;
+}
 export interface AdvanceProgressWithMediaPayload {
   progressDate: string;
   outputQuantity: number;
@@ -55,13 +62,33 @@ export async function getAllProcessingBatchProgresses(): Promise<ProcessingBatch
     return [];
   }
 }
-
-export async function getProcessingBatchProgressById(id: string): Promise<ProcessingBatchProgress | null> {
+export async function getProcessingBatchProgressById(progressId: string): Promise<ProcessingBatchProgress | null> {
   try {
-    const res = await api.get(`/ProcessingBatchsProgress/${id}`);
+    const res = await api.get(`/ProcessingBatchsProgress/detail/${progressId}`);
+    
+   
     return res.data;
-  } catch (err) {
-    console.error("❌ getProcessingBatchProgressById:", err);
+  
+  } catch (error) {
+    console.error("Error fetching progress detail:", error);
+    return null;
+  }
+}
+
+export async function getProcessingBatchProgressByBatchAndStep(batchId: string, stepIndex: number): Promise<ProcessingBatchProgress | null> {
+  try {
+    console.log('=== API: getProcessingBatchProgressByBatchAndStep ===');
+    console.log('Parameters:', { batchId, stepIndex });
+    
+    const allProgresses = await getAllProcessingBatchProgresses();
+    console.log('All progresses fetched:', allProgresses.length);
+    
+    const progress = allProgresses.find(p => p.batchId === batchId && p.stepIndex === stepIndex);
+    console.log('Found progress:', progress);
+    
+    return progress || null;
+  } catch (error) {
+    console.error("Error fetching progress by batch and step:", error);
     return null;
   }
 }
@@ -103,18 +130,56 @@ export async function createProcessingBatchProgressWithMedia(
   payload: CreateProgressWithMediaPayload
 ): Promise<void> {
   const formData = new FormData();
+  formData.append("processingBatchId", batchId);
   formData.append("progressDate", payload.progressDate);
   formData.append("outputQuantity", payload.outputQuantity.toString());
   formData.append("outputUnit", payload.outputUnit);
-  if (payload.photoFile) formData.append("photoFile", payload.photoFile);
-  if (payload.videoFile) formData.append("videoFile", payload.videoFile);
+  
+  // Thêm files vào mediaFiles array như backend mong đợi
+  if (payload.photoFiles) {
+    payload.photoFiles.forEach(file => formData.append("mediaFiles", file));
+  }
+  if (payload.videoFiles) {
+    payload.videoFiles.forEach(file => formData.append("mediaFiles", file));
+  }
+
+  console.log("📤 API: createProcessingBatchProgressWithMedia");
+  console.log("📤 BatchId:", batchId);
+  console.log("📤 FormData entries:");
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}:`, value);
+  }
 
   try {
     await api.post(`/ProcessingBatchsProgress/${batchId}/upload`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-  } catch (err) {
+    console.log("✅ API call successful");
+  } catch (err: any) {
     console.error("❌ createProcessingBatchProgressWithMedia:", err);
+    console.error("❌ Error response data:", err?.response?.data);
+    console.error("❌ Error response status:", err?.response?.status);
+    console.error("❌ Validation errors:", err?.response?.data?.errors);
+    
+    // Hiển thị chi tiết validation errors
+    if (err?.response?.data?.errors) {
+      console.error("❌ Detailed validation errors:");
+      Object.entries(err.response.data.errors).forEach(([field, messages]) => {
+        console.error(`  ${field}:`, messages);
+      });
+    }
+    
+    // Hiển thị error object trực tiếp
+    if (err?.errors) {
+      console.error("❌ Direct error object:");
+      Object.entries(err.errors).forEach(([field, messages]) => {
+        console.error(`  ${field}:`, messages);
+      });
+    }
+    
+    // Hiển thị toàn bộ error object để debug
+    console.error("❌ Full error object:", JSON.stringify(err, null, 2));
+    
     throw err;
   }
 }

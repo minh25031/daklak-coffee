@@ -4,6 +4,7 @@ export interface ProcessingStages {
   stageId: string;
   stageName: string;
   description: string;
+  createdAt: string;
 }
 
 export async function getAllProcessingStagess(): Promise<ProcessingStages[]> {

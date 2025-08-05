@@ -36,6 +36,9 @@ const pathTitleMap: Record<string, string> = {
     reports: "Báo cáo",
     users: "Quản lý người dùng",
     settings: "Cài đặt",
+    create: "Tạo",
+    edit: "Chỉnh sửa",
+    "Chi tiết": "Chi tiết",
 };
 
 export default function HeaderDashboard() {
@@ -53,10 +56,30 @@ export default function HeaderDashboard() {
     }, []);
 
     const currentTitle = useMemo(() => {
-        const segments = pathname.split("/").filter(Boolean);
-        const last = segments[segments.length - 1];
-        return pathTitleMap[last] || "Tổng quan";
-    }, [pathname]);
+    const segments = pathname.split("/").filter(Boolean);
+    
+    // Kiểm tra nếu có segment "create" hoặc "edit" hoặc ID (số)
+    const last = segments[segments.length - 1];
+    const secondLast = segments[segments.length - 2];
+    
+    // Nếu segment cuối là "create"
+    if (last === "create") {
+        return pathTitleMap[last] || "Tạo";
+    }
+    
+    // Nếu segment cuối là "edit"
+    if (last === "edit") {
+        return pathTitleMap[last] || "Chỉnh sửa";
+    }
+    
+    // Nếu segment cuối là ID (số) và segment trước đó tồn tại
+    if (/^\d+$/.test(last) && secondLast) {
+        return pathTitleMap[secondLast] ? `${pathTitleMap[secondLast]} - Chi tiết` : "Chi tiết";
+    }
+    
+    // Trường hợp thông thường
+    return pathTitleMap[last] || "Tổng quan";
+}, [pathname]);
 
     const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
         userName ?? "U"

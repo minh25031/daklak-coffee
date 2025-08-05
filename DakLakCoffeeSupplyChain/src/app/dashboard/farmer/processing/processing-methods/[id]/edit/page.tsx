@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AppToast } from '@/components/ui/AppToast';
-import { ArrowLeft, Settings, Info, Loader2, CheckCircle, FileText, Hash } from 'lucide-react';
-import { createProcessingMethod } from '@/lib/api/processingMethods';
+import { ArrowLeft, Settings, Info, Loader2, CheckCircle, FileText, Hash, AlertCircle } from 'lucide-react';
+import { getProcessingMethodById, updateProcessingMethod, ProcessingMethod } from '@/lib/api/processingMethods';
 import PageTitle from '@/components/ui/PageTitle';
 
-export default function CreateProcessingMethodPage() {
+export default function EditProcessingMethodPage() {
+  const { id } = useParams();
   const router = useRouter();
   
+  const [method, setMethod] = useState<ProcessingMethod | null>(null);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -20,13 +22,46 @@ export default function CreateProcessingMethodPage() {
     methodCode: '',
   });
   
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchMethod() {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const data = await getProcessingMethodById(Number(id));
+        setMethod(data);
+        
+        // Set form data
+        setForm({
+          name: data.name || '',
+          description: data.description || '',
+          steps: data.steps || '',
+          methodCode: data.methodCode || '',
+        });
+      } catch (err: any) {
+        console.error('Error fetching method:', err);
+        setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchMethod();
+  }, [id]);
 
   const handleChange = (name: string, value: string) => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
+    if (!id) return;
+    
     setIsSubmitting(true);
     
     const { name, description, steps, methodCode } = form;
@@ -44,23 +79,108 @@ export default function CreateProcessingMethodPage() {
     }
     
     try {
-      await createProcessingMethod({
+      await updateProcessingMethod(Number(id), {
         name: name.trim(),
         description: description.trim(),
         steps: steps.trim(),
         methodCode: methodCode.trim()
       });
       
-      AppToast.success('Tạo phương pháp sơ chế thành công!');
-      router.push('/dashboard/farmer/processing/processing-methods');
+      AppToast.success('Cập nhật phương pháp sơ chế thành công!');
+      router.push(`/dashboard/farmer/processing/processing-methods/${id}`);
     } catch (err: any) {
-      console.error('Error creating method:', err);
-      const errorMessage = err?.response?.data?.message || 'Tạo phương pháp sơ chế thất bại!';
+      console.error('Error updating method:', err);
+      const errorMessage = err?.response?.data?.message || 'Cập nhật phương pháp sơ chế thất bại!';
       AppToast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+        <div className="p-6 max-w-4xl mx-auto">
+          {/* Header Skeleton */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Form Skeleton */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6">
+              <div className="h-6 bg-white/20 rounded w-48 animate-pulse"></div>
+            </div>
+            <div className="p-6 space-y-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                  <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Loading Indicator */}
+          <div className="text-center space-y-4 mt-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <p className="text-lg text-gray-600 font-medium">Đang tải dữ liệu...</p>
+            <p className="text-sm text-gray-500">Đang tải thông tin phương pháp sơ chế</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center space-y-6 max-w-md mx-auto p-6">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-gray-900">Không thể tải dữ liệu</h2>
+            <p className="text-gray-600">{error}</p>
+          </div>
+          <Button 
+            variant="outline"
+            onClick={() => router.back()}
+            className="flex items-center gap-2 mx-auto"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!method) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="w-8 h-8 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900">Không tìm thấy dữ liệu</h2>
+          <p className="text-gray-600">Phương pháp sơ chế này không tồn tại hoặc đã bị xóa</p>
+          <Button 
+            variant="outline"
+            onClick={() => router.back()}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
@@ -68,8 +188,8 @@ export default function CreateProcessingMethodPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <PageTitle
-            title="Tạo phương pháp sơ chế mới"
-            subtitle="Thêm phương pháp sơ chế mới vào hệ thống"
+            title="Chỉnh sửa phương pháp sơ chế"
+            subtitle="Cập nhật thông tin phương pháp sơ chế"
           />
           <Button 
             variant="outline" 
@@ -88,9 +208,9 @@ export default function CreateProcessingMethodPage() {
               <Info className="w-5 h-5 text-blue-600" />
             </div>
             <div className="space-y-1">
-              <h3 className="font-semibold text-blue-900">Hướng dẫn tạo phương pháp sơ chế</h3>
+              <h3 className="font-semibold text-blue-900">Thông tin chỉnh sửa</h3>
               <p className="text-sm text-blue-700">
-                Vui lòng nhập đầy đủ thông tin về phương pháp sơ chế bao gồm tên, mô tả và các bước thực hiện chi tiết.
+                Bạn có thể cập nhật thông tin phương pháp sơ chế. Phương pháp hiện tại: <strong>{method.name}</strong>
               </p>
             </div>
           </div>
@@ -177,12 +297,12 @@ export default function CreateProcessingMethodPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Đang tạo...
+                    Đang cập nhật...
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-5 h-5" />
-                    Tạo phương pháp sơ chế
+                    Cập nhật phương pháp sơ chế
                   </>
                 )}
               </Button>
@@ -192,4 +312,4 @@ export default function CreateProcessingMethodPage() {
       </div>
     </div>
   );
-}
+} 

@@ -5,6 +5,10 @@ export interface ProcessingParameter {
   parameterName: string;
   value: string;
   unit: string;
+  parameterType: string;
+  parameterValue: string;
+  description: string;
+  isActive: boolean;
 }
 
 export async function getAllProcessingParameters(): Promise<

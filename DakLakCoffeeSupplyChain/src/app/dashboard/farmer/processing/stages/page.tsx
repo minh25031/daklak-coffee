@@ -7,8 +7,9 @@ import {
 } from "@/lib/api/processingStages";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Settings, FileText, Calendar, Edit, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
+import PageTitle from "@/components/ui/PageTitle";
 
 export default function ProcessingStagesPage() {
   const router = useRouter();
@@ -31,76 +32,163 @@ export default function ProcessingStagesPage() {
   );
 
   return (
-    <div className="flex min-h-screen bg-amber-50 p-6 gap-6">
-      {/* Sidebar filter */}
-      <aside className="w-64">
-        <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-700">Tìm kiếm</h2>
-          <div className="relative">
-            <Input
-              placeholder="Tìm tên công đoạn..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pr-10"
-            />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <div className="p-6 max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <PageTitle
+            title="Quản lý công đoạn sơ chế"
+            subtitle="Thiết lập và quản lý các công đoạn trong quy trình sơ chế cà phê"
+          />
+          <Button
+            onClick={() => router.push("/dashboard/farmer/processing/stages/create")}
+            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Thêm công đoạn
+          </Button>
+        </div>
+
+        {/* Stats Card */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Tổng công đoạn</p>
+              <p className="text-3xl font-bold text-gray-900">{data.length}</p>
+            </div>
+            <div className="p-4 bg-gradient-to-r from-green-100 to-blue-100 rounded-xl">
+              <Settings className="w-8 h-8 text-green-600" />
+            </div>
           </div>
         </div>
-      </aside>
 
-      {/* Main content */}
-      <main className="flex-1 space-y-6">
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="flex justify-between items-center px-4 py-3 border-b">
-            <h1 className="text-lg font-semibold text-gray-800">
-              Danh sách công đoạn sơ chế
-            </h1>
-            <Button
-              onClick={() =>
-                router.push("/dashboard/farmer/processing/stages/create")
-              }
-              className="flex gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Thêm công đoạn
-            </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Search className="w-5 h-5 text-gray-600" />
+                  Tìm kiếm
+                </h2>
+                <div className="relative">
+                  <Input
+                    placeholder="Tìm tên công đoạn..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pr-10 border-gray-200 focus:border-green-500 focus:ring-green-500"
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Thống kê</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">Tất cả</span>
+                    <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
+                      {data.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">Đã tìm thấy</span>
+                    <span className="bg-green-200 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                      {filtered.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {loading ? (
-            <div className="py-6 text-center text-sm text-gray-500 italic">
-              ⏳ Đang tải dữ liệu...
+          {/* Main content */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-800">Danh sách công đoạn sơ chế</h2>
+                <p className="text-gray-600 mt-1">Hiển thị {filtered.length} công đoạn</p>
+              </div>
+
+              {loading ? (
+                <div className="p-12 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                  <p className="text-lg text-gray-600 font-medium">Đang tải dữ liệu...</p>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Settings className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">Không tìm thấy công đoạn nào</h3>
+                  <p className="text-gray-500">Thử thay đổi từ khóa tìm kiếm hoặc thêm công đoạn mới.</p>
+                </div>
+              ) : (
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {filtered.map((stage) => (
+                      <div
+                        key={stage.stageId}
+                        className="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 hover:border-green-300 transition-all duration-300 hover:shadow-lg group flex flex-col h-full"
+                      >
+                        <div className="p-6 flex flex-col h-full">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 text-lg mb-2">{stage.stageName}</h3>
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <FileText className="w-4 h-4" />
+                                <span>ID: {stage.stageId}</span>
+                              </div>
+                            </div>
+                            <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors duration-200">
+                              <Settings className="w-5 h-5 text-green-600" />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3 flex-grow">
+                            <div className="flex items-start gap-2">
+                              <FileText className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                              <p className="text-sm text-gray-600 leading-relaxed">
+                                {stage.description || "Chưa có mô tả cho công đoạn này."}
+                              </p>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <Calendar className="w-4 h-4" />
+                              <span>Tạo lúc: {new Date(stage.createdAt).toLocaleDateString('vi-VN')}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+                              onClick={() => router.push(`/dashboard/farmer/processing/stages/${stage.stageId}`)}
+                            >
+                              <Eye className="w-4 h-4" />
+                              Xem chi tiết
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                              onClick={() => router.push(`/dashboard/farmer/processing/stages/${stage.stageId}/edit`)}
+                            >
+                              <Edit className="w-4 h-4" />
+                              Sửa
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="py-6 text-center text-sm text-gray-500 italic">
-              🚫 Không tìm thấy công đoạn nào
-            </div>
-          ) : (
-            <table className="w-full text-sm table-auto">
-              <thead className="bg-gray-100 text-gray-700 font-medium">
-                <tr>
-                  <th className="px-6 py-3 text-left">Tên công đoạn</th>
-                  <th className="px-6 py-3 text-left">Mô tả</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((stage) => (
-                  <tr
-                    key={stage.stageId}
-                    className="border-t transition hover:bg-gray-50"
-                  >
-                    <td className="px-6 py-3 font-medium text-gray-800">
-                      {stage.stageName}
-                    </td>
-                    <td className="px-6 py-3 text-gray-600">
-                      {stage.description || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
