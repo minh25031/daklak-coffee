@@ -22,3 +22,30 @@ export const ContractStatusMap: Record<ContractStatusValue, {
   Cancelled: { label: "Đã hủy", color: "red", icon: "❌" },
   Expired: { label: "Quá hạn", color: "orange", icon: "⌛" },
 };
+
+export enum ContractStatus {
+  NotStarted = "NotStarted",
+  PreparingDelivery = "PreparingDelivery",
+  InProgress = "InProgress",
+  PartialCompleted = "PartialCompleted",
+  Completed = "Completed",
+  Cancelled = "Cancelled",
+  Expired = "Expired",
+}
+
+export function convertEnumStatusToApi(
+  status: ContractStatus
+): "open" | "in_progress" | "completed" {
+  switch (status) {
+    case ContractStatus.NotStarted:
+    case ContractStatus.PreparingDelivery:
+      return "open";
+    case ContractStatus.InProgress:
+    case ContractStatus.PartialCompleted:
+      return "in_progress";
+    case ContractStatus.Completed:
+      return "completed";
+    default:
+      return "open"; // fallback
+  }
+}

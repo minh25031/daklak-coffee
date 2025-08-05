@@ -1,4 +1,7 @@
 import api from "./axios";
+import { ContractStatus } from "@/lib/constants/contractStatus";
+import { ContractItemCreateDto } from "@/lib/api/contractItems";
+import { ContractItemUpdateDto } from "@/lib/api/contractItems";
 
 export interface Contract {
   id: string;
@@ -53,6 +56,7 @@ export interface ContractViewDetailsDto {
   contractTitle: string;
   contractFileUrl: string;
   sellerName: string;
+  buyerId: string;
   buyerName: string;
   deliveryRounds?: number;
   totalQuantity?: number;
@@ -65,6 +69,27 @@ export interface ContractViewDetailsDto {
   createdAt: string;
   updatedAt: string;
   contractItems: ContractItemViewDto[];
+}
+
+export interface ContractCreateDto {
+  buyerId: string;
+  contractNumber: string;
+  contractTitle: string;
+  contractFileUrl?: string;
+  deliveryRounds?: number;
+  totalQuantity?: number;
+  totalValue?: number;
+  startDate?: string; // hoặc DateOnly/Date tuỳ định dạng
+  endDate?: string;
+  signedAt?: string;
+  status: ContractStatus;
+  cancelReason: string;
+  contractItems: ContractItemCreateDto[];
+}
+
+export interface ContractUpdateDto extends ContractCreateDto {
+  contractId: string;
+  contractItems: ContractItemUpdateDto[]; // override để dùng loại Update thay vì Create
 }
 
 // Mock data for contracts
@@ -129,33 +154,33 @@ export async function getContractById(id: string): Promise<Contract | null> {
   return mockContracts.find((contract) => contract.id === id) || null;
 }
 
-// Create new contract
-export async function createContract(contract: Omit<Contract, "id" | "createdAt" | "updatedAt">): Promise<Contract> {
-  // TODO: Replace with actual API call
-  const newContract: Contract = {
-    ...contract,
-    id: Math.random().toString(36).substr(2, 9),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  mockContracts.push(newContract);
-  return newContract;
-}
+// // Create new contract
+// export async function createContract(contract: Omit<Contract, "id" | "createdAt" | "updatedAt">): Promise<Contract> {
+//   // TODO: Replace with actual API call
+//   const newContract: Contract = {
+//     ...contract,
+//     id: Math.random().toString(36).substr(2, 9),
+//     createdAt: new Date().toISOString(),
+//     updatedAt: new Date().toISOString(),
+//   };
+//   mockContracts.push(newContract);
+//   return newContract;
+// }
 
-// Update contract
-export async function updateContract(id: string, updates: Partial<Contract>): Promise<Contract | null> {
-  // TODO: Replace with actual API call
-  const index = mockContracts.findIndex((contract) => contract.id === id);
-  if (index === -1) return null;
+// // Update contract
+// export async function updateContract(id: string, updates: Partial<Contract>): Promise<Contract | null> {
+//   // TODO: Replace with actual API call
+//   const index = mockContracts.findIndex((contract) => contract.id === id);
+//   if (index === -1) return null;
 
-  const updatedContract = {
-    ...mockContracts[index],
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
-  mockContracts[index] = updatedContract;
-  return updatedContract;
-}
+//   const updatedContract = {
+//     ...mockContracts[index],
+//     ...updates,
+//     updatedAt: new Date().toISOString(),
+//   };
+//   mockContracts[index] = updatedContract;
+//   return updatedContract;
+// }
 
 // Delete contract
 export async function deleteContract(id: string): Promise<boolean> {
@@ -210,3 +235,13 @@ export async function getContractDetails(contractId: string): Promise<ContractVi
 export async function softDeleteContract(contractId: string): Promise<void> {
   await api.patch(`/Contracts/soft-delete/${contractId}`);
 } 
+
+// Gọi API để tạo hợp đồng mới
+export async function createContract(data: ContractCreateDto): Promise<void> {
+  await api.post("/Contracts", data);
+}
+
+// Gọi API để cập nhật hợp đồng theo contractId
+export async function updateContract(contractId: string, data: ContractUpdateDto): Promise<void> {
+  await api.put(`/Contracts/${contractId}`, data);
+}
