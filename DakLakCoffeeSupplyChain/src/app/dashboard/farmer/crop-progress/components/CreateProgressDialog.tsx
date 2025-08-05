@@ -43,12 +43,18 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
     const createdStageCodes = (existingProgress ?? []).map((p) => p.stageCode);
 
     const canCreateStage = (stageCode: string) => {
-        const currentIndex = STAGE_ORDER.indexOf(stageCode);
+        const normalizedStageCode = stageCode.toUpperCase();
+        const currentIndex = STAGE_ORDER.indexOf(normalizedStageCode);
         const requiredPrevious = STAGE_ORDER.slice(0, currentIndex);
-        const hasAllPrevious = requiredPrevious.every((code) => createdStageCodes.includes(code));
-        const alreadyExists = createdStageCodes.includes(stageCode);
+        const hasAllPrevious = requiredPrevious.every((code) =>
+            createdStageCodes.map(c => c.toUpperCase()).includes(code)
+        );
+        const alreadyExists = createdStageCodes
+            .map((c) => c.toUpperCase())
+            .includes(normalizedStageCode);
         return hasAllPrevious && !alreadyExists;
     };
+
 
     const selectedStage = stageOptions.find((s) => s.stageId === stageId);
     const isHarvestingStage = selectedStage?.stageCode === "HARVESTING";
