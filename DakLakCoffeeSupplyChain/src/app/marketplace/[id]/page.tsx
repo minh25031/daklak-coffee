@@ -47,7 +47,7 @@ export default function PlanDetailPage() {
       AppToast.error(getErrorMessage(error));
       return null;
     });
-    console.log("Fetched Procurement Plans:", data);
+    //console.log("Fetched Procurement Plans:", data);
     setPlan(data);
     setLoading(false);
   };
@@ -60,7 +60,6 @@ export default function PlanDetailPage() {
         return [];
       }
     );
-    //console.log("Fetched Procurement Plans:", data);
     setRegistrations(data);
     setLoading(false);
   };

@@ -21,7 +21,7 @@ export default function MarketplacePage() {
   useEffect(() => {
     fetchData();
   }, []);
-  ``
+  
   const fetchData = async () => {
     setLoading(true);
     const data = await getAllAvailableProcurementPlans().catch((error) => {
