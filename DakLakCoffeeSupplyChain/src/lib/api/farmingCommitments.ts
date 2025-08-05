@@ -40,8 +40,11 @@ export interface FarmingCommitment {
   commitmentCode: string;
   commitmentName: string;
   farmerId: string;
+  farmerName: string;
+  totalPrice: number;
   registrationId: string;
   note: string;
+  commitmentDate: string; // ISO date string
   committedArea: number; // in hectares
   committedAt: string; // ISO date string
   totalCommittedPrice: number; // total price for the committed area
@@ -73,9 +76,9 @@ export async function getFarmerCommitments(): Promise<FarmingCommitmentItem[]> {
 }
 
 // Lấy danh sách cam kết cho Business Manager
-export async function getBusinessCommitments(): Promise<FarmingCommitmentItem[]> {
+export async function getBusinessCommitments(): Promise<FarmingCommitment[]> {
   try {
-    const res = await api.get<FarmingCommitmentItem[]>("/FarmingCommitment/BusinessManager");
+    const res = await api.get<FarmingCommitment[]>("/FarmingCommitment/BusinessManager");
     return res.data;
   } catch (err) {
     console.error("Lỗi getBusinessCommitments:", err);

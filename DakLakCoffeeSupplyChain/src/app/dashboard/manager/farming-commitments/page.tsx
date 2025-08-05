@@ -5,14 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { cn, getErrorMessage } from '@/lib/utils';
-import { FarmingCommitmentItem, getBusinessCommitments } from '@/lib/api/farmingCommitments';
+import { FarmingCommitment, getBusinessCommitments } from '@/lib/api/farmingCommitments';
 import { toast } from 'sonner';
 import { FarmingCommitmentStatusMap, FarmingCommitmentStatusValue } from '@/lib/constants/FarmingCommitmentStatu';
 import FilterStatusPanel from '@/components/ui/filterStatusPanel';
 import FarmingCommitmentCard from '@/components/farming-commitments/FarmingCommitmentCard';
 
 export default function BusinessFarmingCommitmentPage() {
-    const [farmingCommitments, setFarmingCommitments] = useState<FarmingCommitmentItem[]>([]);
+    const [farmingCommitments, setFarmingCommitments] = useState<FarmingCommitment[]>([]);
     const [search, setSearch] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<FarmingCommitmentStatusValue | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -88,10 +88,10 @@ export default function BusinessFarmingCommitmentPage() {
                         <thead className="bg-gray-100 text-gray-700 font-medium">
                             <tr>
                                 <th className="px-4 py-3 text-left">Tên cam kết</th>
-                                <th className="px-4 py-3 text-left">Tổng sản lượng</th>
-                                <th className="px-4 py-3 text-left">Giá cả đã thống nhất</th>
+                                <th className="px-4 py-3 text-left">Tên nông dân</th>
+                                <th className="px-4 py-3 text-left">Tổng thành tiền</th>
                                 <th className="px-4 py-3 text-left">Trạng thái</th>
-                                <th className="px-4 py-3 text-left">Ngày bắt đầu – kết thúc dự kiến</th>
+                                <th className="px-4 py-3 text-left">Ngày lập cam kết</th>
                                 <th className="px-4 py-3 text-left">Hành động</th>
                             </tr>
                         </thead>
