@@ -9,7 +9,7 @@ export type CropProgress = {
   cropSeasonDetailId: string;
   stageId: number;
   stageName: string;
-  stageCode: string; // ✅ THÊM stageCode để kiểm tra "HARVESTING"
+  stageCode: string; 
   progressDate: string;
   note: string;
   photoUrl?: string;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getProcessingBatchById, updateProcessingBatch, ProcessingBatch } from '@/lib/api/processingBatches';
+import { getProcessingBatchById, updateProcessingBatch, ProcessingBatch, getAvailableCoffeeTypes } from '@/lib/api/processingBatches';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AppToast } from '@/components/ui/AppToast';
@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  getAvailableCoffeeTypes,
   CoffeeType,
 } from '@/lib/api/processingBatches';
 import {

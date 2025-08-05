@@ -7,9 +7,22 @@ import {
   approveInboundRequest,
   rejectInboundRequest,
 } from "@/lib/api/warehouseInboundRequest";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft,
+  Package,
+  CalendarClock,
+  ClipboardCheck,
+  User,
+  Phone,
+  FileText,
+  CheckCircle,
+  XCircle,
+  Coffee,
+  Layers,
+  Leaf
+} from "lucide-react";
 
 export default function InboundRequestDetailPage() {
   const { id } = useParams();
@@ -27,7 +40,6 @@ export default function InboundRequestDetailPage() {
         router.push("/dashboard/staff/inbounds");
       }
     }
-
     fetchDetail();
   }, [id, router]);
 
@@ -51,65 +63,77 @@ export default function InboundRequestDetailPage() {
   };
 
   const getStatusBadge = (status: string) => {
-  const base = "capitalize px-3 py-1 rounded-md font-medium text-sm";
+    switch (status) {
+      case "Pending":
+        return <Badge className="bg-gray-200 text-gray-800">⏳ Đang chờ duyệt</Badge>;
+      case "Approved":
+        return <Badge className="bg-blue-100 text-blue-800">📝 Đã duyệt</Badge>;
+      case "Completed":
+        return <Badge className="bg-green-100 text-green-800">✅ Hoàn tất</Badge>;
+      case "Rejected":
+        return <Badge className="bg-red-100 text-red-800">❌ Đã từ chối</Badge>;
+      case "Cancelled":
+        return <Badge className="bg-yellow-100 text-yellow-800">🚫 Đã huỷ</Badge>;
+      default:
+        return <Badge className="bg-muted text-muted-foreground">{status}</Badge>;
+    }
+  };
 
-  switch (status) {
-    case "Pending":
-      return <Badge className={`${base} bg-gray-100 text-gray-800`}>⏳ Đang chờ duyệt</Badge>;
-    case "Approved":
-      return <Badge className={`${base} bg-blue-100 text-blue-800`}>📝 Đã duyệt</Badge>;
-    case "Completed":
-      return <Badge className={`${base} bg-green-100 text-green-800`}>✅ Hoàn tất</Badge>;
-    case "Rejected":
-      return <Badge className={`${base} bg-red-100 text-red-800`}>❌ Đã từ chối</Badge>;
-    case "Cancelled":
-      return <Badge className={`${base} bg-yellow-100 text-yellow-800`}>🚫 Đã huỷ</Badge>;
-    default:
-      return <Badge className={`${base} bg-muted text-muted-foreground`}>{status}</Badge>;
+  if (!request) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-10 w-10 border-b-2 border-green-600 rounded-full"></div>
+      </div>
+    );
   }
-};
-
-  if (!request) return <div className="p-6">Đang tải...</div>;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">📥 Chi tiết yêu cầu nhập kho</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-800">
-          <div><strong>Mã yêu cầu:</strong> {request.requestCode}</div>
-          <div><strong>Trạng thái:</strong> {getStatusBadge(request.status)}</div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-lime-50">
+      <div className="p-6 max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-lime-500 bg-clip-text text-transparent">
+              📥 Chi tiết yêu cầu nhập kho
+            </h1>
+            <p className="text-gray-600">Mã yêu cầu: {request.requestCode}</p>
+          </div>
+          <Button variant="outline" onClick={() => router.back()} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
+          </Button>
+        </div>
 
-          <div><strong>Ngày tạo:</strong> {formatDate(request.createdAt)}</div>
-          <div><strong>Ngày giao dự kiến:</strong> {formatDate(request.preferredDeliveryDate)}</div>
+        {/* Detail section */}
+        <div className="bg-white shadow rounded-2xl p-6 border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-700">
+            <DetailItem icon={<ClipboardCheck className="text-green-600" />} label="Trạng thái" value={getStatusBadge(request.status)} />
+            <DetailItem icon={<CalendarClock className="text-rose-600" />} label="Ngày tạo" value={formatDate(request.createdAt)} />
+            <DetailItem icon={<CalendarClock className="text-blue-600" />} label="Ngày giao dự kiến" value={formatDate(request.preferredDeliveryDate)} />
+            {request.actualDeliveryDate && (
+              <DetailItem icon={<CalendarClock className="text-purple-600" />} label="Ngày giao thực tế" value={formatDate(request.actualDeliveryDate)} />
+            )}
+            <DetailItem icon={<Package className="text-orange-600" />} label="Số lượng" value={`${request.requestedQuantity} kg`} />
+            <DetailItem icon={<FileText className="text-gray-600" />} label="Ghi chú" value={request.note || "Không có"} />
+            <DetailItem icon={<User className="text-indigo-600" />} label="Nông dân" value={request.farmerName} />
+            <DetailItem icon={<Phone className="text-gray-500" />} label="SĐT" value={request.farmerPhone} />
+            {request.businessStaffName && (
+              <DetailItem icon={<User className="text-green-500" />} label="Nhân viên phụ trách" value={request.businessStaffName} />
+            )}
+            {request.batchCode && (
+              <DetailItem icon={<Layers className="text-orange-500" />} label="Mã lô hàng" value={request.batchCode} />
+            )}
+            {request.coffeeType && (
+              <DetailItem icon={<Coffee className="text-brown-600" />} label="Loại cà phê" value={request.coffeeType} />
+            )}
+            {request.seasonCode && (
+              <DetailItem icon={<Leaf className="text-lime-500" />} label="Mùa vụ" value={request.seasonCode} />
+            )}
+          </div>
 
-          {request.actualDeliveryDate && (
-            <div><strong>Ngày giao thực tế:</strong> {formatDate(request.actualDeliveryDate)}</div>
-          )}
-
-          <div><strong>Số lượng:</strong> {request.requestedQuantity} kg</div>
-          <div><strong>Ghi chú:</strong> {request.note || "Không có"}</div>
-
-          <div><strong>Nông dân:</strong> {request.farmerName}</div>
-          <div><strong>Điện thoại:</strong> {request.farmerPhone}</div>
-
-          {request.businessStaffName && (
-            <div><strong>Nhân viên phụ trách:</strong> {request.businessStaffName}</div>
-          )}
-
-          {request.batchCode && (
-            <div><strong>Mã lô hàng:</strong> {request.batchCode}</div>
-          )}
-          {request.coffeeType && (
-            <div><strong>Loại cà phê:</strong> {request.coffeeType}</div>
-          )}
-          {request.seasonCode && (
-            <div><strong>Mùa vụ:</strong> {request.seasonCode}</div>
-          )}
-
+          {/* Action buttons */}
           {request.status === "Pending" && (
-            <div className="md:col-span-2 pt-4 flex gap-4">
+            <div className="pt-6 flex flex-wrap gap-4">
               <Button
                 onClick={handleApprove}
                 disabled={loading}
@@ -126,16 +150,29 @@ export default function InboundRequestDetailPage() {
               </Button>
             </div>
           )}
-          <div className="md:col-span-2 pt-4">
-  <Button
-    variant="outline"
-    onClick={() => router.push("/dashboard/staff/inbounds")}
-  >
-    ← Quay lại danh sách
-  </Button>
-</div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Reusable detail component
+function DetailItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+      <div className="p-2 bg-gray-100 rounded-md">{icon}</div>
+      <div>
+        <p className="text-xs text-gray-500 font-medium">{label}</p>
+        <p className="font-semibold text-gray-800">{value}</p>
+      </div>
     </div>
   );
 }

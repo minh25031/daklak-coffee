@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { FarmingCommitmentItem } from "@/lib/api/farmingCommitments";
+import { FarmingCommitment } from "@/lib/api/farmingCommitments";
 import { FarmingCommitmentStatusMap, FarmingCommitmentStatusValue } from "@/lib/constants/FarmingCommitmentStatu";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import Link from "next/link";
 export default function FarmingCommitmentCard({
   commitment,
 }: {
-  commitment: FarmingCommitmentItem;
+  commitment: FarmingCommitment;
 }) {
   return (
     <tr key={commitment.commitmentId} className='border-t hover:bg-gray-50'>
@@ -22,8 +22,8 @@ export default function FarmingCommitmentCard({
         </Link>
       </td>
 
-      <td className='px-4 py-3'>{commitment.committedQuantity} kg</td>
-      <td className='px-4 py-3'>{commitment.confirmedPrice}</td>
+      <td className='px-4 py-3'>{commitment.farmerName}</td>
+      <td className='px-4 py-3'>{commitment.totalPrice}</td>
 
       <td className='px-4 py-3'>
         <Badge
@@ -46,12 +46,10 @@ export default function FarmingCommitmentCard({
       </td>
 
       <td className='px-4 py-3'>
-        {new Date(commitment.estimatedDeliveryStart).toLocaleDateString("vi-VN")} –{" "}
-        {new Date(commitment.estimatedDeliveryEnd).toLocaleDateString("vi-VN")}
+        {new Date(commitment.commitmentDate).toLocaleDateString("vi-VN")}
       </td>
 
       <td className='px-4 py-3 text-center align-middle'>
-        {/* <CropplanDetailDialog plan={plan} /> */}
       </td>
     </tr>
   );

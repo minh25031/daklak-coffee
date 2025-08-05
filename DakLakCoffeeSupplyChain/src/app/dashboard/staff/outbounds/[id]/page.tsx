@@ -4,8 +4,18 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getOutboundRequestById, acceptOutboundRequest } from '@/lib/api/warehouseOutboundRequest';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  ArrowLeft,
+  Package,
+  Warehouse,
+  ListOrdered,
+  User,
+  FileText,
+  CalendarClock,
+  ClipboardCheck,
+  StickyNote,
+} from 'lucide-react';
 
 export default function ViewOutboundRequestDetailStaff() {
   const { id } = useParams();
@@ -18,11 +28,8 @@ export default function ViewOutboundRequestDetailStaff() {
 
     getOutboundRequestById(id)
       .then((res) => {
-        if (res?.data) {
-          setData(res.data);
-        } else {
-          throw new Error(res?.message || 'Không lấy được dữ liệu');
-        }
+        if (res?.data) setData(res.data);
+        else throw new Error(res?.message || 'Không lấy được dữ liệu');
       })
       .catch((err) => alert('❌ ' + err.message))
       .finally(() => setLoading(false));
@@ -62,32 +69,52 @@ export default function ViewOutboundRequestDetailStaff() {
     return isNaN(d.getTime()) ? 'Không xác định' : d.toLocaleString('vi-VN');
   };
 
-  if (loading) return <p className="p-6">Đang tải dữ liệu...</p>;
-  if (!data) return <p className="p-6 text-red-500">Không tìm thấy yêu cầu.</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-10 w-10 border-b-2 border-green-600 rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return <div className="p-6 text-red-500">Không tìm thấy yêu cầu.</div>;
+  }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">📦 Chi tiết yêu cầu xuất kho</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-800 text-sm">
-            <div><strong>Mã yêu cầu:</strong> {data.outboundRequestCode}</div>
-            <div><strong>Kho:</strong> {data.warehouseName || "Không rõ"}</div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <div className="p-6 max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              📦 Chi tiết yêu cầu xuất kho
+            </h1>
+            <p className="text-gray-600">Xem thông tin chi tiết về yêu cầu</p>
+          </div>
+          <Button variant="outline" onClick={() => router.back()} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
+          </Button>
+        </div>
 
-            <div><strong>Hàng tồn kho:</strong> {data.inventoryName || "Không rõ"}</div>
-            <div><strong>Đơn vị:</strong> {data.unit}</div>
+        {/* Detail card */}
+        <div className="bg-white shadow rounded-2xl p-6 border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-700">
+            <DetailItem icon={<Package className="text-green-600" />} label="Mã yêu cầu" value={data.outboundRequestCode} />
+            <DetailItem icon={<Warehouse className="text-blue-600" />} label="Kho" value={data.warehouseName || "Không rõ"} />
 
-            <div><strong>Số lượng:</strong> {data.requestedQuantity} {data.unit}</div>
-            <div><strong>Trạng thái:</strong> {getStatusBadge(data.status)}</div>
+            <DetailItem icon={<ListOrdered className="text-purple-600" />} label="Hàng tồn kho" value={data.inventoryName || "Không rõ"} />
+            <DetailItem icon={<ClipboardCheck className="text-orange-600" />} label="Số lượng" value={`${data.requestedQuantity} ${data.unit}`} />
 
-            <div><strong>Mục đích xuất kho:</strong> {data.purpose || "Không có"}</div>
-            <div><strong>Lý do:</strong> {data.reason || "Không có"}</div>
+            <DetailItem icon={<FileText className="text-rose-600" />} label="Mục đích xuất kho" value={data.purpose || "Không có"} />
+            <DetailItem icon={<StickyNote className="text-red-600" />} label="Lý do" value={data.reason || "Không có"} />
 
-            <div><strong>Người yêu cầu:</strong> {data.requestedByName || "Không xác định"}</div>
-            <div><strong>Ngày tạo:</strong> {formatDate(data.createdAt)}</div>
-            <div><strong>Cập nhật lần cuối:</strong> {formatDate(data.updatedAt)}</div>
+            <DetailItem icon={<User className="text-indigo-600" />} label="Người yêu cầu" value={data.requestedByName || "Không xác định"} />
+            <DetailItem icon={<CalendarClock className="text-gray-600" />} label="Ngày tạo" value={formatDate(data.createdAt)} />
+
+            <DetailItem icon={<CalendarClock className="text-gray-600" />} label="Cập nhật lần cuối" value={formatDate(data.updatedAt)} />
+            <DetailItem icon={<Package className="text-green-600" />} label="Trạng thái" value={getStatusBadge(data.status)} />
 
             {data.orderItemId && (
               <div className="md:col-span-2">
@@ -102,18 +129,30 @@ export default function ViewOutboundRequestDetailStaff() {
             )}
           </div>
 
+          {/* Action */}
           <div className="pt-6 flex gap-4">
-            <Button variant="outline" onClick={() => router.push('/dashboard/staff/outbounds')}>
-              ← Quay lại danh sách
-            </Button>
+            
             {data.status === 'Pending' && (
               <Button className="bg-green-600 text-white" onClick={handleAccept}>
                 Duyệt yêu cầu
               </Button>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Component hiển thị 1 field với icon
+function DetailItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+      <div className="p-2 bg-gray-100 rounded-md">{icon}</div>
+      <div>
+        <p className="text-xs text-gray-500 font-medium">{label}</p>
+        <p className="font-semibold text-gray-800">{value}</p>
+      </div>
     </div>
   );
 }

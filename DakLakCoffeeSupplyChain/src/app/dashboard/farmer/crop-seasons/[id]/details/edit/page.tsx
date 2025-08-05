@@ -5,13 +5,6 @@ import { AppToast } from "@/components/ui/AppToast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-
-import {
-  CropSeasonDetailStatusMap,
-  CropSeasonDetailStatusValue,
-  CropSeasonDetailStatusNumberToValue,
-  CropSeasonDetailStatusValueToNumber,
-} from "@/lib/constants/cropSeasonDetailStatus";
 import {
   getCropSeasonDetailById,
   updateCropSeasonDetail,
@@ -36,12 +29,11 @@ export default function UpdateCropSeasonDetailDialog({
     plannedQuality: "",
     expectedHarvestStart: "",
     expectedHarvestEnd: "",
-    estimatedYield: "",
-    status: "Planned" as CropSeasonDetailStatusValue,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
   const QUALITY_OPTIONS = [
     { label: "Cà phê đặc sản (SCA 80+)", value: "SCA 80+" },
     { label: "Robusta chất lượng cao (Fine Robusta)", value: "Fine Robusta" },
@@ -61,8 +53,6 @@ export default function UpdateCropSeasonDetailDialog({
           plannedQuality: detail.plannedQuality || "",
           expectedHarvestStart: detail.expectedHarvestStart,
           expectedHarvestEnd: detail.expectedHarvestEnd,
-          estimatedYield: detail.estimatedYield?.toString() || "",
-          status: CropSeasonDetailStatusNumberToValue[detail.status],
         });
       } catch (err) {
         AppToast.error("Không thể tải dữ liệu vùng trồng");
@@ -91,23 +81,17 @@ export default function UpdateCropSeasonDetailDialog({
       plannedQuality,
       expectedHarvestStart,
       expectedHarvestEnd,
-      estimatedYield,
-      status,
     } = form;
-
-    const parsedStatus = CropSeasonDetailStatusValueToNumber[status];
 
     const payload = {
       detailId,
       commitmentDetailId,
       expectedHarvestStart,
       expectedHarvestEnd,
-      estimatedYield: parseFloat(estimatedYield || "0"),
       areaAllocated: parseFloat(areaAllocated),
       plannedQuality,
-      status: parsedStatus,
     };
-    console.log("Submitting payload:", payload);
+
     setIsSubmitting(true);
     try {
       await updateCropSeasonDetail(detailId, payload);
@@ -163,7 +147,6 @@ export default function UpdateCropSeasonDetailDialog({
         </select>
       </div>
 
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Bắt đầu thu hoạch</Label>
@@ -183,32 +166,6 @@ export default function UpdateCropSeasonDetailDialog({
             onChange={handleChange}
           />
         </div>
-      </div>
-
-      <div>
-        <Label>Năng suất ước tính (tấn)</Label>
-        <Input
-          type="number"
-          name="estimatedYield"
-          value={form.estimatedYield}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div>
-        <Label>Trạng thái</Label>
-        <select
-          name="status"
-          value={form.status}
-          onChange={handleChange}
-          className="w-full border rounded px-2 py-2"
-        >
-          {Object.entries(CropSeasonDetailStatusMap).map(([key, val]) => (
-            <option key={key} value={key}>
-              {val.label}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="flex justify-end gap-2 pt-2">

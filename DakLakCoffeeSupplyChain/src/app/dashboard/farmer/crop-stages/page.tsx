@@ -107,7 +107,7 @@ export default function CropStagesDialog() {
                             >
                                 <div className="flex items-center justify-between mb-1">
                                     <h3 className="text-sm font-medium text-orange-700 flex items-center gap-2">
-                                        {stageIconMap[stage.stageCode.toUpperCase() as CropStage["stageCode"]] ?? (
+                                        {stageIconMap[stage.stageCode] ?? (
                                             <HelpCircle className="h-5 w-5 text-gray-400" />
                                         )}
                                         {stage.stageName}

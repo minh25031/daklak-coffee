@@ -32,7 +32,36 @@ export interface FarmingCommitmentItem {
   estimatedDeliveryStart: string;
   estimatedDeliveryEnd: string;
   status: number;
-  farmingCommitmentsDetailsDTOs?: CommitmentDetail[]; // ✅ Quan trọng
+  farmingCommitmentsDetailsDTOs?: CommitmentDetail[];
+}
+
+export interface FarmingCommitment {
+  commitmentId: string;
+  commitmentCode: string;
+  commitmentName: string;
+  farmerId: string;
+  farmerName: string;
+  totalPrice: number;
+  registrationId: string;
+  note: string;
+  commitmentDate: string; // ISO date string
+  committedArea: number; // in hectares
+  committedAt: string; // ISO date string
+  totalCommittedPrice: number; // total price for the committed area
+  farmingCommitmentDetails: Partial<FarmingCommitmentDetail>[];
+  status: string | number; // e.g. "Pending", "Approved", "Rejected"
+}
+
+export interface FarmingCommitmentDetail {
+  commitmentDetailId: string;
+  registrationDetailId: string;
+  confirmedPrice: number; // price per kg
+  committedQuantity: number; // in kg
+  estimatedDeliveryStart: string; // ISO date string
+  estimatedDeliveryEnd: string; // ISO date string
+  note: string;
+  status: string | number; // e.g. "Pending", "Approved", "Rejected"
+  contractDeliveryItemId?: string; // optional, if linked to a delivery contract
 }
 
 // Lấy danh sách cam kết của Farmer
@@ -47,9 +76,9 @@ export async function getFarmerCommitments(): Promise<FarmingCommitmentItem[]> {
 }
 
 // Lấy danh sách cam kết cho Business Manager
-export async function getBusinessCommitments(): Promise<FarmingCommitmentItem[]> {
+export async function getBusinessCommitments(): Promise<FarmingCommitment[]> {
   try {
-    const res = await api.get<FarmingCommitmentItem[]>("/FarmingCommitment/BusinessManager");
+    const res = await api.get<FarmingCommitment[]>("/FarmingCommitment/BusinessManager");
     return res.data;
   } catch (err) {
     console.error("Lỗi getBusinessCommitments:", err);
@@ -79,4 +108,11 @@ export async function getCommitmentById(commitmentId: string): Promise<FarmingCo
     console.error("Lỗi getCommitmentById:", err);
     return null;
   }
+}
+
+export async function createFarmingCommitment(
+  data: Partial<FarmingCommitment>
+): Promise<FarmingCommitment | null> {
+  const res = await api.post<FarmingCommitment>("/FarmingCommitment", data);
+  return res.data;
 }

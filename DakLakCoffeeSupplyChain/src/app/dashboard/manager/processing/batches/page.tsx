@@ -85,8 +85,8 @@ export default function ManagerProcessingBatchesPage() {
       coffeeTypeId: cropSeason ? (cropSeason as any).coffeeTypeId || "" : "",
       cropSeasonId: batch.cropSeasonId,
       methodId: batch.methodId.toString(),
-      inputQuantity: batch.inputQuantity,
-      inputUnit: batch.inputUnit,
+      inputQuantity: batch.totalInputQuantity,
+      inputUnit: "kg",
     });
     setOpenDialog(true);
   };

@@ -9,6 +9,7 @@ import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Plus, Package, Calendar, Clock, Eye, Edit, Filter } from "lucide-react";
+import { ProcessingStatus } from "@/lib/constants/batchStatus";
 
 export default function Batches() {
   const router = useRouter();
@@ -78,13 +79,13 @@ export default function Batches() {
 
   const getStatusInfo = (status: number) => {
     switch (status) {
-      case 0:
+      case ProcessingStatus.NotStarted:
         return { label: "Chờ xử lý", color: "bg-yellow-100 text-yellow-700", icon: "⏳" };
-      case 1:
+      case ProcessingStatus.InProgress:
         return { label: "Đang xử lý", color: "bg-blue-100 text-blue-700", icon: "🔄" };
-      case 2:
+      case ProcessingStatus.Completed:
         return { label: "Hoàn thành", color: "bg-green-100 text-green-700", icon: "✅" };
-      case 3:
+      case ProcessingStatus.Cancelled:
         return { label: "Đã hủy", color: "bg-red-100 text-red-700", icon: "❌" };
       default:
         return { label: "Không xác định", color: "bg-gray-100 text-gray-700", icon: "❓" };
@@ -139,7 +140,7 @@ export default function Batches() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium">Chờ xử lý</p>
-                <p className="text-2xl font-bold text-yellow-600">{statusCounts[0] || 0}</p>
+                <p className="text-2xl font-bold text-yellow-600">{statusCounts[ProcessingStatus.NotStarted] || 0}</p>
               </div>
               <div className="p-3 bg-yellow-100 rounded-xl">
                 <Clock className="w-6 h-6 text-yellow-600" />
@@ -151,7 +152,7 @@ export default function Batches() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium">Đang xử lý</p>
-                <p className="text-2xl font-bold text-blue-600">{statusCounts[1] || 0}</p>
+                <p className="text-2xl font-bold text-blue-600">{statusCounts[ProcessingStatus.InProgress] || 0}</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-xl">
                 <Clock className="w-6 h-6 text-blue-600" />
@@ -163,7 +164,7 @@ export default function Batches() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium">Hoàn thành</p>
-                <p className="text-2xl font-bold text-green-600">{statusCounts[2] || 0}</p>
+                <p className="text-2xl font-bold text-green-600">{statusCounts[ProcessingStatus.Completed] || 0}</p>
               </div>
               <div className="p-3 bg-green-100 rounded-xl">
                 <Package className="w-6 h-6 text-green-600" />
@@ -227,13 +228,14 @@ export default function Batches() {
                   </button>
                   
                   {Object.entries(statusCounts).map(([status, count]) => {
-                    const statusInfo = getStatusInfo(parseInt(status));
+                    const statusNum = parseInt(status, 10);
+                    const statusInfo = getStatusInfo(statusNum);
                     return (
                       <button
                         key={status}
-                        onClick={() => setSelectedStatus(parseInt(status))}
+                        onClick={() => setSelectedStatus(statusNum)}
                         className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
-                          selectedStatus === parseInt(status)
+                          selectedStatus === statusNum
                             ? "bg-green-100 border-green-300 text-green-700"
                             : "bg-gray-50 hover:bg-gray-100 text-gray-700"
                         }`}

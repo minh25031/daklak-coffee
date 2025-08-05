@@ -243,7 +243,7 @@ export default function ViewProcessingBatch() {
               <div>
                 <p className="text-sm text-gray-500 font-medium">Khối lượng vào</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {formatNumber(batch.inputQuantity)} {batch.inputUnit}
+                  {formatNumber(batch.totalInputQuantity)}
                 </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-xl">
@@ -382,7 +382,7 @@ export default function ViewProcessingBatch() {
         <div>
                     <p className="text-sm text-gray-500">Khối lượng vào</p>
                     <p className="font-semibold text-gray-900">
-                      {formatNumber(batch.inputQuantity)} {batch.inputUnit}
+                      {formatNumber(batch.totalInputQuantity)}
                     </p>
                   </div>
                 </div>

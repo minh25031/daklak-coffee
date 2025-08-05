@@ -318,7 +318,7 @@ export default function ProgressDetailPage() {
                   <div>
                     <p className="text-sm text-gray-500">Khối lượng vào</p>
                     <p className="font-semibold text-gray-900">
-                      {new Intl.NumberFormat("vi-VN").format(Number(batch.inputQuantity))} {batch.inputUnit}
+                      {new Intl.NumberFormat("vi-VN").format(Number(batch.totalInputQuantity))}
                     </p>
                   </div>
                 </div>

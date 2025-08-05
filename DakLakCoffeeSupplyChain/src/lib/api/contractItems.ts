@@ -1,7 +1,7 @@
 import api from "./axios";
 
 export interface ContractItemCreateDto {
-  contractId: string;
+  contractId?: string;
   coffeeTypeId: string;
   quantity: number;
   unitPrice: number;
