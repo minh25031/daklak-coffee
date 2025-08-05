@@ -1,14 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { getWarehouseById } from '@/lib/api/warehouses';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import {
+  ArrowLeft,
+  Building2,
+  MapPin,
+  Boxes,
+  User,
+  CalendarDays,
+  RefreshCw,
+  Hash
+} from 'lucide-react';
 
 export default function WarehouseDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
   const [warehouse, setWarehouse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,30 +40,98 @@ export default function WarehouseDetailPage() {
     fetchWarehouse();
   }, [id]);
 
-  if (loading) return <p className="p-4">Đang tải dữ liệu...</p>;
-  if (!warehouse) return <p className="p-4">Không tìm thấy kho.</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-10 w-10 border-b-2 border-orange-500 rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!warehouse) {
+    return <div className="p-6 text-red-600">❌ Không tìm thấy kho.</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-amber-50 p-6">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader className="flex justify-between items-center">
-          <CardTitle>Chi tiết kho</CardTitle>
-          <Link href="/dashboard/staff/warehouses">
-            <Button variant="outline">← Quay lại danh sách</Button>
-          </Link>
-        </CardHeader>
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-amber-50">
+      <div className="p-6 max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-yellow-500 bg-clip-text text-transparent">
+              🏬 Chi tiết kho hàng
+            </h1>
+            <p className="text-gray-600">Xem thông tin chi tiết của kho</p>
+          </div>
+          <Button variant="outline" onClick={() => router.back()} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
+          </Button>
+        </div>
 
-        <CardContent className="space-y-4 text-sm text-gray-700">
-          <p><strong>Mã kho (GUID):</strong> {warehouse.warehouseId}</p>
-          <p><strong>Mã kho:</strong> {warehouse.warehouseCode}</p>
-          <p><strong>Tên kho:</strong> {warehouse.name}</p>
-          <p><strong>Vị trí:</strong> {warehouse.location}</p>
-          <p><strong>Dung lượng:</strong> {warehouse.capacity?.toLocaleString()} kg</p>
-          <p><strong>Người quản lý:</strong> {warehouse.managerName}</p>
-          <p><strong>Ngày tạo:</strong> {new Date(warehouse.createdAt).toLocaleString()}</p>
-          <p><strong>Ngày cập nhật:</strong> {new Date(warehouse.updatedAt).toLocaleString()}</p>
-        </CardContent>
-      </Card>
+        {/* Detail */}
+        <div className="bg-white shadow rounded-2xl p-6 border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-700">
+            <DetailItem
+              icon={<Hash className="text-gray-600" />}
+              label="Mã kho (GUID)"
+              value={warehouse.warehouseId}
+            />
+            <DetailItem
+              icon={<Building2 className="text-orange-600" />}
+              label="Mã kho (Code)"
+              value={warehouse.warehouseCode}
+            />
+            <DetailItem
+              icon={<MapPin className="text-blue-600" />}
+              label="Vị trí"
+              value={warehouse.location}
+            />
+            <DetailItem
+              icon={<Boxes className="text-green-600" />}
+              label="Dung lượng"
+              value={`${warehouse.capacity?.toLocaleString()} kg`}
+            />
+            <DetailItem
+              icon={<User className="text-indigo-600" />}
+              label="Người quản lý"
+              value={warehouse.managerName}
+            />
+            <DetailItem
+              icon={<CalendarDays className="text-rose-600" />}
+              label="Ngày tạo"
+              value={new Date(warehouse.createdAt).toLocaleString('vi-VN')}
+            />
+            <DetailItem
+              icon={<RefreshCw className="text-gray-600" />}
+              label="Ngày cập nhật"
+              value={new Date(warehouse.updatedAt).toLocaleString('vi-VN')}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
+
+// Reusable detail item component
+function DetailItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 bg-gray-100 p-4 rounded-xl border border-gray-200 shadow-sm">
+      <div className="p-2 bg-white rounded-lg shadow">{icon}</div>
+      <div>
+        <p className="text-xs text-gray-500 font-medium">{label}</p>
+        <p className="font-semibold text-gray-900">{value}</p>
+      </div>
+    </div>
+  );
+}
+
