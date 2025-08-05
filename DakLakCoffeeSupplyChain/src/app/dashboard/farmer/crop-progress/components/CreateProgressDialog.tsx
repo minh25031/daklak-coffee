@@ -28,6 +28,7 @@ interface Props {
     detailId: string;
     onSuccess?: () => void;
     existingProgress?: { stageCode: string }[];
+
 }
 
 export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: Props) {
