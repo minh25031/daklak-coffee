@@ -59,7 +59,7 @@ export default function CropStagesDialog() {
     const [loading, setLoading] = useState(false);
 
     const fetchStages = useCallback(async () => {
-        if (stages.length > 0) return; // tránh gọi lại nếu đã có dữ liệu
+        if (stages.length > 0) return;
         setLoading(true);
         try {
             const data = await getCropStages();
@@ -107,7 +107,7 @@ export default function CropStagesDialog() {
                             >
                                 <div className="flex items-center justify-between mb-1">
                                     <h3 className="text-sm font-medium text-orange-700 flex items-center gap-2">
-                                        {stageIconMap[stage.stageCode] ?? (
+                                        {stageIconMap[stage.stageCode.toUpperCase() as CropStage["stageCode"]] ?? (
                                             <HelpCircle className="h-5 w-5 text-gray-400" />
                                         )}
                                         {stage.stageName}
