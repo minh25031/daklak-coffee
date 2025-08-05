@@ -4,6 +4,7 @@ import { getErrorMessage } from '@/lib/utils';
 // ================== TYPES ==================
 
 export type CropSeasonDetail = {
+  stages: any;
   success: any;
   error: string;
   detailId: string;
@@ -27,10 +28,8 @@ export type CropSeasonDetailCreatePayload = {
   commitmentDetailId: string;
   expectedHarvestStart: string;
   expectedHarvestEnd: string;
-  estimatedYield: number;
   areaAllocated: number;
   plannedQuality: string;
-  status: number;
 };
 
 // ✅ Cập nhật vùng trồng – không thay đổi
@@ -39,10 +38,8 @@ export type CropSeasonDetailUpdatePayload = {
   commitmentDetailId?: string; // optional nếu không đổi dòng cam kết
   expectedHarvestStart?: string;
   expectedHarvestEnd?: string;
-  estimatedYield?: number;
   areaAllocated?: number;
   plannedQuality?: string;
-  status: number;
 };
 
 // ================== API FUNCTIONS ==================

@@ -32,8 +32,6 @@ export default function CreateCropSeasonDetailPage() {
     plannedQuality: "",
     expectedHarvestStart: "",
     expectedHarvestEnd: "",
-    estimatedYield: "",
-    status: 0,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,8 +114,6 @@ export default function CreateCropSeasonDetailPage() {
         plannedQuality: form.plannedQuality,
         expectedHarvestStart: form.expectedHarvestStart,
         expectedHarvestEnd: form.expectedHarvestEnd,
-        estimatedYield: parseFloat(form.estimatedYield || "0"),
-        status: Number(form.status),
       });
       AppToast.success("Tạo vùng trồng thành công!");
       router.push(`/dashboard/farmer/crop-seasons/${cropSeasonId}`);
@@ -210,16 +206,6 @@ export default function CreateCropSeasonDetailPage() {
                 required
               />
             </div>
-          </div>
-
-          <div>
-            <Label>Năng suất ước tính (tấn)</Label>
-            <Input
-              type="number"
-              name="estimatedYield"
-              value={form.estimatedYield}
-              onChange={handleChange}
-            />
           </div>
 
           <div className="flex justify-end">

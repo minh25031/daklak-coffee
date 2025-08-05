@@ -27,7 +27,6 @@ export default function EditCropSeasonPage() {
         startDate: '',
         endDate: '',
         note: '',
-        status: 'Active',
     });
 
     const formatDate = (d: string) => new Date(d).toISOString().split('T')[0];
@@ -43,7 +42,6 @@ export default function EditCropSeasonPage() {
                     startDate: formatDate(data.startDate),
                     endDate: formatDate(data.endDate),
                     note: data.note || '',
-                    status: data.status,
                 });
             } catch {
                 AppToast.error('Không thể tải dữ liệu mùa vụ.');
@@ -80,7 +78,6 @@ export default function EditCropSeasonPage() {
                 startDate: form.startDate,
                 endDate: form.endDate,
                 note: form.note,
-                status: CropSeasonStatusValueToNumber[form.status as keyof typeof CropSeasonStatusValueToNumber],
             };
 
             const result = await updateCropSeason(id as string, payload);
@@ -128,21 +125,6 @@ export default function EditCropSeasonPage() {
                     <div>
                         <Label htmlFor="note">Ghi chú</Label>
                         <Textarea name="note" value={form.note} onChange={handleChange} />
-                    </div>
-
-                    <div>
-                        <Label htmlFor="status">Trạng thái</Label>
-                        <select
-                            name="status"
-                            value={form.status}
-                            onChange={handleChange}
-                            className="w-full border rounded px-2 py-2"
-                        >
-                            <option value="Active">Đang hoạt động</option>
-                            <option value="Paused">Tạm dừng</option>
-                            <option value="Completed">Hoàn thành</option>
-                            <option value="Cancelled">Đã huỷ</option>
-                        </select>
                     </div>
 
                     <div className="border-t pt-4">
