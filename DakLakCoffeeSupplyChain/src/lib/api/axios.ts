@@ -29,17 +29,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    // ❌ TIMEOUT
+    // TIMEOUT
     if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
       return Promise.reject(new Error("Yêu cầu mất quá nhiều thời gian, vui lòng thử lại sau."));
     }
 
-    // ❌ KHÔNG CÓ PHẢN HỒI TỪ SERVER (mạng / SSL / CORS)
+    // KHÔNG CÓ PHẢN HỒI TỪ SERVER (mạng / SSL / CORS)
     if (error.request && !error.response) {
       return Promise.reject(new Error("Không nhận được phản hồi từ máy chủ."));
     }
 
-    // ❌ LỖI TỪ BACKEND CÓ RESPONSE
+    // LỖI TỪ BACKEND CÓ RESPONSE
     if (error.response) {
       const status = error.response.status;
       let message = "";
@@ -49,14 +49,15 @@ api.interceptors.response.use(
       } else {
         message =
           error.response.data?.message ||
+          error.response.data ||
           HTTP_ERROR_MESSAGES[status] ||
           `Lỗi HTTP status ${status}`;
       }
 
-      return Promise.reject(new Error(message));
+      return Promise.reject(message);
     }
 
-    // ❌ LỖI KHÔNG XÁC ĐỊNH
+    // LỖI KHÔNG XÁC ĐỊNH
     return Promise.reject(error);
   }
 );
