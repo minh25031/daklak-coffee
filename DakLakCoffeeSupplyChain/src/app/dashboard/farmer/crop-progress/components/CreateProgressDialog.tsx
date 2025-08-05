@@ -31,6 +31,7 @@ interface Props {
 }
 
 export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: Props) {
+    console.log("CreateProgressDialog mounted with detailId:", existingProgress);
     const [note, setNote] = useState("");
     const [stageOptions, setStageOptions] = useState<CropStage[]>([]);
     const [stageId, setStageId] = useState<number | null>(null);

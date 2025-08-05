@@ -14,7 +14,7 @@ export default function InboundRequestListPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 6;
   const router = useRouter();
 
   useEffect(() => {

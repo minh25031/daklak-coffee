@@ -1,26 +1,34 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   getWarehouseReceiptById,
   confirmWarehouseReceipt
 } from "@/lib/api/warehouseReceipt";
-import {
-  Card, CardHeader, CardTitle, CardContent
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowLeft,
+  Package,
+  Boxes,
+  CalendarClock,
+  ClipboardCheck,
+  User,
+  FileText,
+  CheckCircle,
+  Clock
+} from 'lucide-react';
 
 export default function ReceiptDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
   const [receipt, setReceipt] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [confirmedQuantity, setConfirmedQuantity] = useState<number>(0);
-  const [note, setNote] = useState<string>("");
-  const [error, setError] = useState<string>("");
+  const [note, setNote] = useState<string>('');
+  const [error, setError] = useState<string>('');
 
   const isConfirmed = receipt?.note?.includes("[Confirmed at");
 
@@ -71,53 +79,64 @@ export default function ReceiptDetailPage() {
     }
   };
 
-  if (loading) return <p className="p-4">Đang tải...</p>;
-  if (!receipt) return <p className="p-4">Không tìm thấy phiếu nhập kho.</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-10 w-10 border-b-2 border-green-600 rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!receipt) {
+    return <div className="p-6 text-red-600">❌ Không tìm thấy phiếu nhập kho.</div>;
+  }
 
   return (
-    <div className="h-screen overflow-y-auto bg-gray-50 p-6 pb-40">
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader className="flex justify-between items-center">
-          <CardTitle>Chi tiết phiếu nhập kho</CardTitle>
-          <Link href="/dashboard/staff/receipts">
-            <button className="border px-3 py-1 rounded text-sm hover:bg-gray-100">
-              ← Quay lại
-            </button>
-          </Link>
-        </CardHeader>
-        <CardContent className="space-y-3">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-lime-50">
+      <div className="p-6 max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
           <div>
-            <p><strong>Mã phiếu:</strong> {receipt.receiptCode}</p>
-            <p><strong>Kho:</strong> {receipt.warehouseName}</p>
-            <p><strong>Mẻ sơ chế:</strong> {receipt.batchCode}</p>
-            <p><strong>Số lượng nhận:</strong> {receipt.receivedQuantity}kg</p>
-            <p><strong>Ngày nhận:</strong> {new Date(receipt.receivedAt).toLocaleString()}</p>
-            <p><strong>Ghi chú:</strong> {receipt.note || "Không có"}</p>
-            <p><strong>Nhân viên:</strong> {receipt.staffName || "Không rõ"}</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-lime-500 bg-clip-text text-transparent">
+              📥 Chi tiết phiếu nhập kho
+            </h1>
+            <p className="text-gray-600">Mã phiếu: {receipt.receiptCode}</p>
           </div>
-          <Badge
-            className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${
-              isConfirmed
-                ? "bg-green-100 text-green-800"
-                : "bg-yellow-100 text-yellow-800"
-            }`}
-          >
-            {isConfirmed ? "Đã xác nhận" : "Chưa xác nhận"}
-          </Badge>
-        </CardContent>
-      </Card>
+          <Button variant="outline" onClick={() => router.back()} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
+          </Button>
+        </div>
 
-      {!isConfirmed && (
-        <Card className="max-w-3xl mx-auto mt-6">
-          <CardHeader>
-            <CardTitle>Xác nhận phiếu nhập</CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Detail */}
+        <div className="bg-white shadow rounded-2xl p-6 border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-700">
+            <DetailItem icon={<Package className="text-green-600" />} label="Kho" value={receipt.warehouseName} />
+            <DetailItem icon={<Boxes className="text-orange-600" />} label="Mẻ sơ chế" value={receipt.batchCode} />
+            <DetailItem icon={<ClipboardCheck className="text-blue-600" />} label="Số lượng nhận" value={`${receipt.receivedQuantity} kg`} />
+            <DetailItem icon={<CalendarClock className="text-red-500" />} label="Ngày nhận" value={new Date(receipt.receivedAt).toLocaleString('vi-VN')} />
+            <DetailItem icon={<FileText className="text-purple-600" />} label="Ghi chú" value={receipt.note || 'Không có'} />
+            <DetailItem icon={<User className="text-gray-600" />} label="Nhân viên" value={receipt.staffName || 'Không rõ'} />
+            <DetailItem
+              icon={isConfirmed ? <CheckCircle className="text-green-600" /> : <Clock className="text-yellow-600" />}
+              label="Trạng thái"
+              value={
+                isConfirmed
+                  ? <span className="text-green-600 font-semibold">✅ Đã xác nhận</span>
+                  : <span className="text-yellow-600 font-semibold">⏳ Chưa xác nhận</span>
+              }
+            />
+          </div>
+        </div>
+
+        {/* Confirm Form */}
+        {!isConfirmed && (
+          <div className="bg-white shadow rounded-2xl p-6 border border-gray-100 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-700">✅ Xác nhận phiếu nhập</h2>
+
             <form onSubmit={handleConfirm} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Số lượng xác nhận (kg)
-                </label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Số lượng xác nhận (kg)</label>
                 <Input
                   type="number"
                   min={1}
@@ -125,9 +144,10 @@ export default function ReceiptDetailPage() {
                   onChange={(e) => setConfirmedQuantity(Number(e.target.value))}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Ghi chú{" "}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Ghi chú{' '}
                   {confirmedQuantity < receipt.receivedQuantity && (
                     <span className="text-red-500">(bắt buộc)</span>
                   )}
@@ -137,24 +157,41 @@ export default function ReceiptDetailPage() {
                   onChange={(e) => setNote(e.target.value)}
                   placeholder={
                     confirmedQuantity < receipt.receivedQuantity
-                      ? "Vui lòng ghi lý do xác nhận thiếu..."
-                      : "Ghi chú thêm (nếu có)"
+                      ? 'Vui lòng ghi lý do xác nhận thiếu...'
+                      : 'Ghi chú thêm (nếu có)'
                   }
                 />
               </div>
-              {error && <p className="text-red-500">{error}</p>}
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                >
-                  Xác nhận
-                </button>
-              </div>
+
+              {error && <p className="text-red-600">{error}</p>}
+
+              <Button type="submit" className="bg-green-600 text-white">
+                Xác nhận
+              </Button>
             </form>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+      <div className="p-2 bg-gray-100 rounded-md">{icon}</div>
+      <div>
+        <p className="text-xs text-gray-500 font-medium">{label}</p>
+        <p className="font-semibold text-gray-800">{value}</p>
+      </div>
     </div>
   );
 }
