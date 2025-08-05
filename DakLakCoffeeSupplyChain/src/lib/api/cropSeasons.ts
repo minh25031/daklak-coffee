@@ -50,7 +50,6 @@ export interface CropSeasonUpdatePayload {
   startDate: string;
   endDate: string;   
   note?: string | null;
-  status: number;    
 }
 
 
@@ -140,20 +139,26 @@ export async function updateCropSeason(
     return { success: false, error: message };
   }
 }
+export interface CropSeasonCreatePayload {
+  commitmentId: string;
+  seasonName: string;
+  startDate: string;
+  endDate: string;
+  note?: string;
+}
 
 
-export async function createCropSeason(data: Partial<CropSeason>): Promise<ServiceResult> {
+export async function createCropSeason(data: CropSeasonCreatePayload): Promise<ServiceResult> {
   try {
     const res = await api.post<ServiceResult>("/CropSeasons", data);
 
-    // Nếu code là 400 hoặc không có dữ liệu → coi là lỗi
     if (!res.data || res.data.code === 400 || res.data.data === null) {
       throw new Error(res.data.message || "Tạo mùa vụ thất bại.");
     }
 
-    return res.data; // ✅ thành công
+    return res.data;
   } catch (err) {
     console.error("Lỗi createCropSeason:", err);
-    throw err; // để FE hiển thị toast lỗi
+    throw err;
   }
 }
