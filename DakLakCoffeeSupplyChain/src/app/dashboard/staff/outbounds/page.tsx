@@ -125,7 +125,6 @@ export default function StaffOutboundRequestList() {
                         <div className="flex justify-center items-center gap-2">
                           <Eye
                             className="w-5 h-5 text-gray-700 hover:text-blue-600 cursor-pointer"
-                            title="Xem chi tiết"
                             onClick={() =>
                               router.push(`/dashboard/staff/outbounds/${item.outboundRequestId}`)
                             }
@@ -134,12 +133,10 @@ export default function StaffOutboundRequestList() {
                             <>
                               <Check
                                 className="w-5 h-5 text-green-600 hover:text-green-800 cursor-pointer"
-                                title="Duyệt"
                                 onClick={() => handleAccept(item.outboundRequestId)}
                               />
                               <X
                                 className="w-5 h-5 text-red-600 hover:text-red-800 cursor-pointer"
-                                title="Từ chối"
                                 onClick={() => handleReject(item.outboundRequestId)}
                               />
                             </>

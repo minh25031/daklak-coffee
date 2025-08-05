@@ -119,3 +119,21 @@ export function formatUnitPriceByQuantity(unitPrice: number, quantity: number): 
 export function formatDiscount(value: number): string {
   return `${value.toLocaleString()} VND`;
 }
+
+export function formatDateTimeVN(dateStr: string | Date | undefined) {
+  if (!dateStr) return "Chưa xác định";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime()) || d.getFullYear() === 1970) return "Chưa xác định";
+    
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+  } catch {
+    return "Chưa xác định";
+  }
+}

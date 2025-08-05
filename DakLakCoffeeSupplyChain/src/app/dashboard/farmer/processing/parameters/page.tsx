@@ -5,20 +5,12 @@ import {
   getAllProcessingParameters,
   ProcessingParameter,
 } from "@/lib/api/processingParameters";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from "@/components/ui/table";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Sliders } from "lucide-react";
+import { Plus, Search, Sliders, Settings, Eye, Edit, BarChart3 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import PageTitle from "@/components/ui/PageTitle";
 
 export default function ProcessingParametersPage() {
   const [data, setData] = useState<ProcessingParameter[]>([]);
@@ -41,77 +33,215 @@ export default function ProcessingParametersPage() {
   );
 
   return (
-    <div className="min-h-screen bg-amber-50 p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="relative w-full max-w-md">
-          <Input
-            placeholder="Tìm kiếm tham số..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <div className="p-6 max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <PageTitle
+            title="Quản lý tham số sơ chế"
+            subtitle="Thiết lập và quản lý các tham số kỹ thuật cho quá trình sơ chế"
           />
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <Button
+            onClick={() => router.push("/dashboard/farmer/processing/parameters/create")}
+            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Thêm tham số
+          </Button>
         </div>
-        <Button
-          onClick={() =>
-            router.push("/dashboard/farmer/processing/parameters/create")
-          }
-          className="flex gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Thêm tham số
-        </Button>
-      </div>
 
-      <Card className="shadow-md border border-gray-100">
-        <CardHeader className="px-6 py-4 border-b">
-          <CardTitle className="text-lg font-semibold text-gray-800">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Tổng tham số</p>
+                <p className="text-2xl font-bold text-gray-900">{data.length}</p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <Sliders className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
           
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="py-6 text-center text-sm text-gray-500 italic">
-              ⏳ Đang tải dữ liệu...
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Đã tìm thấy</p>
+                <p className="text-2xl font-bold text-green-600">{filtered.length}</p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-xl">
+                <Search className="w-6 h-6 text-green-600" />
+              </div>
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="py-6 text-center text-sm text-gray-500 italic">
-              🚫 Không tìm thấy tham số nào
+          </div>
+          
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Đang hoạt động</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {data.filter(item => item.isActive !== false).length}
+                </p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-xl">
+                <Settings className="w-6 h-6 text-purple-600" />
+              </div>
             </div>
-          ) : (
-            <Table>
-              <TableHeader className="bg-gray-50 text-gray-700">
-                <TableRow>
-                  <TableHead className="px-6 py-3 text-left">
-                    Tên tham số
-                  </TableHead>
-                  <TableHead className="px-6 py-3 text-left">Giá trị</TableHead>
-                  <TableHead className="px-6 py-3 text-left">Đơn vị</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((item) => (
-                  <TableRow
-                    key={item.parameterId}
-                    className="hover:bg-orange-50 transition border-b"
-                  >
-                    <TableCell className="px-6 py-4 font-semibold text-gray-800 flex items-center gap-2">
-                      <Sliders className="w-4 h-4 text-orange-400" />
-                      {item.parameterName}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-gray-700">
-                      {item.value}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-gray-600">
-                      {item.unit}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+          
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Loại tham số</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {new Set(data.map(item => item.parameterType)).size}
+                </p>
+              </div>
+              <div className="p-3 bg-orange-100 rounded-xl">
+                <BarChart3 className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Search className="w-5 h-5 text-gray-600" />
+                Tìm kiếm
+              </h2>
+              <div className="relative">
+                <Input
+                  placeholder="Tìm kiếm tham số..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pr-10 border-gray-200 focus:border-green-500 focus:ring-green-500"
+                />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Thống kê</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">Tất cả</span>
+                    <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
+                      {data.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">Đã tìm thấy</span>
+                    <span className="bg-green-200 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                      {filtered.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main content */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-800">Danh sách tham số</h2>
+                <p className="text-gray-600 mt-1">Hiển thị {filtered.length} trong tổng số {data.length} tham số</p>
+              </div>
+
+              {loading ? (
+                <div className="p-12 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                  <p className="text-lg text-gray-600 font-medium">Đang tải dữ liệu...</p>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Sliders className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">Không tìm thấy tham số nào</h3>
+                  <p className="text-gray-500">Thử thay đổi từ khóa tìm kiếm hoặc thêm tham số mới.</p>
+                </div>
+              ) : (
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {filtered.map((item) => (
+                      <div
+                        key={item.parameterId}
+                        className="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 hover:border-orange-300 transition-all duration-300 hover:shadow-lg group"
+                      >
+                        <div className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 text-lg mb-2">
+                                {item.parameterName}
+                              </h3>
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <Sliders className="w-4 h-4" />
+                                <span>{item.parameterType}</span>
+                              </div>
+                            </div>
+                            <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors duration-200">
+                              <Settings className="w-5 h-5 text-orange-600" />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <BarChart3 className="w-4 h-4" />
+                              <span className="font-semibold text-gray-900">{item.parameterValue} {item.unit}</span>
+                            </div>
+                            
+                            {item.description && (
+                              <div className="flex items-start gap-2">
+                                <BarChart3 className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                  {item.description.length > 50 
+                                    ? `${item.description.substring(0, 50)}...` 
+                                    : item.description}
+                                </p>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center gap-2">
+                              <Badge variant={item.isActive !== false ? "default" : "secondary"}>
+                                {item.isActive !== false ? "Hoạt động" : "Không hoạt động"}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                                                     <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+                               onClick={() => router.push(`/dashboard/farmer/processing/parameters/${item.parameterId}`)}
+                             >
+                               <Eye className="w-4 h-4" />
+                               Xem chi tiết
+                             </Button>
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                               onClick={() => router.push(`/dashboard/farmer/processing/parameters/${item.parameterId}/edit`)}
+                             >
+                               <Edit className="w-4 h-4" />
+                               Sửa
+                             </Button>
+                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

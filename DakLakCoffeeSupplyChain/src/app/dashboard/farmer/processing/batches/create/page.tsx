@@ -25,6 +25,8 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { ArrowLeft, Package, Coffee, Calendar, Settings, Info, Loader2, CheckCircle } from "lucide-react";
+import PageTitle from "@/components/ui/PageTitle";
 
 export default function CreateProcessingBatchPage() {
   const router = useRouter();
@@ -46,34 +48,40 @@ export default function CreateProcessingBatchPage() {
 
   useEffect(() => {
     async function fetchInitial() {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        const userId = payload?.userId || payload?.UserId || payload?.sub;
-        if (userId) {
-          setForm((prev) => ({ ...prev, farmerId: userId }));
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const userId = payload?.userId || payload?.UserId || payload?.sub;
+          if (userId) {
+            setForm((prev) => ({ ...prev, farmerId: userId }));
+          }
+        } catch (err) {
+          console.error("❌ Lỗi giải mã token:", err);
         }
-      } catch (err) {
-        console.error("❌ Lỗi giải mã token:", err);
       }
     }
-  } fetchInitial();
-},
-  []);
+    fetchInitial();
+  }, []);
 
   // ✅ Load các dropdown cần thiết
   useEffect(() => {
     async function fetchData() {
       try {
-        const [cropSeasons, methods] = await Promise.all([
+        setLoading(true);
+        const [cropSeasonsData, methodsData] = await Promise.all([
           getCropSeasonsForCurrentUser({ page: 1, pageSize: 100 }),
           getAllProcessingMethods(),
         ]);
-        setCropSeasons(cropSeasons);
-        setMethods(methods);
+        
+        console.log('Crop Seasons:', cropSeasonsData);
+        console.log('Methods:', methodsData);
+        
+        setCropSeasons(cropSeasonsData);
+        setMethods(methodsData);
       } catch (err) {
         console.error("❌ Lỗi tải dữ liệu:", err);
+        AppToast.error("Không thể tải dữ liệu cần thiết");
       } finally {
         setLoading(false);
       }
@@ -88,10 +96,12 @@ export default function CreateProcessingBatchPage() {
       setLoadingCoffeeTypes(true);
       try {
         const types = await getAvailableCoffeeTypes(form.cropSeasonId);
+        console.log('Coffee Types for season:', form.cropSeasonId, types);
         setCoffeeTypes(types);
       } catch (err) {
         console.error("❌ Lỗi load loại cà phê:", err);
         setCoffeeTypes([]);
+        AppToast.error("Không thể tải danh sách loại cà phê");
       } finally {
         setLoadingCoffeeTypes(false);
       }
@@ -141,93 +151,228 @@ export default function CreateProcessingBatchPage() {
     }
   };
 
-  if (loading)
-    return <div className="p-8 text-center">Đang tải dữ liệu...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+        <div className="p-6 max-w-4xl mx-auto">
+          {/* Header Skeleton */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Form Skeleton */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6">
+              <div className="h-6 bg-white/20 rounded w-48 animate-pulse"></div>
+            </div>
+            <div className="p-6 space-y-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                  <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Loading Indicator */}
+          <div className="text-center space-y-4 mt-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <p className="text-lg text-gray-600 font-medium">Đang tải dữ liệu...</p>
+            <p className="text-sm text-gray-500">Đang tải danh sách mùa vụ và phương pháp sơ chế</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold mb-6">Tạo lô sơ chế mới</h1>
-      <div className="space-y-4 bg-white rounded-xl shadow p-6">
-        {/* Mùa vụ */}
-        <div>
-          <label className="block mb-1 font-medium">Mùa vụ *</label>
-          <Select
-            value={form.cropSeasonId}
-            onValueChange={(v) => handleChange("cropSeasonId", v)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Chọn mùa vụ" />
-            </SelectTrigger>
-            <SelectContent>
-              {cropSeasons.map((cs) => (
-                <SelectItem key={cs.cropSeasonId} value={cs.cropSeasonId}>
-                  {cs.seasonName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Loại cà phê */}
-        <div>
-          <label className="block mb-1 font-medium">Loại cà phê *</label>
-          <Select
-            value={form.coffeeTypeId}
-            onValueChange={(v) => handleChange("coffeeTypeId", v)}
-            disabled={!form.cropSeasonId || loadingCoffeeTypes}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Chọn loại cà phê" />
-            </SelectTrigger>
-            <SelectContent>
-              {coffeeTypes.map((ct) => (
-                <SelectItem key={ct.coffeeTypeId} value={ct.coffeeTypeId}>
-                  {ct.typeName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {form.cropSeasonId && coffeeTypes.length === 0 && (
-            <p className="text-sm text-yellow-600 mt-2">
-              Không có loại cà phê nào khả dụng trong mùa vụ này.
-            </p>
-          )}
-        </div>
-
-        {/* Mã lô */}
-        <div>
-          <label className="block mb-1 font-medium">Mã lô *</label>
-          <Input
-            value={form.batchCode}
-            onChange={(e) => handleChange("batchCode", e.target.value)}
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <div className="p-6 max-w-4xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <PageTitle
+            title="Tạo lô sơ chế mới"
+            subtitle="Thêm lô sơ chế mới vào hệ thống"
           />
-        </div>
-
-        {/* Phương pháp */}
-        <div>
-          <label className="block mb-1 font-medium">Phương pháp sơ chế *</label>
-          <Select
-            value={form.methodId}
-            onValueChange={(v) => handleChange("methodId", v)}
+          <Button 
+            variant="outline" 
+            onClick={() => router.back()}
+            className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
           >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Chọn phương pháp" />
-            </SelectTrigger>
-            <SelectContent>
-              {methods.map((m) => (
-                <SelectItem key={m.methodId.toString()} value={m.methodId.toString()}>
-                  {m.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex justify-end">
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Đang tạo..." : "Tạo lô sơ chế"}
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
           </Button>
         </div>
+
+        {/* Info Card */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Info className="w-5 h-5 text-blue-600" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-semibold text-blue-900">Hướng dẫn tạo lô sơ chế</h3>
+              <p className="text-sm text-blue-700">
+                Vui lòng chọn mùa vụ trước, sau đó chọn loại cà phê tương ứng. 
+                Nhập mã lô và chọn phương pháp sơ chế phù hợp.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6 text-white">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Thông tin lô sơ chế
+            </h2>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            {/* Mùa vụ */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-green-600" />
+                Mùa vụ *
+              </label>
+              <Select
+                value={form.cropSeasonId}
+                onValueChange={(v) => handleChange("cropSeasonId", v)}
+              >
+                <SelectTrigger className="w-full h-12 border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors">
+                  <SelectValue placeholder="Chọn mùa vụ" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cropSeasons.map((cs) => (
+                    <SelectItem key={cs.cropSeasonId} value={cs.cropSeasonId}>
+                      {cs.seasonName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {cropSeasons.length === 0 && (
+                <p className="text-sm text-red-600">Không có mùa vụ nào khả dụng</p>
+              )}
+            </div>
+
+            {/* Loại cà phê */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Coffee className="w-4 h-4 text-orange-600" />
+                Loại cà phê *
+              </label>
+              <Select
+                value={form.coffeeTypeId}
+                onValueChange={(v) => handleChange("coffeeTypeId", v)}
+                disabled={!form.cropSeasonId || loadingCoffeeTypes}
+              >
+                <SelectTrigger className="w-full h-12 border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors">
+                  <SelectValue placeholder={loadingCoffeeTypes ? "Đang tải..." : "Chọn loại cà phê"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {coffeeTypes.map((ct) => (
+                    <SelectItem key={ct.coffeeTypeId} value={ct.coffeeTypeId}>
+                      {ct.typeName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {loadingCoffeeTypes && (
+                <div className="flex items-center gap-2 text-sm text-blue-600">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Đang tải danh sách loại cà phê...
+                </div>
+              )}
+              {form.cropSeasonId && !loadingCoffeeTypes && coffeeTypes.length === 0 && (
+                <p className="text-sm text-yellow-600 flex items-center gap-2">
+                  <Info className="w-4 h-4" />
+                  Không có loại cà phê nào khả dụng trong mùa vụ này.
+                </p>
+              )}
+            </div>
+
+            {/* Mã lô */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Package className="w-4 h-4 text-purple-600" />
+                Mã lô *
+              </label>
+              <Input
+                value={form.batchCode}
+                onChange={(e) => handleChange("batchCode", e.target.value)}
+                placeholder="Nhập mã lô sơ chế"
+                className="h-12 border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors"
+              />
+            </div>
+
+            {/* Phương pháp */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Settings className="w-4 h-4 text-indigo-600" />
+                Phương pháp sơ chế *
+              </label>
+              <Select
+                value={form.methodId}
+                onValueChange={(v) => handleChange("methodId", v)}
+              >
+                <SelectTrigger className="w-full h-12 border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors">
+                  <SelectValue placeholder="Chọn phương pháp" />
+                </SelectTrigger>
+                <SelectContent>
+                  {methods.map((m) => (
+                    <SelectItem key={m.methodId.toString()} value={m.methodId.toString()}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {methods.length === 0 && (
+                <p className="text-sm text-red-600">Không có phương pháp sơ chế nào khả dụng</p>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end pt-4">
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting}
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Đang tạo...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Tạo lô sơ chế
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Debug Info (chỉ hiển thị trong development) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <h3 className="font-semibold text-gray-900 mb-2">Debug Info:</h3>
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>Crop Seasons: {cropSeasons.length}</p>
+              <p>Coffee Types: {coffeeTypes.length}</p>
+              <p>Methods: {methods.length}</p>
+              <p>Selected Season: {form.cropSeasonId}</p>
+              <p>Selected Coffee Type: {form.coffeeTypeId}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

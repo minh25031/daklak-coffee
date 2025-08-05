@@ -2,10 +2,19 @@ import api from "./axios";
 
 export interface ProcessingMethod {
   methodId: number;
-
   methodCode: string;
   name: string;
   description: string;
+  steps: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProcessingMethodData {
+  methodCode: string;
+  name: string;
+  description: string;
+  steps: string;
 }
 
 export async function getAllProcessingMethods(): Promise<ProcessingMethod[]> {
@@ -18,8 +27,18 @@ export async function getAllProcessingMethods(): Promise<ProcessingMethod[]> {
   }
 }
 
+export async function getProcessingMethodById(id: number): Promise<ProcessingMethod> {
+  try {
+    const res = await api.get(`/ProcessingMethod/${id}`);
+    return res.data;
+  } catch (err) {
+    console.error("Lỗi getProcessingMethodById:", err);
+    throw err;
+  }
+}
+
 export async function createProcessingMethod(
-  data: Omit<ProcessingMethod, "methodId">
+  data: CreateProcessingMethodData
 ) {
   try {
     const res = await api.post("/ProcessingMethod", data);
@@ -32,7 +51,7 @@ export async function createProcessingMethod(
 
 export async function updateProcessingMethod(
   id: number,
-  data: Omit<ProcessingMethod, "methodId">
+  data: CreateProcessingMethodData
 ) {
   try {
     const res = await api.put(`/ProcessingMethod/${id}`, data);

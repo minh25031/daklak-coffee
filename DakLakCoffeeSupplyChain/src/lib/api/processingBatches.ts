@@ -4,6 +4,7 @@ import { ProcessingBatchProgress } from "./processingBatchProgress";
 
 
 export interface ProcessingProgress {
+  progressId: string;
   stageName: string;
   stageDescription: string;
   outputQuantity: string;
@@ -14,7 +15,7 @@ export interface ProcessingProgress {
   photoUrl?: string | null;
   videoUrl?: string | null;
   updatedByName: string;
-stepIndex: number;
+  stepIndex: number;
 }
 
 export interface ProcessingProduct {
@@ -35,7 +36,7 @@ export interface CoffeeType {
 
 
 export interface ProcessingBatch {
-  coffeeTypeId: string ;
+  coffeeTypeId: string;
   batchId: string;
   batchCode: string;
   systemBatchCode: string;
@@ -53,7 +54,6 @@ export interface ProcessingBatch {
   createdAt: string;
   progresses: ProcessingBatchProgress[];
   products: ProcessingProduct[];
-    
 }
 export interface CreateProcessingBatchPayload {
   coffeeTypeId: string;
@@ -61,6 +61,14 @@ export interface CreateProcessingBatchPayload {
   batchCode: string;
   methodId: number;
 }
+
+export interface UpdateProcessingBatchData {
+  coffeeTypeId: string;
+  cropSeasonId: string;
+  batchCode: string;
+  methodId: number;
+}
+
 export async function getAllProcessingBatches(): Promise<ProcessingBatch[] | null> {
   try {
     const res = await api.get("/ProcessingBatch");
@@ -99,21 +107,19 @@ export async function createProcessingBatch(
     throw err;
   }
 }
-export async function getProcessingBatchById(
-  id: string
-): Promise<ProcessingBatch> {
+export async function getProcessingBatchById(id: string): Promise<ProcessingBatch> {
   try {
-    const res = await api.get(`/ProcessingBatch/${id}`);
+    const res = await api.get(`/ProcessingBatch/${id}/full-details`);
     return res.data;
   } catch (err) {
-    console.error("Lỗi getProcessingBatchById:", err);
+    console.error("❌ Lỗi getProcessingBatchById:", err);
     throw err;
   }
 }
 
 export async function updateProcessingBatch(
   id: string,
-  data: Omit<ProcessingBatch, "batchId">
+  data: UpdateProcessingBatchData
 ): Promise<ProcessingBatch> {
   try {
     const res = await api.put(`/ProcessingBatch/${id}`, data);
