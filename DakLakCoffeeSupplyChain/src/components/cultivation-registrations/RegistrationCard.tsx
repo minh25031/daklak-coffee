@@ -13,6 +13,7 @@ import {
 import { getErrorMessage } from "@/lib/utils";
 import { ConfirmDialog } from "../ui/confirmDialog";
 import { FiCheck } from "react-icons/fi";
+import { useRouter } from "next/dist/client/components/navigation";
 
 const STORAGE_KEY_PREFIX = "registration-expanded-";
 
@@ -39,6 +40,7 @@ export default function RegistrationCard({
   cultivationRegistrationViewDetailsDtos,
   onUpdate,
 }: RegistrationCardProps) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [loadingApprovalId, setLoadingApprovalId] = useState<string | null>(
     null
@@ -189,9 +191,24 @@ export default function RegistrationCard({
                 {/* Nút Duyệt */}
                 <div className='flex justify-end'>
                   {isApproved ? (
-                    <Button size='sm' disabled className='cursor-default'>
+                    <>
+                    <Button size='sm' disabled className='cursor-default mr-2'>
                       Đã duyệt
                     </Button>
+
+                    <Button
+                        size="sm"
+                        variant="secondary" // hoặc style bạn muốn
+                        onClick={() => {
+                          // Chuyển trang tạo cam kết, truyền query params
+                          router.push(
+                            `/dashboard/manager/farming-commitments/create?registrationId=${registrationId}&registrationDetailId=${detail.cultivationRegistrationDetailId}&wantedPrice=${detail.wantedPrice}&estimatedYield=${detail.estimatedYield}`
+                          );
+                        }}
+                      >
+                        Tạo cam kết
+                      </Button>
+                    </>
                   ) : (
                     <Button
                       size='sm'

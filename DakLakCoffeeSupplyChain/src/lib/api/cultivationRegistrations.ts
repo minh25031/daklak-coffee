@@ -1,7 +1,7 @@
 import { ParamValue } from "next/dist/server/request/params";
 import api from "./axios";
 
-export type CultivationRegistration = {
+export interface CultivationRegistration {
   registrationId: string;
   registrationCode: string;
   planId: string;
@@ -13,9 +13,9 @@ export type CultivationRegistration = {
   registeredArea: number; // in hectares
   registeredAt: string; // ISO date string
   totalWantedPrice: number; // total price for the registered area
-  cultivationRegistrationViewDetailsDtos: Partial<CultivationRegistrationDetail>[];
+  cultivationRegistrationDetails: Partial<CultivationRegistrationDetail>[];
 };
-export type CultivationRegistrationDetail = {
+export interface CultivationRegistrationDetail {
   cultivationRegistrationDetailId: string;
   registrationId: string;
   planDetailId: string;
@@ -32,6 +32,11 @@ export type CultivationRegistrationDetail = {
 
 export async function getCultivationRegistrationsByPlanId(planId: ParamValue): Promise<CultivationRegistration[]> {
   const response = await api.get(`/CultivationRegistration/Available/${planId}`);
+  return response.data;
+}
+
+export async function getCultivationRegistrationById(registrationId: string): Promise<CultivationRegistration | null> {
+  const response = await api.get(`/CultivationRegistration/${registrationId}`);
   return response.data;
 }
 
