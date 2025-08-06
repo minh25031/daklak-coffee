@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +14,6 @@ import { FiTrash2 } from "react-icons/fi";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
   createFarmingCommitment,
-  FarmingCommitment,
 } from "@/lib/api/farmingCommitments";
 import {
   CultivationRegistration,
@@ -73,12 +72,10 @@ export default function CreateFarmingCommitmentPage() {
       }));
 
       if (paramRegistrationId) fetchRegistration(paramRegistrationId);
-      console.log("Registration ID:", paramRegistrationId);
-      //console.log("registration", registration);
     }
 
     //fetchPlan(paramRegistrationId);
-  }, [paramRegistrationId, paramRegistrationDetailId]);
+  }, [paramRegistrationId, paramRegistrationDetailId, paramWantedPrice, paramEstimatedYield]);
 
   //#region API Calls
 
@@ -145,6 +142,7 @@ export default function CreateFarmingCommitmentPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  //#region Form Handlers
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -223,6 +221,8 @@ export default function CreateFarmingCommitmentPage() {
       AppToast.error(getErrorMessage(error) || "Tạo cam kết thất bại.");
     }
   };
+
+  //#endregion
 
   return (
     <div className='max-w-2xl mx-auto py-10 px-4'>
