@@ -23,7 +23,7 @@ export default function FarmingCommitmentCard({
       </td>
 
       <td className='px-4 py-3'>{commitment.farmerName}</td>
-      <td className='px-4 py-3'>{commitment.totalPrice}</td>
+      <td className='px-4 py-3'>{commitment.totalPrice.toLocaleString()}</td>
 
       <td className='px-4 py-3'>
         <Badge
@@ -46,7 +46,7 @@ export default function FarmingCommitmentCard({
       </td>
 
       <td className='px-4 py-3'>
-        {new Date(commitment.commitmentDate).toLocaleDateString("vi-VN")}
+        {commitment.commitmentDate.toLocaleDateString("vi-VN")}
       </td>
 
       <td className='px-4 py-3 text-center align-middle'>

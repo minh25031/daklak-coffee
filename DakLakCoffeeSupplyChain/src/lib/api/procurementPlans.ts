@@ -1,5 +1,5 @@
 import api from "./axios";
-import { FarmingCommitmentItem } from "./farmingCommitments";
+import { FarmingCommitment } from "./farmingCommitments";
 
 export type ProcurementPlan = {
   planId: string;
@@ -23,7 +23,7 @@ export type ProcurementPlan = {
   updatedAt: string;
   status: string | number;
   procurementPlansDetails: Partial<ProcurementPlansDetails>[];
-  commitments: Partial<FarmingCommitmentItem>[];
+  commitments: Partial<FarmingCommitment>[];
 };
 
 export type ProcurementPlansDetails = {
