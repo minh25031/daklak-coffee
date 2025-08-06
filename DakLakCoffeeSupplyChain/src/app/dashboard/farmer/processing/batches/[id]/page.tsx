@@ -1,19 +1,18 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   getProcessingBatchById,
   ProcessingBatch,
 } from "@/lib/api/processingBatches";
-import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
-import { getAllProcessingWastes, ProcessingWaste } from "@/lib/api/processingBatchWastes";
 import StatusBadge from "@/components/processing-batches/StatusBadge";
 import { 
   Loader, 
   PlusCircle, 
   ArrowLeft, 
+  ArrowRight,
   Package, 
   Calendar, 
   User, 
@@ -26,7 +25,9 @@ import {
   AlertCircle,
   FileImage,
   Video,
-  Scale
+  Scale,
+  X,
+  Maximize2
 } from "lucide-react";
 import {
   Dialog,
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ProcessingBatchProgress } from "@/lib/api/processingBatchProgress";
+import { ProcessingWaste } from "@/lib/api/processingBatchWastes";
 import CreateProcessingProgressForm from "@/components/processing-batches/CreateProcessingProgressForm";
 import AdvanceProcessingProgressForm from "@/components/processing-batches/AdvanceProcessingProgressForm";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
@@ -49,32 +51,151 @@ export default function ViewProcessingBatch() {
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openAdvanceModal, setOpenAdvanceModal] = useState(false);
   const [latestProgress, setLatestProgress] = useState<ProcessingBatchProgress | null>(null);
-  const [coffeeTypes, setCoffeeTypes] = useState<CoffeeType[]>([]);
-  const [coffeeTypesLoading, setCoffeeTypesLoading] = useState(false);
-  const [wastes, setWastes] = useState<ProcessingWaste[]>([]);
-  const [wastesLoading, setWastesLoading] = useState(false);
+  
+  // Media viewer dialog states
+  const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    url: string;
+    type: 'image' | 'video';
+    caption?: string;
+  } | null>(null);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [allMedia, setAllMedia] = useState<Array<{
+    url: string;
+    type: 'image' | 'video';
+    caption?: string;
+  }>>([]);
+
+  // Tối ưu: Cache các hàm format để tránh tạo lại
+  const formatWeight = useCallback((kg: number | string | undefined): string => {
+    const number = Number(kg);
+    if (isNaN(number)) return "-";
+    if (number >= 1000) return `${(number / 1000).toFixed(2)} tấn`;
+    if (number >= 100) return `${(number / 100).toFixed(1)} tạ`;
+    return `${new Intl.NumberFormat("vi-VN").format(number)} kg`;
+  }, []);
+
+  const formatNumber = useCallback((value: number | string | undefined) => {
+    const number = Number(value);
+    return isNaN(number)
+      ? "-"
+      : new Intl.NumberFormat("vi-VN").format(number);
+  }, []);
+
+  // Tối ưu: Cache tính toán totalOutputQuantity từ API response
+  const totalOutputQuantity = useMemo(() => {
+    if (!batch?.progresses) return 0;
+    return batch.progresses.reduce((sum, progress) => {
+      const quantity = Number(progress.outputQuantity?.toString().replace(/[^\d.]/g, ""));
+      return sum + (isNaN(quantity) ? 0 : quantity);
+    }, 0);
+  }, [batch?.progresses]);
+
+  // Tối ưu: Cache tính toán wastes từ progresses
+  const allWastes = useMemo(() => {
+    if (!batch?.progresses) return [];
+    const wastes: ProcessingWaste[] = [];
+    batch.progresses.forEach(progress => {
+      if (progress.wastes && progress.wastes.length > 0) {
+        wastes.push(...progress.wastes);
+      }
+    });
+    return wastes;
+  }, [batch?.progresses]);
+
+  // Hàm mở media viewer với tất cả media
+  const openMediaViewer = useCallback((media: { url: string; type: 'image' | 'video'; caption?: string }, mediaIndex: number) => {
+    // Thu thập tất cả media từ tất cả progresses
+    const allMediaList: Array<{ url: string; type: 'image' | 'video'; caption?: string }> = [];
+    let targetIndex = 0;
+    let foundTarget = false;
+    
+    batch?.progresses?.forEach(progress => {
+      if (progress.mediaFiles) {
+        progress.mediaFiles.forEach((mediaFile, idx) => {
+          allMediaList.push({
+            url: mediaFile.mediaUrl,
+            type: mediaFile.mediaType,
+            caption: mediaFile.caption
+          });
+          
+          // Tìm index của media được click
+          if (mediaFile.mediaUrl === media.url && !foundTarget) {
+            targetIndex = allMediaList.length - 1;
+            foundTarget = true;
+          }
+        });
+      }
+    });
+
+    setAllMedia(allMediaList);
+    setCurrentMediaIndex(targetIndex);
+    setSelectedMedia(media);
+    setMediaViewerOpen(true);
+  }, [batch?.progresses]);
+
+  // Hàm chuyển media
+  const navigateMedia = useCallback((direction: 'prev' | 'next') => {
+    if (allMedia.length === 0) return;
+    
+    let newIndex = currentMediaIndex;
+    if (direction === 'prev') {
+      newIndex = currentMediaIndex > 0 ? currentMediaIndex - 1 : allMedia.length - 1;
+    } else {
+      newIndex = currentMediaIndex < allMedia.length - 1 ? currentMediaIndex + 1 : 0;
+    }
+    
+    setCurrentMediaIndex(newIndex);
+    setSelectedMedia(allMedia[newIndex]);
+  }, [allMedia, currentMediaIndex]);
+
+  // Xử lý keyboard events
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!mediaViewerOpen) return;
+      
+      switch (event.key) {
+        case 'Escape':
+          setMediaViewerOpen(false);
+          break;
+        case 'ArrowLeft':
+          navigateMedia('prev');
+          break;
+        case 'ArrowRight':
+          navigateMedia('next');
+          break;
+        case 'ArrowUp':
+        case 'ArrowDown':
+          // Có thể thêm zoom in/out cho ảnh
+          break;
+      }
+    };
+
+    if (mediaViewerOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mediaViewerOpen, navigateMedia]);
 
   useEffect(() => {
     const fetchBatch = async () => {
       if (typeof id === "string") {
         try {
-        setLoading(true);
+          setLoading(true);
           setError(null);
-        const data = await getProcessingBatchById(id);
-        setBatch(data);
           
-          // Lấy coffee types và wastes
-          const [coffeeTypesData, wastesData] = await Promise.all([
-            getCoffeeTypes(),
-            getAllProcessingWastes()
-          ]);
-          setCoffeeTypes(coffeeTypesData || []);
-          setWastes(wastesData || []);
+          // Tối ưu: Chỉ cần fetch 1 API call thay vì 3
+          const data = await getProcessingBatchById(id);
+          setBatch(data);
+          
         } catch (err: any) {
           console.error('Error fetching batch:', err);
           setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
         } finally {
-        setLoading(false);
+          setLoading(false);
         }
       }
     };
@@ -89,34 +210,6 @@ export default function ViewProcessingBatch() {
       setLatestProgress(latest);
     }
   }, [batch]);
-
-  const formatWeight = (kg: number | string | undefined): string => {
-    const number = Number(kg);
-    if (isNaN(number)) return "-";
-    if (number >= 1000) return `${(number / 1000).toFixed(2)} tấn`;
-    if (number >= 100) return `${(number / 100).toFixed(1)} tạ`;
-    return `${new Intl.NumberFormat("vi-VN").format(number)} kg`;
-  };
-
-  const formatNumber = (value: number | string | undefined) => {
-    const number = Number(value);
-    return isNaN(number)
-      ? "-"
-      : new Intl.NumberFormat("vi-VN").format(number);
-  };
-
-  // Tính tổng khối lượng ra từ progresses
-  const totalOutputQuantity =
-    batch?.progresses?.reduce((sum, progress) => {
-      const quantity = Number(progress.outputQuantity?.toString().replace(/[^\d.]/g, ""));
-      return sum + (isNaN(quantity) ? 0 : quantity);
-    }, 0) || 0;
-
-  const getCoffeeTypeName = (coffeeTypeId: string) => {
-    if (!coffeeTypeId) return "Chưa xác định";
-    const coffeeType = coffeeTypes.find(ct => ct.coffeeTypeId === coffeeTypeId);
-    return coffeeType ? coffeeType.typeName : `ID: ${coffeeTypeId}`;
-  };
 
   if (loading) {
     return (
@@ -282,7 +375,7 @@ export default function ViewProcessingBatch() {
           
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
             <div className="flex items-center justify-between">
-        <div>
+              <div>
                 <p className="text-sm text-gray-500 font-medium">Trạng thái</p>
                 <div className="mt-1">
                   <StatusBadge status={batch.status} />
@@ -320,8 +413,8 @@ export default function ViewProcessingBatch() {
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <Package className="w-5 h-5 text-blue-600" />
-        </div>
-        <div>
+                  </div>
+                  <div>
                     <p className="text-sm text-gray-500">Mã hệ thống</p>
                     <p className="font-semibold text-gray-900">{batch.systemBatchCode}</p>
                   </div>
@@ -330,8 +423,8 @@ export default function ViewProcessingBatch() {
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-orange-100 rounded-lg">
                     <Calendar className="w-5 h-5 text-orange-600" />
-        </div>
-        <div>
+                  </div>
+                  <div>
                     <p className="text-sm text-gray-500">Mùa vụ</p>
                     <p className="font-semibold text-gray-900">{batch.cropSeasonName}</p>
                   </div>
@@ -340,8 +433,8 @@ export default function ViewProcessingBatch() {
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-100 rounded-lg">
                     <User className="w-5 h-5 text-purple-600" />
-        </div>
-        <div>
+                  </div>
+                  <div>
                     <p className="text-sm text-gray-500">Nông dân</p>
                     <p className="font-semibold text-gray-900">{batch.farmerName}</p>
                   </div>
@@ -352,34 +445,30 @@ export default function ViewProcessingBatch() {
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-indigo-100 rounded-lg">
                     <Settings className="w-5 h-5 text-indigo-600" />
-        </div>
-        <div>
+                  </div>
+                  <div>
                     <p className="text-sm text-gray-500">Phương pháp sơ chế</p>
                     <p className="font-semibold text-gray-900">{batch.methodName}</p>
                   </div>
                 </div>
                 
-                                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-red-100 rounded-lg">
-                     <Coffee className="w-5 h-5 text-red-600" />
-        </div>
-        <div>
-                     <p className="text-sm text-gray-500">Loại cà phê</p>
-                     <p className="font-semibold text-gray-900">
-                       {coffeeTypesLoading ? (
-                         <span className="text-gray-400">Đang tải...</span>
-                       ) : (
-                         getCoffeeTypeName(batch.coffeeTypeId)
-                       )}
-                     </p>
-                   </div>
-                 </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <Coffee className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Loại cà phê</p>
+                    <p className="font-semibold text-gray-900">
+                      {batch.typeName || "Chưa xác định"}
+                    </p>
+                  </div>
+                </div>
                 
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-yellow-100 rounded-lg">
                     <Scale className="w-5 h-5 text-yellow-600" />
-        </div>
-        <div>
+                  </div>
+                  <div>
                     <p className="text-sm text-gray-500">Khối lượng vào</p>
                     <p className="font-semibold text-gray-900">
                       {formatNumber(batch.totalInputQuantity)}
@@ -390,11 +479,11 @@ export default function ViewProcessingBatch() {
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
                     <Calendar className="w-5 h-5 text-green-600" />
-        </div>
-        <div>
+                  </div>
+                  <div>
                     <p className="text-sm text-gray-500">Ngày tạo</p>
                     <p className="font-semibold text-gray-900">
-          {new Date(batch.createdAt).toLocaleString("vi-VN")}
+                      {new Date(batch.createdAt).toLocaleString("vi-VN")}
                     </p>
                   </div>
                 </div>
@@ -412,33 +501,33 @@ export default function ViewProcessingBatch() {
                 Tiến độ sơ chế
               </h2>
 
-          {batch.status !== ProcessingStatus.Completed &&
-            (!batch.progresses || batch.progresses.length === 0 ? (
+              {batch.status !== ProcessingStatus.Completed &&
+                (!batch.progresses || batch.progresses.length === 0 ? (
                   <Button
-                onClick={() => setOpenCreateModal(true)}
+                    onClick={() => setOpenCreateModal(true)}
                     className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-              >
+                  >
                     <PlusCircle className="w-4 h-4 mr-2" />
                     Tạo tiến trình đầu tiên
                   </Button>
-            ) : (
-              latestProgress && (
+                ) : (
+                  latestProgress && (
                     <Button
-                  onClick={() => setOpenAdvanceModal(true)}
+                      onClick={() => setOpenAdvanceModal(true)}
                       className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                >
+                    >
                       <PlusCircle className="w-4 h-4 mr-2" />
                       Cập nhật bước tiếp theo
                     </Button>
-              )
-            ))}
+                  )
+                ))}
             </div>
-        </div>
+          </div>
 
           <div className="p-6">
-        {batch.progresses && batch.progresses.length > 0 ? (
+            {batch.progresses && batch.progresses.length > 0 ? (
               <div className="space-y-4">
-              {batch.progresses.map((progress, idx) => (
+                {batch.progresses.map((progress, idx) => (
                   <div
                     key={idx}
                     className="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 hover:border-purple-300 transition-all duration-300 hover:shadow-lg p-6"
@@ -488,35 +577,67 @@ export default function ViewProcessingBatch() {
                     </div>
                     
                     {/* Media Section */}
-                    {(progress.photoUrl || progress.videoUrl) && (
+                    {progress.mediaFiles && progress.mediaFiles.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-gray-100">
                         <h4 className="text-sm font-medium text-gray-700 mb-3">Tài liệu đính kèm</h4>
                         <div className="flex gap-4">
-                          {progress.photoUrl && (
-                            <div className="flex items-center gap-2">
-                              <FileImage className="w-4 h-4 text-green-600" />
-                              <span className="text-sm text-gray-600">Ảnh</span>
-                                                             <img 
-                                 src={progress.photoUrl} 
-                                 alt={`Photo of ${progress.stageName}`} 
-                                 className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
-                                 onClick={() => progress.photoUrl && window.open(progress.photoUrl, '_blank')}
-                               />
+                          {progress.mediaFiles.map((media, mediaIdx) => (
+                            <div key={mediaIdx} className="flex items-center gap-2">
+                              {media.mediaType === 'image' ? (
+                                <>
+                                  <FileImage className="w-4 h-4 text-green-600" />
+                                  <span className="text-sm text-gray-600">Ảnh</span>
+                                  <div className="relative group">
+                                    <img 
+                                      src={media.mediaUrl} 
+                                      alt={media.caption || `Photo of ${progress.stageName}`} 
+                                      className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
+                                      loading="lazy"
+                                      onClick={() => openMediaViewer({
+                                        url: media.mediaUrl,
+                                        type: 'image',
+                                        caption: media.caption
+                                      }, 0)}
+                                    />
+                                  </div>
+                                </>
+                              ) : media.mediaType === 'video' ? (
+                                <>
+                                  <Video className="w-4 h-4 text-blue-600" />
+                                  <span className="text-sm text-gray-600">Video</span>
+                                  <div className="relative group">
+                                    <video 
+                                      className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
+                                      preload="metadata"
+                                      onClick={() => openMediaViewer({
+                                        url: media.mediaUrl,
+                                        type: 'video',
+                                        caption: media.caption
+                                      }, 0)}
+                                    >
+                                      <source src={media.mediaUrl} />
+                                    </video>
+                                  </div>
+                                </>
+                              ) : null}
                             </div>
-                          )}
-                          
-                          {progress.videoUrl && (
-                            <div className="flex items-center gap-2">
-                              <Video className="w-4 h-4 text-blue-600" />
-                              <span className="text-sm text-gray-600">Video</span>
-                              <video 
-                                controls 
-                                className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
-                              >
-                        <source src={progress.videoUrl} />
-                      </video>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Wastes Section */}
+                    {progress.wastes && progress.wastes.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Chất thải</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {progress.wastes.map((waste: ProcessingWaste, wasteIdx: number) => (
+                            <div key={wasteIdx} className="flex items-center gap-2 text-sm text-gray-600">
+                              <Package className="w-4 h-4 text-red-600" />
+                              <span className="font-medium">{waste.wasteType}:</span>
+                              <span>{formatNumber(waste.quantity)} {waste.unit}</span>
                             </div>
-                          )}
+                          ))}
                         </div>
                       </div>
                     )}
@@ -535,60 +656,21 @@ export default function ViewProcessingBatch() {
           </div>
         </div>
 
-        {/* Products Section */}
-        {batch.products && batch.products.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 text-white">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                Sản phẩm
-              </h2>
-            </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {batch.products.map((product, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-gradient-to-br from-white to-orange-50 rounded-xl border border-orange-200 hover:border-orange-300 transition-all duration-300 hover:shadow-lg p-4"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 bg-orange-100 rounded-lg">
-                        <Package className="w-5 h-5 text-orange-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                        <p className="text-sm text-gray-500">Sản phẩm {idx + 1}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Scale className="w-4 h-4 text-green-600" />
-                      <span className="font-medium">Khối lượng:</span>
-                      <span>{formatNumber(product.quantity)} {product.unit}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Waste Section */}
-        {wastes && wastes.length > 0 && (
+        {/* Waste Section - Tổng hợp từ tất cả progresses */}
+        {allWastes.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="bg-gradient-to-r from-red-500 to-pink-500 p-6 text-white">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <Package className="w-5 h-5" />
-                Chất thải
+                Tổng hợp chất thải
               </h2>
             </div>
             
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {wastes.map((waste, idx) => (
+                {allWastes.map((waste, idx) => (
                   <div
-                    key={waste.wasteId}
+                    key={`${waste.wasteId}-${idx}`}
                     className="bg-gradient-to-br from-white to-red-50 rounded-xl border border-red-200 hover:border-red-300 transition-all duration-300 hover:shadow-lg p-4"
                   >
                     <div className="flex items-center gap-3 mb-3">
@@ -605,7 +687,7 @@ export default function ViewProcessingBatch() {
                       <Scale className="w-4 h-4 text-red-600" />
                       <span className="font-medium">Khối lượng:</span>
                       <span>{formatNumber(waste.quantity)} {waste.unit}</span>
-      </div>
+                    </div>
 
                     <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
                       <Calendar className="w-4 h-4 text-gray-500" />
@@ -620,40 +702,133 @@ export default function ViewProcessingBatch() {
         )}
 
         {/* Modals */}
-      <Dialog open={openCreateModal} onOpenChange={setOpenCreateModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Tạo tiến trình đầu tiên</DialogTitle>
-          </DialogHeader>
-          <CreateProcessingProgressForm
-            defaultBatchId={batch.batchId}
-            onSuccess={() => {
-              setOpenCreateModal(false);
-              window.location.reload();
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openAdvanceModal} onOpenChange={setOpenAdvanceModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">
-              Cập nhật sau bước: {latestProgress?.stageName}
-            </DialogTitle>
-          </DialogHeader>
-          {latestProgress && (
-            <AdvanceProcessingProgressForm
-              batchId={batch.batchId}
-              latestProgress={latestProgress}
+        <Dialog open={openCreateModal} onOpenChange={setOpenCreateModal}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">Tạo tiến trình đầu tiên</DialogTitle>
+            </DialogHeader>
+            <CreateProcessingProgressForm
+              defaultBatchId={batch.batchId}
               onSuccess={() => {
-                setOpenAdvanceModal(false);
+                setOpenCreateModal(false);
                 window.location.reload();
               }}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={openAdvanceModal} onOpenChange={setOpenAdvanceModal}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">
+                Cập nhật sau bước: {latestProgress?.stageName}
+              </DialogTitle>
+            </DialogHeader>
+            {latestProgress && (
+              <AdvanceProcessingProgressForm
+                batchId={batch.batchId}
+                latestProgress={latestProgress}
+                onSuccess={() => {
+                  setOpenAdvanceModal(false);
+                  window.location.reload();
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Media Viewer Dialog */}
+        <Dialog open={mediaViewerOpen} onOpenChange={setMediaViewerOpen}>
+          <DialogContent 
+            className="w-screen h-screen max-w-none max-h-none overflow-hidden p-0 bg-black border-0 shadow-none z-[9999]"
+            showCloseButton={false}
+          >
+            {/* Header */}
+            <div className="absolute top-4 right-4 z-50">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMediaViewerOpen(false)}
+                className="h-10 w-10 p-0 bg-black/60 hover:bg-red-600 text-white border-white/40 rounded-full shadow-lg hover:shadow-red-500/30 transition-all duration-200"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Navigation Buttons */}
+            {allMedia.length > 1 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateMedia('prev')}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 h-12 w-12 p-0 bg-black/60 hover:bg-white/20 text-white border-white/40 rounded-full z-50 shadow-lg hover:shadow-white/20 transition-all duration-200"
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateMedia('next')}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 h-12 w-12 p-0 bg-black/60 hover:bg-white/20 text-white border-white/40 rounded-full z-50 shadow-lg hover:shadow-white/20 transition-all duration-200"
+                >
+                  <ArrowRight className="w-6 h-6" />
+                </Button>
+              </>
+            )}
+
+            {/* Media Counter */}
+            {allMedia.length > 1 && (
+              <div className="absolute top-4 left-4 z-50 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
+                {currentMediaIndex + 1} / {allMedia.length}
+              </div>
+            )}
+
+            {/* Media Content */}
+            <div className="flex items-center justify-center h-full w-full p-2">
+              {selectedMedia?.type === 'image' ? (
+                <div className="flex flex-col items-center w-full h-full">
+                  <img 
+                    src={selectedMedia.url} 
+                    alt={selectedMedia.caption || 'Hình ảnh'} 
+                    className="w-full h-full object-contain"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  {selectedMedia.caption && (
+                    <p className="mt-4 text-sm text-white text-center max-w-2xl bg-black/60 px-4 py-2 rounded-lg">
+                      {selectedMedia.caption}
+                    </p>
+                  )}
+                </div>
+              ) : selectedMedia?.type === 'video' ? (
+                <div className="flex flex-col items-center w-full h-full">
+                  <video 
+                    controls 
+                    className="w-full h-full rounded-lg"
+                    autoPlay
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <source src={selectedMedia.url} />
+                    Trình duyệt của bạn không hỗ trợ video.
+                  </video>
+                  {selectedMedia.caption && (
+                    <p className="mt-4 text-sm text-white text-center max-w-2xl bg-black/60 px-4 py-2 rounded-lg">
+                      {selectedMedia.caption}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+            </div>
+
+            {/* Keyboard Instructions */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-black/60 text-white px-4 py-2 rounded-full text-sm">
+              <div className="flex items-center gap-4">
+                <span>← → Chuyển ảnh</span>
+                <span>ESC Đóng</span>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
