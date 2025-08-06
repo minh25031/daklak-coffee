@@ -6,10 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getAllContracts, ContractViewAllDto } from "@/lib/api/contracts";
 import FilterStatusPanel from "@/components/contracts/FilterContractStatusPanel";
-import ContractCard from "@/components/contracts/ContractCard";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,

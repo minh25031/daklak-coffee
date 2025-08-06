@@ -9,6 +9,7 @@ import {
   FiTruck,
   FiClock, // Biểu tượng phù hợp cho Xuất kho
   FiClipboard,
+  FiCalendar
 } from "react-icons/fi";
 import Link from "next/link";
 import React from "react";
@@ -18,6 +19,7 @@ export default function ManagerDashboard() {
     <div className="w-full bg-orange-50 min-h-screen">
       <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Hợp đồng cung ứng */}
           <Link href="/dashboard/manager/contracts">
             <DashboardCard
               icon={<FiFileText className="text-orange-500 text-xl" />}
@@ -26,6 +28,18 @@ export default function ManagerDashboard() {
               isLink
             />
           </Link>
+
+          {/* Lịch giao hàng */}
+          <Link href="/dashboard/manager/contract-delivery-batches">
+            <DashboardCard
+              icon={<FiCalendar className="text-orange-500 text-xl" />}
+              title="Lịch giao hàng"
+              description="Xem và quản lý các đợt giao hàng từ hợp đồng cung ứng."
+              isLink
+            />
+          </Link>
+
+          {/* Kế hoạch thu mua */}
           <Link href="/dashboard/manager/procurement-plans">
             <DashboardCard
               icon={<FiClipboard className="text-orange-500 text-xl" />}
