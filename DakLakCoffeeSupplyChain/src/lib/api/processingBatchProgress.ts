@@ -2,13 +2,37 @@ import axios from "axios";
 import api from "./axios";
 import { InvalidTokenError } from "jwt-decode";
 
+export interface ProcessingWaste {
+  wasteId: string;
+  wasteCode: string;
+  wasteType: string;
+  quantity: number;
+  unit: string;
+  createdAt: string;
+}
+
+export interface ProcessingParameter {
+  parameterId: string;
+  parameterName: string;
+  parameterValue: string;
+  unit: string;
+  recordedAt: string;
+}
+
+export interface MediaFile {
+  mediaId: string;
+  mediaType: "image" | "video";
+  mediaUrl: string;
+  caption: string;
+  uploadedAt: string;
+}
 
 export interface ProcessingBatchProgress {
   progressId: string;
   batchId: string;
   batchCode: string;
   stepIndex: number;
-  stageId: number;
+  stageId: string;
   stageName: string;
   stageDescription?: string;
   progressDate: string;
@@ -19,7 +43,9 @@ export interface ProcessingBatchProgress {
   updatedByName?: string;
   createdAt: string;
   updatedAt: string;
-   mediaFiles?: MediaFile[];
+  mediaFiles?: MediaFile[];
+  wastes?: ProcessingWaste[];
+  parameters?: ProcessingParameter[];
 }
 
 export interface CreateProgressDto {
@@ -39,13 +65,7 @@ export interface CreateProgressWithMediaPayload {
   photoFiles?: File[];
   videoFiles?: File[];
 }
-export interface MediaFile {
-  mediaId: string;
-  mediaType: "image" | "video";
-  mediaUrl: string;
-  caption: string;
-  uploadedAt: string;
-}
+
 export interface AdvanceProgressWithMediaPayload {
   progressDate: string;
   outputQuantity: number;

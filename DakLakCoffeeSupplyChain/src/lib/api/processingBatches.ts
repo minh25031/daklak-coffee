@@ -51,6 +51,7 @@ export interface ProcessingBatch {
   totalOutputQuantity: number;
   status: number;
   createdAt: string;
+  typeName?: string; // Thêm từ API response mới
   progresses: ProcessingBatchProgress[];
   products: ProcessingProduct[];
 }
@@ -180,11 +181,13 @@ export async function createProcessingBatch(
 
 export async function getProcessingBatchById(id: string): Promise<ProcessingBatch> {
   try {
-    const res = await api.get(`/ProcessingBatch/${id}/full-details`);
-    return res.data;
-  } catch (err) {
-    console.error("❌ Lỗi getProcessingBatchById:", err);
-    throw err;
+    console.log("🔎 Fetching full processing batch details with ID:", id);
+    const response = await api.get(`/ProcessingBatch/${id}/full-details`);
+    console.log("✅ Full batch details fetched successfully");
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Error fetching full batch details:", error);
+    throw error;
   }
 }
 
