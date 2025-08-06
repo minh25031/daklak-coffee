@@ -5,13 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { cn, getErrorMessage } from '@/lib/utils';
-import { FarmingCommitment, getBusinessCommitments } from '@/lib/api/farmingCommitments';
+import { FarmingCommitment, getFarmerCommitments } from '@/lib/api/farmingCommitments';
 import { toast } from 'sonner';
 import { FarmingCommitmentStatusMap, FarmingCommitmentStatusValue } from '@/lib/constants/FarmingCommitmentStatu';
 import FilterStatusPanel from '@/components/ui/filterStatusPanel';
-import FarmingCommitmentCard from '@/components/farming-commitments/FarmingCommitmentCard';
+import FarmingCommitmentCardForFarmer from '@/components/farming-commitments/FarmingCommitmentCardForFarmer';
 
-export default function BusinessFarmingCommitmentPage() {
+export default function FarmerFarmingCommitmentPage() {
     const [farmingCommitments, setFarmingCommitments] = useState<FarmingCommitment[]>([]);
     const [search, setSearch] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<FarmingCommitmentStatusValue | null>(null);
@@ -19,17 +19,15 @@ export default function BusinessFarmingCommitmentPage() {
     const pageSize = 10;
 
     useEffect(() => {
-        
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
-            const data = await getBusinessCommitments().catch((error) => {
+        const fetchData = async () => {
+            const data = await getFarmerCommitments().catch((error) => {
                 toast.error(getErrorMessage(error));
                 return [];
             });
             setFarmingCommitments(data);
         };
+        fetchData();
+    }, []);
 
     const filteredCommitments = farmingCommitments.filter(commitment =>
         (!selectedStatus || commitment.status === selectedStatus) &&
@@ -90,7 +88,7 @@ export default function BusinessFarmingCommitmentPage() {
                         <thead className="bg-gray-100 text-gray-700 font-medium">
                             <tr>
                                 <th className="px-4 py-3 text-left">Tên cam kết</th>
-                                <th className="px-4 py-3 text-left">Tên nông dân</th>
+                                <th className="px-4 py-3 text-left">Tên doanh nghiệp</th>
                                 <th className="px-4 py-3 text-left">Tổng thành tiền</th>
                                 <th className="px-4 py-3 text-left">Trạng thái</th>
                                 <th className="px-4 py-3 text-left">Ngày lập cam kết</th>
@@ -99,7 +97,7 @@ export default function BusinessFarmingCommitmentPage() {
                         </thead>
                         <tbody>
                             {pagedCommitments.map((commitment) => (
-                                <FarmingCommitmentCard key={commitment.commitmentId} commitment={commitment} />
+                                <FarmingCommitmentCardForFarmer key={commitment.commitmentId} commitment={commitment} />
                             ))}
                         </tbody>
                     </table>

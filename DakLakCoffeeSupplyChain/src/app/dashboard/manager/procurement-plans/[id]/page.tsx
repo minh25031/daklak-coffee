@@ -289,7 +289,7 @@ export default function ProcurementPlanDetailPage() {
               registeredArea={reg.registeredArea}
               registeredAt={reg.registeredAt}
               cultivationRegistrationViewDetailsDtos={
-                reg.cultivationRegistrationViewDetailsDtos
+                reg.cultivationRegistrationDetails
               }
               onUpdate={handleUpdateRegistration}
             />

@@ -132,6 +132,11 @@ export function SidebarGroup() {
         icon: iconMap.dashboard,
       },
       {
+        title: "Cam kết với doanh nghiệp",
+        href: "/dashboard/farmer/farming-commitments",
+        icon: iconMap.contracts,
+      },
+      {
         title: "Mùa vụ",
         href: "/dashboard/farmer/crop-seasons",
         icon: iconMap.crops,

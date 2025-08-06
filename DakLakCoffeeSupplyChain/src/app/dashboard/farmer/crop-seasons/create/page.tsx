@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { AppToast } from '@/components/ui/AppToast';
 import { getErrorMessage } from '@/lib/utils';
-import { getAvailableCommitments, FarmingCommitmentItem } from '@/lib/api/farmingCommitments';
+import { getAvailableCommitments, FarmingCommitment } from '@/lib/api/farmingCommitments';
 
 export default function CreateCropSeasonPage() {
     useAuthGuard(['farmer']);
@@ -25,7 +25,7 @@ export default function CreateCropSeasonPage() {
         commitmentId: '',
     });
 
-    const [availableCommitments, setAvailableCommitments] = useState<FarmingCommitmentItem[]>([]);
+    const [availableCommitments, setAvailableCommitments] = useState<FarmingCommitment[]>([]);
     const [isLoadingCommitments, setIsLoadingCommitments] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 

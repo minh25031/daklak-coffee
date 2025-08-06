@@ -1,60 +1,28 @@
 // lib/api/farmingCommitments.ts
 import api from "@/lib/api/axios";
-
-// Chi tiết từng dòng cam kết (dòng con trong một cam kết)
-export interface CommitmentDetail {
-  commitmentDetailId: string;
-  commitmentDetailCode: string;
-  commitmentId: string;
-  registrationDetailId: string;
-  planDetailId: string;
-  confirmedPrice: number;
-  committedQuantity: number;
-  estimatedDeliveryStart: string;
-  estimatedDeliveryEnd: string;
-  note: string;
-  contractDeliveryItemId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Thông tin 1 cam kết (bao gồm cả các dòng cam kết)
-export interface FarmingCommitmentItem {
-  commitmentId: string;
-  commitmentCode: string;
-  commitmentName: string;
-  farmerName: string;
-  planTitle?: string;
-  totalPrice?: number;
-  commitmentDate?: string;
-  confirmedPrice: number;
-  committedQuantity: number;
-  estimatedDeliveryStart: string;
-  estimatedDeliveryEnd: string;
-  status: number;
-  farmingCommitmentsDetailsDTOs?: CommitmentDetail[];
-}
-
 export interface FarmingCommitment {
   commitmentId: string;
   commitmentCode: string;
   commitmentName: string;
   farmerId: string;
   farmerName: string;
+  businessName: string;
+  planTitle?: string;
   totalPrice: number;
   registrationId: string;
   note: string;
-  commitmentDate: string; // ISO date string
-  committedArea: number; // in hectares
+  commitmentDate: Date; // ISO date string
   committedAt: string; // ISO date string
-  totalCommittedPrice: number; // total price for the committed area
   farmingCommitmentDetails: Partial<FarmingCommitmentDetail>[];
   status: string | number; // e.g. "Pending", "Approved", "Rejected"
 }
 
 export interface FarmingCommitmentDetail {
   commitmentDetailId: string;
+  commitmentDetailCode: string;
+  commitmentId: string;
   registrationDetailId: string;
+  planDetailId: string;
   confirmedPrice: number; // price per kg
   committedQuantity: number; // in kg
   estimatedDeliveryStart: string; // ISO date string
@@ -62,12 +30,14 @@ export interface FarmingCommitmentDetail {
   note: string;
   status: string | number; // e.g. "Pending", "Approved", "Rejected"
   contractDeliveryItemId?: string; // optional, if linked to a delivery contract
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Lấy danh sách cam kết của Farmer
-export async function getFarmerCommitments(): Promise<FarmingCommitmentItem[]> {
+export async function getFarmerCommitments(): Promise<FarmingCommitment[]> {
   try {
-    const res = await api.get<FarmingCommitmentItem[]>("/FarmingCommitment/Farmer");
+    const res = await api.get<FarmingCommitment[]>("/FarmingCommitment/Farmer");
     return res.data;
   } catch (err) {
     console.error("Lỗi getFarmerCommitments:", err);
@@ -87,9 +57,9 @@ export async function getBusinessCommitments(): Promise<FarmingCommitment[]> {
 }
 
 // Lấy các cam kết còn trống để gán cho mùa vụ
-export async function getAvailableCommitments(): Promise<FarmingCommitmentItem[]> {
+export async function getAvailableCommitments(): Promise<FarmingCommitment[]> {
   try {
-    const res = await api.get<FarmingCommitmentItem[]>(
+    const res = await api.get<FarmingCommitment[]>(
       "/FarmingCommitment/Farmer/AvailableForCropSeason"
     );
     return res.data;
@@ -100,9 +70,9 @@ export async function getAvailableCommitments(): Promise<FarmingCommitmentItem[]
 }
 
 // Lấy chi tiết 1 cam kết (nếu bạn vẫn muốn dùng cách này)
-export async function getCommitmentById(commitmentId: string): Promise<FarmingCommitmentItem | null> {
+export async function getCommitmentById(commitmentId: string): Promise<FarmingCommitment | null> {
   try {
-    const res = await api.get<FarmingCommitmentItem>(`/FarmingCommitment/${commitmentId}`);
+    const res = await api.get<FarmingCommitment>(`/FarmingCommitment/${commitmentId}`);
     return res.data;
   } catch (err) {
     console.error("Lỗi getCommitmentById:", err);

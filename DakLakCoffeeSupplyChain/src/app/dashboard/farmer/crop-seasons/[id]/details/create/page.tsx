@@ -63,12 +63,12 @@ export default function CreateCropSeasonDetailPage() {
         const allCommitments = await getFarmerCommitments();
         const matched = allCommitments.find(c => c.commitmentId === commitmentId);
 
-        if (!matched || !matched.farmingCommitmentsDetailsDTOs) {
+        if (!matched || !matched.farmingCommitmentDetails) {
           AppToast.error("Không tìm thấy dòng cam kết.");
           return;
         }
 
-        const details = matched.farmingCommitmentsDetailsDTOs.map((detail: any) => ({
+        const details = matched.farmingCommitmentDetails.map((detail: any) => ({
           commitmentDetailId: detail.commitmentDetailId,
           commitmentDetailCode: detail.commitmentDetailCode,
           note: detail.note,
