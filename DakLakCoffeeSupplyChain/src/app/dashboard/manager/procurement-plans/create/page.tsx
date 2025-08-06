@@ -18,12 +18,15 @@ import {
 import { createProcurementPlan } from "@/lib/api/procurementPlans";
 import { FiTrash2 } from "react-icons/fi";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { LoadingButton } from "@/components/ui/loadingProgress";
 
 export default function CreateProcurementPlanPage() {
   useAuthGuard(["manager"]);
 
   const formatDate = (d: string) => new Date(d).toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
   const router = useRouter();
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
     title: "",
@@ -46,6 +49,51 @@ export default function CreateProcurementPlanPage() {
     ],
   });
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.title) newErrors.title = "Vui lòng nhập tên kế hoạch.";
+    if (!form.startDate) newErrors.startDate = "Vui lòng chọn ngày bắt đầu.";
+    if (!form.endDate) newErrors.endDate = "Vui lòng chọn ngày kết thúc.";
+    if (new Date(form.startDate) >= new Date(form.endDate))
+      newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu.";
+    if (form.procurementPlansDetails.length === 0) {
+      newErrors.procurementPlansDetails =
+        "Vui lòng thêm ít nhất một chi tiết kế hoạch.";
+    } else {
+      form.procurementPlansDetails.forEach((detail, index) => {
+        if (!detail.coffeeTypeId) {
+          newErrors[`coffeeTypeId-${index}`] = "Vui lòng chọn loại cà phê.";
+        }
+        if (detail.processMethodId === 0) {
+          newErrors[`processMethodId-${index}`] =
+            "Vui lòng chọn phương pháp sơ chế.";
+        }
+        if (detail.targetQuantity <= 100) {
+          newErrors[`targetQuantity-${index}`] =
+            "Sản lượng mục tiêu phải lớn hơn 100 kg.";
+        }
+        if (detail.minimumRegistrationQuantity < 100) {
+          newErrors[`minimumRegistrationQuantity-${index}`] =
+            "Số lượng đăng ký tối thiểu không thể nhỏ hơn 100 kg.";
+        }
+        if (detail.minPriceRange < 1000) {
+          newErrors[`minPriceRange-${index}`] =
+            "Giá tối thiểu không thể nhỏ hơn 1000 đồng.";
+        }
+        if (detail.maxPriceRange < detail.minPriceRange) {
+          newErrors[`maxPriceRange-${index}`] =
+            "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu.";
+        }
+        if (detail.expectedYieldPerHectare <= 0) {
+          newErrors[`expectedYieldPerHectare-${index}`] =
+            "Sản lượng dự kiến trên 1 ha phải lớn hơn 0.";
+        }
+      });
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const [availableCoffeeTypes, setAvailableCoffeeTypes] = useState<
     CoffeeType[]
   >([]);
@@ -53,33 +101,35 @@ export default function CreateProcurementPlanPage() {
     ProcessingMethod[]
   >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingCoffeeTypes, setIsLoadingCoffeeTypes] = useState(true);
-  const [isLoadingProcessingMethods, setIsLoadingProcessingMethods] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchCoffeeTypes() {
-      try {
-        const data = await getCoffeeTypes();
-        setAvailableCoffeeTypes(data);
-      } catch (err) {
-        AppToast.error(getErrorMessage(err) || "Không thể tải loại cà phê");
-      } finally {
-        setIsLoadingCoffeeTypes(false);
-      }
-    }
-    async function fetchProcessingMethods() {
-      const data = await getAllProcessingMethods().catch((error) => {
-        AppToast.error(getErrorMessage(error));
-        return [];
-      });
-      setAvailableProcessingMethods(data);
-    }
-
     fetchCoffeeTypes();
     fetchProcessingMethods();
-    setIsLoadingProcessingMethods(false);
   }, []);
+
+  //#region API Calls
+  const fetchCoffeeTypes = async () => {
+    setLoading(true);
+    const data = await getCoffeeTypes().catch((error) => {
+      AppToast.error(getErrorMessage(error));
+      return [];
+    });
+    setAvailableCoffeeTypes(data);
+    setLoading(false);
+  };
+  const fetchProcessingMethods = async () => {
+    setLoading(true);
+    const data = await getAllProcessingMethods().catch((error) => {
+      AppToast.error(getErrorMessage(error));
+      return [];
+    });
+    setAvailableProcessingMethods(data);
+    setLoading(false);
+  };
+  //#endregion
+
+  //#region Form Handlers
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -150,31 +200,11 @@ export default function CreateProcurementPlanPage() {
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
 
-    const requiredFields = ["title", "description"];
-    const missing = requiredFields.filter(
-      (field) => !form[field as keyof typeof form]
-    );
-
-    if (missing.length > 0) {
-      AppToast.error("Vui lòng điền đầy đủ các trường bắt buộc.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Kiểm tra điều kiện bắt buộc trong ít nhất 1 card detail - bắt buộc card mặc định
-    const isDetailsValid = form.procurementPlansDetails.every((detail) => {
-      return (
-        detail.coffeeTypeId !== "" &&
-        detail.processMethodId !== 0 &&
-        detail.targetQuantity > 0
-      );
-    });
-
-    if (!isDetailsValid) {
-      AppToast.error("Vui lòng điền đầy đủ thông tin chi tiết ở các kế hoạch.");
+    if (!validateForm()) {
       setIsSubmitting(false);
       return;
     }
@@ -200,6 +230,8 @@ export default function CreateProcurementPlanPage() {
     }
   };
 
+  //#endregion
+
   return (
     <div className='max-w-2xl mx-auto py-10 px-4'>
       <Card>
@@ -208,28 +240,44 @@ export default function CreateProcurementPlanPage() {
         </CardHeader>
         <CardContent className='space-y-4'>
           <div>
-            <Label htmlFor='title'>Tên kế hoạch</Label>
+            <Label htmlFor='title'>
+              Tên kế hoạch
+              <span className='text-red-500'>*</span>
+            </Label>
             <Input
               name='title'
               value={form.title}
               onChange={handleChange}
               required
             />
+            {errors[`title`] && (
+              <p className='text-red-500 text-xs'>{errors[`title`]}</p>
+            )}
           </div>
 
           <div className='grid grid-cols-2 gap-4'>
             <div>
-              <Label htmlFor='startDate'>Ngày bắt đầu mở đăng ký</Label>
+              <Label htmlFor='startDate'>
+                Ngày bắt đầu mở đăng ký
+                <span className='text-red-500'>*</span>
+              </Label>
               <Input
                 type='date'
                 name='startDate'
+                min={today}
                 value={form.startDate}
                 onChange={handleChange}
                 required
               />
+              {errors[`startDate`] && (
+                <p className='text-red-500 text-xs'>{errors[`startDate`]}</p>
+              )}
             </div>
             <div>
-              <Label htmlFor='endDate'>Ngày kết thúc đăng ký</Label>
+              <Label htmlFor='endDate'>
+                Ngày kết thúc đăng ký
+                <span className='text-red-500'>*</span>
+              </Label>
               <Input
                 type='date'
                 name='endDate'
@@ -237,6 +285,9 @@ export default function CreateProcurementPlanPage() {
                 onChange={handleChange}
                 required
               />
+              {errors[`endDate`] && (
+                <p className='text-red-500 text-xs'>{errors[`endDate`]}</p>
+              )}
             </div>
           </div>
 
@@ -269,70 +320,88 @@ export default function CreateProcurementPlanPage() {
               </CardHeader>
               <CardContent className='space-y-3'>
                 <div>
-                  <Label htmlFor={`coffeeTypeId-${index}`}>Loại cà phê</Label>
-                  {isLoadingCoffeeTypes ? (
+                  <Label htmlFor={`coffeeTypeId-${index}`}>Loại cà phê
+                    <span className='text-red-500'>*</span>
+                  </Label>
+                  {loading ? (
                     <LoadingSpinner />
                   ) : availableCoffeeTypes.length === 0 ? (
                     <p className='text-red-500 text-sm italic'>
                       Không có loại cà phê nào
                     </p>
                   ) : (
-                    <select
-                      id={`coffeeTypeId-${index}`}
-                      name='coffeeTypeId'
-                      value={detail.coffeeTypeId}
-                      onChange={(e) => handleDetailChange(index, e)}
-                      required
-                      className='block w-full rounded border border-gray-300 px-3 py-2 cursor-pointer'
-                    >
-                      <option value='' className='cursor-pointer'>
-                        -- Chọn loại cà phê --
-                      </option>
-                      {availableCoffeeTypes.map((type) => (
-                        <option
-                          key={type.coffeeTypeId}
-                          value={type.coffeeTypeId}
-                          className='cursor-pointer'
-                        >
-                          {type.typeName}
+                    <>
+                      <select
+                        id={`coffeeTypeId-${index}`}
+                        name='coffeeTypeId'
+                        value={detail.coffeeTypeId}
+                        onChange={(e) => handleDetailChange(index, e)}
+                        required
+                        className='block w-full rounded border border-gray-300 px-3 py-2 cursor-pointer'
+                      >
+                        <option value='' className='cursor-pointer'>
+                          -- Chọn loại cà phê --
                         </option>
-                      ))}
-                    </select>
+                        {availableCoffeeTypes.map((type) => (
+                          <option
+                            key={type.coffeeTypeId}
+                            value={type.coffeeTypeId}
+                            className='cursor-pointer'
+                          >
+                            {type.typeName}
+                          </option>
+                        ))}
+                      </select>
+                      {errors[`coffeeTypeId-${index}`] && (
+                        <p className='text-red-500 text-xs'>
+                          {errors[`coffeeTypeId-${index}`]}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
                 <div>
                   <Label htmlFor={`processMethodId-${index}`}>
                     Phương pháp sơ chế
+                    <span className='text-red-500'>*</span>
                   </Label>
-                  {isLoadingProcessingMethods ? (
+                  {loading ? (
                     <LoadingSpinner />
                   ) : availableProcessingMethods.length === 0 ? (
                     <p className='text-red-500 text-sm italic'>
                       Không có phương pháp sơ chế nào
                     </p>
                   ) : (
-                    <select
-                      id={`processMethodId-${index}`}
-                      name='processMethodId'
-                      value={detail.processMethodId}
-                      onChange={(e) => handleDetailChange(index, e)}
-                      required
-                      className='block w-full rounded border border-gray-300 px-3 py-2'
-                    >
-                      <option value={0}>-- Chọn phương pháp sơ chế --</option>
-                      {availableProcessingMethods.map((method) => (
-                        <option key={method.methodId} value={method.methodId}>
-                          {method.name}
-                        </option>
-                      ))}
-                    </select>
+                    <>
+                      <select
+                        id={`processMethodId-${index}`}
+                        name='processMethodId'
+                        value={detail.processMethodId}
+                        onChange={(e) => handleDetailChange(index, e)}
+                        required
+                        className='block w-full rounded border border-gray-300 px-3 py-2'
+                      >
+                        <option value={0}>-- Chọn phương pháp sơ chế --</option>
+                        {availableProcessingMethods.map((method) => (
+                          <option key={method.methodId} value={method.methodId}>
+                            {method.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errors[`processMethodId-${index}`] && (
+                        <p className='text-red-500 text-xs'>
+                          {errors[`processMethodId-${index}`]}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
                 <div>
                   <Label htmlFor={`targetQuantity-${index}`}>
                     Sản lượng mục tiêu (kg)
+                    <span className='text-red-500'>*</span>
                   </Label>
                   <Input
                     id={`targetQuantity-${index}`}
@@ -343,6 +412,11 @@ export default function CreateProcurementPlanPage() {
                     onChange={(e) => handleDetailChange(index, e)}
                     required
                   />
+                  {errors[`targetQuantity-${index}`] && (
+                    <p className='text-red-500 text-xs'>
+                      {errors[`targetQuantity-${index}`]}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -360,6 +434,7 @@ export default function CreateProcurementPlanPage() {
                 <div>
                   <Label htmlFor={`minimumRegistrationQuantity-${index}`}>
                     Số lượng đăng ký tối thiểu (kg)
+                    <span className='text-red-500'>*</span>
                   </Label>
                   <Input
                     id={`minimumRegistrationQuantity-${index}`}
@@ -369,11 +444,17 @@ export default function CreateProcurementPlanPage() {
                     value={detail.minimumRegistrationQuantity}
                     onChange={(e) => handleDetailChange(index, e)}
                   />
+                  {errors[`minimumRegistrationQuantity-${index}`] && (
+                    <p className='text-red-500 text-xs'>
+                      {errors[`minimumRegistrationQuantity-${index}`]}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <Label htmlFor={`minPriceRange-${index}`}>
                     Giá tối thiểu (VNĐ/kg)
+                    <span className='text-red-500'>*</span>
                   </Label>
                   <Input
                     id={`minPriceRange-${index}`}
@@ -383,11 +464,17 @@ export default function CreateProcurementPlanPage() {
                     value={detail.minPriceRange}
                     onChange={(e) => handleDetailChange(index, e)}
                   />
+                  {errors[`minPriceRange-${index}`] && (
+                    <p className='text-red-500 text-xs'>
+                      {errors[`minPriceRange-${index}`]}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <Label htmlFor={`maxPriceRange-${index}`}>
                     Giá tối đa (VNĐ/kg)
+                    <span className='text-red-500'>*</span>
                   </Label>
                   <Input
                     id={`maxPriceRange-${index}`}
@@ -397,11 +484,17 @@ export default function CreateProcurementPlanPage() {
                     value={detail.maxPriceRange}
                     onChange={(e) => handleDetailChange(index, e)}
                   />
+                  {errors[`maxPriceRange-${index}`] && (
+                    <p className='text-red-500 text-xs'>
+                      {errors[`maxPriceRange-${index}`]}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <Label htmlFor={`expectedYieldPerHectare-${index}`}>
                     Sản lượng dự kiến trên 1 ha (kg)
+                    <span className='text-red-500'>*</span>
                   </Label>
                   <Input
                     id={`expectedYieldPerHectare-${index}`}
@@ -411,10 +504,15 @@ export default function CreateProcurementPlanPage() {
                     value={detail.expectedYieldPerHectare}
                     onChange={(e) => handleDetailChange(index, e)}
                   />
+                  {errors[`expectedYieldPerHectare-${index}`] && (
+                    <p className='text-red-500 text-xs'>
+                      {errors[`expectedYieldPerHectare-${index}`]}
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <Label htmlFor={`note-${index}`}>Ghi chú</Label>
+                  <Label htmlFor={`note-${index}`}>Mô tả</Label>
                   <Textarea
                     id={`note-${index}`}
                     name='note'
@@ -433,13 +531,15 @@ export default function CreateProcurementPlanPage() {
           </div>
 
           <div className='flex justify-end'>
-            <Button
+            <LoadingButton
+              loading={isSubmitting}
+              type="submit"
               onClick={handleSubmit}
-              className='bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium text-sm'
+              className='bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium text-sm transition'
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Đang tạo..." : "Tạo kế hoạch"}
-            </Button>
+              Tạo kế hoạch
+            </LoadingButton>
           </div>
         </CardContent>
       </Card>
