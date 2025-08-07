@@ -163,7 +163,7 @@ export default function ContractsPage() {
           <div className="flex justify-between items-center gap-4 flex-wrap">
             <div className="flex gap-4 items-center">
               <div className="flex flex-col">
-                <label className="text-sm text-gray-600">Từ ngày</label>
+                <label className="text-sm font-medium text-gray-700">Từ ngày</label>
                 <Input
                   type="date"
                   value={startDate ? startDate.toISOString().split("T")[0] : ""}
@@ -176,7 +176,7 @@ export default function ContractsPage() {
                 />
               </div>
               <div className="flex flex-col">
-                <label className="text-sm text-gray-600">Đến ngày</label>
+                <label className="text-sm font-medium text-gray-700">Đến ngày</label>
                 <Input
                   type="date"
                   value={endDate ? endDate.toISOString().split("T")[0] : ""}

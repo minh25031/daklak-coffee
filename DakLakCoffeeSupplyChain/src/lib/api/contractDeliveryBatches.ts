@@ -5,6 +5,7 @@ export type ContractDeliveryBatchViewAllDto = {
   deliveryBatchId: string;
   deliveryBatchCode: string;
   contractId: string;
+  contractNumber: string;
   deliveryRound: number;
   expectedDeliveryDate: string | null;
   totalPlannedQuantity: number | null;
