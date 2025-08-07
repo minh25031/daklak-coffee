@@ -28,7 +28,6 @@ export default function Page() {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
 
-    // ✅ Reset tooltip khi sửa ngày
     if (name === 'preferredDeliveryDate') {
       const dateInput = document.getElementById('preferredDeliveryDate') as HTMLInputElement;
       if (dateInput) {
@@ -39,7 +38,12 @@ export default function Page() {
 
   useEffect(() => {
     getAllProcessingBatches()
-      .then((data) => setBatches(data ?? []))
+      .then((data) => {
+        const validBatches = (data ?? []).filter(
+          (b) => b.status === 2 && !b.isDeleted // 2 = Completed
+        );
+        setBatches(validBatches);
+      })
       .catch((err) => alert('Không thể tải danh sách lô xử lý: ' + err.message));
   }, []);
 
@@ -52,7 +56,6 @@ export default function Page() {
 
       if (!batchId) throw new Error('Bạn chưa chọn lô xử lý');
 
-      // ✅ Kiểm tra ngày giao không được là quá khứ
       const dateInput = document.getElementById('preferredDeliveryDate') as HTMLInputElement;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -80,6 +83,16 @@ export default function Page() {
       alert('❌ Lỗi: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getStatusLabel = (status: number) => {
+    switch (status) {
+      case 0: return 'Chưa bắt đầu';
+      case 1: return 'Đang xử lý';
+      case 2: return 'Hoàn tất';
+      case 3: return 'Đã huỷ';
+      default: return 'Không xác định';
     }
   };
 
@@ -152,7 +165,7 @@ export default function Page() {
                   <option value="">-- Chọn lô --</option>
                   {batches.map((b) => (
                     <option key={b.batchId} value={b.batchId}>
-                      {b.batchCode} ({b.status})
+                      {b.batchCode} • {getStatusLabel(b.status)}
                     </option>
                   ))}
                 </select>
