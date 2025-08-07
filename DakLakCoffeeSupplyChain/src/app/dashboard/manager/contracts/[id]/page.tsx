@@ -49,7 +49,7 @@ const contractStatusMap: Record<string, { label: string; className: string }> =
     },
     PreparingDelivery: {
       label: "Chuẩn bị giao",
-      className: "bg-blue-100 text-blue-700",
+      className: "bg-purple-100 text-purple-700",
     },
     InProgress: {
       label: "Đang thực hiện",

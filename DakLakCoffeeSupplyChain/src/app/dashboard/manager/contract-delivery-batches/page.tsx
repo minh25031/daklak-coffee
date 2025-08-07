@@ -23,11 +23,20 @@ import {
 import {
   ContractDeliveryBatchViewAllDto,
   getAllContractDeliveryBatches,
+  softDeleteContractDeliveryBatch,
 } from "@/lib/api/contractDeliveryBatches";
 import FilterDeliveryBatchStatusPanel from "@/components/contract-delivery-batches/FilterDeliveryBatchStatusPanel";
 import { Tooltip } from "@/components/ui/tooltip";
 import { formatQuantity } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogContent,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export function getDeliveryBatchStatusDisplay(
   status: ContractDeliveryBatchStatus | "ALL"
@@ -81,9 +90,14 @@ export default function ContractDeliveryBatchesPage() {
   const [loading, setLoading] = useState(true);
   const ITEMS_PER_PAGE = 6;
   const [currentPage, setCurrentPage] = useState(1);
+  const router = useRouter();
 
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [batchToDelete, setBatchToDelete] =
+    useState<ContractDeliveryBatchViewAllDto | null>(null);
 
   useEffect(() => {
     const fetchBatches = async () => {
@@ -143,6 +157,31 @@ export default function ContractDeliveryBatchesPage() {
     setCurrentPage(1);
   }, [search, selectedStatus]);
 
+  const reloadData = async () => {
+    setLoading(true);
+    try {
+      const result = await getAllContractDeliveryBatches();
+      setData(result);
+    } catch (err) {
+      console.error("Không thể làm mới danh sách đợt giao hàng:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBatch = async () => {
+    if (!batchToDelete?.deliveryBatchId) return;
+    try {
+      await softDeleteContractDeliveryBatch(batchToDelete.deliveryBatchId);
+      setShowDeleteDialog(false);
+      setBatchToDelete(null);
+      reloadData(); // hoặc fetch lại danh sách
+    } catch (error) {
+      console.error("Xoá thất bại:", error);
+      alert("Không thể xoá đợt giao hàng. Vui lòng thử lại.");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-amber-50 p-6 gap-6">
       {/* Sidebar */}
@@ -179,7 +218,9 @@ export default function ContractDeliveryBatchesPage() {
             {/* Bộ lọc ngày */}
             <div className="flex gap-4 items-center">
               <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700">Từ ngày</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Từ ngày
+                </label>
                 <Input
                   type="date"
                   value={fromDate ? fromDate.toISOString().split("T")[0] : ""}
@@ -192,7 +233,9 @@ export default function ContractDeliveryBatchesPage() {
                 />
               </div>
               <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700">Đến ngày</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Đến ngày
+                </label>
                 <Input
                   type="date"
                   value={toDate ? toDate.toISOString().split("T")[0] : ""}
@@ -218,7 +261,9 @@ export default function ContractDeliveryBatchesPage() {
                   <th className="px-4 py-2 text-left">Mã đợt giao</th>
                   <th className="px-4 py-2 text-left">Số hợp đồng</th>
                   <th className="px-4 py-2 text-center">Đợt</th>
-                  <th className="px-4 py-2 text-center whitespace-nowrap">Ngày dự kiến</th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">
+                    Ngày dự kiến
+                  </th>
                   <th className="px-4 py-2 text-center whitespace-nowrap">
                     Khối lượng
                     <Tooltip content="Khối lượng cà phê cần giao trong đợt này, đã được xác định theo hợp đồng.">
@@ -270,13 +315,28 @@ export default function ContractDeliveryBatchesPage() {
                       </td>
                       <td className="px-4 py-2 text-center">
                         <div className="flex justify-center gap-[2px]">
-                          <Button variant="ghost" className="w-7 h-7 p-[2px]">
+                          <Button
+                            variant="ghost"
+                            className="w-7 h-7 p-[2px]"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/manager/contract-delivery-batches/${batch.deliveryBatchId}`
+                              )
+                            }
+                          >
                             <Eye className="w-4 h-4 text-blue-500" />
                           </Button>
                           <Button variant="ghost" className="w-7 h-7 p-[2px]">
                             <Pencil className="w-4 h-4 text-yellow-500" />
                           </Button>
-                          <Button variant="ghost" className="w-7 h-7 p-[2px]">
+                          <Button
+                            variant="ghost"
+                            className="w-7 h-7 p-[2px]"
+                            onClick={() => {
+                              setBatchToDelete(batch);
+                              setShowDeleteDialog(true);
+                            }}
+                          >
                             <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
                         </div>
@@ -314,6 +374,29 @@ export default function ContractDeliveryBatchesPage() {
           </div>
         )}
       </main>
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xoá đợt giao hàng?</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xoá đợt giao hàng{" "}
+              <strong>{batchToDelete?.deliveryBatchCode}</strong> không? Hành
+              động này sẽ ẩn đợt giao khỏi danh sách và không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Huỷ
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteBatch}>
+              Xoá
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
