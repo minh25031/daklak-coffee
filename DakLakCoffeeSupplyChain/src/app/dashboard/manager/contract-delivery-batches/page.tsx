@@ -350,27 +350,48 @@ export default function ContractDeliveryBatchesPage() {
         </div>
 
         {/* Pagination */}
-        {filteredData.length > ITEMS_PER_PAGE && (
-          <div className="flex justify-end mt-4 space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              ← Trước
-            </Button>
-            <span className="text-sm text-gray-600 px-2 pt-1">
-              Trang {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Sau →
-            </Button>
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border rounded-md text-sm text-gray-700">
+            {/* Thông tin số lượng hiển thị */}
+            <div className="text-sm text-gray-600">
+              Đang hiển thị{" "}
+              <span className="font-medium">
+                {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+              </span>
+              –
+              <span className="font-medium">
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length)}
+              </span>{" "}
+              / {filteredData.length} đợt giao hàng
+            </div>
+
+            {/* Điều khiển phân trang */}
+            <div className="flex gap-2 justify-end mt-2 sm:mt-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="px-3"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
+                ← Trước
+              </Button>
+              <span className="flex items-center px-2">
+                Trang <span className="mx-1 font-semibold">{currentPage}</span>{" "}
+                / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="px-3"
+                disabled={currentPage === totalPages}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+              >
+                Sau →
+              </Button>
+            </div>
           </div>
         )}
       </main>

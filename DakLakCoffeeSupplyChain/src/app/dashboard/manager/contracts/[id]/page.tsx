@@ -362,16 +362,25 @@ export default function ContractDetailPage() {
                   )}
                 </TableBody>
               </Table>
+
+              {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border-t rounded-b-md text-sm text-gray-700">
-                  <div className="mb-2 sm:mb-0">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border rounded-md text-sm text-gray-700">
+                  {/* Thông tin hiển thị mặt hàng */}
+                  <div className="text-sm text-gray-600">
                     Đang hiển thị{" "}
+                    <span className="font-medium">
+                      {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+                    </span>
+                    –
                     <span className="font-medium">
                       {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}
                     </span>{" "}
-                    / <span className="font-medium">{totalItems}</span> mặt hàng
+                    / {totalItems} mặt hàng
                   </div>
-                  <div className="flex gap-2 justify-end">
+
+                  {/* Điều khiển phân trang */}
+                  <div className="flex gap-2 justify-end mt-2 sm:mt-0">
                     <Button
                       variant="outline"
                       size="sm"
