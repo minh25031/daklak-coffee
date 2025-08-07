@@ -156,7 +156,7 @@ export default function RegistrationCard({
           className='mt-4 border-t border-gray-200 pt-4 space-y-3 text-sm text-gray-700'
         >
           {cultivationRegistrationDetails.map((detail) => {
-            const isApproved = detail.status === 1;
+            const isApproved = detail.status === "Approved";
             return (
               <div
                 key={detail.cultivationRegistrationDetailId}

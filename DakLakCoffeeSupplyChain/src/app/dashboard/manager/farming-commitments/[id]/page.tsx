@@ -25,7 +25,7 @@ import { FarmingCommitmentStatusMap } from "@/lib/constants/FarmingCommitmentSta
 import StatusBadge from "@/components/crop-seasons/StatusBadge";
 import { getCultivationRegistrationsByPlanId } from "@/lib/api/cultivationRegistrations";
 
-export default function ProcurementPlanDetailPage() {
+export default function FarmingCommitmentDetailPageForBusiness() {
   const { id } = useParams();
   const router = useRouter();
   //const [plan, setPlan] = useState<ProcurementPlan | null>(null);

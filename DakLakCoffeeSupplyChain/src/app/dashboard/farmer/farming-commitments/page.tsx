@@ -51,7 +51,7 @@ export default function FarmerFarmingCommitmentPage() {
     currentPage * pageSize
   );
 
-  const statusCounts = filteredCommitments.reduce<
+  const statusCounts = farmingCommitments.reduce<
     Record<FarmingCommitmentStatusValue, number>
   >(
     (acc, commitment) => {
@@ -60,11 +60,11 @@ export default function FarmerFarmingCommitmentPage() {
       return acc;
     },
     {
-      0: 0,
-      1: 0,
-      2: 0,
-      3: 0,
-      4: 0,
+      Pending_farmer: 0,
+      Active: 0,
+      Completed: 0,
+      Cancelled: 0,
+      Breached: 0,
     }
   );
 
@@ -85,11 +85,6 @@ export default function FarmerFarmingCommitmentPage() {
               className='pr-10'
             />
             <Search className='absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
-          </div>
-          <div className='flex justify-end text-sm'>
-            <Button className='w-full bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium text-sm'>
-              Search
-            </Button>
           </div>
         </div>
 
