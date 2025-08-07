@@ -1,0 +1,364 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { softDeleteContractDeliveryItem } from "@/lib/api/contractDeliveryItems";
+import {
+  ContractDeliveryBatchViewDetailsDto,
+  ContractDeliveryItemViewDto,
+  getContractDeliveryBatchById,
+} from "@/lib/api/contractDeliveryBatches";
+import { formatDate, formatQuantity } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { FiCalendar } from "react-icons/fi";
+import { Pencil, Trash2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tooltip } from "@/components/ui/tooltip";
+import { useRouter } from "next/navigation";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogContent,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+export const contractDeliveryBatchStatusMap: Record<
+  string,
+  { label: string; className: string }
+> = {
+  Planned: {
+    label: "Chuẩn bị giao",
+    className: "bg-purple-100 text-purple-700",
+  },
+  InProgress: {
+    label: "Đang thực hiện",
+    className: "bg-yellow-100 text-yellow-800",
+  },
+  Fulfilled: {
+    label: "Hoàn thành",
+    className: "bg-green-100 text-green-700",
+  },
+  Cancelled: {
+    label: "Đã huỷ",
+    className: "bg-red-100 text-red-700",
+  },
+};
+
+export default function ContractDeliveryBatchDetailPage() {
+  const { id } = useParams();
+  const [batch, setBatch] =
+    useState<ContractDeliveryBatchViewDetailsDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const [editingItem, setEditingItem] =
+    useState<ContractDeliveryItemViewDto | null>(null);
+  const [showItemFormDialog, setShowItemFormDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] =
+    useState<ContractDeliveryItemViewDto | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const ITEMS_PER_PAGE = 5;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalItems = batch?.contractDeliveryItems.length ?? 0;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  const paginatedItems =
+    batch?.contractDeliveryItems.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    ) ?? [];
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchData = async () => {
+      try {
+        const result = await getContractDeliveryBatchById(id as string);
+        setBatch(result);
+      } catch (err) {
+        console.error("Failed to fetch batch:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  const handleDelete = async () => {
+    if (!itemToDelete?.deliveryItemId) return;
+
+    try {
+      // Gọi API xoá mềm mặt hàng đợt giao (tên hàm giả định)
+      await softDeleteContractDeliveryItem(itemToDelete.deliveryItemId);
+
+      // Đóng dialog
+      setShowDeleteDialog(false);
+
+      // Reload lại batch (từ server) hoặc cập nhật local:
+      const updated = {
+        ...batch!,
+        contractDeliveryItems: batch!.contractDeliveryItems.filter(
+          (i) => i.deliveryItemId !== itemToDelete.deliveryItemId
+        ),
+      };
+      setBatch(updated);
+    } catch (error) {
+      console.error("Xoá thất bại:", error);
+      alert("Không thể xoá mặt hàng. Vui lòng thử lại.");
+    }
+  };
+
+  if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
+  if (!batch)
+    return (
+      <div className="p-6 text-red-500">Không tìm thấy đợt giao hàng.</div>
+    );
+
+  return (
+    <div className="w-full min-h-screen bg-orange-50 px-4 py-6 lg:px-20 flex justify-center">
+      <div className="w-full max-w-6xl space-y-6">
+        {/* Title */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 text-2xl font-semibold text-gray-800">
+            <FiCalendar className="text-orange-600 w-6 h-6" />
+            <span>Đợt giao: {batch.deliveryBatchCode}</span>
+          </div>
+          <Button
+            className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-medium px-4 py-2 rounded-lg shadow-md flex items-center gap-2"
+            onClick={() => {
+              alert("Đi tới trang chỉnh sửa đợt giao");
+            }}
+          >
+            ✏️ Chỉnh sửa
+          </Button>
+        </div>
+
+        <Separator className="border-t border-gray-200 my-2" />
+
+        {/* Delivery Batch Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Thông tin đợt giao</CardTitle>
+          </CardHeader>
+
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <strong>Số hợp đồng:</strong> {batch.contractNumber}
+            </div>
+            <div>
+              <strong>Tên hợp đồng:</strong> {batch.contractTitle}
+            </div>
+            <div>
+              <strong>Đợt giao:</strong> {batch.deliveryRound}
+            </div>
+            <div>
+              <strong>Ngày dự kiến:</strong>{" "}
+              {batch.expectedDeliveryDate
+                ? formatDate(batch.expectedDeliveryDate)
+                : "—"}
+            </div>
+            <div>
+              <strong>Khối lượng:</strong>{" "}
+              {formatQuantity(batch.totalPlannedQuantity ?? 0)}
+            </div>
+            <div>
+              <strong>Trạng thái:</strong>
+              <span
+                className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${
+                  contractDeliveryBatchStatusMap[batch.status]?.className
+                }`}
+              >
+                {contractDeliveryBatchStatusMap[batch.status]?.label ||
+                  batch.status}
+              </span>
+            </div>
+            <div>
+              <strong>Ngày tạo:</strong>{" "}
+              {batch.createdAt ? formatDate(batch.createdAt) : "—"}
+            </div>
+            <div>
+              <strong>Ngày cập nhật:</strong>{" "}
+              {batch.updatedAt ? formatDate(batch.updatedAt) : "—"}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Delivery Items Table */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Danh sách mặt hàng giao</CardTitle>
+            <Button
+              onClick={() => {
+                setEditingItem(null); // create mode
+                setShowItemFormDialog(true);
+              }}
+            >
+              + Thêm mặt hàng
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto rounded border bg-white">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tên loại cà phê</TableHead>
+                    <TableHead className="text-center whitespace-nowrap">
+                      Khối lượng cần giao
+                    </TableHead>
+                    <TableHead className="text-center whitespace-nowrap">
+                      Khối lượng đã giao
+                    </TableHead>
+                    <TableHead>Ghi chú</TableHead>
+                    <TableHead className="text-center">Hành động</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {batch.contractDeliveryItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center text-muted-foreground"
+                      >
+                        Không có mặt hàng nào.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedItems.map((item) => (
+                      <TableRow key={item.deliveryItemId}>
+                        <TableCell>{item.coffeeTypeName}</TableCell>
+                        <TableCell className="text-center">
+                          {formatQuantity(item.plannedQuantity)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {item.fulfilledQuantity != null
+                            ? formatQuantity(item.fulfilledQuantity)
+                            : "—"}
+                        </TableCell>
+                        <TableCell>{item.note || "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex justify-center gap-1">
+                            <Tooltip content="Chỉnh sửa">
+                              <Button
+                                variant="ghost"
+                                className="w-8 h-8"
+                                onClick={() => {
+                                  setEditingItem(item);
+                                  setShowItemFormDialog(true);
+                                }}
+                              >
+                                <Pencil className="w-4 h-4 text-yellow-500" />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Xoá">
+                              <Button
+                                variant="ghost"
+                                className="w-8 h-8"
+                                onClick={() => {
+                                  setItemToDelete(item);
+                                  setShowDeleteDialog(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </Tooltip>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+                {totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border-t rounded-b-md text-sm text-gray-700">
+                    <div className="mb-2 sm:mb-0">
+                      Đang hiển thị{" "}
+                      <span className="font-medium">
+                        {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}
+                      </span>{" "}
+                      / <span className="font-medium">{totalItems}</span> mặt
+                      hàng
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-3"
+                        disabled={currentPage === 1}
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                      >
+                        ← Trước
+                      </Button>
+                      <span className="flex items-center px-2">
+                        Trang{" "}
+                        <span className="mx-1 font-semibold">
+                          {currentPage}
+                        </span>{" "}
+                        / {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-3"
+                        disabled={currentPage === totalPages}
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, totalPages)
+                          )
+                        }
+                      >
+                        Sau →
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Back button */}
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={() => history.back()}>
+            ← Quay lại
+          </Button>
+        </div>
+      </div>
+      {/* Dialog xác nhận xoá mặt hàng */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xoá mặt hàng?</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xoá mặt hàng{" "}
+              <strong>{itemToDelete?.coffeeTypeName}</strong> khỏi đợt giao
+              không? Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Huỷ
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Xoá
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
