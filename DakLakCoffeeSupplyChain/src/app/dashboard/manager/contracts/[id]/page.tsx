@@ -35,11 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import ContractItemFormDialog from "@/components/contracts/ContractItemFormDialog";
 import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
-import {
-  formatQuantity,
-  formatUnitPriceByQuantity,
-  formatDiscount,
-} from "@/lib/utils";
+import { formatQuantity, formatDate, formatDiscount } from "@/lib/utils";
 
 const contractStatusMap: Record<string, { label: string; className: string }> =
   {
@@ -61,12 +57,6 @@ const contractStatusMap: Record<string, { label: string; className: string }> =
     },
     Cancelled: { label: "Đã huỷ", className: "bg-red-100 text-red-700" },
   };
-
-const formatDate = (date?: string) => {
-  if (!date) return "-";
-  const d = new Date(date);
-  return d.toLocaleDateString("vi-VN");
-};
 
 export default function ContractDetailPage() {
   const params = useParams();
@@ -221,11 +211,15 @@ export default function ContractDetailPage() {
             </div>
             <div>
               <strong>Tổng khối lượng:</strong>{" "}
-              {contract.totalQuantity?.toLocaleString() ?? "-"}
+              {contract.totalQuantity !== undefined
+                ? formatQuantity(contract.totalQuantity)
+                : "-"}
             </div>
             <div>
               <strong>Tổng giá trị:</strong>{" "}
-              {contract.totalValue?.toLocaleString() ?? "-"}
+              {contract.totalValue !== undefined
+                ? `${contract.totalValue.toLocaleString()} VNĐ`
+                : "-"}
             </div>
             <div>
               <strong>Ngày bắt đầu:</strong> {formatDate(contract.startDate)}
@@ -292,9 +286,9 @@ export default function ContractDetailPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Tên loại cà phê</TableHead>
-                    <TableHead>Số lượng</TableHead>
-                    <TableHead>Đơn giá</TableHead>
-                    <TableHead>Chiết khấu</TableHead>
+                    <TableHead className="text-center">Số lượng</TableHead>
+                    <TableHead className="text-center">Đơn giá</TableHead>
+                    <TableHead className="text-center">Chiết khấu</TableHead>
                     <TableHead>Ghi chú</TableHead>
                     <TableHead className="text-center">Hành động</TableHead>
                   </TableRow>
@@ -313,16 +307,16 @@ export default function ContractDetailPage() {
                     paginatedItems.map((item) => (
                       <TableRow key={item.contractItemId}>
                         <TableCell>{item.coffeeTypeName}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           {item.quantity !== undefined
                             ? formatQuantity(item.quantity)
                             : "-"}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           {item.unitPrice?.toLocaleString()}{" "}
                           <span className="text-muted-foreground">VNĐ/kg</span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           {item.discountAmount !== undefined
                             ? `${item.discountAmount}%`
                             : "-"}
