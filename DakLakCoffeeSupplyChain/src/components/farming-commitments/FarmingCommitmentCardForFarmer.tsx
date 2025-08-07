@@ -5,7 +5,7 @@ import { FarmingCommitment } from "@/lib/api/farmingCommitments";
 import {
   FarmingCommitmentStatusMap,
   FarmingCommitmentStatusValue,
-} from "@/lib/constants/FarmingCommitmentStatu";
+} from "@/lib/constants/FarmingCommitmentStatus";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -52,9 +52,7 @@ export default function FarmingCommitmentCardForFarmer({
       </td>
 
       <td className='px-4 py-3'>
-        {commitment.commitmentDate
-          ? new Date(commitment.commitmentDate).toLocaleDateString("vi-VN")
-          : ""}
+        {new Date(commitment.commitmentDate).toLocaleDateString("vi-VN")}
       </td>
 
       <td className='px-4 py-3 text-center align-middle'></td>

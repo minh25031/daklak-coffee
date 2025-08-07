@@ -320,7 +320,7 @@ export default function PlanDetailPage() {
                   <p>
                     Diện tích đăng ký: {reg.registeredArea.toLocaleString()} ha
                     - Số đơn chi tiết:{" "}
-                    {reg.cultivationRegistrationViewDetailsDtos.length}
+                    {reg.cultivationRegistrationDetails.length}
                   </p>
                   <p className='text-sm text-gray-500'>
                     Ngày đăng ký:{" "}

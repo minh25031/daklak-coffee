@@ -207,11 +207,11 @@ export default function BusinessProcurementPlansPage() {
             />
             <Search className='absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
           </div>
-          <div className='flex justify-end text-sm'>
+          {/* <div className='flex justify-end text-sm'>
             <Button className='w-full bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium text-sm'>
               Search
             </Button>
-          </div>
+          </div> */}
         </div>
 
         <FilterStatusPanel<ProcurementPlanStatusValue>

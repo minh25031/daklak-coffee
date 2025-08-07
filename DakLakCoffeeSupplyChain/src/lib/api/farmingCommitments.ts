@@ -1,28 +1,30 @@
 // lib/api/farmingCommitments.ts
 import api from "@/lib/api/axios";
-export interface FarmingCommitment {
+export type FarmingCommitment = {
   commitmentId: string;
   commitmentCode: string;
   commitmentName: string;
   farmerId: string;
   farmerName: string;
-  businessName: string;
+  companyName: string;
   planTitle?: string;
   totalPrice: number;
   registrationId: string;
   note: string;
-  commitmentDate: Date; // ISO date string
+  commitmentDate: string; // ISO date string
   committedAt: string; // ISO date string
   farmingCommitmentDetails: Partial<FarmingCommitmentDetail>[];
+  FarmingCommitmentsDetailsCreateDtos: Partial<FarmingCommitmentDetail>[];
   status: string | number; // e.g. "Pending", "Approved", "Rejected"
 }
 
-export interface FarmingCommitmentDetail {
+export type FarmingCommitmentDetail = {
   commitmentDetailId: string;
   commitmentDetailCode: string;
   commitmentId: string;
   registrationDetailId: string;
   planDetailId: string;
+  coffeeTypeName: string;
   confirmedPrice: number; // price per kg
   committedQuantity: number; // in kg
   estimatedDeliveryStart: string; // ISO date string
