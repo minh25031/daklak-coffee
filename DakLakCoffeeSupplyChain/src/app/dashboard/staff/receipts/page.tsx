@@ -6,19 +6,18 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, Eye, Search } from 'lucide-react';
+import { Eye, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function ReceiptListPage() {
   const [receipts, setReceipts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
   const pageSize = 10;
 
   useEffect(() => {
-    async function fetchReceipts() {
+    (async () => {
       try {
         const res = await getAllWarehouseReceipts();
         if (res.status === 1) {
@@ -28,150 +27,112 @@ export default function ReceiptListPage() {
         }
       } catch {
         toast.error('Lỗi khi tải dữ liệu từ server.');
-      } finally {
-        setLoading(false);
       }
-    }
-
-    fetchReceipts();
+    })();
   }, []);
 
-  const filteredReceipts = receipts.filter((r) =>
+  const filtered = receipts.filter((r) =>
     r.receiptCode?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredReceipts.length / pageSize);
-  const pagedReceipts = filteredReceipts.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <Card className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">📄 Danh sách phiếu nhập kho</h1>
-        <div className="relative flex items-center gap-2">
+        <h1 className="text-xl font-bold">📥 Phiếu nhập kho</h1>
+        <div className="flex gap-2 items-center relative">
           <Input
-            placeholder="Tìm theo mã phiếu..."
+            placeholder="Tìm mã phiếu..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setCurrentPage(1);
+              setPage(1);
             }}
             className="w-64 pr-10"
           />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Link href="/dashboard/staff/receipts/create">
-            <Button className="bg-blue-600 text-white hover:bg-blue-700">
-              + Tạo mới
-            </Button>
+            <Button className="bg-blue-600 text-white hover:bg-blue-700">+ Tạo mới</Button>
           </Link>
         </div>
       </div>
 
-      {/* Content */}
-      {loading ? (
-        <p className="text-gray-500">Đang tải dữ liệu...</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto border">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 text-left">Mã phiếu</th>
-                <th className="px-4 py-2 text-left">Kho</th>
-                <th className="px-4 py-2 text-left">Lô hàng</th>
-                <th className="px-4 py-2 text-left">Số lượng (kg)</th>
-                <th className="px-4 py-2 text-left">Ngày nhập</th>
-                <th className="px-4 py-2 text-left">Nhân viên</th>
-                <th className="px-4 py-2 text-center">Trạng thái</th>
-                <th className="px-4 py-2 text-center">Xem</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedReceipts.map((receipt) => {
-                const note = receipt?.note ?? '';
-                const isConfirmed = /\[?confirmed at/i.test(note);
-                return (
-                  <tr key={receipt.receiptId} className="border-t">
-                    <td className="px-4 py-2">{receipt.receiptCode || '?'}</td>
-                    <td className="px-4 py-2">{receipt.warehouseName || '?'}</td>
-                    <td className="px-4 py-2">{receipt.batchCode || '?'}</td>
-                    <td className="px-4 py-2">{receipt.receivedQuantity ?? '?'}</td>
-                    <td className="px-4 py-2">
-                      {receipt.receivedAt
-                        ? new Date(receipt.receivedAt).toLocaleDateString()
-                        : '?'}
-                    </td>
-                    <td className="px-4 py-2">{receipt.staffName || 'Không rõ'}</td>
-                    <td className="px-4 py-2 text-center">
-                      <Badge
-                        className={`capitalize px-3 py-1 rounded-md font-medium text-sm ${
-                          isConfirmed
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {isConfirmed ? 'Đã xác nhận' : 'Chưa xác nhận'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2 text-center">
-                      <Link href={`/dashboard/staff/receipts/${receipt.receiptId}`}>
-                        <Eye className="w-4 h-4 text-blue-600 hover:text-blue-800 cursor-pointer inline-block" />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-              {pagedReceipts.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="text-center py-4 text-gray-500">
-                    Không có phiếu nhập kho nào.
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full table-auto border text-sm bg-white">
+          <thead className="bg-gray-100 text-left">
+            <tr>
+              <th className="px-3 py-2 border">Mã phiếu</th>
+              <th className="px-3 py-2 border">Kho</th>
+              <th className="px-3 py-2 border">Lô hàng</th>
+              <th className="px-3 py-2 border">Số lượng</th>
+              <th className="px-3 py-2 border text-center">Trạng thái</th>
+              <th className="px-3 py-2 border text-center">Xem</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paged.map((r) => {
+              const isConfirmed = r?.note?.toLowerCase().includes('confirmed at');
+              return (
+                <tr key={r.receiptId} className="border-t">
+                  <td className="px-3 py-2">{r.receiptCode}</td>
+                  <td className="px-3 py-2">{r.warehouseName}</td>
+                  <td className="px-3 py-2">{r.batchCode}</td>
+                  <td className="px-3 py-2">{r.receivedQuantity ?? '?'}</td>
+                  <td className="px-3 py-2 text-center">
+                    <Badge
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        isConfirmed
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}
+                    >
+                      {isConfirmed ? 'Đã xác nhận' : 'Chưa xác nhận'}
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <Link href={`/dashboard/staff/receipts/${r.receiptId}`}>
+                      <Eye className="w-4 h-4 text-blue-600 hover:text-blue-800 cursor-pointer" />
+                    </Link>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {!loading && filteredReceipts.length > 0 && (
-        <div className="flex justify-between items-center mt-4">
-          <span className="text-sm text-muted-foreground">
-            Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredReceipts.length)} trong {filteredReceipts.length} phiếu
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            {[...Array(totalPages).keys()].map((_, i) => {
-              const page = i + 1;
-              return (
-                <Button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`rounded-md px-3 py-1 text-sm ${
-                    page === currentPage
-                      ? 'bg-black text-white'
-                      : 'bg-white text-black border'
-                  }`}
-                >
-                  {page}
-                </Button>
               );
             })}
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            >
+            {paged.length === 0 && (
+              <tr>
+                <td colSpan={6} className="text-center py-4 text-gray-500">
+                  Không có phiếu phù hợp.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {filtered.length > 0 && (
+        <div className="flex justify-between items-center mt-4 text-sm">
+          <span>
+            Hiển thị {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} trong {filtered.length}
+          </span>
+          <div className="flex gap-1">
+            <Button variant="outline" size="icon" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            {[...Array(totalPages)].map((_, i) => (
+              <Button
+                key={i}
+                size="sm"
+                onClick={() => setPage(i + 1)}
+                className={page === i + 1 ? 'bg-black text-white' : 'bg-white text-black border'}
+              >
+                {i + 1}
+              </Button>
+            ))}
+            <Button variant="outline" size="icon" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>

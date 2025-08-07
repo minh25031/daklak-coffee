@@ -17,6 +17,8 @@ import { toast } from 'sonner';
 
 import { getAllOutboundRequests } from '@/lib/api/warehouseOutboundRequest';
 import { createOutboundReceipt } from '@/lib/api/warehouseOutboundReceipt';
+import { getInventoriesByWarehouseId } from '@/lib/api/inventory';
+import { getWarehouseById } from '@/lib/api/warehouses';
 
 type OutboundRequest = {
   outboundRequestId: string;
@@ -39,10 +41,14 @@ export default function CreateOutboundReceiptPage() {
   const [destination, setDestination] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const [usedCapacity, setUsedCapacity] = useState<number | null>(null);
+  const [totalCapacity, setTotalCapacity] = useState<number | null>(null);
+
   const selectedRequest = requests.find(
     (r) => r.outboundRequestId === selectedRequestId
   );
 
+  // Lấy danh sách yêu cầu đã được duyệt
   useEffect(() => {
     const fetchAcceptedRequests = async () => {
       try {
@@ -59,6 +65,28 @@ export default function CreateOutboundReceiptPage() {
     };
     fetchAcceptedRequests();
   }, []);
+
+  // Khi chọn 1 request -> fetch dung lượng và tổng capacity của kho tương ứng
+  useEffect(() => {
+    const fetchWarehouseUsage = async () => {
+      if (!selectedRequest) return;
+
+      try {
+        const inventories = await getInventoriesByWarehouseId(selectedRequest.warehouseId);
+        const used = inventories.reduce((sum: number, item: any) => sum + item.quantity, 0);
+        setUsedCapacity(used);
+
+        const warehouseDetail = await getWarehouseById(selectedRequest.warehouseId);
+        const capacity = warehouseDetail?.data?.capacity || 0;
+        setTotalCapacity(capacity);
+      } catch (error) {
+        setUsedCapacity(null);
+        setTotalCapacity(null);
+      }
+    };
+
+    fetchWarehouseUsage();
+  }, [selectedRequest]);
 
   const handleSubmit = async () => {
     if (!selectedRequest) {
@@ -93,7 +121,7 @@ export default function CreateOutboundReceiptPage() {
       </h1>
 
       <div className="space-y-5">
-        {/* Yêu cầu xuất kho */}
+        {/* Select yêu cầu xuất kho */}
         <div>
           <Label className="font-semibold text-gray-800">Chọn yêu cầu xuất kho *</Label>
           <Select
@@ -106,17 +134,36 @@ export default function CreateOutboundReceiptPage() {
             <SelectContent>
               {requests.map((r) => (
                 <SelectItem key={r.outboundRequestId} value={r.outboundRequestId}>
-                  {r.outboundRequestCode} – {r.warehouseName} – {r.batchCode}
+                  <div className="flex flex-col text-left">
+                    <span className="font-medium text-sm">
+                      {r.outboundRequestCode} – {r.warehouseName}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      📦 {r.batchCode} | ⚖️ {r.requestedQuantity} {r.unit}
+                    </span>
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Thông tin chi tiết */}
+        {/* Hiển thị thông tin chi tiết */}
         {selectedRequest && (
           <div className="space-y-2 text-sm text-gray-700 border border-gray-300 bg-gray-50 rounded-lg p-4">
             <p><strong>🏢 Kho:</strong> {selectedRequest.warehouseName}</p>
+
+            {usedCapacity !== null && totalCapacity !== null ? (
+              <p>
+                <strong>📦 Dung lượng:</strong>{' '}
+                <span className="text-gray-900 font-medium">
+                  {usedCapacity.toLocaleString()} / {totalCapacity.toLocaleString()} {selectedRequest.unit}
+                </span>
+              </p>
+            ) : (
+              <p className="text-gray-400 italic">Đang tải dung lượng kho...</p>
+            )}
+
             <p><strong>📦 Mẻ hàng:</strong> {selectedRequest.batchCode}</p>
             <p><strong>⚖️ Số lượng:</strong> {selectedRequest.requestedQuantity} {selectedRequest.unit}</p>
           </div>
@@ -133,7 +180,7 @@ export default function CreateOutboundReceiptPage() {
           />
         </div>
 
-        {/* Địa điểm nhận */}
+        {/* Địa điểm nhận hàng */}
         <div>
           <Label className="text-gray-800">Địa điểm nhận hàng</Label>
           <Input

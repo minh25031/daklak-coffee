@@ -2,12 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { getAllWarehouses } from "@/lib/api/warehouses";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { getInventoriesByWarehouseId } from "@/lib/api/inventory";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Eye, Search } from "lucide-react";
-import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
+import { Doughnut } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 type Warehouse = {
   warehouseId: string;
@@ -18,28 +27,44 @@ type Warehouse = {
 
 export default function WarehouseListPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [usedCapacities, setUsedCapacities] = useState<Record<string, number>>(
+    {}
+  );
   const [loading, setLoading] = useState(true);
-  const pageSize = 10;
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const fetchData = async () => {
+    async function fetchData() {
       try {
         const res = await getAllWarehouses();
-        if (Array.isArray(res)) {
-          setWarehouses(res);
-        } else if (res.status === 1 && Array.isArray(res.data)) {
+        if (res?.status === 1 && Array.isArray(res.data)) {
           setWarehouses(res.data);
+
+          const usageMap: Record<string, number> = {};
+          for (const warehouse of res.data) {
+            try {
+              const inventories = await getInventoriesByWarehouseId(
+                warehouse.warehouseId
+              );
+              const totalUsed = inventories.reduce(
+                (sum: number, i: any) => sum + i.quantity,
+                0
+              );
+              usageMap[warehouse.warehouseId] = totalUsed;
+            } catch {
+              usageMap[warehouse.warehouseId] = 0;
+            }
+          }
+          setUsedCapacities(usageMap);
         } else {
-          toast.error("❌ Không thể tải danh sách kho");
+          toast.error("❌ Không thể tải danh sách kho.");
         }
       } catch (error) {
-        toast.error("❌ Đã xảy ra lỗi khi tải danh sách kho");
+        toast.error("❌ Đã xảy ra lỗi khi tải danh sách kho.");
       } finally {
         setLoading(false);
       }
-    };
+    }
     fetchData();
   }, []);
 
@@ -47,116 +72,96 @@ export default function WarehouseListPage() {
     w.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paged = filtered.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
   return (
-    <Card className="p-6 bg-white shadow-md rounded-lg">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-orange-600">Danh sách kho</h1>
         <div className="relative w-72">
           <Input
             placeholder="Tìm kiếm theo tên kho..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
+            onChange={(e) => setSearch(e.target.value)}
             className="pr-10 border-orange-300 focus:ring-orange-400"
           />
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-orange-400" />
         </div>
       </div>
 
-      {/* Table content */}
+      {/* Content */}
       {loading ? (
         <p className="text-gray-500">Đang tải dữ liệu...</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-gray-500 italic">Không tìm thấy kho phù hợp.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto border border-gray-200 rounded-lg">
-            <thead className="bg-orange-50 text-orange-800">
-              <tr>
-                <th className="text-left px-4 py-2">Tên kho</th>
-                <th className="text-left px-4 py-2">Vị trí</th>
-                <th className="text-left px-4 py-2">Dung lượng (kg)</th>
-                <th className="text-center px-4 py-2">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paged.map((w) => (
-                <tr key={w.warehouseId} className="border-t hover:bg-orange-50 transition">
-                  <td className="px-4 py-2 font-semibold text-gray-900">{w.name}</td>
-                  <td className="px-4 py-2">{w.location}</td>
-                  <td className="px-4 py-2">
-                    {w.capacity?.toLocaleString() ?? "-"} kg
-                  </td>
-                  <td className="px-4 py-2 text-center">
-                    <Link href={`/dashboard/staff/warehouses/${w.warehouseId}`}>
-                      <Button variant="outline" size="sm" className="border-orange-500 text-orange-600 hover:bg-orange-100">
-                        <Eye className="w-4 h-4 mr-1" /> Xem
-                      </Button>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {paged.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-center py-4 italic text-gray-500">
-                    Không tìm thấy kho phù hợp.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {filtered.map((warehouse) => {
+            const used = usedCapacities[warehouse.warehouseId] || 0;
+            const total = warehouse.capacity || 0;
+            const available = Math.max(0, total - used);
+            const usedPercent = total > 0 ? (used / total) * 100 : 0;
 
-      {/* Pagination */}
-      {!loading && filtered.length > 0 && (
-        <div className="flex justify-between items-center mt-6">
-          <span className="text-sm text-muted-foreground">
-            Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} trong {filtered.length} kho
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            {[...Array(totalPages).keys()].map((_, i) => {
-              const page = i + 1;
-              return (
-                <Button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`rounded-full px-3 py-1 text-sm ${
-                    page === currentPage
-                      ? "bg-orange-600 text-white"
-                      : "bg-white text-orange-600 border border-orange-400"
-                  }`}
+            return (
+              <Card
+                key={warehouse.warehouseId}
+                className="p-4 rounded-xl border shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-24 h-24">
+                    <Doughnut
+                      data={{
+                        labels: ["Đã sử dụng", "Còn trống"],
+                        datasets: [
+                          {
+                            data: [used, available],
+                            backgroundColor: ["#FB923C", "#86EFAC"],
+                            hoverOffset: 6,
+                          },
+                        ],
+                      }}
+                      options={{
+                        plugins: {
+                          legend: {
+                            display: false,
+                          },
+                        },
+                        cutout: "60%",
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-gray-800">
+                      {warehouse.name}
+                    </h2>
+                    <p className="text-sm text-gray-500">{warehouse.location}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Dung lượng:{" "}
+                      <span className="font-medium">
+                        {(used || 0).toLocaleString()} /{" "}
+                        {total.toLocaleString()} kg
+                      </span>
+                    </p>
+                    <p
+                      className={`text-xs mt-1 ${
+                        usedPercent > 80 ? "text-red-500" : "text-green-600"
+                      }`}
+                    >
+                      {usedPercent.toFixed(1)}% đã sử dụng
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={`/dashboard/staff/warehouses/${warehouse.warehouseId}`}
                 >
-                  {page}
-                </Button>
-              );
-            })}
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
+                  <button className="mt-4 w-full bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold py-2 rounded-lg transition">
+                    Xem chi tiết
+                  </button>
+                </Link>
+              </Card>
+            );
+          })}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

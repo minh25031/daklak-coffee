@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, CheckCircle, Clock } from 'lucide-react';
 
 interface OutboundReceiptItem {
   outboundReceiptId: string;
@@ -13,56 +13,63 @@ interface OutboundReceiptItem {
   batchCode: string;
   quantity: number;
   unit: string;
-  exportedAt: string | null;
+  note?: string;
 }
 
 export default function OutboundReceiptListPage() {
   const [receipts, setReceipts] = useState<OutboundReceiptItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 6;
-
   const router = useRouter();
 
   useEffect(() => {
-    const fetchReceipts = async () => {
+    const fetchReceiptsWithNote = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) throw new Error('Not authenticated');
+        if (!token) throw new Error('Chưa đăng nhập');
 
+        // Fetch danh sách ban đầu
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/WarehouseOutboundReceipts`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!res.ok) throw new Error(await res.text());
+        const list = await res.json();
+        if (!Array.isArray(list)) throw new Error('Dữ liệu không hợp lệ');
 
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setReceipts(data);
-        } else {
-          console.error('Unexpected response:', data);
-          alert('⚠️ Unexpected response format');
-        }
+        // Fetch chi tiết từng phiếu để lấy `note`
+        const enriched = await Promise.all(
+          list.map(async (r: any) => {
+            try {
+              const detailRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/WarehouseOutboundReceipts/${r.outboundReceiptId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+
+              if (!detailRes.ok) throw new Error();
+              const detail = await detailRes.json();
+              return { ...r, note: detail.note };
+            } catch {
+              return r;
+            }
+          })
+        );
+
+        setReceipts(enriched);
       } catch (err: any) {
-        console.error('Fetch error:', err);
-        alert('❌ Failed to load: ' + err.message);
+        alert('❌ Lỗi khi tải danh sách: ' + err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchReceipts();
+    fetchReceiptsWithNote();
   }, []);
-
-  const totalPages = Math.ceil(receipts.length / pageSize);
-  const pagedReceipts = receipts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (loading) return <p className="p-6">Đang tải phiếu xuất kho...</p>;
 
   return (
     <div className="p-6 space-y-6">
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
+      <Card className="p-6 shadow-md">
+        <div className="flex justify-between items-center mb-4">
           <h1 className="text-xl font-bold text-orange-600">📤 Danh sách phiếu xuất kho</h1>
           <Button
             className="bg-orange-600 hover:bg-orange-700 text-white"
@@ -73,106 +80,52 @@ export default function OutboundReceiptListPage() {
         </div>
 
         {receipts.length === 0 ? (
-          <p className="text-muted-foreground">Không có phiếu xuất kho nào.</p>
+          <p className="text-gray-500 italic">Chưa có phiếu xuất kho nào.</p>
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full table-auto border text-sm bg-white">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="p-2 border text-left">Mã phiếu</th>
-                    <th className="p-2 border text-left">Kho</th>
-                    <th className="p-2 border text-left">Mẻ hàng</th>
-                    <th className="p-2 border text-left">Số lượng</th>
-                    <th className="p-2 border text-left">Ngày xuất</th>
-                    <th className="p-2 border text-center">Xem</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagedReceipts.map((r) => {
-                    const exportedDate = r.exportedAt ? new Date(r.exportedAt) : null;
-                    const isValidDate = exportedDate && !isNaN(exportedDate.getTime());
-
-                    return (
-                      <tr key={r.outboundReceiptId} className="border-t">
-                        <td className="p-2 border">{r.outboundReceiptCode}</td>
-                        <td className="p-2 border">{r.warehouseName || 'Không rõ'}</td>
-                        <td className="p-2 border">{r.batchCode || 'Không rõ'}</td>
-                        <td className="p-2 border">
-                          {r.quantity} {r.unit || 'kg'}
-                        </td>
-                        <td className="p-2 border">
-                          {isValidDate ? (
-                            <>
-                              {exportedDate.toLocaleDateString('vi-VN')}
-                              <br />
-                              <span className="text-xs text-gray-500">
-                                {exportedDate.toLocaleTimeString('vi-VN')}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground italic">Chưa xác định</span>
-                          )}
-                        </td>
-                        <td className="p-2 border text-center">
-                          <Eye
-                            className="w-4 h-4 text-blue-600 hover:text-blue-800 cursor-pointer inline-block"
-                            onClick={() =>
-                              router.push(`/dashboard/staff/outbound-receipts/${r.outboundReceiptId}`)
-                            }
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-between items-center mt-4">
-                <span className="text-sm text-muted-foreground">
-                  Hiển thị {(currentPage - 1) * pageSize + 1}–
-                  {Math.min(currentPage * pageSize, receipts.length)} trong {receipts.length} phiếu
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  {[...Array(totalPages).keys()].map((_, i) => {
-                    const page = i + 1;
-                    return (
-                      <Button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`rounded-full px-3 py-1 text-sm ${
-                          page === currentPage
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-white text-orange-600 border border-orange-400'
-                        }`}
-                      >
-                        {page}
-                      </Button>
-                    );
-                  })}
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border bg-white">
+              <thead className="bg-gray-100 text-left">
+                <tr>
+                  <th className="p-2 border">Mã phiếu</th>
+                  <th className="p-2 border">Kho</th>
+                  <th className="p-2 border">Mẻ hàng</th>
+                  <th className="p-2 border">Số lượng</th>
+                  <th className="p-2 border">Trạng thái</th>
+                  <th className="p-2 border text-center">Xem</th>
+                </tr>
+              </thead>
+              <tbody>
+                {receipts.map((r) => {
+                  const isConfirmed = r.note?.includes('[Đã xác nhận lúc');
+                  return (
+                    <tr key={r.outboundReceiptId} className="border-t">
+                      <td className="p-2 border">{r.outboundReceiptCode}</td>
+                      <td className="p-2 border">{r.warehouseName}</td>
+                      <td className="p-2 border">{r.batchCode}</td>
+                      <td className="p-2 border">{r.quantity} {r.unit || 'kg'}</td>
+                      <td className="p-2 border font-medium">
+                        {isConfirmed ? (
+                          <span className="text-green-600 flex items-center gap-1">
+                            <CheckCircle className="w-4 h-4" /> Đã xác nhận
+                          </span>
+                        ) : (
+                          <span className="text-yellow-600 flex items-center gap-1">
+                            <Clock className="w-4 h-4" /> Chưa xác nhận
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-2 border text-center">
+                        <Eye
+                          className="w-4 h-4 text-blue-600 hover:text-blue-800 cursor-pointer inline-block"
+                          onClick={() => router.push(`/dashboard/staff/outbound-receipts/${r.outboundReceiptId}`)}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
     </div>
