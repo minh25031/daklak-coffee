@@ -18,12 +18,16 @@ import {
   CheckCircle,
   XCircle,
   FileText,
+  Info,
 } from "lucide-react";
 import {
   ContractDeliveryBatchViewAllDto,
   getAllContractDeliveryBatches,
 } from "@/lib/api/contractDeliveryBatches";
 import FilterDeliveryBatchStatusPanel from "@/components/contract-delivery-batches/FilterDeliveryBatchStatusPanel";
+import { Tooltip } from "@/components/ui/tooltip";
+import { formatQuantity } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 
 export function getDeliveryBatchStatusDisplay(
   status: ContractDeliveryBatchStatus | "ALL"
@@ -78,6 +82,9 @@ export default function ContractDeliveryBatchesPage() {
   const ITEMS_PER_PAGE = 6;
   const [currentPage, setCurrentPage] = useState(1);
 
+  const [fromDate, setFromDate] = useState<Date | null>(null);
+  const [toDate, setToDate] = useState<Date | null>(null);
+
   useEffect(() => {
     const fetchBatches = async () => {
       try {
@@ -94,12 +101,22 @@ export default function ContractDeliveryBatchesPage() {
   }, []);
 
   const filteredData = data.filter((batch) => {
-    const matchesSearch = batch.deliveryBatchCode
-      .toLowerCase()
-      .includes(search.toLowerCase());
+    const matchesSearch =
+      batch.deliveryBatchCode.toLowerCase().includes(search.toLowerCase()) ||
+      batch.contractNumber.toLowerCase().includes(search.toLowerCase());
+
     const matchesStatus =
       selectedStatus === "ALL" || batch.status === selectedStatus;
-    return matchesSearch && matchesStatus;
+
+    const batchDate = batch.expectedDeliveryDate
+      ? new Date(batch.expectedDeliveryDate)
+      : null;
+
+    const matchesDate =
+      (!fromDate || (batchDate && batchDate >= fromDate)) &&
+      (!toDate || (batchDate && batchDate <= toDate));
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
@@ -158,7 +175,36 @@ export default function ContractDeliveryBatchesPage() {
       <main className="flex-1 space-y-6">
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
           {/* Header */}
-          <div className="flex justify-end items-center">
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            {/* Bộ lọc ngày */}
+            <div className="flex gap-4 items-center">
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700">Từ ngày</label>
+                <Input
+                  type="date"
+                  value={fromDate ? fromDate.toISOString().split("T")[0] : ""}
+                  onChange={(e) =>
+                    setFromDate(
+                      e.target.value ? new Date(e.target.value) : null
+                    )
+                  }
+                  className="w-[150px]"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700">Đến ngày</label>
+                <Input
+                  type="date"
+                  value={toDate ? toDate.toISOString().split("T")[0] : ""}
+                  onChange={(e) =>
+                    setToDate(e.target.value ? new Date(e.target.value) : null)
+                  }
+                  className="w-[150px]"
+                />
+              </div>
+            </div>
+
+            {/* Nút tạo mới */}
             <Button className="bg-black text-white hover:bg-gray-800">
               + Tạo đợt giao hàng mới
             </Button>
@@ -170,10 +216,15 @@ export default function ContractDeliveryBatchesPage() {
               <thead className="bg-gray-100 text-gray-700">
                 <tr>
                   <th className="px-4 py-2 text-left">Mã đợt giao</th>
-                  <th className="px-4 py-2 text-left">Mã hợp đồng</th>
+                  <th className="px-4 py-2 text-left">Số hợp đồng</th>
                   <th className="px-4 py-2 text-center">Đợt</th>
-                  <th className="px-4 py-2 text-center">Ngày dự kiến</th>
-                  <th className="px-4 py-2 text-center">SL kế hoạch</th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">Ngày dự kiến</th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">
+                    Khối lượng
+                    <Tooltip content="Khối lượng cà phê cần giao trong đợt này, đã được xác định theo hợp đồng.">
+                      <Info className="inline ml-1 w-3 h-3 text-gray-400" />
+                    </Tooltip>
+                  </th>
                   <th className="px-4 py-2 text-center">Trạng thái</th>
                   <th className="px-4 py-2 text-center">Hành động</th>
                 </tr>
@@ -198,7 +249,7 @@ export default function ContractDeliveryBatchesPage() {
                       className="hover:bg-gray-50 border-t"
                     >
                       <td className="px-4 py-2">{batch.deliveryBatchCode}</td>
-                      <td className="px-4 py-2">{batch.contractId}</td>
+                      <td className="px-4 py-2">{batch.contractNumber}</td>
                       <td className="px-4 py-2 text-center">
                         {batch.deliveryRound}
                       </td>
@@ -208,9 +259,11 @@ export default function ContractDeliveryBatchesPage() {
                           : "—"}
                       </td>
                       <td className="px-4 py-2 text-center">
-                        {batch.totalPlannedQuantity ?? "—"}
+                        {batch.totalPlannedQuantity != null
+                          ? formatQuantity(batch.totalPlannedQuantity)
+                          : "—"}
                       </td>
-                      <td className="px-4 py-2 text-center">
+                      <td className="px-4 py-2 text-center whitespace-nowrap">
                         <span className="text-xs px-2 py-1 rounded-full font-medium bg-purple-100 text-purple-700">
                           {ContractDeliveryBatchStatusLabel[batch.status]}
                         </span>
