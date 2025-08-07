@@ -33,14 +33,14 @@ export const ProcessingStatusMap: Record<
   [ProcessingStatus.InProgress]: {
     label: "Đang xử lý",
     icon: Loader2, // vòng quay xử lý
-    bgClass: "bg-green-100",
-    textClass: "text-green-800",
+    bgClass: "bg-blue-100",
+    textClass: "text-blue-800",
   },
   [ProcessingStatus.Completed]: {
     label: "Hoàn thành",
     icon: CheckCircle,
-    bgClass: "bg-blue-100",
-    textClass: "text-blue-800",
+    bgClass: "bg-green-100",
+    textClass: "text-green-800",
   },
   [ProcessingStatus.Cancelled]: {
     label: "Đã huỷ",

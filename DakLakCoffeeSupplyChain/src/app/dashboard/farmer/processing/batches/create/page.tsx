@@ -14,6 +14,7 @@ import {
   getCropSeasonsForCurrentUser,
   CropSeasonListItem,
 } from "@/lib/api/cropSeasons";
+
 import {
   getAllProcessingMethods,
   ProcessingMethod,
@@ -136,15 +137,35 @@ export default function CreateProcessingBatchPage() {
         coffeeTypeId,
         cropSeasonId,
         batchCode: batchCode.trim(),
-        methodId: Number(methodId)
+        methodId: Number(methodId),
+        inputQuantity: 0, // Sẽ được cập nhật sau khi có thông tin từ crop season
+        inputUnit: "kg" // Đơn vị mặc định
       });
 
       AppToast.success("Tạo lô sơ chế thành công!");
       router.push("/dashboard/farmer/processing/batches");
     } catch (err: any) {
       console.error("❌ Lỗi tạo batch:", err);
-      const errorMessage =
-        err?.response?.data?.message || "Tạo lô sơ chế thất bại!";
+      
+      // Xử lý các loại lỗi cụ thể
+      let errorMessage = "Tạo lô sơ chế thất bại!";
+      
+      if (err?.response?.data?.message) {
+        // Lấy message từ API response
+        errorMessage = err.response.data.message;
+      } else if (err?.message) {
+        // Lấy message từ Error object
+        errorMessage = err.message;
+      } else if (err?.response?.status === 400) {
+        errorMessage = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.";
+      } else if (err?.response?.status === 404) {
+        errorMessage = "Không tìm thấy thông tin cần thiết. Vui lòng thử lại.";
+      } else if (err?.response?.status === 409) {
+        errorMessage = "Lô sơ chế đã tồn tại hoặc thông tin bị trùng lặp.";
+      } else if (err?.response?.status >= 500) {
+        errorMessage = "Lỗi hệ thống. Vui lòng thử lại sau.";
+      }
+      
       AppToast.error(errorMessage);
     } finally {
       setIsSubmitting(false);

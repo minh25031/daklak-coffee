@@ -740,8 +740,18 @@ export default function ViewProcessingBatch() {
         {/* Media Viewer Dialog */}
         <Dialog open={mediaViewerOpen} onOpenChange={setMediaViewerOpen}>
           <DialogContent 
-            className="w-screen h-screen max-w-none max-h-none overflow-hidden p-0 bg-black border-0 shadow-none z-[9999]"
+            className="media-viewer-overlay w-screen h-screen max-w-none max-h-none overflow-hidden p-0 bg-black border-0 shadow-none !fixed !inset-0 !top-0 !left-0 !right-0 !bottom-0"
             showCloseButton={false}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 999999
+            }}
           >
             {/* Header */}
             <div className="absolute top-4 right-4 z-50">
@@ -783,42 +793,48 @@ export default function ViewProcessingBatch() {
                 {currentMediaIndex + 1} / {allMedia.length}
               </div>
             )}
-
-            {/* Media Content */}
-            <div className="flex items-center justify-center h-full w-full p-2">
-              {selectedMedia?.type === 'image' ? (
-                <div className="flex flex-col items-center w-full h-full">
-                  <img 
-                    src={selectedMedia.url} 
-                    alt={selectedMedia.caption || 'Hình ảnh'} 
-                    className="w-full h-full object-contain"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  {selectedMedia.caption && (
-                    <p className="mt-4 text-sm text-white text-center max-w-2xl bg-black/60 px-4 py-2 rounded-lg">
-                      {selectedMedia.caption}
-                    </p>
-                  )}
-                </div>
-              ) : selectedMedia?.type === 'video' ? (
-                <div className="flex flex-col items-center w-full h-full">
-                  <video 
-                    controls 
-                    className="w-full h-full rounded-lg"
-                    autoPlay
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <source src={selectedMedia.url} />
-                    Trình duyệt của bạn không hỗ trợ video.
-                  </video>
-                  {selectedMedia.caption && (
-                    <p className="mt-4 text-sm text-white text-center max-w-2xl bg-black/60 px-4 py-2 rounded-lg">
-                      {selectedMedia.caption}
-                    </p>
-                  )}
-                </div>
-              ) : null}
-            </div>
+{/* Media Content */}
+<div className="absolute inset-0 flex items-center justify-center bg-black z-40">
+  {selectedMedia?.type === 'image' ? (
+    <div className="flex flex-col items-center justify-center">
+      <img 
+        src={selectedMedia.url} 
+        alt={selectedMedia.caption || 'Hình ảnh'} 
+        className="object-contain"
+        style={{
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+        }}
+      />
+      {selectedMedia.caption && (
+        <p className="mt-4 text-sm text-white text-center max-w-2xl bg-black/60 px-4 py-2 rounded-lg">
+          {selectedMedia.caption}
+        </p>
+      )}
+    </div>
+  ) : selectedMedia?.type === 'video' ? (
+    <div className="flex flex-col items-center justify-center">
+      <video 
+        controls 
+        autoPlay
+        className="object-contain"
+        style={{
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+        }}
+      >
+        <source src={selectedMedia.url} />
+        Trình duyệt của bạn không hỗ trợ video.
+      </video>
+      {selectedMedia.caption && (
+        <p className="mt-4 text-sm text-white text-center max-w-2xl bg-black/60 px-4 py-2 rounded-lg">
+          {selectedMedia.caption}
+        </p>
+      )}
+    </div>
+  ) : null}
+</div>
+  
 
             {/* Keyboard Instructions */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-black/60 text-white px-4 py-2 rounded-full text-sm">

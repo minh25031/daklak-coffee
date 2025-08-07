@@ -6,11 +6,31 @@ import {
 } from "@/lib/constants/batchStatus";
 
 interface StatusBadgeProps {
-  status: number;
+  status: number | string;
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const info = ProcessingStatusMap[status as ProcessingStatus];
+  // Đảm bảo status là number
+  const numericStatus = typeof status === 'string' ? parseInt(status, 10) : status;
+  
+  // Sử dụng switch case để đảm bảo mapping đúng
+  let info;
+  switch (numericStatus) {
+    case ProcessingStatus.NotStarted:
+      info = ProcessingStatusMap[ProcessingStatus.NotStarted];
+      break;
+    case ProcessingStatus.InProgress:
+      info = ProcessingStatusMap[ProcessingStatus.InProgress];
+      break;
+    case ProcessingStatus.Completed:
+      info = ProcessingStatusMap[ProcessingStatus.Completed];
+      break;
+    case ProcessingStatus.Cancelled:
+      info = ProcessingStatusMap[ProcessingStatus.Cancelled];
+      break;
+    default:
+      info = null;
+  }
 
   if (!info) {
     return (
