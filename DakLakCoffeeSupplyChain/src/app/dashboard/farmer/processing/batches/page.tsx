@@ -67,6 +67,8 @@ export default function Batches() {
 
   const filtered = batches.filter(
     (b) =>
+      // Chỉ hiển thị những bản ghi chưa bị xóa
+      !b.isDeleted &&
       (selectedStatus === null || b.status === selectedStatus) &&
       (!search || b.batchCode.toLowerCase().includes(search.toLowerCase()))
   );
