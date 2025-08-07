@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { softDeleteContractDeliveryItem } from "@/lib/api/contractDeliveryItems";
+import {
+  ContractDeliveryItemUpdateDto,
+  softDeleteContractDeliveryItem,
+} from "@/lib/api/contractDeliveryItems";
 import {
   ContractDeliveryBatchViewDetailsDto,
   ContractDeliveryItemViewDto,
@@ -32,6 +35,12 @@ import {
   DialogContent,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ContractItemViewDto } from "@/lib/api/contractItems";
+import {
+  getContractDetails,
+  ContractViewDetailsDto,
+} from "@/lib/api/contracts";
+import ContractDeliveryItemFormDialog from "@/components/contract-delivery-batches/ContractDeliveryItemFormDialog";
 
 export const contractDeliveryBatchStatusMap: Record<
   string,
@@ -67,6 +76,7 @@ export default function ContractDeliveryBatchDetailPage() {
   const [itemToDelete, setItemToDelete] =
     useState<ContractDeliveryItemViewDto | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [contractItems, setContractItems] = useState<ContractItemViewDto[]>([]);
 
   const ITEMS_PER_PAGE = 5;
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,18 +90,29 @@ export default function ContractDeliveryBatchDetailPage() {
       currentPage * ITEMS_PER_PAGE
     ) ?? [];
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!id) return;
-    const fetchData = async () => {
-      try {
-        const result = await getContractDeliveryBatchById(id as string);
-        setBatch(result);
-      } catch (err) {
-        console.error("Failed to fetch batch:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    try {
+      const result = await getContractDeliveryBatchById(id as string);
+      setBatch(result);
+
+      const contract = await getContractDetails(result.contractId);
+      setContractItems(
+        contract.contractItems.map((item) => ({
+          ...item,
+          quantity: item.quantity ?? 0,
+          unitPrice: item.unitPrice ?? 0,
+          discountAmount: item.discountAmount ?? 0,
+        }))
+      );
+    } catch (err) {
+      console.error("Lỗi khi tải dữ liệu:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [id]);
 
@@ -253,7 +274,7 @@ export default function ContractDeliveryBatchDetailPage() {
                                 variant="ghost"
                                 className="w-8 h-8"
                                 onClick={() => {
-                                  setEditingItem(item);
+                                  setEditingItem(item); // dùng đúng item view dto
                                   setShowItemFormDialog(true);
                                 }}
                               >
@@ -343,6 +364,30 @@ export default function ContractDeliveryBatchDetailPage() {
           </Button>
         </div>
       </div>
+      <ContractDeliveryItemFormDialog
+        open={showItemFormDialog}
+        onOpenChange={setShowItemFormDialog}
+        deliveryBatchId={batch.deliveryBatchId}
+        contractItems={contractItems}
+        initialData={
+          editingItem
+            ? ({
+                deliveryItemId: editingItem.deliveryItemId,
+                deliveryBatchId: batch.deliveryBatchId,
+                contractItemId: editingItem.contractItemId,
+                plannedQuantity: editingItem.plannedQuantity,
+                fulfilledQuantity: editingItem.fulfilledQuantity ?? undefined,
+                note: editingItem.note,
+              } as ContractDeliveryItemUpdateDto)
+            : undefined
+        }
+        mode={editingItem ? "edit" : "create"}
+        onSuccess={() => {
+          setShowItemFormDialog(false);
+          setEditingItem(null);
+          fetchData();
+        }}
+      />
       {/* Dialog xác nhận xoá mặt hàng */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
