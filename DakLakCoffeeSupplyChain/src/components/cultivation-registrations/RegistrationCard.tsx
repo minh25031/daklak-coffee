@@ -25,7 +25,7 @@ type RegistrationCardProps = {
   farmerLocation: string;
   registeredArea: number;
   registeredAt: string;
-  cultivationRegistrationViewDetailsDtos: Partial<CultivationRegistrationDetail>[];
+  cultivationRegistrationDetails: Partial<CultivationRegistrationDetail>[];
   onUpdate?: () => void;
 };
 
@@ -37,7 +37,7 @@ export default function RegistrationCard({
   farmerLocation,
   registeredArea,
   registeredAt,
-  cultivationRegistrationViewDetailsDtos,
+  cultivationRegistrationDetails,
   onUpdate,
 }: RegistrationCardProps) {
   const router = useRouter();
@@ -72,7 +72,7 @@ export default function RegistrationCard({
   };
 
   const currentDetail =
-    cultivationRegistrationViewDetailsDtos.find(
+    cultivationRegistrationDetails.find(
       (d) => d.cultivationRegistrationDetailId === currentDetailId
     ) || null;
 
@@ -155,7 +155,7 @@ export default function RegistrationCard({
           id={`detail-content-${registrationId}`}
           className='mt-4 border-t border-gray-200 pt-4 space-y-3 text-sm text-gray-700'
         >
-          {cultivationRegistrationViewDetailsDtos.map((detail) => {
+          {cultivationRegistrationDetails.map((detail) => {
             const isApproved = detail.status === 1;
             return (
               <div

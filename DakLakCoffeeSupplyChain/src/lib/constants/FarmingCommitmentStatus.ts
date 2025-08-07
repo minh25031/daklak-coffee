@@ -1,31 +1,31 @@
-export type FarmingCommitmentStatusValue = 0 | 1 | 2 | 3 | 4;
+export type FarmingCommitmentStatusValue = 'Pending_farmer' | 'Active' | 'Completed' | 'Cancelled' | 'Breached';
 
 export const FarmingCommitmentStatusMap: Record<FarmingCommitmentStatusValue, {
   label: string;
-  color: 'green' | '#ff4900' | 'blue' | 'red';
-  icon: string; 
+  color: 'green' | 'yellow' | 'blue' | 'red' | 'gray';
+  icon: string;
 }> = {
-  1: {
+  'Active': {
     label: 'Đang hoạt động',
     color: 'green',
     icon: 'A'
   },
-  2: {
+  'Completed': {
     label: 'Đã hoàn thành',
-    color: '#ff4900',
+    color: 'gray',
     icon: 'D'
   },
-  0: {
+  'Pending_farmer': {
     label: 'Đang chờ duyệt',
     color: 'blue',
     icon: 'P'
   },
-  3: {
+  'Cancelled': {
     label: 'Đã hủy hợp đồng',
     color: 'red',
     icon: 'C'
   },
-  4: {
+  'Breached': {
     label: 'Đã bị vi phạm',
     color: 'red',
     icon: 'X'
