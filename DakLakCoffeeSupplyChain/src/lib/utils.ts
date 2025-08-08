@@ -141,3 +141,24 @@ export function formatDateTimeVN(dateStr: string | Date | undefined) {
     return "Chưa xác định";
   }
 }
+
+/** Chuyển Date hoặc string sang định dạng 'YYYY-MM-DD' để gửi API */
+export function toDateOnly(d?: Date | string | null): string {
+  if (!d) return "";                       // để trống khi chưa chọn
+  if (d instanceof Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  // nếu là string 'YYYY-MM-DD' thì giữ nguyên 10 ký tự đầu
+  return String(d).slice(0, 10);
+}
+
+/** Nhận string 'YYYY-MM-DD' hoặc Date, trả về Date (hoặc undefined nếu rỗng/invalid) */
+export function fromDateOnly(v?: string | Date | null): Date | undefined {
+  if (!v) return undefined;                 // null/undefined -> undefined
+  if (v instanceof Date) return v;          // đã là Date thì trả về luôn
+  const d = new Date(v);                    // string 'YYYY-MM-DD' -> Date
+  return isNaN(d.getTime()) ? undefined : d;
+}
