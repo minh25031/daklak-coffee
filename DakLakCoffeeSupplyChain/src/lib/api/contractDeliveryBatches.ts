@@ -1,5 +1,7 @@
 import api from "./axios";
 import { ContractDeliveryBatchStatus } from "@/lib/constants/contractDeliveryBatchStatus";
+import { ContractDeliveryItemCreateDto, ContractDeliveryItemUpdateDto} from "@/lib/api/contractDeliveryItems";
+import { toDateOnly } from "@/lib/utils";
 
 // DTO: Thông tin cơ bản của đợt giao hàng (hiển thị ở danh sách)
 export type ContractDeliveryBatchViewAllDto = {
@@ -42,6 +44,25 @@ export type ContractDeliveryBatchViewDetailsDto = {
   contractDeliveryItems: ContractDeliveryItemViewDto[];
 };
 
+export type ContractDeliveryBatchCreateDto = {
+  contractId: string;                     // Guid
+  deliveryRound: number;                  // >= 1
+  expectedDeliveryDate: Date | string;    // Date or 'YYYY-MM-DD'
+  totalPlannedQuantity: number;           // > 0
+  status: ContractDeliveryBatchStatus;    // default Planned
+  contractDeliveryItems: ContractDeliveryItemCreateDto[];
+};
+
+export type ContractDeliveryBatchUpdateDto = {
+  deliveryBatchId: string;                // Guid
+  contractId: string;                     // Guid
+  deliveryRound: number;                  // >= 1
+  expectedDeliveryDate: Date | string;    // Date or 'YYYY-MM-DD'
+  totalPlannedQuantity: number;           // > 0
+  status: ContractDeliveryBatchStatus;
+  contractDeliveryItems: ContractDeliveryItemUpdateDto[];
+};
+
 // API: Lấy danh sách tất cả đợt giao hàng
 export async function getAllContractDeliveryBatches(): Promise<ContractDeliveryBatchViewAllDto[]> {
   const response = await api.get<ContractDeliveryBatchViewAllDto[]>("/ContractDeliveryBatchs");
@@ -54,6 +75,20 @@ export async function getContractDeliveryBatchById(
 ): Promise<ContractDeliveryBatchViewDetailsDto> {
   const response = await api.get<ContractDeliveryBatchViewDetailsDto>(`/ContractDeliveryBatchs/${id}`);
   return response.data;
+}
+
+export async function createContractDeliveryBatch(dto: ContractDeliveryBatchCreateDto) {
+  return api.post("/ContractDeliveryBatchs", {
+    ...dto,
+    expectedDeliveryDate: toDateOnly(dto.expectedDeliveryDate),
+  });
+}
+
+export async function updateContractDeliveryBatch(id: string, dto: ContractDeliveryBatchUpdateDto) {
+  return api.put(`/ContractDeliveryBatchs/${id}`, {
+    ...dto,
+    expectedDeliveryDate: toDateOnly(dto.expectedDeliveryDate),
+  });
 }
 
 // API: Xoá mềm đợt giao hàng theo ID

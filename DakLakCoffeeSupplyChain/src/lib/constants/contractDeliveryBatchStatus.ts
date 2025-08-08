@@ -1,4 +1,4 @@
-// types/contract-delivery-batch-status.enum.ts
+// lib/constants/contractDeliveryBatchStatus.ts
 
 export enum ContractDeliveryBatchStatus {
   Planned = "Planned",        // Đã lên kế hoạch
