@@ -20,7 +20,28 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
-import {ContractItemCreateDto, ContractItemUpdateDto} from "@/lib/api/contractItems"
+import {
+  ContractItemCreateDto,
+  ContractItemUpdateDto,
+} from "@/lib/api/contractItems";
+
+// Helper: input có suffix đơn vị bên phải
+function InputWithSuffix({
+  unit,
+  className,
+  ...props
+}: React.ComponentProps<typeof Input> & { unit?: string }) {
+  return (
+    <div className="relative">
+      <Input {...props} className={`pr-14 ${className ?? ""}`} />
+      {unit ? (
+        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
+          {unit}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 type Props = {
   initialData?: ContractUpdateDto;
@@ -172,8 +193,8 @@ export default function ContractForm({
     });
   }
 
-async function handleSubmit(event: React.FormEvent) {
-      event.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     try {
       if (!formData) {
         toast.error("Dữ liệu chưa sẵn sàng");
@@ -181,7 +202,7 @@ async function handleSubmit(event: React.FormEvent) {
       }
 
       const { contractItems, ...rest } = formData;
-console.log(formData)
+      console.log(formData);
       if (!contractItems || contractItems.length === 0) {
         toast.error("Vui lòng thêm ít nhất 1 mặt hàng vào hợp đồng.");
         return;
@@ -204,7 +225,10 @@ console.log(formData)
 
         await updateContract(dto.contractId, {
           ...dto,
-          contractFileUrl: dto.contractFileUrl?.trim() === "" ? undefined : dto.contractFileUrl,
+          contractFileUrl:
+            dto.contractFileUrl?.trim() === ""
+              ? undefined
+              : dto.contractFileUrl,
           contractItems: normalizedItems,
         });
 
@@ -224,7 +248,10 @@ console.log(formData)
 
         await createContract({
           ...dto,
-          contractFileUrl: dto.contractFileUrl?.trim() === "" ? undefined : dto.contractFileUrl,
+          contractFileUrl:
+            dto.contractFileUrl?.trim() === ""
+              ? undefined
+              : dto.contractFileUrl,
           contractItems: normalizedItems,
         });
 
@@ -303,22 +330,31 @@ console.log(formData)
             }
           />
         </div>
+
         <div>
-          <label className="block mb-1 text-sm font-medium">Tổng KL</label>
+          <label className="block mb-1 text-sm font-medium">Tổng KL (kg)</label>
           <Input
             type="number"
+            step={0.1}
+            min={0}
             value={formData.totalQuantity || ""}
             onChange={(e) =>
               handleChange("totalQuantity", Number(e.target.value))
             }
+            className="no-spinner"
           />
         </div>
+
         <div>
-          <label className="block mb-1 text-sm font-medium">Tổng GT</label>
+          <label className="block mb-1 text-sm font-medium">
+            Tổng GT (VND)
+          </label>
           <Input
             type="number"
+            min={0}
             value={formData.totalValue || ""}
             onChange={(e) => handleChange("totalValue", Number(e.target.value))}
+            className="no-spinner"
           />
         </div>
       </div>
@@ -374,80 +410,107 @@ console.log(formData)
           Danh sách mặt hàng
         </label>
 
-        {formData.contractItems.map((item, index) => (
-          <div
-            key={index}
-            className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2"
-          >
-            {/* Loại cà phê */}
-            <select
-              value={item.coffeeTypeId}
-              onChange={(e) =>
-                updateContractItem(index, "coffeeTypeId", e.target.value)
-              }
-              className="p-2 border rounded"
-            >
-              <option value="">-- Chọn loại cà phê --</option>
-              {coffeeTypes.map((type) => (
-                <option key={type.coffeeTypeId} value={type.coffeeTypeId}>
-                  {type.typeName}
-                </option>
-              ))}
-            </select>
+        {formData.contractItems.length > 0 && (
+          <>
+            {/* Header */}
+            <div className="hidden md:grid md:grid-cols-6 gap-2 mb-1 text-xs font-medium text-muted-foreground">
+              <span>Loại cà phê</span>
+              <span>Số lượng (kg)</span>
+              <span>Đơn giá (VND/Kg)</span>
+              <span>Chiết khấu (%)</span>
+              <span>Ghi chú</span>
+              <span></span>
+            </div>
 
-            {/* Số lượng */}
-            <Input
-              placeholder="Số lượng"
-              type="number"
-              value={item.quantity}
-              onChange={(e) =>
-                updateContractItem(index, "quantity", Number(e.target.value))
-              }
-            />
+            {/* Body */}
+            {formData.contractItems.map((item, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2"
+              >
+                {/* Loại cà phê */}
+                <select
+                  value={item.coffeeTypeId}
+                  onChange={(e) =>
+                    updateContractItem(index, "coffeeTypeId", e.target.value)
+                  }
+                  className="p-2 border rounded"
+                >
+                  <option value="">-- Chọn loại cà phê --</option>
+                  {coffeeTypes.map((type) => (
+                    <option key={type.coffeeTypeId} value={type.coffeeTypeId}>
+                      {type.typeName}
+                    </option>
+                  ))}
+                </select>
 
-            {/* Đơn giá */}
-            <Input
-              placeholder="Đơn giá"
-              type="number"
-              value={item.unitPrice}
-              onChange={(e) =>
-                updateContractItem(index, "unitPrice", Number(e.target.value))
-              }
-            />
+                {/* Số lượng */}
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={item.quantity}
+                  onChange={(e) =>
+                    updateContractItem(
+                      index,
+                      "quantity",
+                      Number(e.target.value)
+                    )
+                  }
+                  className="no-spinner"
+                />
 
-            {/* Chiết khấu */}
-            <Input
-              placeholder="Chiết khấu"
-              type="number"
-              value={item.discountAmount || ""}
-              onChange={(e) =>
-                updateContractItem(
-                  index,
-                  "discountAmount",
-                  Number(e.target.value)
-                )
-              }
-            />
+                {/* Đơn giá */}
+                <Input
+                  type="number"
+                  min={0}
+                  value={item.unitPrice}
+                  onChange={(e) =>
+                    updateContractItem(
+                      index,
+                      "unitPrice",
+                      Number(e.target.value)
+                    )
+                  }
+                  className="no-spinner"
+                />
 
-            {/* Ghi chú */}
-            <Input
-              placeholder="Ghi chú"
-              value={item.note || ""}
-              onChange={(e) =>
-                updateContractItem(index, "note", e.target.value)
-              }
-            />
+                {/* Chiết khấu */}
+                <Input
+                  type="number"
+                  step={0.1}
+                  min={0}
+                  value={item.discountAmount || ""}
+                  onChange={(e) =>
+                    updateContractItem(
+                      index,
+                      "discountAmount",
+                      Number(e.target.value)
+                    )
+                  }
+                  className="no-spinner"
+                />
 
-            {/* Xoá */}
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => removeContractItem(index)}
-            >
-              Xoá
-            </Button>
-          </div>
-        ))}
+                {/* Ghi chú */}
+                <Input
+                  placeholder="Ghi chú"
+                  value={item.note || ""}
+                  onChange={(e) =>
+                    updateContractItem(index, "note", e.target.value)
+                  }
+                />
+
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => removeContractItem(index)}
+                >
+                  Xoá
+                </Button>
+              </div>
+            ))}
+          </>
+        )}
 
         <Button
           type="button"
