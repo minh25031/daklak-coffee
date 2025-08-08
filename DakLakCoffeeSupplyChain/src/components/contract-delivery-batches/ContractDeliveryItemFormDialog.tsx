@@ -152,17 +152,13 @@ export default function ContractDeliveryItemFormDialog({
           <div className="grid gap-1">
             <Label htmlFor="contractItemId">Loại cà phê</Label>
             <Select
-              value={formData.contractItemId}
+              value={formData.contractItemId || undefined} // Khi rỗng -> undefined để hiện placeholder
               onValueChange={(value) =>
                 setFormData((prev) => ({ ...prev, contractItemId: value }))
               }
             >
               <SelectTrigger id="contractItemId" className="w-full">
-                <SelectValue>
-                  {contractItems.find(
-                    (item) => item.contractItemId === formData.contractItemId
-                  )?.coffeeTypeName ?? "Chọn loại cà phê"}
-                </SelectValue>
+                <SelectValue placeholder="-- Chọn loại cà phê --" />
               </SelectTrigger>
               <SelectContent className="w-full">
                 {contractItems.map((item) => (

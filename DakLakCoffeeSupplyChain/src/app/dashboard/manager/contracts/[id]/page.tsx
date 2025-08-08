@@ -182,7 +182,7 @@ export default function ContractDetailPage() {
           <Button
             className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-medium px-4 py-2 rounded-lg shadow-md flex items-center gap-2"
             onClick={() =>
-              router.push(`/dashboard/manager/contracts/edit/${contractId}`)
+              router.push(`/dashboard/manager/contracts/${contract.contractId}/edit`)
             }
           >
             ✏️ Chỉnh sửa
