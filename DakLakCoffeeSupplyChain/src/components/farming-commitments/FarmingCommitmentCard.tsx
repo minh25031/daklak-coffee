@@ -40,7 +40,7 @@ export default function FarmingCommitmentCard({
               ? "bg-gray-100 text-gray-700 border-gray-500"
               : commitment.status === "Cancelled"
               ? "bg-rose-100 text-rose-700 border-rose-500"
-              : commitment.status === "Pending_farmer"
+              : commitment.status === "Pending"
               ? "bg-blue-100 text-blue-700 border-blue-500"
               : "bg-red-100 text-red-700 border-red-500"
           )}
