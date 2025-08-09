@@ -9,7 +9,8 @@ import {
   FiTruck,
   FiClock, // Biểu tượng phù hợp cho Xuất kho
   FiClipboard,
-  FiCalendar
+  FiCalendar,
+  FiShoppingCart
 } from "react-icons/fi";
 import Link from "next/link";
 import React from "react";
@@ -48,16 +49,59 @@ export default function ManagerDashboard() {
               isLink
             />
           </Link>
+
           <DashboardCard
             icon={<FiUsers className="text-orange-500 text-xl" />}
             title="Danh sách nông dân"
             description="Xem và tương tác với các nông hộ đang hợp tác."
           />
+
+          {/* Đơn hàng */}
+          <Link href="/dashboard/manager/orders">
+            <DashboardCard
+              icon={<FiShoppingCart className="text-orange-500 text-xl" />}
+              title="Đơn hàng"
+              description="Tạo, theo dõi và quản lý đơn hàng cho khách hàng doanh nghiệp."
+              isLink
+            />
+          </Link>
+
+          {/* Lô giao hàng */}
+          <Link href="/dashboard/manager/shipments">
+            <DashboardCard
+              icon={<FiTruck className="text-orange-500 text-xl" />}
+              title="Lô giao hàng"
+              description="Quản lý các lô giao hàng gắn với đơn hàng và hợp đồng."
+              isLink
+            />
+          </Link>
+
+          {/* Khách hàng doanh nghiệp */}
+          <Link href="/dashboard/manager/business-buyers">
+            <DashboardCard
+              icon={<FiUsers className="text-orange-500 text-xl" />}
+              title="Khách hàng doanh nghiệp"
+              description="Xem, tạo và quản lý danh sách khách hàng doanh nghiệp."
+              isLink
+            />
+          </Link>
+
+          {/* Sản phẩm */}
+          <Link href="/dashboard/manager/products">
+            <DashboardCard
+              icon={<FiPackage className="text-orange-500 text-xl" />}
+              title="Sản phẩm"
+              description="Quản lý danh mục sản phẩm, SKU và quy cách đóng gói."
+              isLink
+            />
+          </Link>
+
           <DashboardCard
             icon={<FiPackage className="text-orange-500 text-xl" />}
             title="Mẻ sơ chế"
             description="Quản lý và theo dõi các mẻ sơ chế theo mùa vụ."
           />
+          
           <DashboardCard
             icon={<FiBarChart2 className="text-orange-500 text-xl" />}
             title="Báo cáo sản lượng"
