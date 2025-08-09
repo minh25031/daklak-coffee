@@ -1,5 +1,6 @@
 import api from "./axios";
 import { OrderStatus } from "@/lib/constants/orderStatus";
+import { OrderItemViewDto } from "@/lib/api/orderItems";
 
 // DTO: Dữ liệu hiển thị của đơn hàng (trang View All)
 export interface OrderViewAllDto {
@@ -24,6 +25,21 @@ export interface OrderQuery {
   pageSize?: number;
 }
 
+export interface OrderViewDetailsDto {
+  orderId: string;
+  orderCode: string;
+  deliveryRound?: number | null;
+  orderDate?: string | null;         // ISO
+  actualDeliveryDate?: string | null;// yyyy-MM-dd
+  totalAmount?: number | null;
+  note: string;
+  status: OrderStatus;
+  cancelReason: string;
+  deliveryBatchCode: string;
+  contractNumber: string;
+  orderItems: OrderItemViewDto[];
+}
+
 // API: Lấy toàn bộ danh sách đơn hàng
 export async function getAllOrders(): Promise<OrderViewAllDto[]> {
   const { data } = await api.get<OrderViewAllDto[]>("/orders");
@@ -37,8 +53,8 @@ export async function getOrders(params?: OrderQuery): Promise<OrderViewAllDto[]>
 }
 
 // API: Lấy thông tin chi tiết một đơn hàng theo ID
-export async function getOrderById(id: string): Promise<OrderViewAllDto> {
-  const { data } = await api.get<OrderViewAllDto>(`/orders/${id}`);
+export async function getOrderDetails(id: string): Promise<OrderViewDetailsDto> {
+  const { data } = await api.get<OrderViewDetailsDto>(`/orders/${id}`);
   return data;
 }
 
