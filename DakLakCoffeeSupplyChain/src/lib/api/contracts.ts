@@ -3,6 +3,7 @@ import { ContractStatus } from "@/lib/constants/contractStatus";
 import { ContractItemCreateDto } from "@/lib/api/contractItems";
 import { ContractItemUpdateDto } from "@/lib/api/contractItems";
 
+// DTO: Hợp đồng (mock dùng cho demo)
 export interface Contract {
   id: string;
   title: string;
@@ -23,6 +24,7 @@ export interface Contract {
   updatedAt: string;
 }
 
+// DTO: Dữ liệu hiển thị danh sách hợp đồng
 export interface ContractViewAllDto {
   contractId: string;
   contractCode: string;
@@ -38,6 +40,7 @@ export interface ContractViewAllDto {
   status: string; // ContractStatus as string
 }
 
+// DTO: Thông tin mặt hàng trong hợp đồng
 export interface ContractItemViewDto {
   contractItemId: string;
   contractItemCode: string;
@@ -49,6 +52,7 @@ export interface ContractItemViewDto {
   note: string;
 }
 
+// DTO: Dữ liệu chi tiết hợp đồng
 export interface ContractViewDetailsDto {
   contractId: string;
   contractCode: string;
@@ -71,6 +75,7 @@ export interface ContractViewDetailsDto {
   contractItems: ContractItemViewDto[];
 }
 
+// DTO: Tạo mới hợp đồng
 export interface ContractCreateDto {
   buyerId: string;
   contractNumber: string;
@@ -87,12 +92,13 @@ export interface ContractCreateDto {
   contractItems: ContractItemCreateDto[];
 }
 
+// DTO: Cập nhật hợp đồng
 export interface ContractUpdateDto extends ContractCreateDto {
   contractId: string;
   contractItems: ContractItemUpdateDto[]; // override để dùng loại Update thay vì Create
 }
 
-// Mock data for contracts
+// Mock: Danh sách hợp đồng mẫu (chỉ dùng test UI)
 export const mockContracts: Contract[] = [
   {
     id: "1",
@@ -142,13 +148,13 @@ export const mockContracts: Contract[] = [
   },
 ];
 
-// Get all contracts (real API)
+// API: Lấy toàn bộ danh sách hợp đồng
 export async function getAllContracts(): Promise<ContractViewAllDto[]> {
   const response = await api.get<ContractViewAllDto[]>("/Contracts");
   return response.data;
 }
 
-// Get contract by ID
+// API: Lấy chi tiết hợp đồng theo ID (mock)
 export async function getContractById(id: string): Promise<Contract | null> {
   // TODO: Replace with actual API call
   return mockContracts.find((contract) => contract.id === id) || null;
@@ -225,23 +231,23 @@ export async function rejectFarmerApplication(contractId: string, farmerId: stri
   return true;
 }
 
-// Gọi API để lấy chi tiết một hợp đồng
+// API: Lấy chi tiết hợp đồng kèm danh sách mặt hàng
 export async function getContractDetails(contractId: string): Promise<ContractViewDetailsDto> {
   const response = await api.get<ContractViewDetailsDto>(`/Contracts/${contractId}`);
   return response.data;
 }
 
-// Gọi API để xoá mềm hợp đồng
+// API: Xoá mềm hợp đồng
 export async function softDeleteContract(contractId: string): Promise<void> {
   await api.patch(`/Contracts/soft-delete/${contractId}`);
 } 
 
-// Gọi API để tạo hợp đồng mới
+// API: Tạo mới hợp đồng
 export async function createContract(data: ContractCreateDto): Promise<void> {
   await api.post("/Contracts", data);
 }
 
-// Gọi API để cập nhật hợp đồng theo contractId
+// API: Cập nhật hợp đồng
 export async function updateContract(contractId: string, data: ContractUpdateDto): Promise<void> {
   await api.put(`/Contracts/${contractId}`, data);
 }
