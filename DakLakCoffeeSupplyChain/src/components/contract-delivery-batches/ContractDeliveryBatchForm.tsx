@@ -24,9 +24,9 @@ import { toDateOnly, fromDateOnly } from "@/lib/utils";
 
 export type ContractOption = { contractId: string; contractNumber: string };
 
-// ---------- Form State (cho phép undefined) ----------
+// Form State
 type DeliveryBatchFormState = {
-  // giống create DTO nhưng expectedDeliveryDate có thể undefined
+  // Giống create DTO nhưng expectedDeliveryDate có thể undefined
   contractId: string;
   deliveryRound: number;
   expectedDeliveryDate?: Date;
@@ -244,7 +244,7 @@ export default function ContractDeliveryBatchForm({
       return;
     }
 
-    // validate cơ bản
+    // Validate cơ bản
     if (!data.contractId) return toast.error("Vui lòng chọn hợp đồng.");
     if (!data.expectedDeliveryDate)
       return toast.error("Vui lòng chọn ngày dự kiến.");

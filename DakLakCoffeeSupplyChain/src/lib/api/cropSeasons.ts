@@ -73,29 +73,39 @@ export async function getAllCropSeasons(): Promise<CropSeasonListItem[]> {
 }
 
 // Lấy mùa vụ theo userId (dành cho Farmer - chỉ xem của mình)
+// OData version
 export async function getCropSeasonsForCurrentUser(params: {
   search?: string;
   status?: string;
   page?: number;
   pageSize?: number;
 }): Promise<CropSeasonListItem[]> {
+  const { search, status, page = 1, pageSize = 6 } = params ?? {};
+  const q: Record<string, string | number> = {};
+
+  // $search không được để rỗng
+  if (search && search.trim()) {
+    // thường $search cần để trong dấu ngoặc kép
+    q["$search"] = `"${search.trim()}"`;
+  }
+
+  if (status && status.trim()) {
+    // nếu field là enum/string -> nhớ escape nếu có ' trong giá trị
+    const safe = status.trim().replace(/'/g, "''");
+    q["$filter"] = `status eq '${safe}'`;
+  }
+
+  q["$top"] = pageSize;
+  q["$skip"] = (page - 1) * pageSize;
+
   try {
-    const res = await api.get<CropSeasonListItem[]>("/CropSeasons", {
-      params: {
-        search: params.search,
-        status: params.status,
-        page: params.page ?? 1,
-        pageSize: params.pageSize ?? 10,
-      }
-    });
+    const res = await api.get<CropSeasonListItem[]>("/CropSeasons", { params: q });
     return res.data;
   } catch (err) {
     console.error("Lỗi getCropSeasonsForCurrentUser:", err);
     return [];
   }
 }
-
-
 
 // Lấy chi tiết 1 mùa vụ (bao gồm danh sách vùng trồng)
 export async function getCropSeasonById(id: string): Promise<CropSeason | null> {
