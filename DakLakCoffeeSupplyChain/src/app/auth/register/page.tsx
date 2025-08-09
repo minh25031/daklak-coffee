@@ -2,24 +2,30 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Home } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Mail, Lock, Eye, EyeOff, User, Phone, Building, FileText, Loader2, CheckCircle, RefreshCw } from "lucide-react";
 import { resendVerificationEmail, signUp } from "@/lib/api/auth";
 import { getErrorMessage } from "@/lib/utils";
 import { AppToast } from "@/components/ui/AppToast";
 
 export default function RegisterPage() {
   const [showResendBox, setShowResendBox] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     confirmPassword: "",
     name: "",
     phone: "",
-    roleId: 4, // 4 = Farmer, 2 = Business
+    roleId: 1, // 1 = Farmer, 2 = Business
     companyName: "",
     taxId: "",
     businessLicenseURl: "",
@@ -67,8 +73,7 @@ export default function RegisterPage() {
         newErrors.taxId = "Mã số thuế phải từ 10 đến 14 chữ số";
       }
       if (!formData.businessLicenseURl) {
-        newErrors.businessLicenseURl =
-          "Vui lòng nhập đường dẫn giấy phép kinh doanh";
+        newErrors.businessLicenseURl = "Vui lòng nhập đường dẫn giấy phép kinh doanh";
       }
     }
 
@@ -93,16 +98,18 @@ export default function RegisterPage() {
       phone: formData.phone,
       companyName: formData.roleId === 2 ? formData.companyName : "",
       taxId: formData.roleId === 2 ? formData.taxId : "",
-      businessLicenseURl:
-        formData.roleId === 2 ? formData.businessLicenseURl : "",
+      businessLicenseURl: formData.roleId === 2 ? formData.businessLicenseURl : "",
     };
-    
+
+    setLoading(true);
     try {
       await signUp(payload);
       setTimeout(() => setShowResendBox(true), 10000);
       AppToast.success("Bạn hãy kiểm tra email đã được đăng ký để xác thực.");
     } catch (err) {
       AppToast.error(getErrorMessage(err));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -117,186 +124,306 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className='relative flex h-screen w-full bg-muted'>
-      <Link
-        href='/'
-        className='hidden md:flex basis-2/3 bg-cover bg-center'
-        style={{ backgroundImage: "url('/logo.jpg')", borderRadius: 20 }}
-      >
-        <span className='sr-only'>Về trang chủ</span>
-      </Link>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex">
+      {/* Left Side - Hero Section */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-amber-600 to-yellow-600"></div>
 
-      <div className='basis-full md:basis-1/3 flex items-center justify-center px-6 bg-white'>
-        <Card className='w-full max-w-md shadow-lg relative overflow-visible'>
-          <Link
-            href='/'
-            className='absolute -top-5 -right-5 bg-white border border-gray-300 shadow-lg rounded-full p-3 hover:bg-amber-100 transition z-20'
-          >
-            <Home className='w-6 h-6 text-amber-900' />
-          </Link>
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12 text-center w-full">
+          {/* Logo */}
+          <div className="w-48 h-48 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-10 shadow-2xl overflow-hidden">
+            <Image
+              src="/logo.jpg"
+              alt="DakLak SupplyChain Logo"
+              width={120}
+              height={120}
+              className="rounded-full object-cover"
+            />
+          </div>
 
-          <CardHeader>
-            <CardTitle className='text-2xl text-center'>
-              Đăng ký tài khoản
-            </CardTitle>
-            <p className='text-sm text-muted-foreground text-center mt-1'>
-              Tham gia nền tảng chuỗi cung ứng cà phê Đắk Lắk
-            </p>
-          </CardHeader>
+          <h1 className="text-5xl font-bold mb-6">
+            Tham gia cùng chúng tôi
+          </h1>
+          <p className="text-xl text-orange-100 mb-10 max-w-md leading-relaxed">
+            Kết nối với hệ sinh thái cà phê Đắk Lắk và tối ưu hóa chuỗi cung ứng của bạn
+          </p>
 
-          <CardContent>
-            <form className='space-y-4' onSubmit={handleSubmit}>
-              <div className='space-y-2'>
-                <Label htmlFor='roleId'>Vai trò</Label>
-                <select
-                  name='roleId'
-                  id='roleId'
-                  value={formData.roleId}
-                  onChange={handleChange}
-                  className='w-full border rounded-md px-3 py-2 text-sm cursor-pointer'
-                >
-                  <option value={1}>Nông dân</option>
-                  <option value={2}>Doanh nghiệp</option>
-                </select>
-              </div>
+          {/* Feature Points */}
+          <div className="space-y-4 text-sm text-orange-100">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <span className="font-medium">Quản lý mùa vụ hiệu quả</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <span className="font-medium">Kết nối trực tiếp với đối tác</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <span className="font-medium">Theo dõi tiến độ thời gian thực</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <InputField
-                label='Email'
-                name='email'
-                type='email'
-                value={formData.email}
-                onChange={handleChange}
-                error={errors.email}
-              />
-              <InputField
-                label='Mật khẩu'
-                name='password'
-                type='password'
-                value={formData.password}
-                onChange={handleChange}
-                error={errors.password}
-              />
-              <InputField
-                label='Xác nhận mật khẩu'
-                name='confirmPassword'
-                type='password'
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                error={errors.confirmPassword}
-              />
-              <InputField
-                label='Tên người đại diện'
-                name='name'
-                value={formData.name}
-                onChange={handleChange}
-                error={errors.name}
-              />
-              <InputField
-                label='Số điện thoại'
-                name='phone'
-                value={formData.phone}
-                onChange={handleChange}
-                error={errors.phone}
-              />
+      {/* Right Side - Register Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          {/* Register Card */}
+          <Card className="border-orange-100 shadow-xl bg-white/95 backdrop-blur-sm">
+            <CardHeader className="text-center pb-4">
+              <CardTitle className="text-2xl font-bold text-gray-800">
+                Đăng ký tài khoản
+              </CardTitle>
+              <p className="text-gray-600 text-sm mt-2">
+                Tạo tài khoản để tham gia nền tảng chuỗi cung ứng cà phê Đắk Lắk
+              </p>
+            </CardHeader>
 
-              {formData.roleId === 2 && (
-                <>
-                  <InputField
-                    label='Tên công ty'
-                    name='companyName'
-                    value={formData.companyName}
-                    onChange={handleChange}
-                    error={errors.companyName}
-                  />
-                  <InputField
-                    label='Mã số thuế'
-                    name='taxId'
-                    value={formData.taxId}
-                    onChange={handleChange}
-                    error={errors.taxId}
-                  />
-                  <InputField
-                    label='Link giấy phép kinh doanh'
-                    name='businessLicenseURl'
-                    value={formData.businessLicenseURl}
-                    onChange={handleChange}
-                    error={errors.businessLicenseURl}
-                  />
-                </>
-              )}
-              <div className='flex items-center space-x-2'>
-                <input
-                  type='checkbox'
-                  id='acceptTerms'
-                  name='acceptTerms'
-                  checked={formData.acceptTerms}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      acceptTerms: e.target.checked,
-                    }))
-                  }
-                  className='cursor-pointer'
-                />
-                <Label htmlFor='acceptTerms' className='text-sm'>
-                  Tôi đồng ý với các{" "}
-                  <Link
-                    href='/terms-of-service'
-                    target='_blank'
-                    className='text-blue-600 underline cursor-pointer'
+            <CardContent>
+              <form className="space-y-5" onSubmit={handleSubmit}>
+                {/* Role Selection */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Vai trò</Label>
+                  <Select
+                    value={formData.roleId.toString()}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, roleId: parseInt(value) }))}
                   >
-                    điều khoản của nền tảng
-                  </Link>
-                </Label>
-              </div>
-              {errors.acceptTerms && (
-                <p className='text-red-500 text-xs mt-1'>
-                  {errors.acceptTerms}
-                </p>
-              )}
-              {showResendBox && (
-                <div className='mt-4 p-3 rounded bg-green-100 text-green-800 text-sm text-center'>
-                  Không nhận được email?{" "}
-                  <button
-                    type='button'
-                    onClick={async () => {
-                      const email = localStorage.getItem("pending_email");
-                      if (email) {
-                        await resendVerificationEmail(email);
-                      } else {
-                        alert("Không tìm thấy email đã đăng ký.");
-                      }
-                    }}
-                    className='text-green-700 font-semibold underline hover:text-green-900 ml-1 cursor-pointer'
-                  >
-                    Gửi lại xác thực email
-                  </button>
+                    <SelectTrigger className="border-gray-200 focus:border-orange-500 focus:ring-orange-500">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">🌾 Nông dân</SelectItem>
+                      <SelectItem value="2">🏢 Doanh nghiệp</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
 
-              <Button
-                type='submit'
-                className='w-full bg-amber-900 hover:bg-amber-800 cursor-pointer'
-              >
-                Đăng ký
-              </Button>
+                {/* Email Field */}
+                <InputField
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  error={errors.email}
+                  icon={<Mail className="w-4 h-4 text-gray-400" />}
+                  placeholder="Nhập email của bạn"
+                />
 
-              <div className='text-sm text-center'>
-                <span className='text-gray-600'>Đã có tài khoản? </span>
-                <Link
-                  href='/auth/login'
-                  className='text-amber-900 font-semibold hover:underline cursor-pointer'
+                {/* Password Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Mật khẩu</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="pl-10 pr-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500"
+                        placeholder="Nhập mật khẩu"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Xác nhận mật khẩu</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        className="pl-10 pr-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500"
+                        placeholder="Xác nhận mật khẩu"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword}</p>}
+                  </div>
+                </div>
+
+                {/* Personal Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField
+                    label="Tên người đại diện"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    error={errors.name}
+                    icon={<User className="w-4 h-4 text-gray-400" />}
+                    placeholder="Nhập họ tên"
+                  />
+
+                  <InputField
+                    label="Số điện thoại"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    error={errors.phone}
+                    icon={<Phone className="w-4 h-4 text-gray-400" />}
+                    placeholder="Nhập số điện thoại"
+                  />
+                </div>
+
+                {/* Business Info (if role is Business) */}
+                {formData.roleId === 2 && (
+                  <div className="space-y-4 p-4 bg-orange-50 rounded-lg border border-orange-100">
+                    <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                      <Building className="w-4 h-4 text-orange-600" />
+                      Thông tin doanh nghiệp
+                    </h3>
+
+                    <InputField
+                      label="Tên công ty"
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleChange}
+                      error={errors.companyName}
+                      icon={<Building className="w-4 h-4 text-gray-400" />}
+                      placeholder="Nhập tên công ty"
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <InputField
+                        label="Mã số thuế"
+                        name="taxId"
+                        value={formData.taxId}
+                        onChange={handleChange}
+                        error={errors.taxId}
+                        icon={<FileText className="w-4 h-4 text-gray-400" />}
+                        placeholder="Nhập mã số thuế"
+                      />
+
+                      <InputField
+                        label="Link giấy phép kinh doanh"
+                        name="businessLicenseURl"
+                        value={formData.businessLicenseURl}
+                        onChange={handleChange}
+                        error={errors.businessLicenseURl}
+                        icon={<FileText className="w-4 h-4 text-gray-400" />}
+                        placeholder="Nhập link giấy phép"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Terms & Conditions */}
+                <div className="space-y-2">
+                  <div className="flex items-start space-x-3">
+                    <input
+                      type="checkbox"
+                      id="acceptTerms"
+                      name="acceptTerms"
+                      checked={formData.acceptTerms}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          acceptTerms: e.target.checked,
+                        }))
+                      }
+                      className="mt-1 w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <Label htmlFor="acceptTerms" className="text-sm text-gray-700">
+                      Tôi đồng ý với các{" "}
+                      <Link
+                        href="/terms-of-service"
+                        target="_blank"
+                        className="text-orange-600 hover:text-orange-700 underline font-medium"
+                      >
+                        điều khoản của nền tảng
+                      </Link>
+                    </Label>
+                  </div>
+                  {errors.acceptTerms && (
+                    <p className="text-red-500 text-xs ml-7">{errors.acceptTerms}</p>
+                  )}
+                </div>
+
+                {/* Resend Email Box */}
+                {showResendBox && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-green-800 text-sm">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Không nhận được email?</span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const email = localStorage.getItem("pending_email");
+                          if (email) {
+                            await resendVerificationEmail(email);
+                          } else {
+                            alert("Không tìm thấy email đã đăng ký.");
+                          }
+                        }}
+                        className="text-green-700 font-semibold underline hover:text-green-900 inline-flex items-center gap-1"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Gửi lại
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-11 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  Đăng nhập
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    'Đăng ký tài khoản'
+                  )}
+                </Button>
+
+                {/* Login Link */}
+                <div className="text-center">
+                  <span className="text-sm text-gray-600">Đã có tài khoản? </span>
+                  <Link
+                    href="/auth/login"
+                    className="text-sm font-semibold text-orange-600 hover:text-orange-700 hover:underline transition-colors"
+                  >
+                    Đăng nhập ngay
+                  </Link>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Footer */}
+          <div className="mt-8 text-center text-xs text-gray-500">
+            <p>© 2025 DakLak SupplyChain Platform. All rights reserved.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
 type InputFieldProps = {
   label: string;
   name: string;
@@ -304,7 +431,10 @@ type InputFieldProps = {
   value: string | number;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
   error?: string;
+  icon?: React.ReactNode;
+  placeholder?: string;
 };
+
 function InputField({
   label,
   name,
@@ -312,21 +442,31 @@ function InputField({
   value,
   onChange,
   error,
+  icon,
+  placeholder,
 }: InputFieldProps) {
   return (
-    <div className='space-y-2'>
-      <Label htmlFor={name} className='text-sm'>
+    <div className="space-y-2">
+      <Label htmlFor={name} className="text-sm font-medium text-gray-700">
         {label}
       </Label>
-      <Input
-        id={name}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        className='text-sm'
-      />
-      {error && <p className='text-red-500 text-xs'>{error}</p>}
+      <div className="relative">
+        {icon && (
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+            {icon}
+          </div>
+        )}
+        <Input
+          id={name}
+          name={name}
+          type={type}
+          value={value}
+          onChange={onChange}
+          className={`${icon ? "pl-10" : ""} border-gray-200 focus:border-orange-500 focus:ring-orange-500`}
+          placeholder={placeholder}
+        />
+      </div>
+      {error && <p className="text-red-500 text-xs">{error}</p>}
     </div>
   );
 }
