@@ -72,8 +72,6 @@ export async function getAllCropSeasons(): Promise<CropSeasonListItem[]> {
   }
 }
 
-// Lấy mùa vụ theo userId (dành cho Farmer - chỉ xem của mình)
-// OData version
 export async function getCropSeasonsForCurrentUser(params: {
   search?: string;
   status?: string;
@@ -107,7 +105,7 @@ export async function getCropSeasonsForCurrentUser(params: {
   }
 }
 
-// Lấy chi tiết 1 mùa vụ (bao gồm danh sách vùng trồng)
+
 export async function getCropSeasonById(id: string): Promise<CropSeason | null> {
   try {
     const res = await api.get<CropSeason>(`/CropSeasons/${id}`);
@@ -120,7 +118,7 @@ export async function getCropSeasonById(id: string): Promise<CropSeason | null> 
 
 export async function deleteCropSeasonById(id: string): Promise<{ code: any; message: string }> {
   try {
-    const res = await api.patch(`/CropSeasons/soft-delete/${id}`); // ✅ Dùng PATCH thay vì DELETE
+    const res = await api.patch(`/CropSeasons/soft-delete/${id}`); 
     return {
       code: 200,
       message: res.data || 'Xoá thành công',

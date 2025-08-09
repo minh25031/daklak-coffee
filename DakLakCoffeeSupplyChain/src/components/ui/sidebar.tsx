@@ -817,7 +817,6 @@ export function SidebarFooter({ isCollapsed }: SidebarFooterProps) {
 
   useEffect(() => {
     const storedName = localStorage.getItem("user_name");
-    console.log("Stored user name:", storedName);
     setUserName(storedName);
   }, []);
 

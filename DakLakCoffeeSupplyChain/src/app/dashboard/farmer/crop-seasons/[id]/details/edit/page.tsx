@@ -31,6 +31,7 @@ export default function UpdateCropSeasonDetailDialog({
     expectedHarvestEnd: "",
   });
 
+  const [commitmentDetailCode, setCommitmentDetailCode] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,25 +43,26 @@ export default function UpdateCropSeasonDetailDialog({
     { label: "Tiêu chuẩn cơ bản", value: "Standard" },
   ];
 
+  const toDateInput = (d?: string) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const detail = await getCropSeasonDetailById(detailId);
-
         setForm({
           commitmentDetailId: detail.commitmentDetailId,
           areaAllocated: detail.areaAllocated?.toString() || "",
           plannedQuality: detail.plannedQuality || "",
-          expectedHarvestStart: detail.expectedHarvestStart,
-          expectedHarvestEnd: detail.expectedHarvestEnd,
+          expectedHarvestStart: toDateInput(detail.expectedHarvestStart),
+          expectedHarvestEnd: toDateInput(detail.expectedHarvestEnd),
         });
-      } catch (err) {
+        setCommitmentDetailCode(detail.commitmentDetailCode || "");
+      } catch {
         AppToast.error("Không thể tải dữ liệu vùng trồng");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [detailId]);
 
@@ -68,28 +70,34 @@ export default function UpdateCropSeasonDetailDialog({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const validate = () => {
+    const errs: string[] = [];
+    const area = form.areaAllocated ? parseFloat(form.areaAllocated) : NaN;
+    if (form.areaAllocated && (Number.isNaN(area) || area < 0)) {
+      errs.push("Diện tích phải là số ≥ 0.");
+    }
+    if (form.expectedHarvestStart && form.expectedHarvestEnd) {
+      const s = new Date(form.expectedHarvestStart).getTime();
+      const e = new Date(form.expectedHarvestEnd).getTime();
+      if (e < s) errs.push("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.");
+    }
+    if (errs.length) AppToast.error(errs.join(" "));
+    return errs.length === 0;
   };
 
   const handleSubmit = async () => {
-    const {
-      commitmentDetailId,
-      areaAllocated,
-      plannedQuality,
-      expectedHarvestStart,
-      expectedHarvestEnd,
-    } = form;
+    if (!validate()) return;
 
     const payload = {
       detailId,
-      commitmentDetailId,
-      expectedHarvestStart,
-      expectedHarvestEnd,
-      areaAllocated: parseFloat(areaAllocated),
-      plannedQuality,
+      commitmentDetailId: form.commitmentDetailId || undefined, // nếu không đổi có thể để undefined
+      expectedHarvestStart: form.expectedHarvestStart || undefined,
+      expectedHarvestEnd: form.expectedHarvestEnd || undefined,
+      areaAllocated: form.areaAllocated ? parseFloat(form.areaAllocated) : undefined,
+      plannedQuality: form.plannedQuality || undefined,
     };
 
     setIsSubmitting(true);
@@ -98,8 +106,8 @@ export default function UpdateCropSeasonDetailDialog({
       AppToast.success("Cập nhật vùng trồng thành công!");
       onSuccess();
       onClose();
-    } catch (err) {
-      AppToast.error((err as any)?.message || "Cập nhật thất bại");
+    } catch (err: any) {
+      AppToast.error(err?.message || "Cập nhật thất bại");
     } finally {
       setIsSubmitting(false);
     }
@@ -109,17 +117,18 @@ export default function UpdateCropSeasonDetailDialog({
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label>ID dòng cam kết (commitmentDetailId)</Label>
-        <Input
-          name="commitmentDetailId"
-          value={form.commitmentDetailId}
-          onChange={handleChange}
-          placeholder="Nhập ID dòng cam kết"
-          required
-        />
+      {/* Thông tin cam kết vùng trồng */}
+      <div className="rounded-md border p-3 bg-muted/30">
+        <p className="text-sm font-medium mb-2">Thông tin cam kết vùng trồng</p>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <Label className="text-xs">Mã dòng cam kết</Label>
+            <Input value={commitmentDetailCode || form.commitmentDetailId} disabled readOnly />
+          </div>
+        </div>
       </div>
 
+      {/* Trường chỉnh sửa */}
       <div>
         <Label>Diện tích (ha)</Label>
         <Input
@@ -127,6 +136,8 @@ export default function UpdateCropSeasonDetailDialog({
           name="areaAllocated"
           value={form.areaAllocated}
           onChange={handleChange}
+          min="0"
+          step="0.01"
         />
       </div>
 

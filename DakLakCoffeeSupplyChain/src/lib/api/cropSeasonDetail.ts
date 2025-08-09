@@ -10,6 +10,7 @@ export type CropSeasonDetail = {
   detailId: string;
   cropSeasonId: string;
   commitmentDetailId: string; // ✅ Dùng thay cho coffeeTypeId
+  commitmentDetailCode: string;
   expectedHarvestStart: string;
   expectedHarvestEnd: string;
   estimatedYield: number;
