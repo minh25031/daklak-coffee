@@ -1,4 +1,5 @@
 import api from "@/lib/api/axios";
+import { CropSeasonStatusValueToNumber } from "../constants/cropSeasonStatus";
 
 // ========== TYPES ==========
 export interface CropSeasonDetail {
@@ -72,25 +73,58 @@ export async function getAllCropSeasons(): Promise<CropSeasonListItem[]> {
   }
 }
 
+
+function buildStatusFilter(raw?: string): string | undefined {
+  if (!raw) return;
+
+  const s = raw.trim();
+
+  // Map label VN → số enum
+  const vnToNumber: Record<string, number> = {
+    "Đang hoạt động": 0,
+    "Tạm dừng": 1,
+    "Hoàn thành": 2,
+    "Đã hủy": 3,
+  };
+
+  // Map value EN → số enum
+  const enToNumber: Record<string, number> = {
+    Active: 0,
+    Paused: 1,
+    Completed: 2,
+    Cancelled: 3,
+  };
+
+  // Nếu có map trung tâm của bạn:
+  if ((CropSeasonStatusValueToNumber as any)?.[s] !== undefined) {
+    return `Status eq ${CropSeasonStatusValueToNumber[s as keyof typeof CropSeasonStatusValueToNumber]}`;
+  }
+
+  if (vnToNumber[s] !== undefined) return `Status eq ${vnToNumber[s]}`;
+  if (enToNumber[s] !== undefined) return `Status eq ${enToNumber[s]}`;
+  if (/^\d+$/.test(s)) return `Status eq ${parseInt(s, 10)}`; // fallback nếu truyền số trực tiếp
+
+  console.warn("Không map được status, bỏ qua filter:", s);
+  return;
+}
+
+
 export async function getCropSeasonsForCurrentUser(params: {
   search?: string;
-  status?: string;
+  status?: string;   // có thể truyền 'Active' | 'Đang hoạt động' | '0'
   page?: number;
   pageSize?: number;
 }): Promise<CropSeasonListItem[]> {
   const { search, status, page = 1, pageSize = 6 } = params ?? {};
   const q: Record<string, string | number> = {};
 
-  // $search không được để rỗng
   if (search && search.trim()) {
-    // thường $search cần để trong dấu ngoặc kép
     q["$search"] = `"${search.trim()}"`;
   }
 
-  if (status && status.trim()) {
-    // nếu field là enum/string -> nhớ escape nếu có ' trong giá trị
-    const safe = status.trim().replace(/'/g, "''");
-    q["$filter"] = `status eq '${safe}'`;
+  const statusFilter = buildStatusFilter(status);
+  if (statusFilter) {
+    q["$filter"] = statusFilter; // ví dụ: "Status eq 0"
   }
 
   q["$top"] = pageSize;
@@ -104,7 +138,6 @@ export async function getCropSeasonsForCurrentUser(params: {
     return [];
   }
 }
-
 
 export async function getCropSeasonById(id: string): Promise<CropSeason | null> {
   try {
@@ -170,3 +203,5 @@ export async function createCropSeason(data: CropSeasonCreatePayload): Promise<S
     throw err;
   }
 }
+
+
