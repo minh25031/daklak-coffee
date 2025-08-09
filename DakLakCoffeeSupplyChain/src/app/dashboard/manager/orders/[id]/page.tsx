@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -12,14 +12,24 @@ import {
   DialogContent,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Pencil, Trash2, Info, Package } from "lucide-react";
+import { Pencil, Trash2, Info, Package } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { OrderViewDetailsDto, getOrderDetails } from "@/lib/api/orders";
-import { OrderItemViewDto, softDeleteOrderItem } from "@/lib/api/orderItems";
+import {
+  OrderItemViewDto,
+  OrderItemUpdateDto,
+  softDeleteOrderItem,
+} from "@/lib/api/orderItems";
 import { OrderStatus, OrderStatusLabel } from "@/lib/constants/orderStatus";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import OrderItemFormDialog from "@/components/orders/OrderItemFormDialog";
+import {
+  getContractDeliveryBatchById,
+  buildCdiOptions,
+} from "@/lib/api/contractDeliveryBatches";
+import { getProductOptions, type ProductOption } from "@/lib/api/products";
 
 export default function OrderDetailPage() {
   const router = useRouter();
@@ -35,6 +45,12 @@ export default function OrderDetailPage() {
     null
   );
   const [deleting, setDeleting] = useState(false);
+
+  const [showOrderItemDialog, setShowOrderItemDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
+  const [editingItem, setEditingItem] = useState<
+    OrderItemUpdateDto | undefined
+  >(undefined);
 
   const orderStatusBadgeMap: Record<
     OrderStatus,
@@ -118,6 +134,127 @@ export default function OrderDetailPage() {
 
   // Khi dữ liệu items thay đổi -> quay về trang 1
   useEffect(() => setCurrentPage(1), [items.length]);
+
+  type ContractDeliveryItemOption = {
+    contractDeliveryItemId: string;
+    label: string;
+  };
+  type ProductOption = { productId: string; name: string };
+
+  const [contractDeliveryItems, setContractDeliveryItems] = useState<
+    ContractDeliveryItemOption[]
+  >([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
+
+  // Nạp dropdown Products cho form
+  useEffect(() => {
+    // Có order rồi thì load products (hoặc bạn có thể load ngay từ đầu cũng được)
+    if (!order) return;
+    getProductOptions()
+      .then(setProducts)
+      .catch(() => toast.error("Không tải được danh sách sản phẩm"));
+  }, [order]);
+
+  // Nạp dropdown ContractDeliveryItems từ chi tiết đợt giao
+  useEffect(() => {
+    // BE cần trả về deliveryBatchId trong order details
+    const deliveryBatchId = (order as any)?.deliveryBatchId as
+      | string
+      | undefined;
+
+    if (!deliveryBatchId) {
+      return;
+    }
+
+    (async () => {
+      try {
+        const details = await getContractDeliveryBatchById(deliveryBatchId);
+        setContractDeliveryItems(
+          (details.contractDeliveryItems ?? []).map((x) => ({
+            contractDeliveryItemId: String(x.deliveryItemId), // ép string
+            label: `${x.coffeeTypeName} — KH: ${x.plannedQuantity}`,
+          }))
+        );
+      } catch {
+        toast.error("Không tải được danh sách mặt hàng đợt giao");
+      }
+    })();
+  }, [order]);
+
+  // Refetch list sau khi lưu xong
+  const orderId = params.id as string;
+
+  const refetchOrderItems = useCallback(async () => {
+    const data = await getOrderDetails(orderId);
+    setOrder(data);
+  }, [orderId]);
+
+  // Mở dialog tạo
+  const openCreateDialog = () => {
+    setDialogMode("create");
+    setEditingItem(undefined);
+    setShowOrderItemDialog(true);
+  };
+
+  // helper
+  const norm = (s: string | undefined | null) =>
+    String(s ?? "")
+      .trim()
+      .toLowerCase();
+
+  // Nạp danh sách ContractDeliveryItems theo batchId
+  useEffect(() => {
+    if (!order?.deliveryBatchId) return;
+    (async () => {
+      try {
+        const details = await getContractDeliveryBatchById(
+          order.deliveryBatchId
+        );
+        setContractDeliveryItems(
+          (details.contractDeliveryItems ?? []).map((x) => ({
+            contractDeliveryItemId: norm(x.deliveryItemId), // normalize
+            label: `${x.coffeeTypeName} — KH: ${x.plannedQuantity}`,
+          }))
+        );
+      } catch {
+        toast.error("Không tải được danh sách mặt hàng đợt giao");
+        setContractDeliveryItems([]);
+      }
+    })();
+  }, [order?.deliveryBatchId]);
+
+  // Mở dialog sửa (map từ OrderItemViewDto -> OrderItemUpdateDto)
+  const openEditDialog = (row: OrderItemViewDto) => {
+    if (!order) return;
+
+    const currentId = norm(row.contractDeliveryItemId); // normalize
+
+    // nếu option hiện tại chưa có thì chèn, dùng key đã normalize để tránh trùng khác case
+    setContractDeliveryItems((prev) => {
+      const map = new Map(prev.map((o) => [norm(o.contractDeliveryItemId), o]));
+      if (!map.has(currentId)) {
+        map.set(currentId, {
+          contractDeliveryItemId: currentId,
+          label: "Mặt hàng đợt giao (hiện tại)",
+        });
+      }
+      return Array.from(map.values());
+    });
+
+    setDialogMode("edit");
+    setEditingItem({
+      orderItemId: row.orderItemId,
+      orderId: order.orderId,
+      contractDeliveryItemId: currentId, // normalize
+      productId: String(row.productId),
+      quantity: row.quantity ?? 0,
+      unitPrice: row.unitPrice ?? 0,
+      discountAmount: row.discountAmount ?? 0,
+      note: row.note ?? "",
+    });
+
+    setShowOrderItemDialog(true);
+  };
 
   const handleDeleteItem = async () => {
     if (!itemToDelete?.orderItemId) return;
@@ -282,15 +419,7 @@ export default function OrderDetailPage() {
         <div className="rounded-xl border bg-white p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold">Danh sách sản phẩm</h2>
-            <Button
-              onClick={() =>
-                router.push(
-                  `/dashboard/manager/orders/${order.orderId}/items/create`
-                )
-              }
-            >
-              + Thêm mặt hàng
-            </Button>
+            <Button onClick={openCreateDialog}>+ Thêm mặt hàng</Button>
           </div>
 
           <div className="overflow-x-auto">
@@ -355,11 +484,7 @@ export default function OrderDetailPage() {
                             <Button
                               variant="ghost"
                               className="h-7 w-7 p-[2px]"
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/manager/orders/${order.orderId}/items/${it.orderItemId}/edit`
-                                )
-                              }
+                              onClick={() => openEditDialog(it)}
                             >
                               <Pencil className="h-4 w-4 text-yellow-500" />
                             </Button>
@@ -431,7 +556,7 @@ export default function OrderDetailPage() {
             </div>
           )}
         </div>
-        
+
         {/* Footer nút quay lại */}
         <div className="flex justify-end mt-4">
           <Button
@@ -441,6 +566,18 @@ export default function OrderDetailPage() {
             ← Quay lại
           </Button>
         </div>
+
+        <OrderItemFormDialog
+          open={showOrderItemDialog}
+          onOpenChange={setShowOrderItemDialog}
+          mode={dialogMode}
+          orderId={order.orderId}
+          orderCode={order.orderCode}
+          contractDeliveryItems={contractDeliveryItems}
+          products={products}
+          initialData={editingItem}
+          onSuccess={refetchOrderItems}
+        />
 
         {/* Delete Item dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

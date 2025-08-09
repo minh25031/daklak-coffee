@@ -25,6 +25,7 @@ export interface OrderQuery {
   pageSize?: number;
 }
 
+// DTO: Chi tiết đơn hàng kèm danh sách mặt hàng
 export interface OrderViewDetailsDto {
   orderId: string;
   orderCode: string;
@@ -35,6 +36,7 @@ export interface OrderViewDetailsDto {
   note: string;
   status: OrderStatus;
   cancelReason: string;
+  deliveryBatchId: string;
   deliveryBatchCode: string;
   contractNumber: string;
   orderItems: OrderItemViewDto[];
