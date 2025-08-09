@@ -25,6 +25,7 @@ export default function LoginPage() {
         try {
             const decoded = await login(email, password);
 
+            console.log("Login successful:", decoded);
             const roleSlug = roleSlugMap[decoded.role] ?? "dashboard";
             router.push(`/dashboard/${roleSlug}`);
 

@@ -31,35 +31,26 @@ interface Props {
 }
 
 export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: Props) {
-    console.log("CreateProgressDialog mounted with detailId:", existingProgress);
     const [note, setNote] = useState("");
     const [stageOptions, setStageOptions] = useState<CropStage[]>([]);
     const [stageId, setStageId] = useState<number | null>(null);
     const [progressDate, setProgressDate] = useState<string>("");
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [actualYield, setActualYield] = useState<number | undefined>(undefined);
 
     const STAGE_ORDER = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "HARVESTING"];
-    const createdStageCodes = (existingProgress ?? []).map((p) => p.stageCode);
+    const createdStageCodes = (existingProgress ?? []).map((p) => p.stageCode?.toUpperCase?.() ?? "");
 
     const canCreateStage = (stageCode: string) => {
-        const normalizedStageCode = stageCode.toUpperCase();
-        const currentIndex = STAGE_ORDER.indexOf(normalizedStageCode);
-        const requiredPrevious = STAGE_ORDER.slice(0, currentIndex);
-        const hasAllPrevious = requiredPrevious.every((code) =>
-            createdStageCodes.map(c => c.toUpperCase()).includes(code)
-        );
-        const alreadyExists = createdStageCodes
-            .map((c) => c.toUpperCase())
-            .includes(normalizedStageCode);
-        return hasAllPrevious && !alreadyExists;
+        const normalized = stageCode.toUpperCase();
+        const currentIndex = STAGE_ORDER.indexOf(normalized);
+        const requiredPrev = STAGE_ORDER.slice(0, currentIndex);
+        const hasAllPrev = requiredPrev.every((code) => createdStageCodes.includes(code));
+        const alreadyExists = createdStageCodes.includes(normalized);
+        return hasAllPrev && !alreadyExists;
     };
 
-
     const selectedStage = stageOptions.find((s) => s.stageId === stageId);
-    const isHarvestingStage = selectedStage?.stageCode === "HARVESTING";
-
     const allStagesCompleted = STAGE_ORDER.every((code) => createdStageCodes.includes(code));
 
     useEffect(() => {
@@ -81,44 +72,40 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
             AppToast.error("Vui lòng chọn giai đoạn hợp lệ.");
             return;
         }
-
         if (!progressDate) {
             AppToast.error("Vui lòng chọn ngày ghi nhận.");
             return;
         }
-
-        if (isHarvestingStage && (actualYield === undefined || actualYield <= 0)) {
-            AppToast.error("Vui lòng nhập sản lượng thực tế hợp lệ.");
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const [y, m, d] = progressDate.split("-").map(Number);
+        const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
+        if (dt > today) {
+            AppToast.error("Ngày ghi nhận không được lớn hơn hôm nay.");
             return;
         }
 
         setLoading(true);
         try {
-            const payload: any = {
+            const payload = {
                 cropSeasonDetailId: detailId,
                 stageId: selectedStage.stageId,
                 stageDescription: selectedStage.stageName,
                 stepIndex: selectedStage.orderIndex,
                 progressDate,
                 note,
-                photoUrl: "",
-                videoUrl: "",
             };
-
-            if (isHarvestingStage) {
-                payload.actualYield = actualYield;
-            }
-
+            console.log("Creating crop progress:", payload);
             await createCropProgress(payload);
 
             AppToast.success("Ghi nhận tiến độ thành công.");
             setOpen(false);
             setNote("");
-            setActualYield(undefined);
             setProgressDate("");
             if (onSuccess) onSuccess();
         } catch (err: any) {
             const msg = err?.response?.data?.message;
+            console.error("Create error:", err?.response?.data ?? err);
+
             if (msg?.includes("đã tồn tại")) {
                 AppToast.error("Tiến độ hôm nay cho giai đoạn này đã được ghi nhận.");
             } else {
@@ -191,22 +178,6 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
                             />
                         </div>
 
-                        {isHarvestingStage && (
-                            <div>
-                                <Label>Năng suất thực tế (kg)</Label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={actualYield ?? ""}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        setActualYield(val === "" ? undefined : parseFloat(val));
-                                    }}
-                                    placeholder="Nhập năng suất thu hoạch..."
-                                />
-                            </div>
-                        )}
 
                         <div>
                             <Label>Ghi chú</Label>

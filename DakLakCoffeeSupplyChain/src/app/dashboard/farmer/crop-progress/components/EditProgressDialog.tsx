@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     Dialog,
     DialogTrigger,
@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Pencil } from "lucide-react";
 import { AppToast } from "@/components/ui/AppToast";
 import { CropProgress, updateCropProgress } from "@/lib/api/cropProgress";
-import { getCropSeasonDetailById } from "@/lib/api/cropSeasonDetail";
 
 type Props = {
     progress: CropProgress;
@@ -22,11 +21,7 @@ type Props = {
     triggerButton?: React.ReactNode;
 };
 
-export function EditProgressDialog({
-    progress,
-    onSuccess,
-    triggerButton,
-}: Props) {
+export function EditProgressDialog({ progress, onSuccess, triggerButton }: Props) {
     const [open, setOpen] = useState(false);
     const [note, setNote] = useState(progress.note || "");
     const [progressDate, setProgressDate] = useState<string>(
@@ -34,40 +29,20 @@ export function EditProgressDialog({
             ? new Date(progress.progressDate).toISOString().split("T")[0]
             : ""
     );
-    const [actualYield, setActualYield] = useState<number | undefined>(
-        progress.actualYield
-    );
-    const [seasonDetailYield, setSeasonDetailYield] = useState<number | undefined>(
-        undefined
-    );
     const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (open && progress.stageCode === "HARVESTING") {
-            getCropSeasonDetailById(progress.cropSeasonDetailId)
-                .then((detail) => {
-                    if (detail?.actualYield != null) {
-                        setActualYield(detail.actualYield);
-                        setSeasonDetailYield(detail.actualYield);
-                    }
-                })
-                .catch(() => {
-                    AppToast.error("Không thể tải sản lượng hiện có.");
-                });
-        }
-    }, [open, progress]);
 
     const handleSubmit = async () => {
         if (!progressDate) {
             AppToast.error("Vui lòng chọn ngày ghi nhận.");
             return;
         }
-
-        if (progress.stageCode === "HARVESTING") {
-            if (!actualYield || actualYield <= 0) {
-                AppToast.error("Vui lòng nhập sản lượng hợp lệ (> 0) cho giai đoạn thu hoạch.");
-                return;
-            }
+        // FE check ngày không vượt hôm nay (khớp BE)
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const [y, m, d] = progressDate.split("-").map(Number);
+        const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
+        if (dt > today) {
+            AppToast.error("Ngày ghi nhận không được lớn hơn hôm nay.");
+            return;
         }
 
         try {
@@ -79,17 +54,17 @@ export function EditProgressDialog({
                 stageDescription: progress.stageName,
                 progressDate,
                 note,
-                photoUrl: progress.photoUrl,
-                videoUrl: progress.videoUrl,
-                stepIndex: progress.stepIndex ?? 0,
-                actualYield: progress.stageCode === "HARVESTING" ? actualYield : undefined,
+                photoUrl: progress.photoUrl ?? "",
+                videoUrl: progress.videoUrl ?? "",
+                stepIndex: progress.stepIndex ?? 1,
+                // ❌ actualYield removed
             });
 
             AppToast.success("Cập nhật tiến độ thành công!");
             setOpen(false);
             onSuccess();
         } catch (error: any) {
-            AppToast.error(error.response?.data?.message || "Cập nhật thất bại.");
+            AppToast.error(error?.response?.data?.message || "Cập nhật thất bại.");
         } finally {
             setLoading(false);
         }
@@ -138,29 +113,6 @@ export function EditProgressDialog({
                             placeholder="Nhập ghi chú..."
                         />
                     </div>
-
-                    {/* Sản lượng thực tế nếu là HARVESTING */}
-                    {progress.stageCode === "HARVESTING" && (
-                        <div>
-                            <Label>Sản lượng thực tế (kg / tấn)</Label>
-                            <Input
-                                type="number"
-                                min={0}
-                                step={0.1}
-                                placeholder="Nhập sản lượng..."
-                                value={actualYield ?? ""}
-                                onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    setActualYield(isNaN(value) ? undefined : value);
-                                }}
-                            />
-                            {seasonDetailYield !== undefined && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Sản lượng đã ghi trước đó: <strong>{seasonDetailYield} kg</strong>
-                                </p>
-                            )}
-                        </div>
-                    )}
 
                     {/* Nút lưu */}
                     <div className="flex justify-end pt-2">

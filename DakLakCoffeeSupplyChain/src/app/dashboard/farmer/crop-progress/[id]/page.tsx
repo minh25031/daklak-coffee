@@ -1,4 +1,3 @@
-// Full updated version of CropProgressPage with accurate yield handling
 "use client";
 
 import { useEffect, useState } from "react";
@@ -18,12 +17,15 @@ import {
     getCropProgressesByDetailId,
 } from "@/lib/api/cropProgress";
 import { Button } from "@/components/ui/button";
+// Nếu dùng shadcn/ui Dialog, import từ đây:
 import {
     Dialog,
     DialogTrigger,
     DialogContent,
     DialogTitle,
-} from "@radix-ui/react-dialog";
+} from "@/components/ui/dialog";
+// ↑ Nếu app của bạn đang dùng Radix thô thì giữ import cũ, nhưng khuyến nghị dùng shadcn/ui cho đồng bộ.
+
 import { CreateProgressDialog } from "../components/CreateProgressDialog";
 import { EditProgressDialog } from "../components/EditProgressDialog";
 import {
@@ -67,7 +69,7 @@ export default function CropProgressPage() {
         try {
             const detail = await getCropSeasonDetailById(cropSeasonDetailId);
             setSeasonDetail(detail);
-        } catch (err) {
+        } catch {
             AppToast.error("Không thể lấy thông tin vùng trồng.");
         }
     };
@@ -90,6 +92,7 @@ export default function CropProgressPage() {
         return isNaN(d.getTime()) ? "-" : d.toLocaleDateString("vi-VN");
     };
 
+    // Tổng sản lượng hiển thị từ SeasonDetail (read-only)
     const totalYield = Number(seasonDetail?.actualYield || 0);
 
     return (
@@ -117,7 +120,10 @@ export default function CropProgressPage() {
                                 existingProgress={progressList.map((p) => ({
                                     stageCode: p.stageCode,
                                 }))}
-                                onSuccess={reloadData}
+                                onSuccess={() => {
+                                    reloadData();
+                                    loadSeasonDetail();
+                                }}
                             />
                         </div>
                     </div>
@@ -136,13 +142,16 @@ export default function CropProgressPage() {
                                 </p>
                                 <p className="text-sm text-gray-700">
                                     {allStages.length > 0
-                                        ? `✅ Đã cập nhật: ${progressList.length} / ${allStages.length} (${Math.round((progressList.length / allStages.length) * 100)}%)`
+                                        ? `✅ Đã cập nhật: ${progressList.length} / ${allStages.length} (${Math.round(
+                                            (progressList.length / allStages.length) * 100
+                                        )}%)`
                                         : "✅ Đã cập nhật: Đang tải giai đoạn..."}
                                 </p>
                                 <p className="text-sm font-semibold text-orange-700">
                                     🎯 Sản lượng thu hoạch: {totalYield > 0 ? `${totalYield} kg` : "Chưa có ghi nhận"}
                                 </p>
                             </div>
+
                             <div className="space-y-8">
                                 {progressList.map((progress, index) => (
                                     <div
@@ -158,23 +167,22 @@ export default function CropProgressPage() {
                                                     <CalendarDays className="inline w-4 h-4 mr-1" />
                                                     {formatDate(progress.progressDate)}
                                                 </Badge>
+
+                                                {/* Nếu là giai đoạn thu hoạch, chỉ hiển thị tổng từ SeasonDetail */}
                                                 {progress.stageName?.toLowerCase() === "thu hoạch" && (
                                                     <span className="text-xs text-orange-600 font-semibold">
-                                                        Tổng thu hoạch: {seasonDetail?.actualYield ?? "-"} kg
+                                                        Tổng thu hoạch: {totalYield > 0 ? `${totalYield} kg` : "-"}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
+
                                         {progress.note && (
                                             <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">
                                                 {progress.note}
                                             </p>
                                         )}
-                                        {progress.stageName?.toLowerCase() === "thu hoạch" && progress.actualYield && (
-                                            <p className="text-sm text-gray-700 mt-1">
-                                                👉 Sản lượng thực tế: <strong>{progress.actualYield} kg</strong>
-                                            </p>
-                                        )}
+
                                         {(progress.photoUrl || progress.videoUrl) && (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
                                                 {/* Ảnh */}
@@ -189,7 +197,7 @@ export default function CropProgressPage() {
                                                                 />
                                                             </div>
                                                         </DialogTrigger>
-                                                        <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-0 max-w-4xl max-h-[85vh] flex items-center justify-center bg-white rounded-lg shadow-xl z-50">
+                                                        <DialogContent className="p-0 max-w-4xl max-h-[85vh] flex items-center justify-center bg-white rounded-lg shadow-xl">
                                                             <DialogTitle className="sr-only">Xem ảnh</DialogTitle>
                                                             <img
                                                                 src={progress.photoUrl}
@@ -214,7 +222,7 @@ export default function CropProgressPage() {
                                                                 </video>
                                                             </div>
                                                         </DialogTrigger>
-                                                        <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-0 max-w-5xl max-h-[85vh] flex items-center justify-center bg-white rounded-lg shadow-xl z-50">
+                                                        <DialogContent className="p-0 max-w-5xl max-h-[85vh] flex items-center justify-center bg-white rounded-lg shadow-xl">
                                                             <DialogTitle className="sr-only">Xem video</DialogTitle>
                                                             <video
                                                                 controls
@@ -234,7 +242,7 @@ export default function CropProgressPage() {
                                                 progress={progress}
                                                 onSuccess={() => {
                                                     reloadData();
-                                                    loadSeasonDetail();
+                                                    loadSeasonDetail(); // refresh tổng sản lượng
                                                 }}
                                                 triggerButton={
                                                     <Button
@@ -253,17 +261,16 @@ export default function CropProgressPage() {
                                                 className="h-8 w-8 hover:bg-red-100"
                                                 title="Xoá tiến độ"
                                                 onClick={async () => {
-                                                    const confirmDelete = confirm(
-                                                        "Bạn chắc chắn muốn xoá tiến độ này?"
-                                                    );
+                                                    const confirmDelete = confirm("Bạn chắc chắn muốn xoá tiến độ này?");
                                                     if (!confirmDelete) return;
                                                     try {
                                                         await deleteCropProgress(progress.progressId);
                                                         AppToast.success("Xoá tiến độ thành công!");
                                                         reloadData();
+                                                        loadSeasonDetail(); // refresh tổng sản lượng
                                                     } catch (error: any) {
                                                         AppToast.error(
-                                                            error.response?.data?.message || "Xoá thất bại."
+                                                            error?.response?.data?.message || "Xoá thất bại."
                                                         );
                                                     }
                                                 }}
