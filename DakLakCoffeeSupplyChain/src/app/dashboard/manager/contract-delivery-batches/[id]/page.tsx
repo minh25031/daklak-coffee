@@ -157,9 +157,11 @@ export default function ContractDeliveryBatchDetailPage() {
           </div>
           <Button
             className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-medium px-4 py-2 rounded-lg shadow-md flex items-center gap-2"
-            onClick={() => {
-              alert("Đi tới trang chỉnh sửa đợt giao");
-            }}
+            onClick={() =>
+              router.push(
+                `/dashboard/manager/contract-delivery-batches/${batch.deliveryBatchId}/edit`
+              )
+            }
           >
             ✏️ Chỉnh sửa
           </Button>
@@ -215,155 +217,151 @@ export default function ContractDeliveryBatchDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Delivery Items Table */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Danh sách mặt hàng giao</CardTitle>
+        {/* Danh sách mặt hàng giao */}
+        <div className="rounded-xl border bg-white p-4">
+          {/* Header */}
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">Danh sách mặt hàng giao</h2>
             <Button
               onClick={() => {
-                setEditingItem(null); // create mode
+                setEditingItem(null); // chế độ tạo mới
                 setShowItemFormDialog(true);
               }}
             >
               + Thêm mặt hàng
             </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto rounded border bg-white">
-              <Table className="min-w-[700px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tên loại cà phê</TableHead>
-                    <TableHead className="text-center whitespace-nowrap">
-                      Khối lượng cần giao
-                    </TableHead>
-                    <TableHead className="text-center whitespace-nowrap">
-                      Khối lượng đã giao
-                    </TableHead>
-                    <TableHead>Ghi chú</TableHead>
-                    <TableHead className="text-center">Hành động</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {batch.contractDeliveryItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="text-center text-muted-foreground"
-                      >
-                        Không có mặt hàng nào.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedItems.map((item) => (
-                      <TableRow key={item.deliveryItemId}>
-                        <TableCell>{item.coffeeTypeName}</TableCell>
-                        <TableCell className="text-center">
-                          {formatQuantity(item.plannedQuantity)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {item.fulfilledQuantity != null
-                            ? formatQuantity(item.fulfilledQuantity)
-                            : "—"}
-                        </TableCell>
-                        <TableCell>{item.note || "—"}</TableCell>
-                        <TableCell>
-                          <div className="flex justify-center gap-1">
-                            <Tooltip content="Chỉnh sửa">
-                              <Button
-                                variant="ghost"
-                                className="w-8 h-8"
-                                onClick={() => {
-                                  setEditingItem(item); // dùng đúng item view dto
-                                  setShowItemFormDialog(true);
-                                }}
-                              >
-                                <Pencil className="w-4 h-4 text-yellow-500" />
-                              </Button>
-                            </Tooltip>
-                            <Tooltip content="Xoá">
-                              <Button
-                                variant="ghost"
-                                className="w-8 h-8"
-                                onClick={() => {
-                                  setItemToDelete(item);
-                                  setShowDeleteDialog(true);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </Tooltip>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
+          </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border rounded-md text-sm text-gray-700">
-                    {/* Thông tin hiển thị mặt hàng */}
-                    <div className="text-sm text-gray-600">
-                      Đang hiển thị{" "}
-                      <span className="font-medium">
-                        {(currentPage - 1) * ITEMS_PER_PAGE + 1}
-                      </span>
-                      –
-                      <span className="font-medium">
-                        {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}
-                      </span>{" "}
-                      / {totalItems} mặt hàng
-                    </div>
-
-                    {/* Điều khiển phân trang */}
-                    <div className="flex gap-2 justify-end mt-2 sm:mt-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="px-3"
-                        disabled={currentPage === 1}
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                      >
-                        ← Trước
-                      </Button>
-                      <span className="flex items-center px-2">
-                        Trang{" "}
-                        <span className="mx-1 font-semibold">
-                          {currentPage}
-                        </span>{" "}
-                        / {totalPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="px-3"
-                        disabled={currentPage === totalPages}
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages)
-                          )
-                        }
-                      >
-                        Sau →
-                      </Button>
-                    </div>
-                  </div>
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-auto text-sm border border-gray-200">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr>
+                  <th className="px-4 py-2 text-left whitespace-nowrap">
+                    Tên loại cà phê
+                  </th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">
+                    Khối lượng cần giao
+                  </th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">
+                    Khối lượng đã giao
+                  </th>
+                  <th className="px-4 py-2 text-left">Ghi chú</th>
+                  <th className="px-4 py-2 text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {batch.contractDeliveryItems.length === 0 ? (
+                  <tr>
+                    <td className="py-8 text-center text-gray-500" colSpan={5}>
+                      Không có mặt hàng nào.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedItems.map((item) => (
+                    <tr
+                      key={item.deliveryItemId}
+                      className="border-t hover:bg-gray-50"
+                    >
+                      <td className="px-4 py-2">{item.coffeeTypeName}</td>
+                      <td className="px-4 py-2 text-center">
+                        {formatQuantity(item.plannedQuantity)}
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        {item.fulfilledQuantity != null
+                          ? formatQuantity(item.fulfilledQuantity)
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-2">{item.note || "—"}</td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="flex justify-center gap-[2px]">
+                          <Tooltip content="Chỉnh sửa">
+                            <Button
+                              variant="ghost"
+                              className="h-7 w-7 p-[2px]"
+                              onClick={() => {
+                                setEditingItem(item);
+                                setShowItemFormDialog(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4 text-yellow-500" />
+                            </Button>
+                          </Tooltip>
+                          <Tooltip content="Xoá">
+                            <Button
+                              variant="ghost"
+                              className="h-7 w-7 p-[2px]"
+                              onClick={() => {
+                                setItemToDelete(item);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </Tooltip>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 )}
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+              </tbody>
+            </table>
+          </div>
 
-        {/* Back button */}
-        <div className="flex justify-end">
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border rounded-md text-sm text-gray-700">
+              <div className="text-sm text-gray-600">
+                Đang hiển thị{" "}
+                <span className="font-medium">
+                  {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+                </span>
+                –
+                <span className="font-medium">
+                  {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}
+                </span>{" "}
+                / {totalItems} mặt hàng
+              </div>
+              <div className="flex gap-2 justify-end mt-2 sm:mt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-3"
+                  disabled={currentPage === 1}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                >
+                  ← Trước
+                </Button>
+                <span className="flex items-center px-2">
+                  Trang{" "}
+                  <span className="mx-1 font-semibold">{currentPage}</span> /{" "}
+                  {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-3"
+                  disabled={currentPage === totalPages}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                >
+                  Sau →
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+        {/* Footer */}
+        <div className="flex justify-end mt-4">
           <Button variant="outline" onClick={() => history.back()}>
             ← Quay lại
           </Button>
         </div>
       </div>
+
       <ContractDeliveryItemFormDialog
         open={showItemFormDialog}
         onOpenChange={setShowItemFormDialog}

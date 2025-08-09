@@ -108,6 +108,7 @@ function buildStatusFilter(raw?: string): string | undefined {
   return;
 }
 
+
 export async function getCropSeasonsForCurrentUser(params: {
   search?: string;
   status?: string;   // có thể truyền 'Active' | 'Đang hoạt động' | '0'
@@ -137,6 +138,7 @@ export async function getCropSeasonsForCurrentUser(params: {
     return [];
   }
 }
+
 export async function getCropSeasonById(id: string): Promise<CropSeason | null> {
   try {
     const res = await api.get<CropSeason>(`/CropSeasons/${id}`);
