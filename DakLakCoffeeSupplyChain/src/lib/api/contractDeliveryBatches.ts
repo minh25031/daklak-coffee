@@ -65,6 +65,9 @@ export type ContractDeliveryBatchUpdateDto = {
   contractDeliveryItems: ContractDeliveryItemUpdateDto[];
 };
 
+// Option: Dữ liệu gọn để hiển thị trong dropdown chọn mặt hàng đợt giao
+export type ContractDeliveryItemOption = { contractDeliveryItemId: string; label: string };
+
 // API: Lấy danh sách tất cả đợt giao hàng
 export async function getAllContractDeliveryBatches(): Promise<ContractDeliveryBatchViewAllDto[]> {
   const response = await api.get<ContractDeliveryBatchViewAllDto[]>("/ContractDeliveryBatchs");
@@ -98,4 +101,15 @@ export async function updateContractDeliveryBatch(id: string, dto: ContractDeliv
 // API: Xoá mềm đợt giao hàng theo ID
 export async function softDeleteContractDeliveryBatch(id: string): Promise<void> {
   await api.patch(`/ContractDeliveryBatchs/soft-delete/${id}`);
+}
+
+// Helper: Chuyển danh sách ContractDeliveryItem từ chi tiết đợt giao thành mảng option (id + label) cho dropdown
+export function buildCdiOptions(
+  details: ContractDeliveryBatchViewDetailsDto
+): ContractDeliveryItemOption[] {
+  return (details.contractDeliveryItems ?? []).map((x) => ({
+    contractDeliveryItemId: x.deliveryItemId,
+
+    label: `${x.coffeeTypeName} — KH: ${x.plannedQuantity}`,
+  }));
 }
