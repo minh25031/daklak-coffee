@@ -26,33 +26,34 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-const stageIconMap: Partial<Record<CropStage["stageCode"], JSX.Element>> = {
-    PLANTING: (
+const stageIconMap: Partial<Record<string, JSX.Element>> = {
+    planting: (
         <div className="w-6 h-6 flex items-center justify-center rounded-full bg-green-100">
             <Plane className="h-4 w-4 text-green-600" />
         </div>
     ),
-    FLOWERING: (
+    flowering: (
         <div className="w-6 h-6 flex items-center justify-center rounded-full bg-pink-100">
             <Flower2 className="h-4 w-4 text-pink-500" />
         </div>
     ),
-    FRUITING: (
+    fruiting: (
         <div className="w-6 h-6 flex items-center justify-center rounded-full bg-red-100">
             <Apple className="h-4 w-4 text-red-500" />
         </div>
     ),
-    RIPENING: (
+    ripening: (
         <div className="w-6 h-6 flex items-center justify-center rounded-full bg-yellow-100">
             <Candy className="h-4 w-4 text-yellow-600" />
         </div>
     ),
-    HARVESTING: (
+    harvesting: (
         <div className="w-6 h-6 flex items-center justify-center rounded-full bg-amber-100">
             <ShoppingBasket className="h-4 w-4 text-amber-700" />
         </div>
     ),
 };
+
 
 export default function CropStagesDialog() {
     const [stages, setStages] = useState<CropStage[]>([]);
@@ -113,7 +114,7 @@ export default function CropStagesDialog() {
                                         {stage.stageName}
                                     </h3>
                                     <Badge variant="outline" className="text-xs">
-                                        {stage.stageCode}
+                                        {stage.stageCode.toUpperCase()}
                                     </Badge>
                                 </div>
                                 <p className="text-xs text-muted-foreground">

@@ -12,6 +12,6 @@ export async function getCropStages(): Promise<CropStage[]> {
   const response = await api.get("/CropStages");
   return response.data.map((s: CropStage) => ({
     ...s,
-    stageCode: s.stageCode.toUpperCase(),
+    stageCode: s.stageCode, 
   }));
 }
