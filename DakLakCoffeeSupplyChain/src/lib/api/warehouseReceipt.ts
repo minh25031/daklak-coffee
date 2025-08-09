@@ -6,9 +6,8 @@ async function safeFetch(
   options: RequestInit = {}
 ): Promise<{ status: number; message: string; data?: any }> {
   const token = localStorage.getItem("token");
-
   if (!token) {
-    return { status: 0, message: "Token không tồn tại trong localStorage" };
+    return { status: -1, message: "Token không tồn tại trong localStorage" };
   }
 
   const headers: HeadersInit = {
@@ -18,18 +17,20 @@ async function safeFetch(
 
   try {
     const res = await fetch(url, { ...options, headers });
+    const ct = res.headers.get("content-type") || "";
+    const body = ct.includes("application/json") ? await res.json() : await res.text();
+    const message =
+      typeof body === "string" ? body : body?.message || body?.Message || "";
 
     if (!res.ok) {
-      const text = await res.text();
-      console.error("❌ HTTP Error:", res.status, text);
-      return { status: 0, message: `Lỗi server: ${res.status} - ${text}` };
+      // Giữ nguyên mã lỗi để UI biết 422, 404...
+      return { status: res.status, message: message || `Lỗi ${res.status}` };
     }
 
-    const data = await res.json();
-    return { status: 1, message: "Thành công", data };
-  } catch (err: any) {
+    return { status: 1, message: message || "Thành công", data: body };
+  } catch (err) {
     console.error("❌ Fetch exception:", err);
-    return { status: 0, message: "Lỗi kết nối hoặc token không hợp lệ" };
+    return { status: -1, message: "Lỗi kết nối hoặc token không hợp lệ" };
   }
 }
 
@@ -71,10 +72,7 @@ export async function createWarehouseReceipt(
 // ================================
 export async function confirmWarehouseReceipt(
   receiptId: string,
-  confirmData: {
-    confirmedQuantity: number;
-    note?: string;
-  }
+  confirmData: { confirmedQuantity: number; note?: string }
 ) {
   return await safeFetch(`${BASE_URL}/${receiptId}/confirm`, {
     method: "PUT",
@@ -82,4 +80,3 @@ export async function confirmWarehouseReceipt(
     body: JSON.stringify(confirmData),
   });
 }
-// 
