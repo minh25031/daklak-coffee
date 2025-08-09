@@ -1,46 +1,54 @@
+import api from "./axios";
+import { OrderStatus } from "@/lib/constants/orderStatus";
 
-
-export async function getAllOrders() {
-  const token = localStorage.getItem('token');
-
-  const res = await fetch('https://localhost:7163/api/Orders', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(errText || 'Không lấy được danh sách đơn hàng.');
-  }
-
-  const contentType = res.headers.get('content-type');
-  if (!contentType?.includes('application/json')) {
-    return [];
-  }
-
-  return await res.json(); // ✅ Trả danh sách Order
+export interface OrderViewAllDto {
+  orderId: string;
+  orderCode: string;
+  deliveryRound?: number | null;
+  orderDate?: string | null; // ISO string
+  actualDeliveryDate?: string | null; // ISO string (yyyy-MM-dd from API)
+  totalAmount?: number | null;
+  status: OrderStatus;
+  deliveryBatchCode: string;
+  contractNumber: string;
 }
 
-export async function getOrderItemsByOrderId(orderId: string) {
-  const token = localStorage.getItem('token');
+// Optional: query type cho trang view list
+export interface OrderQuery {
+  search?: string;
+  status?: OrderStatus | "ALL";
+  fromDate?: string; // yyyy-MM-dd
+  toDate?: string;   // yyyy-MM-dd
+  page?: number;
+  pageSize?: number;
+}
 
-  const res = await fetch(`https://localhost:7163/api/Orders/${orderId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export async function getAllOrders(): Promise<OrderViewAllDto[]> {
+  const { data } = await api.get<OrderViewAllDto[]>("/orders");
+  return data;
+}
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(errText || 'Không lấy được chi tiết đơn hàng.');
-  }
+export async function getOrders(params?: OrderQuery): Promise<OrderViewAllDto[]> {
+  const { data } = await api.get<OrderViewAllDto[]>("/orders", { params });
+  return data;
+}
 
-  const contentType = res.headers.get('content-type');
-  if (!contentType?.includes('application/json')) {
-    return [];
-  }
+export async function getOrderById(id: string): Promise<OrderViewAllDto> {
+  const { data } = await api.get<OrderViewAllDto>(`/orders/${id}`);
+  return data;
+}
 
-  const orderDetail = await res.json();
-  return orderDetail.orderItems || []; // ✅ Trả về danh sách orderItem trong đơn hàng
+export async function createOrder(payload: any) {
+  const { data } = await api.post("/orders", payload);
+  return data;
+}
+
+export async function updateOrder(id: string, payload: any) {
+  const { data } = await api.put(`/orders/${id}`, payload);
+  return data;
+}
+
+export async function softDeleteOrder(id: string) {
+  const { data } = await api.patch(`/orders/soft-delete/${id}`);
+  return data;
 }
