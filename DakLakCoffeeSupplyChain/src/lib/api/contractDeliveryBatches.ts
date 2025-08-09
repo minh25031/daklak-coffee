@@ -3,7 +3,7 @@ import { ContractDeliveryBatchStatus } from "@/lib/constants/contractDeliveryBat
 import { ContractDeliveryItemCreateDto, ContractDeliveryItemUpdateDto} from "@/lib/api/contractDeliveryItems";
 import { toDateOnly } from "@/lib/utils";
 
-// DTO: Thông tin cơ bản của đợt giao hàng (hiển thị ở danh sách)
+// DTO: Thông tin hiển thị của một đợt giao hàng trong danh sách
 export type ContractDeliveryBatchViewAllDto = {
   deliveryBatchId: string;
   deliveryBatchCode: string;
@@ -28,7 +28,7 @@ export type ContractDeliveryItemViewDto = {
   note: string;
 };
 
-// DTO: Thông tin chi tiết của 1 đợt giao hàng (dùng trong trang chi tiết)
+// DTO: Thông tin chi tiết của một đợt giao hàng (bao gồm danh sách mặt hàng)
 export type ContractDeliveryBatchViewDetailsDto = {
   deliveryBatchId: string;
   deliveryBatchCode: string;
@@ -44,6 +44,7 @@ export type ContractDeliveryBatchViewDetailsDto = {
   contractDeliveryItems: ContractDeliveryItemViewDto[];
 };
 
+// DTO: Tạo mới một đợt giao hàng
 export type ContractDeliveryBatchCreateDto = {
   contractId: string;                     // Guid
   deliveryRound: number;                  // >= 1
@@ -53,6 +54,7 @@ export type ContractDeliveryBatchCreateDto = {
   contractDeliveryItems: ContractDeliveryItemCreateDto[];
 };
 
+// DTO: Cập nhật một đợt giao hàng
 export type ContractDeliveryBatchUpdateDto = {
   deliveryBatchId: string;                // Guid
   contractId: string;                     // Guid
@@ -77,6 +79,7 @@ export async function getContractDeliveryBatchById(
   return response.data;
 }
 
+// API: Tạo mới một đợt giao hàng
 export async function createContractDeliveryBatch(dto: ContractDeliveryBatchCreateDto) {
   return api.post("/ContractDeliveryBatchs", {
     ...dto,
@@ -84,6 +87,7 @@ export async function createContractDeliveryBatch(dto: ContractDeliveryBatchCrea
   });
 }
 
+// API: Cập nhật một đợt giao hàng theo ID
 export async function updateContractDeliveryBatch(id: string, dto: ContractDeliveryBatchUpdateDto) {
   return api.put(`/ContractDeliveryBatchs/${id}`, {
     ...dto,
