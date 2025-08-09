@@ -13,12 +13,10 @@ export default function FilterStatusPanel({
     statusCounts,
 }: FilterStatusPanelProps) {
     return (
-        <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
-            <h2 className="text-sm font-medium text-gray-700">Lọc theo trạng thái</h2>
-
+        <div className="space-y-4">
             {/* FilterBadge cho tất cả */}
             <FilterBadge
-                icon="Đ"
+                icon="📊"
                 label="Tất cả trạng thái"
                 count={
                     Object.values(statusCounts).reduce((sum, val) => sum + val, 0)

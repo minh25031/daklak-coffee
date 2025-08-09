@@ -51,12 +51,10 @@ export function Sidebar({
 
   const childrenWithProps = React.Children.map(children, (child) => {
     if (
-      typeof child === "object" &&
-      child &&
-      "type" in child &&
-      (child as any).type.name === "SidebarFooter"
+      React.isValidElement(child) &&
+      (child.type as unknown as { displayName?: string })?.displayName === "SidebarFooter"
     ) {
-      return React.cloneElement(child as React.ReactElement<any>, {
+      return React.cloneElement(child as React.ReactElement<{ isCollapsed?: boolean }>, {
         isCollapsed,
       });
     }
@@ -66,12 +64,12 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "h-screen bg-white border-r shadow-sm transition-all duration-300",
+        "h-screen bg-white border-r border-orange-100 shadow-sm transition-all duration-300",
         isCollapsed ? "w-[64px]" : "w-[260px]",
         "flex flex-col fixed left-0 top-0 z-50"
       )}
     >
-      <div className="h-16 flex items-center justify-between px-4 border-b">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-orange-100">
         <div className="flex items-center gap-2 overflow-hidden">
           {!isCollapsed && (
             <>
@@ -88,7 +86,7 @@ export function Sidebar({
             setIsCollapsed(newState);
             onCollapseChange?.(newState);
           }}
-          className="text-orange-600 hover:bg-orange-100 rounded p-1"
+          className="text-orange-600 hover:bg-orange-100 rounded-lg p-2 transition-colors"
         >
           <Menu size={20} />
         </button>
@@ -101,7 +99,7 @@ export function Sidebar({
 // ===== Sidebar Header =====
 export function SidebarHeader({ children }: { children?: ReactNode }) {
   return (
-    <div className="px-4 py-2 border-b font-medium text-sm">{children}</div>
+    <div className="px-4 py-3 border-b border-orange-100 font-medium text-sm text-gray-700">{children}</div>
   );
 }
 
@@ -322,9 +320,9 @@ export function SidebarGroup() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+              "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
               isActive
-                ? "bg-orange-100 text-orange-700"
+                ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
           >
@@ -337,9 +335,9 @@ export function SidebarGroup() {
         <div>
           <button
             className={cn(
-              "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+              "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
               pathname.startsWith("/dashboard/farmer/processing")
-                ? "bg-orange-100 text-orange-700"
+                ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
             onClick={() => setProcessingOpen((v) => !v)}
@@ -351,7 +349,7 @@ export function SidebarGroup() {
               <span className="truncate">Sơ chế</span>
             </div>
             <FiChevronDown
-              className={cn("transition", processingOpen && "rotate-180")}
+              className={cn("transition-transform duration-200", processingOpen && "rotate-180")}
             />
           </button>
           {processingOpen && (
@@ -359,9 +357,9 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/farmer/processing/batches"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname === "/dashboard/farmer/processing"
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -370,11 +368,11 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/farmer/processing/evaluations"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith(
                     "/dashboard/farmer/processing/evaluations"
                   )
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -383,9 +381,9 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/farmer/processing/progresses"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith("/dashboard/farmer/processing/progresses")
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -394,9 +392,9 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/farmer/processing/wastes"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith("/dashboard/farmer/processing/wastes")
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -405,11 +403,11 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/farmer/processing/processing-methods"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith(
                     "/dashboard/farmer/processing/processing-methods"
                   )
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -418,9 +416,9 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/farmer/processing/parameters"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith("/dashboard/farmer/processing/parameters")
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -429,9 +427,9 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/farmer/processing/stages"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith("/dashboard/farmer/processing/stages")
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -440,11 +438,11 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/farmer/processing/waste-disposals"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith(
                     "/dashboard/farmer/processing/waste-disposals"
                   )
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -458,9 +456,9 @@ export function SidebarGroup() {
         <div>
           <button
             className={cn(
-              "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+              "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
               pathname.startsWith("/dashboard/manager/processing")
-                ? "bg-orange-100 text-orange-700"
+                ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
             onClick={() => setProcessingOpen((v) => !v)}
@@ -472,7 +470,7 @@ export function SidebarGroup() {
               <span className="truncate">Chế biến</span>
             </div>
             <FiChevronDown
-              className={cn("transition", processingOpen && "rotate-180")}
+              className={cn("transition-transform duration-200", processingOpen && "rotate-180")}
             />
           </button>
           {processingOpen && (
@@ -480,9 +478,9 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/manager/processing/batches"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname === "/dashboard/manager/processing/batches"
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -491,11 +489,11 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/manager/processing/evaluations"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith(
                     "/dashboard/manager/processing/evaluations"
                   )
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -504,11 +502,11 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/manager/processing/progresses"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith(
                     "/dashboard/manager/processing/progresses"
                   )
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -517,9 +515,9 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/manager/processing/wastes"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith("/dashboard/manager/processing/wastes")
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -528,9 +526,9 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/manager/processing/methods"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith("/dashboard/manager/processing/methods")
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -539,11 +537,11 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/manager/processing/parameters"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith(
                     "/dashboard/manager/processing/parameters"
                   )
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -552,9 +550,9 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/manager/processing/stages"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith("/dashboard/manager/processing/stages")
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -563,11 +561,11 @@ export function SidebarGroup() {
               <Link
                 href="/dashboard/manager/processing/waste-disposals"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname.startsWith(
                     "/dashboard/manager/processing/waste-disposals"
                   )
-                    ? "bg-orange-100 text-orange-700"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
@@ -609,9 +607,9 @@ export function SidebarGroup() {
               <div>
                 <button
                   className={cn(
-                    "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+                    "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
                     isActive
-                      ? "bg-orange-100 text-orange-700"
+                      ? "bg-orange-100 text-orange-700 shadow-sm"
                       : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                   )}
                   onClick={() => setProcessingOpen((v) => !v)}
@@ -623,7 +621,7 @@ export function SidebarGroup() {
                     <span className="truncate">Vận hành kho</span>
                   </div>
                   <FiChevronDown
-                    className={cn("transition", processingOpen && "rotate-180")}
+                    className={cn("transition-transform duration-200", processingOpen && "rotate-180")}
                   />
                 </button>
 
@@ -634,9 +632,9 @@ export function SidebarGroup() {
                         key={href}
                         href={href}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                           activeMatch(pathname)
-                            ? "bg-orange-100 text-orange-700"
+                            ? "bg-orange-100 text-orange-700 shadow-sm"
                             : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                         )}
                       >
@@ -690,9 +688,9 @@ export function SidebarGroup() {
               <div>
                 <button
                   className={cn(
-                    "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+                    "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
                     isOperationActive
-                      ? "bg-orange-100 text-orange-700"
+                      ? "bg-orange-100 text-orange-700 shadow-sm"
                       : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                   )}
                   onClick={() => setProcessingOpen((v) => !v)}
@@ -704,7 +702,7 @@ export function SidebarGroup() {
                     <span className="truncate">Vận hành kho</span>
                   </div>
                   <FiChevronDown
-                    className={cn("transition", processingOpen && "rotate-180")}
+                    className={cn("transition-transform duration-200", processingOpen && "rotate-180")}
                   />
                 </button>
 
@@ -715,9 +713,9 @@ export function SidebarGroup() {
                         key={href}
                         href={href}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                           activeMatch(pathname)
-                            ? "bg-orange-100 text-orange-700"
+                            ? "bg-orange-100 text-orange-700 shadow-sm"
                             : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                         )}
                       >
@@ -761,9 +759,9 @@ export function SidebarGroup() {
               <div>
                 <button
                   className={cn(
-                    "flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm font-medium w-full transition-colors",
+                    "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
                     isDropdownActive
-                      ? "bg-orange-100 text-orange-700"
+                      ? "bg-orange-100 text-orange-700 shadow-sm"
                       : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                   )}
                   onClick={() => setProcessingOpen((v) => !v)}
@@ -775,7 +773,7 @@ export function SidebarGroup() {
                     <span className="truncate">Quản lý kho</span>
                   </div>
                   <FiChevronDown
-                    className={cn("transition", processingOpen && "rotate-180")}
+                    className={cn("transition-transform duration-200", processingOpen && "rotate-180")}
                   />
                 </button>
 
@@ -786,9 +784,9 @@ export function SidebarGroup() {
                         key={href}
                         href={href}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                           activeMatch(pathname)
-                            ? "bg-orange-100 text-orange-700"
+                            ? "bg-orange-100 text-orange-700 shadow-sm"
                             : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                         )}
                       >
@@ -823,8 +821,8 @@ export function SidebarFooter({ isCollapsed }: SidebarFooterProps) {
   if (isCollapsed) return null;
 
   return (
-    <div className="border-t px-4 py-3 text-sm text-gray-600">
-      <div className="flex items-center gap-2 mb-1">
+    <div className="border-t border-orange-100 px-4 py-3 text-sm text-gray-600">
+      <div className="flex items-center gap-2 mb-2">
         <span className="text-gray-400">Xin chào:</span>
         <span className="font-medium text-orange-600">
           {userName ?? "Ẩn danh"}
@@ -835,10 +833,13 @@ export function SidebarFooter({ isCollapsed }: SidebarFooterProps) {
           localStorage.clear();
           window.location.href = "/auth/login";
         }}
-        className="text-red-600 text-sm hover:underline"
+        className="text-red-600 text-sm hover:underline transition-all"
       >
         Đăng xuất
       </button>
     </div>
   );
 }
+
+// Add displayName for proper component identification
+SidebarFooter.displayName = "SidebarFooter";
