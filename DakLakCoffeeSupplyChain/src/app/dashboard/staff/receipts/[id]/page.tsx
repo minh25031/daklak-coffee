@@ -4,85 +4,85 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   getWarehouseReceiptById,
-  confirmWarehouseReceipt
+  confirmWarehouseReceipt,
 } from "@/lib/api/warehouseReceipt";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
-  ArrowLeft,
-  Package,
-  Boxes,
-  CalendarClock,
-  ClipboardCheck,
-  User,
-  FileText,
-  CheckCircle,
-  Clock
-} from 'lucide-react';
+  ArrowLeft, Package, Boxes, CalendarClock, ClipboardCheck, User, FileText, CheckCircle, Clock
+} from "lucide-react";
 
 export default function ReceiptDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+
   const [receipt, setReceipt] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [confirmedQuantity, setConfirmedQuantity] = useState<number>(0);
-  const [note, setNote] = useState<string>('');
-  const [error, setError] = useState<string>('');
 
-  const isConfirmed = receipt?.note?.includes("[Confirmed at");
+  const [confirmedQuantity, setConfirmedQuantity] = useState<number>(0);
+  const [note, setNote] = useState<string>("");
+
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");     // ✅ thông báo thành công riêng
+  const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // ✅ BE set ReceivedAt khi confirm → dùng field này thay vì đọc note
+  const isConfirmed = Boolean(receipt?.receivedAt);
 
   useEffect(() => {
-    if (id) fetchReceipt();
+    if (!id) return;
+    fetchReceipt();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const fetchReceipt = async () => {
-    try {
-      const res = await getWarehouseReceiptById(id as string);
-      if (res.status === 1) {
-        setReceipt(res.data);
-        setConfirmedQuantity(res.data.receivedQuantity || 0);
-        setNote(res.data.note || "");
-      } else {
-        alert("❌ " + res.message);
-      }
-    } catch (error) {
-      alert("❌ Lỗi khi tải chi tiết phiếu");
-    } finally {
-      setLoading(false);
-    }
-  };
+  async function fetchReceipt() {
+    setLoading(true);
+    setError("");
+    setSuccess("");
 
-  const handleConfirm = async (e: React.FormEvent) => {
+    const res = await getWarehouseReceiptById(id as string);
+    if (res.status === 1) {
+      setReceipt(res.data);
+      setConfirmedQuantity(res.data.receivedQuantity || 0);
+      setNote(res.data.note || "");
+    } else {
+      setError(res.message || "Không thể tải chi tiết phiếu.");
+    }
+    setLoading(false);
+  }
+
+  async function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     if (!confirmedQuantity || confirmedQuantity <= 0) {
       setError("⚠️ Số lượng xác nhận phải lớn hơn 0.");
       return;
     }
-
-    if (confirmedQuantity < receipt.receivedQuantity && note.trim() === "") {
+    if (confirmedQuantity < (receipt?.receivedQuantity ?? 0) && note.trim() === "") {
       setError("⚠️ Vui lòng ghi chú lý do nếu xác nhận ít hơn số lượng đã tạo.");
       return;
     }
 
-    try {
-      await confirmWarehouseReceipt(id as string, {
-        confirmedQuantity,
-        note
-      });
-      alert("✅ Xác nhận phiếu thành công");
-      await fetchReceipt(); // Refresh
-    } catch (err: any) {
-      setError("❌ " + err.message);
+    setSubmitting(true);
+    const res = await confirmWarehouseReceipt(id as string, { confirmedQuantity, note });
+
+    if (res.status === 1) {
+      setSuccess("✅ Xác nhận phiếu nhập thành công");
+      await fetchReceipt(); // sẽ cập nhật receivedAt ⇒ form tự ẩn
+    } else {
+      // ví dụ 422: “Số lượng xác nhận (5800kg) vượt quá yêu cầu (5700kg).”
+      setError(res.message || "Xác nhận thất bại.");
     }
-  };
+    setSubmitting(false);
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-10 w-10 border-b-2 border-green-600 rounded-full"></div>
+        <div className="animate-spin h-10 w-10 border-b-2 border-green-600 rounded-full" />
       </div>
     );
   }
@@ -114,9 +114,13 @@ export default function ReceiptDetailPage() {
             <DetailItem icon={<Package className="text-green-600" />} label="Kho" value={receipt.warehouseName} />
             <DetailItem icon={<Boxes className="text-orange-600" />} label="Mẻ sơ chế" value={receipt.batchCode} />
             <DetailItem icon={<ClipboardCheck className="text-blue-600" />} label="Số lượng nhận" value={`${receipt.receivedQuantity} kg`} />
-            <DetailItem icon={<CalendarClock className="text-red-500" />} label="Ngày nhận" value={new Date(receipt.receivedAt).toLocaleString('vi-VN')} />
-            <DetailItem icon={<FileText className="text-purple-600" />} label="Ghi chú" value={receipt.note || 'Không có'} />
-            <DetailItem icon={<User className="text-gray-600" />} label="Nhân viên" value={receipt.staffName || 'Không rõ'} />
+            <DetailItem
+              icon={<CalendarClock className="text-red-500" />}
+              label="Ngày nhận"
+              value={receipt.receivedAt ? new Date(receipt.receivedAt).toLocaleString("vi-VN") : "—"}
+            />
+            <DetailItem icon={<FileText className="text-purple-600" />} label="Ghi chú" value={receipt.note || "Không có"} />
+            <DetailItem icon={<User className="text-gray-600" />} label="Nhân viên" value={receipt.staffName || "Không rõ"} />
             <DetailItem
               icon={isConfirmed ? <CheckCircle className="text-green-600" /> : <Clock className="text-yellow-600" />}
               label="Trạng thái"
@@ -128,6 +132,10 @@ export default function ReceiptDetailPage() {
             />
           </div>
         </div>
+
+        {/* Alerts */}
+        {error && <div className="bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded">{error}</div>}
+        {success && <div className="bg-green-50 text-green-700 border border-green-200 px-4 py-2 rounded">{success}</div>}
 
         {/* Confirm Form */}
         {!isConfirmed && (
@@ -141,32 +149,40 @@ export default function ReceiptDetailPage() {
                   type="number"
                   min={1}
                   value={confirmedQuantity}
-                  onChange={(e) => setConfirmedQuantity(Number(e.target.value))}
+                  onChange={(e) => {
+                    setConfirmedQuantity(Number(e.target.value));
+                    setError("");
+                    setSuccess("");
+                  }}
+                  disabled={submitting}
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
-                  Ghi chú{' '}
-                  {confirmedQuantity < receipt.receivedQuantity && (
+                  Ghi chú{" "}
+                  {confirmedQuantity < (receipt?.receivedQuantity ?? 0) && (
                     <span className="text-red-500">(bắt buộc)</span>
                   )}
                 </label>
                 <Textarea
                   value={note}
-                  onChange={(e) => setNote(e.target.value)}
+                  onChange={(e) => {
+                    setNote(e.target.value);
+                    setError("");
+                    setSuccess("");
+                  }}
                   placeholder={
-                    confirmedQuantity < receipt.receivedQuantity
-                      ? 'Vui lòng ghi lý do xác nhận thiếu...'
-                      : 'Ghi chú thêm (nếu có)'
+                    confirmedQuantity < (receipt?.receivedQuantity ?? 0)
+                      ? "Vui lòng ghi lý do xác nhận thiếu..."
+                      : "Ghi chú thêm (nếu có)"
                   }
+                  disabled={submitting}
                 />
               </div>
 
-              {error && <p className="text-red-600">{error}</p>}
-
-              <Button type="submit" className="bg-green-600 text-white">
-                Xác nhận
+              <Button type="submit" className="bg-green-600 text-white" disabled={submitting}>
+                {submitting ? "Đang xác nhận..." : "Xác nhận"}
               </Button>
             </form>
           </div>
@@ -177,14 +193,8 @@ export default function ReceiptDetailPage() {
 }
 
 function DetailItem({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-}) {
+  icon, label, value,
+}: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
       <div className="p-2 bg-gray-100 rounded-md">{icon}</div>
