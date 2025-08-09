@@ -9,6 +9,8 @@ export type FarmingCommitment = {
   companyName: string;
   planTitle?: string;
   totalPrice: number;
+  totalAdvancePayment: number;
+  totalTax: number;
   registrationId: string;
   note: string;
   commitmentDate: string; // ISO date string
@@ -26,6 +28,8 @@ export type FarmingCommitmentDetail = {
   planDetailId: string;
   coffeeTypeName: string;
   confirmedPrice: number; // price per kg
+  advancePayment: number;
+  taxPrice: number;
   committedQuantity: number; // in kg
   estimatedDeliveryStart: string; // ISO date string
   estimatedDeliveryEnd: string; // ISO date string

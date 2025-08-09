@@ -14,6 +14,9 @@ import { getErrorMessage } from "@/lib/utils";
 import { ConfirmDialog } from "../ui/confirmDialog";
 import { FiCheck } from "react-icons/fi";
 import { useRouter } from "next/dist/client/components/navigation";
+import StatusBadge from "@/components/crop-seasons/StatusBadge";
+import { CultivationRegistrationStatusMap } from "@/lib/constants/cultivationRegistrationStatus";
+import { CultivationRegistrationDetailStatusMap } from "@/lib/constants/cultivationRegistrationDetailStatusMap";
 
 const STORAGE_KEY_PREFIX = "registration-expanded-";
 
@@ -25,6 +28,9 @@ type RegistrationCardProps = {
   farmerLocation: string;
   registeredArea: number;
   registeredAt: string;
+  note: string;
+  status: string | number;
+  commitmentStatus: string | number;
   cultivationRegistrationDetails: Partial<CultivationRegistrationDetail>[];
   onUpdate?: () => void;
 };
@@ -38,6 +44,9 @@ export default function RegistrationCard({
   registeredArea,
   registeredAt,
   cultivationRegistrationDetails,
+  note,
+  status,
+  commitmentStatus,
   onUpdate,
 }: RegistrationCardProps) {
   const router = useRouter();
@@ -116,7 +125,13 @@ export default function RegistrationCard({
 
         {/* Info chính */}
         <div className='flex-1 min-w-0'>
-          <h4 className='text-lg font-semibold truncate'>{farmerName}</h4>
+          <div className='flex items-center gap-1 mb-1'>
+            <h4 className='text-lg font-semibold truncate'>{farmerName}</h4>
+            <StatusBadge
+              status={status}
+              map={CultivationRegistrationStatusMap}
+            />
+          </div>
           <p className='text-sm text-gray-600 truncate'>{farmerLocation}</p>
           <p className='text-sm text-gray-600 mt-1'>
             Diện tích đăng ký:{" "}
@@ -127,6 +142,9 @@ export default function RegistrationCard({
           <p className='text-xs text-gray-400 mt-0.5'>
             Mã đơn: <span className='font-mono'>{registrationCode}</span> - Ngày
             đăng ký: {format(new Date(registeredAt), "dd/MM/yyyy HH:mm")}
+          </p>
+          <p className='text-sm text-gray-600 mt-1'>
+            Mô tả: <span className='font-medium'>{note}</span>
           </p>
         </div>
 
@@ -157,14 +175,22 @@ export default function RegistrationCard({
         >
           {cultivationRegistrationDetails.map((detail) => {
             const isApproved = detail.status === "Approved";
+            const isCommitmentCreated = status === "Approved";
+            const isCommitmentActive = commitmentStatus === "Active";
             return (
               <div
                 key={detail.cultivationRegistrationDetailId}
                 className='bg-orange-100 p-3 rounded-md border border-orange-100'
               >
-                <p>
-                  <strong>Loại cà phê:</strong> {detail.coffeeType}
-                </p>
+                <div className='flex items-center gap-1'>
+                  <p>
+                    <strong>Loại cà phê:</strong> {detail.coffeeType}
+                  </p>
+                  <StatusBadge
+                    status={detail.status ?? ""}
+                    map={CultivationRegistrationDetailStatusMap}
+                  />
+                </div>
                 <p>
                   <strong>Sản lượng ước tính:</strong>{" "}
                   {detail.estimatedYield !== undefined
@@ -188,17 +214,26 @@ export default function RegistrationCard({
                   </p>
                 )}
 
-                {/* Nút Duyệt */}
+                {/* Nút tạo hoặc chỉnh sửa cam kết */}
                 <div className='flex justify-end'>
-                  {isApproved ? (
+                  {isApproved && isCommitmentCreated && !isCommitmentActive? (
                     <>
-                    <Button size='sm' disabled className='cursor-default mr-2'>
-                      Đã duyệt
-                    </Button>
-
+                      <Button
+                        size='sm'
+                        variant='secondary'
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/manager/farming-commitments/[id]/edit?registrationId=${registrationId}&registrationDetailId=${detail.cultivationRegistrationDetailId}&wantedPrice=${detail.wantedPrice}&estimatedYield=${detail.estimatedYield}`
+                          );
+                        }}
+                      >
+                        Chỉnh sửa cam kết
+                      </Button>
+                    </>
+                  ) : isApproved && !isCommitmentCreated ? (
                     <Button
-                        size="sm"
-                        variant="secondary" // hoặc style bạn muốn
+                        size='sm'
+                        variant='secondary' // hoặc style bạn muốn
                         onClick={() => {
                           // Chuyển trang tạo cam kết, truyền query params
                           router.push(
@@ -208,7 +243,9 @@ export default function RegistrationCard({
                       >
                         Tạo cam kết
                       </Button>
-                    </>
+                  )
+                : isCommitmentActive ? (
+                    <></>
                   ) : (
                     <Button
                       size='sm'
