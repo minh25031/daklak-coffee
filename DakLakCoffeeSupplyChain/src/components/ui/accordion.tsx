@@ -67,17 +67,19 @@ export function AccordionTrigger({
   const context = React.useContext(AccordionContext);
   const value = accordionValue || "";
 
-  const isOpen = context?.openItems.includes(value);
+  // Đảm bảo boolean thật
+  const isOpen = context ? context.openItems.includes(value) : false;
 
   return (
     <button
+      type="button" // ✅ fix 1: khai báo type
       onClick={() => context?.toggleItem(value)}
       className={cn(
         "w-full flex items-center justify-between px-4 py-2 font-medium text-left focus:outline-none transition-all cursor-pointer",
         isOpen ? "bg-gray-100" : "bg-white",
         className
       )}
-      aria-expanded={isOpen}
+      aria-expanded={isOpen} // ✅ boolean
       aria-controls={`content-${value}`}
     >
       <span>{children}</span>
@@ -88,21 +90,26 @@ export function AccordionTrigger({
   );
 }
 
-export function AccordionContent({ children }: { children: React.ReactNode }) {
+export function AccordionContent({
+  children,
+  accordionValue,
+}: {
+  children: React.ReactNode;
+  accordionValue?: string;
+}) {
   const context = React.useContext(AccordionContext);
-  const ref = React.useRef<HTMLDivElement>(null);
-  const value = ref.current?.parentElement?.dataset?.value || "";
-  const isOpen = context?.openItems.includes(value);
+
+  const value = accordionValue || "";
+  const isOpen = context ? context.openItems.includes(value) : false;
 
   return (
     <div
-      ref={ref}
       id={`content-${value}`}
       className={cn(
         "transition-all px-4 overflow-hidden",
         isOpen ? "max-h-[1000px] py-2 opacity-100" : "max-h-0 py-0 opacity-0"
       )}
-      aria-hidden={!isOpen}
+      aria-hidden={!isOpen} // ✅ boolean thật
     >
       {children}
     </div>
