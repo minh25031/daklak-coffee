@@ -248,7 +248,14 @@ export default function ContractDeliveryBatchesPage() {
             </div>
 
             {/* Nút tạo mới */}
-            <Button className="bg-black text-white hover:bg-gray-800">
+            <Button
+              className="bg-black text-white hover:bg-gray-800"
+              onClick={() =>
+                router.push(
+                  "/dashboard/manager/contract-delivery-batches/create"
+                )
+              }
+            >
               + Tạo đợt giao hàng mới
             </Button>
           </div>
@@ -326,7 +333,15 @@ export default function ContractDeliveryBatchesPage() {
                           >
                             <Eye className="w-4 h-4 text-blue-500" />
                           </Button>
-                          <Button variant="ghost" className="w-7 h-7 p-[2px]">
+                          <Button
+                            variant="ghost"
+                            className="w-7 h-7 p-[2px]"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/manager/contract-delivery-batches/${batch.deliveryBatchId}/edit`
+                              )
+                            }
+                          >
                             <Pencil className="w-4 h-4 text-yellow-500" />
                           </Button>
                           <Button

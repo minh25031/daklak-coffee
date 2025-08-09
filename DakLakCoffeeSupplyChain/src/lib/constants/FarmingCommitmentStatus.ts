@@ -1,4 +1,4 @@
-export type FarmingCommitmentStatusValue = 'Pending_farmer' | 'Active' | 'Completed' | 'Cancelled' | 'Breached';
+export type FarmingCommitmentStatusValue = 'Pending' | 'Active' | 'Completed' | 'Cancelled' | 'Breached';
 
 export const FarmingCommitmentStatusMap: Record<FarmingCommitmentStatusValue, {
   label: string;
@@ -15,7 +15,7 @@ export const FarmingCommitmentStatusMap: Record<FarmingCommitmentStatusValue, {
     color: 'gray',
     icon: 'D'
   },
-  'Pending_farmer': {
+  'Pending': {
     label: 'Đang chờ duyệt',
     color: 'blue',
     icon: 'P'

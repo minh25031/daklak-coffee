@@ -13,6 +13,9 @@ export interface CultivationRegistration {
   registeredArea: number; // in hectares
   registeredAt: string; // ISO date string
   totalWantedPrice: number; // total price for the registered area
+  note: string;
+  status: string | number;
+  commitmentStatus: string | number;
   cultivationRegistrationDetails: Partial<CultivationRegistrationDetail>[];
 };
 export interface CultivationRegistrationDetail {

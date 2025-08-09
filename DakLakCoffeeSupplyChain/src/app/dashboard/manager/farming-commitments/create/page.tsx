@@ -39,6 +39,7 @@ export default function CreateFarmingCommitmentPage() {
       {
         registrationDetailId: "",
         confirmedPrice: 0,
+        advancePayment: 0,
         committedQuantity: 0,
         estimatedDeliveryStart: "",
         estimatedDeliveryEnd: "",
@@ -62,6 +63,7 @@ export default function CreateFarmingCommitmentPage() {
           {
             registrationDetailId: paramRegistrationDetailId,
             confirmedPrice: Number(paramWantedPrice),
+            advancePayment: 0,
             committedQuantity: Number(paramEstimatedYield),
             estimatedDeliveryStart: "",
             estimatedDeliveryEnd: "",
@@ -87,6 +89,9 @@ export default function CreateFarmingCommitmentPage() {
         return null;
       }
     );
+    if (data) {
+      data.cultivationRegistrationDetails = data.cultivationRegistrationDetails.filter(detail => detail.status === 'Approved');
+    }
     setRegistration(data);
     console.log("Fetched Registration:", data);
     setLoading(false);
@@ -160,6 +165,7 @@ export default function CreateFarmingCommitmentPage() {
         {
           registrationDetailId: "",
           confirmedPrice: 0,
+          advancePayment: 0,
           committedQuantity: 0,
           estimatedDeliveryStart: "",
           estimatedDeliveryEnd: "",
@@ -209,6 +215,7 @@ export default function CreateFarmingCommitmentPage() {
           {
             registrationDetailId: "",
             confirmedPrice: 0,
+            advancePayment: 0,
             committedQuantity: 0,
             estimatedDeliveryStart: "",
             estimatedDeliveryEnd: "",
@@ -288,7 +295,7 @@ export default function CreateFarmingCommitmentPage() {
                 <CardContent className='space-y-3'>
                   <div>
                     <Label htmlFor={`registrationDetailId-${index}`}>
-                      Chi tiết đơn đăng ký
+                      Chi tiết đơn đăng ký (Chỉ chọn được những chi tiết đã duyệt)
                       <span className='text-red-500'>*</span>
                     </Label>
                     {loading ? (
@@ -360,6 +367,26 @@ export default function CreateFarmingCommitmentPage() {
                         {errors[`confirmedPrice${index}`]}
                       </p>
                     )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`advancePayment-${index}`}>
+                      Số tiền tạm ứng cho nông dân (VNĐ/kg) (Có thể bỏ trống)
+                    </Label>
+                    <Input
+                      id={`advancePayment-${index}`}
+                      type='number'
+                      min={0}
+                      name='advancePayment'
+                      value={detail.advancePayment}
+                      onChange={(e) =>
+                        handleDetailChange(
+                          index,
+                          "advancePayment",
+                          Number(e.target.value)
+                        )
+                      }
+                    />
                   </div>
 
                   <div>
