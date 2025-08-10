@@ -31,7 +31,7 @@ export default function ReportDetailsPage() {
         "Ra hoa": "FLOWERING",
         "Kết trái": "FRUITING",
         "Chín": "RIPENING",
-        "Thu hoạch": "HARVESTING",
+        "Thu hoạch": "harvesting",
     };
 
     useEffect(() => {
