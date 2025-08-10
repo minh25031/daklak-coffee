@@ -8,7 +8,7 @@ import {
 } from '@/lib/api/cropSeasons';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, ArrowLeft, Calendar, MapPin, User, FileText, Plus, TrendingUp } from 'lucide-react';
+import { Leaf, Calendar, MapPin, User, FileText, Plus, TrendingUp } from 'lucide-react';
 import StatusBadge from '@/components/crop-seasons/StatusBadge';
 import { CropSeasonStatusMap } from '@/lib/constants/cropSeasonStatus';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -75,14 +75,6 @@ export default function CropSeasonDetail() {
                         </CardHeader>
                         <CardContent className="p-4">
                             <p className="text-red-600 mb-3 font-medium">{error || 'Không tìm thấy mùa vụ'}</p>
-                            <Button
-                                onClick={() => router.back()}
-                                className="bg-orange-600 hover:bg-orange-700 text-white"
-                                size="sm"
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                Quay lại
-                            </Button>
                         </CardContent>
                     </Card>
                 </div>
@@ -103,15 +95,6 @@ export default function CropSeasonDetail() {
                 <div className="bg-white rounded-lg shadow-sm p-4 border border-orange-100">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <Button
-                                variant="ghost"
-                                onClick={() => router.back()}
-                                className="text-gray-600 hover:text-orange-600"
-                                size="sm"
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-1" />
-                                Quay lại
-                            </Button>
                             <div className="flex items-center gap-2">
                                 <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center">
                                     <Leaf className="w-6 h-6 text-white" />

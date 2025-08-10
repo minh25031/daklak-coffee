@@ -1,5 +1,5 @@
 import api from "@/lib/api/axios";
-import { CropSeasonStatusValueToNumber } from "../constants/cropSeasonStatus";
+import { CropSeasonStatusValue, CropSeasonStatusValueToNumber } from "../constants/cropSeasonStatus";
 
 // ========== TYPES ==========
 export interface CropSeasonDetail {
@@ -54,7 +54,7 @@ export interface CropSeasonUpdatePayload {
 }
 
 
-interface ServiceResult<T = any> {
+interface ServiceResult<T = unknown> {
   code: number | string;
   message: string;
   data: T | null;
@@ -96,8 +96,8 @@ function buildStatusFilter(raw?: string): string | undefined {
   };
 
   // Nếu có map trung tâm của bạn:
-  if ((CropSeasonStatusValueToNumber as any)?.[s] !== undefined) {
-    return `Status eq ${CropSeasonStatusValueToNumber[s as keyof typeof CropSeasonStatusValueToNumber]}`;
+  if (s in CropSeasonStatusValueToNumber) {
+    return `Status eq ${CropSeasonStatusValueToNumber[s as CropSeasonStatusValue]}`;
   }
 
   if (vnToNumber[s] !== undefined) return `Status eq ${vnToNumber[s]}`;
@@ -149,34 +149,52 @@ export async function getCropSeasonById(id: string): Promise<CropSeason | null> 
   }
 }
 
-export async function deleteCropSeasonById(id: string): Promise<{ code: any; message: string }> {
+export async function deleteCropSeasonById(id: string): Promise<{ code: number; message: string }> {
   try {
     const res = await api.patch(`/CropSeasons/soft-delete/${id}`); 
     return {
       code: 200,
       message: res.data || 'Xoá thành công',
     };
-  } catch (err: any) {
-    const message =
-      err?.response?.data || err?.message || 'Xoá mùa vụ thất bại.';
+  } catch (err: unknown) {
+    let message = 'Xoá mùa vụ thất bại.';
+    
+    if (typeof err === 'object' && err !== null && 'response' in err) {
+      const response = (err as { response?: { data?: string } }).response;
+      if (response?.data) {
+        message = response.data;
+      }
+    } else if (err instanceof Error) {
+      message = err.message;
+    }
+    
     return {
       code: 400,
       message,
     };
   }
 }
+
 export async function updateCropSeason(
   id: string,
   data: CropSeasonUpdatePayload
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await api.put(`/CropSeasons/${id}`, data);
+    await api.put(`/CropSeasons/${id}`, data);
     return { success: true };
-  } catch (err: any) {
-    const full = err.response?.data;
-    console.error("Chi tiết lỗi updateCropSeason:", full); 
-    const message =
-      full?.message || full?.error || full?.title || err.message || 'Lỗi không xác định';
+  } catch (err: unknown) {
+    let message = 'Lỗi không xác định';
+    
+    if (typeof err === 'object' && err !== null && 'response' in err) {
+      const response = (err as { response?: { data?: { message?: string; error?: string; title?: string } } }).response;
+      if (response?.data) {
+        message = response.data.message || response.data.error || response.data.title || message;
+      }
+    } else if (err instanceof Error) {
+      message = err.message;
+    }
+    
+    console.error("Chi tiết lỗi updateCropSeason:", message);
     return { success: false, error: message };
   }
 }
