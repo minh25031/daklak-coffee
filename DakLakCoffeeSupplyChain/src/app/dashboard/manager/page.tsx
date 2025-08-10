@@ -186,16 +186,21 @@ export default function ManagerDashboard() {
               isLink
             />
           </Link>
-
-          {/* Processing Management */}
-          <Link href="/dashboard/manager/processing/batches">
-            <DashboardCard
-              icon={<FiCoffee className="text-orange-500 text-xl" />}
-              title="Quản lý sơ chế"
-              description="Theo dõi và quản lý các lô sơ chế cà phê."
-              isLink
-            />
-          </Link>
+          <DashboardCard
+            icon={<FiUsers className="text-orange-500 text-xl" />}
+            title="Danh sách nông dân"
+            description="Xem và tương tác với các nông hộ đang hợp tác."
+          />
+          <DashboardCard
+            icon={<FiPackage className="text-orange-500 text-xl" />}
+            title="Mẻ sơ chế"
+            description="Quản lý và theo dõi các mẻ sơ chế theo mùa vụ."
+          />
+          <DashboardCard
+            icon={<FiBarChart2 className="text-orange-500 text-xl" />}
+            title="Báo cáo sản lượng"
+            description="Thống kê về sản lượng, chất lượng và tiến độ."
+          />
 
           {/* Kho hàng */}
           <Link href="/dashboard/manager/warehouses">

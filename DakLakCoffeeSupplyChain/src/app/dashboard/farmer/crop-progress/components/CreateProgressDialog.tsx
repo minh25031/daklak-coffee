@@ -58,7 +58,7 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
 
 
     const selectedStage = stageOptions.find((s) => s.stageId === stageId);
-    const isHarvestingStage = selectedStage?.stageCode === "HARVESTING";
+    const isHarvestingStage = selectedStage?.stageCode === "harvesting";
 
     const allStagesCompleted = STAGE_ORDER.every((code) => createdStageCodes.includes(code));
 

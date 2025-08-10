@@ -19,8 +19,6 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { AppToast } from "@/components/ui/AppToast";
-import { getErrorMessage } from "@/lib/utils";
 import {
   CultivationRegistration,
   getCultivationRegistrationsByPlanId,
@@ -32,9 +30,7 @@ export default function ProcurementPlanDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [plan, setPlan] = useState<ProcurementPlan | null>(null);
-  const [registrations, setRegistrations] = useState<CultivationRegistration[]>(
-    []
-  );
+  const [registrations, setRegistrations] = useState<CultivationRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -46,20 +42,22 @@ export default function ProcurementPlanDetailPage() {
 
     fetchRegistration(id);
   }, [id]);
-
+ //#region APIs call
   const fetchRegistration = async (planId: ParamValue) => {
     setLoading(true);
     const data = await getCultivationRegistrationsByPlanId(planId).catch(
-      (error) => {
-        AppToast.error(getErrorMessage(error));
+      () => {
+        //AppToast.error(getErrorMessage(error));
         return [];
       }
     );
     //console.log("Fetched Procurement Plans:", data);
     setRegistrations(data);
-    console.log("Fetched Registrations:", data);
+    //console.log("Fetched Registrations:", data);
     setLoading(false);
   };
+
+  //#endregion
 
   const handleUpdateRegistration = () => {
     fetchRegistration(id);
@@ -288,7 +286,10 @@ export default function ProcurementPlanDetailPage() {
               farmerLocation={reg.farmerLocation}
               registeredArea={reg.registeredArea}
               registeredAt={reg.registeredAt}
-              cultivationRegistrationViewDetailsDtos={
+              note={reg.note}
+              status={reg.status}
+              commitmentStatus={reg.commitmentStatus}
+              cultivationRegistrationDetails={
                 reg.cultivationRegistrationDetails
               }
               onUpdate={handleUpdateRegistration}

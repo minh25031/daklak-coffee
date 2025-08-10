@@ -27,13 +27,13 @@ export function Tooltip({
           side={side}
           align={align}
           className={cn(
-            "bg-gray-900 text-white text-xs rounded-2xl px-2 py-1 shadow-lg z-50 select-none",
+            "bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50 select-none border border-gray-700",
             className
           )}
           sideOffset={4}
         >
           {content}
-          <TooltipPrimitive.Arrow className='fill-gray-900' />
+          <TooltipPrimitive.Arrow className='fill-gray-800' />
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Root>
     </TooltipPrimitive.Provider>

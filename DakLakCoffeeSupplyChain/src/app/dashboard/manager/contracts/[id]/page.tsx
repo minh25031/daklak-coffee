@@ -35,11 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import ContractItemFormDialog from "@/components/contracts/ContractItemFormDialog";
 import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
-import {
-  formatQuantity,
-  formatUnitPriceByQuantity,
-  formatDiscount,
-} from "@/lib/utils";
+import { formatQuantity, formatDate, formatDiscount } from "@/lib/utils";
 
 const contractStatusMap: Record<string, { label: string; className: string }> =
   {
@@ -49,7 +45,7 @@ const contractStatusMap: Record<string, { label: string; className: string }> =
     },
     PreparingDelivery: {
       label: "Chuẩn bị giao",
-      className: "bg-blue-100 text-blue-700",
+      className: "bg-purple-100 text-purple-700",
     },
     InProgress: {
       label: "Đang thực hiện",
@@ -61,12 +57,6 @@ const contractStatusMap: Record<string, { label: string; className: string }> =
     },
     Cancelled: { label: "Đã huỷ", className: "bg-red-100 text-red-700" },
   };
-
-const formatDate = (date?: string) => {
-  if (!date) return "-";
-  const d = new Date(date);
-  return d.toLocaleDateString("vi-VN");
-};
 
 export default function ContractDetailPage() {
   const params = useParams();
@@ -192,7 +182,9 @@ export default function ContractDetailPage() {
           <Button
             className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-medium px-4 py-2 rounded-lg shadow-md flex items-center gap-2"
             onClick={() =>
-              router.push(`/dashboard/manager/contracts/edit/${contractId}`)
+              router.push(
+                `/dashboard/manager/contracts/${contract.contractId}/edit`
+              )
             }
           >
             ✏️ Chỉnh sửa
@@ -221,11 +213,15 @@ export default function ContractDetailPage() {
             </div>
             <div>
               <strong>Tổng khối lượng:</strong>{" "}
-              {contract.totalQuantity?.toLocaleString() ?? "-"}
+              {contract.totalQuantity !== undefined
+                ? formatQuantity(contract.totalQuantity)
+                : "-"}
             </div>
             <div>
               <strong>Tổng giá trị:</strong>{" "}
-              {contract.totalValue?.toLocaleString() ?? "-"}
+              {contract.totalValue !== undefined
+                ? `${contract.totalValue.toLocaleString()} VNĐ`
+                : "-"}
             </div>
             <div>
               <strong>Ngày bắt đầu:</strong> {formatDate(contract.startDate)}
@@ -274,143 +270,159 @@ export default function ContractDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Danh sách mặt hàng</CardTitle>
+        {/* Danh sách mặt hàng hợp đồng */}
+        <div className="rounded-xl border bg-white p-4">
+          {/* Header */}
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">Danh sách mặt hàng</h2>
             <Button
               onClick={() => {
-                setEditingItem(null); // create mode
+                setEditingItem(null); // tạo mới
                 setShowItemFormDialog(true);
               }}
             >
               + Thêm mặt hàng
             </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto rounded border bg-white">
-              <Table className="min-w-[700px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tên loại cà phê</TableHead>
-                    <TableHead>Số lượng</TableHead>
-                    <TableHead>Đơn giá</TableHead>
-                    <TableHead>Chiết khấu</TableHead>
-                    <TableHead>Ghi chú</TableHead>
-                    <TableHead className="text-center">Hành động</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contract.contractItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-muted-foreground"
-                      >
-                        Không có mặt hàng nào.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedItems.map((item) => (
-                      <TableRow key={item.contractItemId}>
-                        <TableCell>{item.coffeeTypeName}</TableCell>
-                        <TableCell>
-                          {item.quantity !== undefined
-                            ? formatQuantity(item.quantity)
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {item.unitPrice?.toLocaleString()}{" "}
-                          <span className="text-muted-foreground">VNĐ/kg</span>
-                        </TableCell>
-                        <TableCell>
-                          {item.discountAmount !== undefined
-                            ? `${item.discountAmount}%`
-                            : "-"}
-                        </TableCell>
-                        <TableCell>{item.note}</TableCell>
-                        <TableCell>
-                          <div className="flex justify-center gap-1">
-                            <Tooltip content="Chỉnh sửa">
-                              <Button
-                                variant="ghost"
-                                className="w-8 h-8"
-                                onClick={() => {
-                                  setEditingItem(item); // edit mode
-                                  setShowItemFormDialog(true);
-                                }}
-                              >
-                                <Pencil className="w-4 h-4 text-yellow-500" />
-                              </Button>
-                            </Tooltip>
+          </div>
 
-                            <Tooltip content="Xoá">
-                              <Button
-                                variant="ghost"
-                                className="w-8 h-8"
-                                onClick={() => {
-                                  setItemToDelete(item);
-                                  setShowDeleteDialog(true);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </Tooltip>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border-t rounded-b-md text-sm text-gray-700">
-                  <div className="mb-2 sm:mb-0">
-                    Đang hiển thị{" "}
-                    <span className="font-medium">
-                      {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}
-                    </span>{" "}
-                    / <span className="font-medium">{totalItems}</span> mặt hàng
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="px-3"
-                      disabled={currentPage === 1}
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-auto text-sm border border-gray-200">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr>
+                  <th className="px-4 py-2 text-left whitespace-nowrap">
+                    Tên loại cà phê
+                  </th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">
+                    Số lượng
+                  </th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">
+                    Đơn giá
+                  </th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">
+                    Chiết khấu
+                  </th>
+                  <th className="px-4 py-2 text-left">Ghi chú</th>
+                  <th className="px-4 py-2 text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contract.contractItems.length === 0 ? (
+                  <tr>
+                    <td className="py-8 text-center text-gray-500" colSpan={6}>
+                      Không có mặt hàng nào.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedItems.map((item) => (
+                    <tr
+                      key={item.contractItemId}
+                      className="border-t hover:bg-gray-50"
                     >
-                      ← Trước
-                    </Button>
-                    <span className="flex items-center px-2">
-                      Trang{" "}
-                      <span className="mx-1 font-semibold">{currentPage}</span>{" "}
-                      / {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="px-3"
-                      disabled={currentPage === totalPages}
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                      }
-                    >
-                      Sau →
-                    </Button>
-                  </div>
-                </div>
-              )}
+                      <td className="px-4 py-2">{item.coffeeTypeName}</td>
+                      <td className="px-4 py-2 text-center">
+                        {item.quantity !== undefined
+                          ? formatQuantity(item.quantity)
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        {item.unitPrice?.toLocaleString()}{" "}
+                        <span className="text-gray-500 text-xs">VNĐ/kg</span>
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        {item.discountAmount !== undefined
+                          ? `${item.discountAmount}%`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-2">{item.note || "—"}</td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="flex justify-center gap-[2px]">
+                          <Tooltip content="Chỉnh sửa">
+                            <Button
+                              variant="ghost"
+                              className="h-7 w-7 p-[2px]"
+                              onClick={() => {
+                                setEditingItem(item);
+                                setShowItemFormDialog(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4 text-yellow-500" />
+                            </Button>
+                          </Tooltip>
+                          <Tooltip content="Xoá">
+                            <Button
+                              variant="ghost"
+                              className="h-7 w-7 p-[2px]"
+                              onClick={() => {
+                                setItemToDelete(item);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </Tooltip>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border rounded-md text-sm text-gray-700">
+              <div className="text-sm text-gray-600">
+                Đang hiển thị{" "}
+                <span className="font-medium">
+                  {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+                </span>
+                –
+                <span className="font-medium">
+                  {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}
+                </span>{" "}
+                / {totalItems} mặt hàng
+              </div>
+              <div className="flex gap-2 justify-end mt-2 sm:mt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-3"
+                  disabled={currentPage === 1}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                >
+                  ← Trước
+                </Button>
+                <span className="flex items-center px-2">
+                  Trang{" "}
+                  <span className="mx-1 font-semibold">{currentPage}</span> /{" "}
+                  {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-3"
+                  disabled={currentPage === totalPages}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                >
+                  Sau →
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end gap-2">
+          )}
+        </div>
+        {/* Footer */}
+        <div className="flex justify-end mt-4">
           <Button variant="outline" onClick={() => router.back()}>
             ← Quay lại
           </Button>
         </div>
+
         <ContractItemFormDialog
           open={showItemFormDialog}
           onOpenChange={setShowItemFormDialog}

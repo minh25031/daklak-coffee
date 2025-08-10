@@ -27,6 +27,48 @@ import {
 } from "@/components/ui/select";
 import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
 
+// Helper: input có suffix đơn vị bên phải
+function InputWithSuffix({
+  unit,
+  className,
+  ...props
+}: React.ComponentProps<typeof Input> & { unit?: string }) {
+  return (
+    <div className="relative">
+      <Input {...props} className={`pr-14 ${className ?? ""}`} />
+      {unit ? (
+        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
+          {unit}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+type Mode = "create" | "edit";
+
+interface Props {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  mode: Mode;
+  loading?: boolean;
+  contractId: string;
+  coffeeTypes: CoffeeType[];
+  formData: {
+    contractId: string;
+    coffeeTypeId: string;
+    quantity: number | string;
+    unitPrice: number | string;
+    discountAmount: number | string;
+    note?: string;
+  };
+  setFormData: React.Dispatch<React.SetStateAction<Props["formData"]>>;
+  handleChange: React.ChangeEventHandler<
+    HTMLInputElement | HTMLTextAreaElement
+  >;
+  handleSubmit: () => void;
+}
+
 interface ContractItemFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -131,21 +173,18 @@ export default function ContractItemFormDialog({
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
+          {/* Loại cà phê */}
           <div className="grid gap-1">
             <Label htmlFor="coffeeTypeId">Loại cà phê</Label>
             <Select
-              value={formData.coffeeTypeId}
-              onValueChange={(value) => {
-                console.log("Coffee type selected:", value);
-                setFormData((prev) => ({ ...prev, coffeeTypeId: value }));
-              }}
+              // Nếu state rỗng => truyền undefined để hiện placeholder
+              value={formData.coffeeTypeId || undefined}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, coffeeTypeId: value }))
+              }
             >
               <SelectTrigger id="coffeeTypeId" className="w-full">
-                <SelectValue>
-                  {coffeeTypes.find(
-                    (ct) => ct.coffeeTypeId === formData.coffeeTypeId
-                  )?.typeName ?? "Chọn loại cà phê"}
-                </SelectValue>
+                <SelectValue placeholder="-- Chọn loại cà phê --" />
               </SelectTrigger>
               <SelectContent className="w-full">
                 {coffeeTypes.map((type) => (
@@ -157,42 +196,51 @@ export default function ContractItemFormDialog({
             </Select>
           </div>
 
+          {/* Số lượng (kg) */}
           <div className="grid gap-1">
-            <Label htmlFor="quantity">Số lượng</Label>
-            <Input
+            <Label htmlFor="quantity">Số lượng (Kg)</Label>
+            <InputWithSuffix
               id="quantity"
               name="quantity"
               type="number"
+              inputMode="decimal"
+              step={0.1}
+              min={0}
               value={formData.quantity}
               onChange={handleChange}
-              min={0}
             />
           </div>
 
+          {/* Đơn giá (VND/Kg) */}
           <div className="grid gap-1">
-            <Label htmlFor="unitPrice">Đơn giá</Label>
-            <Input
+            <Label htmlFor="unitPrice">Đơn giá (VNĐ/Kg)</Label>
+            <InputWithSuffix
               id="unitPrice"
               name="unitPrice"
               type="number"
+              inputMode="numeric"
+              min={0}
               value={formData.unitPrice}
               onChange={handleChange}
-              min={0}
             />
           </div>
 
+          {/* Chiết khấu (%) */}
           <div className="grid gap-1">
-            <Label htmlFor="discountAmount">Chiết khấu</Label>
-            <Input
+            <Label htmlFor="discountAmount">Chiết khấu (%)</Label>
+            <InputWithSuffix
               id="discountAmount"
               name="discountAmount"
               type="number"
+              inputMode="decimal"
+              step={0.1}
+              min={0}
               value={formData.discountAmount}
               onChange={handleChange}
-              min={0}
             />
           </div>
 
+          {/* Ghi chú */}
           <div className="grid gap-1">
             <Label htmlFor="note">Ghi chú</Label>
             <Textarea

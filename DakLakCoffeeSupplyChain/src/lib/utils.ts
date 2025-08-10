@@ -104,22 +104,26 @@ export function formatDate(dateStr: string | Date | undefined) {
   }
 }
 
+// Định dạng số lượng cà phê thành "kg" hoặc "tấn"
 export function formatQuantity(value: number): string {
   return value >= 1000
     ? `${(value / 1000).toLocaleString()} tấn`
     : `${value.toLocaleString()} kg`;
 }
 
+// Tính đơn giá theo đơn vị khối lượng (kg/tấn)
 export function formatUnitPriceByQuantity(unitPrice: number, quantity: number): string {
   return quantity >= 1000
     ? `${(unitPrice * 1000).toLocaleString()} VND/tấn`
     : `${unitPrice.toLocaleString()} VND/kg`;
 }
 
+// Định dạng giá trị chiết khấu kèm đơn vị VND
 export function formatDiscount(value: number): string {
   return `${value.toLocaleString()} VND`;
 }
 
+// Format ngày và giờ thành "DD-MM-YYYY HH:mm", fallback nếu không hợp lệ
 export function formatDateTimeVN(dateStr: string | Date | undefined) {
   if (!dateStr) return "Chưa xác định";
   try {
@@ -136,4 +140,25 @@ export function formatDateTimeVN(dateStr: string | Date | undefined) {
   } catch {
     return "Chưa xác định";
   }
+}
+
+/** Chuyển Date hoặc string sang định dạng 'YYYY-MM-DD' để gửi API */
+export function toDateOnly(d?: Date | string | null): string {
+  if (!d) return "";                       // để trống khi chưa chọn
+  if (d instanceof Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  // nếu là string 'YYYY-MM-DD' thì giữ nguyên 10 ký tự đầu
+  return String(d).slice(0, 10);
+}
+
+/** Nhận string 'YYYY-MM-DD' hoặc Date, trả về Date (hoặc undefined nếu rỗng/invalid) */
+export function fromDateOnly(v?: string | Date | null): Date | undefined {
+  if (!v) return undefined;                 // null/undefined -> undefined
+  if (v instanceof Date) return v;          // đã là Date thì trả về luôn
+  const d = new Date(v);                    // string 'YYYY-MM-DD' -> Date
+  return isNaN(d.getTime()) ? undefined : d;
 }

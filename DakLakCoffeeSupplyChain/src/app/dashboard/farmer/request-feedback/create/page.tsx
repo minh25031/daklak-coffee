@@ -7,7 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppToast } from '@/components/ui/AppToast';
+import { ArrowLeft, FileText, AlertTriangle, Image, Video, Loader2 } from 'lucide-react';
 
 import {
     GeneralFarmerReportCreateDto,
@@ -30,7 +32,7 @@ export default function CreateReportPage() {
         severityLevel: SeverityLevelEnum.Medium,
         title: '',
         description: '',
-        cropProgressId: '', // nên là undefined chứ không phải ''
+        cropProgressId: '',
         processingProgressId: '',
         imageUrl: '',
         videoUrl: '',
@@ -44,7 +46,8 @@ export default function CreateReportPage() {
             try {
                 const data = await getCropProgressesByDetailId(detailIdFromUrl);
                 setCropProgressOptions(data);
-            } catch (err) {
+            } catch (error) {
+                console.error("Error fetching crop progress:", error);
                 AppToast.error("Không thể tải danh sách tiến độ mùa vụ.");
             }
         };
@@ -53,7 +56,7 @@ export default function CreateReportPage() {
     }, [detailIdFromUrl]);
 
     const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
@@ -83,7 +86,7 @@ export default function CreateReportPage() {
 
         setIsSubmitting(true);
         try {
-            const payload: any = {
+            const payload: GeneralFarmerReportCreateDto = {
                 cropSeasonDetailId: detailIdFromUrl,
                 reportType: form.reportType,
                 title: form.title,
@@ -91,168 +94,242 @@ export default function CreateReportPage() {
                 severityLevel: form.severityLevel,
                 imageUrl: form.imageUrl || undefined,
                 videoUrl: form.videoUrl || undefined,
+                cropProgressId: form.reportType === "Crop" ? form.cropProgressId : undefined,
+                processingProgressId: form.reportType === "Processing" ? form.processingProgressId : undefined,
             };
-
-            if (form.reportType === "Crop" && form.cropProgressId) {
-                payload.cropProgressId = form.cropProgressId;
-            }
-
-            if (form.reportType === "Processing" && form.processingProgressId) {
-                payload.processingProgressId = form.processingProgressId;
-            }
 
             console.log("📦 Final Payload:", JSON.stringify(payload, null, 2));
             const res = await createFarmerReport(payload);
             AppToast.success('Tạo báo cáo thành công!');
             router.push(`/dashboard/farmer/request-feedback/${res.reportId}`);
-        } catch (err: any) {
-            console.error("❌ Raw error:", err.response?.data || err);
-            AppToast.error(err.response?.data?.message || 'Tạo báo cáo thất bại');
+        } catch (err: unknown) {
+            console.error("❌ Raw error:", err);
+            const errorMessage = err instanceof Error && 'response' in err && typeof (err as Error & { response?: { data?: { message?: string } } }).response === 'object'
+                ? (err as Error & { response?: { data?: { message?: string } } }).response?.data?.message
+                : 'Tạo báo cáo thất bại';
+            AppToast.error(errorMessage || "Tạo báo cáo thất bại.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-
     return (
-        <div className="max-w-2xl mx-auto py-10 px-4">
-            <Card className="rounded-2xl shadow border">
-                <CardHeader>
-                    <CardTitle className="text-xl font-bold text-emerald-700">
-                        📝 Tạo báo cáo mới
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                    <div className="space-y-2">
-                        <Label>Loại báo cáo</Label>
-                        <select
-                            name="reportType"
-                            value={form.reportType}
-                            onChange={(e) => {
-                                const reportType = e.target.value as 'Crop' | 'Processing';
-                                setForm((prev) => ({
-                                    ...prev,
-                                    reportType,
-                                    cropProgressId: '',
-                                    processingProgressId: '',
-                                }));
-                            }}
-                            className="w-full border rounded px-3 py-2"
+        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-4">
+            <div className="max-w-3xl mx-auto py-8">
+                {/* Header */}
+                <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-6 mb-6">
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => router.back()}
                         >
-                            <option value="Crop">Mùa vụ</option>
-                            <option value="Processing">Sơ chế</option>
-                        </select>
+                            <ArrowLeft className="w-4 h-4" />
+                        </Button>
+                        <div className="flex items-center gap-3">
+                            <div className="w-1 h-8 bg-gradient-to-b from-orange-500 to-amber-500 rounded-full"></div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-800">
+                                    Tạo báo cáo mới
+                                </h1>
+                                <p className="text-gray-600 text-sm">
+                                    Gửi yêu cầu hỗ trợ kỹ thuật cho các vấn đề gặp phải
+                                </p>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    {form.reportType === 'Crop' && (
+                {/* Main Form */}
+                <Card className="border-orange-100 shadow-sm">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-lg text-gray-800">
+                            <FileText className="w-5 h-5 text-orange-500" />
+                            Thông tin báo cáo
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {/* Report Type */}
                         <div className="space-y-2">
-                            <Label>Chọn tiến độ mùa vụ</Label>
-                            <select
-                                name="cropProgressId"
-                                value={form.cropProgressId}
-                                onChange={(e) => {
-                                    const selectedId = e.target.value;
-                                    const selected = cropProgressOptions.find(p => p.progressId === selectedId);
+                            <Label className="text-sm font-medium text-gray-700">Loại báo cáo *</Label>
+                            <Select
+                                value={form.reportType}
+                                onValueChange={(value: 'Crop' | 'Processing') => {
                                     setForm((prev) => ({
                                         ...prev,
-                                        cropProgressId: selectedId,
+                                        reportType: value,
+                                        cropProgressId: '',
+                                        processingProgressId: '',
                                     }));
                                 }}
-                                className="w-full border rounded px-3 py-2"
                             >
-                                <option value="">-- Chọn giai đoạn --</option>
-                                {cropProgressOptions.map(p => (
-                                    <option key={p.progressId} value={p.progressId}>
-                                        {p.stageName} – {new Date(p.progressDate).toLocaleDateString("vi-VN")}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Crop">🌱 Mùa vụ</SelectItem>
+                                    <SelectItem value="Processing">⚙️ Sơ chế</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    )}
 
-                    {form.reportType === 'Processing' && (
+                        {/* Crop Progress Selection */}
+                        {form.reportType === 'Crop' && (
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-700">Chọn tiến độ mùa vụ *</Label>
+                                <Select
+                                    value={form.cropProgressId}
+                                    onValueChange={(value) => {
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            cropProgressId: value,
+                                        }));
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="-- Chọn giai đoạn --" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {cropProgressOptions.map(p => (
+                                            <SelectItem key={p.progressId} value={p.progressId}>
+                                                {p.stageName} – {new Date(p.progressDate).toLocaleDateString("vi-VN")}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        {/* Processing Progress ID */}
+                        {form.reportType === 'Processing' && (
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-700">ID mẻ sơ chế *</Label>
+                                <Input
+                                    name="processingProgressId"
+                                    value={form.processingProgressId}
+                                    onChange={handleChange}
+                                    placeholder="Nhập ID mẻ sơ chế"
+                                />
+                            </div>
+                        )}
+
+                        {/* Title */}
                         <div className="space-y-2">
-                            <Label>ID mẻ sơ chế</Label>
+                            <Label className="text-sm font-medium text-gray-700">Tiêu đề *</Label>
                             <Input
-                                name="processingProgressId"
-                                value={form.processingProgressId}
+                                name="title"
+                                value={form.title}
                                 onChange={handleChange}
+                                placeholder="Nhập tiêu đề báo cáo"
                             />
                         </div>
-                    )}
 
-                    <div className="space-y-2">
-                        <Label>Tiêu đề</Label>
-                        <Input
-                            name="title"
-                            value={form.title}
-                            onChange={handleChange}
-                        />
-                    </div>
+                        {/* Description */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Mô tả chi tiết *</Label>
+                            <Textarea
+                                name="description"
+                                value={form.description}
+                                onChange={handleChange}
+                                rows={5}
+                                placeholder="Mô tả chi tiết vấn đề bạn gặp phải..."
+                            />
+                        </div>
 
-                    <div className="space-y-2">
-                        <Label>Mô tả</Label>
-                        <Textarea
-                            name="description"
-                            value={form.description}
-                            onChange={handleChange}
-                            rows={4}
-                        />
-                    </div>
+                        {/* Severity Level */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4 text-orange-500" />
+                                Mức độ nghiêm trọng *
+                            </Label>
+                            <Select
+                                value={form.severityLevel.toString()}
+                                onValueChange={(value) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        severityLevel: parseInt(value, 10) as SeverityLevelEnum,
+                                    }))
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Object.values(SeverityLevelEnum)
+                                        .filter((val) => typeof val === 'number')
+                                        .map((val) => (
+                                            <SelectItem key={val} value={val.toString()}>
+                                                {SeverityLevelLabel[val as SeverityLevelEnum]}
+                                            </SelectItem>
+                                        ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                    <div className="space-y-2">
-                        <Label>Mức độ nghiêm trọng</Label>
-                        <select
-                            name="severityLevel"
-                            value={form.severityLevel}
-                            onChange={(e) =>
-                                setForm((prev) => ({
-                                    ...prev,
-                                    severityLevel: parseInt(e.target.value, 10) as SeverityLevelEnum,
-                                }))
-                            }
+                        {/* Media Section */}
+                        <div className="border-t border-gray-200 pt-6">
+                            <h3 className="text-sm font-medium text-gray-700 mb-4">Tài liệu đính kèm (tùy chọn)</h3>
 
-                            className="w-full border rounded px-3 py-2"
-                        >
-                            {Object.values(SeverityLevelEnum)
-                                .filter((val) => typeof val === 'number')
-                                .map((val) => (
-                                    <option key={val} value={val}>
-                                        {val} – {SeverityLevelLabel[val as SeverityLevelEnum]}
-                                    </option>
-                                ))}
-                        </select>
-                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Image URL */}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        <Image className="w-4 h-4 text-blue-500" />
+                                        Hình ảnh (URL)
+                                    </Label>
+                                    <Input
+                                        name="imageUrl"
+                                        value={form.imageUrl}
+                                        onChange={handleChange}
+                                        placeholder="https://example.com/image.jpg"
+                                    />
+                                </div>
 
-                    <div className="space-y-2">
-                        <Label>Ảnh (URL)</Label>
-                        <Input
-                            name="imageUrl"
-                            value={form.imageUrl}
-                            onChange={handleChange}
-                        />
-                    </div>
+                                {/* Video URL */}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        <Video className="w-4 h-4 text-purple-500" />
+                                        Video (URL)
+                                    </Label>
+                                    <Input
+                                        name="videoUrl"
+                                        value={form.videoUrl}
+                                        onChange={handleChange}
+                                        placeholder="https://example.com/video.mp4"
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-                    <div className="space-y-2">
-                        <Label>Video (URL)</Label>
-                        <Input
-                            name="videoUrl"
-                            value={form.videoUrl}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="flex justify-end">
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={isSubmitting}
-                            className="px-6"
-                        >
-                            {isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo'}
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+                        {/* Submit Button */}
+                        <div className="flex justify-end pt-6 border-t border-gray-200">
+                            <div className="flex gap-3">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => router.back()}
+                                    disabled={isSubmitting}
+                                >
+                                    Hủy
+                                </Button>
+                                <Button
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                    className="min-w-[120px]"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Đang gửi...
+                                        </>
+                                    ) : (
+                                        'Gửi báo cáo'
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }

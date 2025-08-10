@@ -163,7 +163,9 @@ export default function ContractsPage() {
           <div className="flex justify-between items-center gap-4 flex-wrap">
             <div className="flex gap-4 items-center">
               <div className="flex flex-col">
-                <label className="text-sm text-gray-600">Từ ngày</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Từ ngày
+                </label>
                 <Input
                   type="date"
                   value={startDate ? startDate.toISOString().split("T")[0] : ""}
@@ -176,7 +178,9 @@ export default function ContractsPage() {
                 />
               </div>
               <div className="flex flex-col">
-                <label className="text-sm text-gray-600">Đến ngày</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Đến ngày
+                </label>
                 <Input
                   type="date"
                   value={endDate ? endDate.toISOString().split("T")[0] : ""}
@@ -304,48 +308,47 @@ export default function ContractsPage() {
           </div>
         </div>
 
+        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">
-              Hiển thị {(currentPage - 1) * pageSize + 1}–
-              {Math.min(currentPage * pageSize, filtered.length)} trong{" "}
-              {filtered.length} hợp đồng
-            </span>
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-4 py-2 bg-gray-50 border rounded-md text-sm text-gray-700">
+            {/* Thông tin hiển thị hợp đồng */}
+            <div className="text-sm text-gray-600">
+              Đang hiển thị{" "}
+              <span className="font-medium">
+                {(currentPage - 1) * pageSize + 1}
+              </span>
+              –
+              <span className="font-medium">
+                {Math.min(currentPage * pageSize, filtered.length)}
+              </span>{" "}
+              / {filtered.length} hợp đồng
+            </div>
+
+            {/* Điều khiển phân trang */}
+            <div className="flex gap-2 justify-end mt-2 sm:mt-0">
               <Button
                 variant="outline"
-                size="icon"
+                size="sm"
+                className="px-3"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               >
-                <ChevronLeft className="w-4 h-4" />
+                ← Trước
               </Button>
-              {[...Array(totalPages)].map((_, i) => {
-                const page = i + 1;
-                return (
-                  <Button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={cn(
-                      "rounded-md px-3 py-1 text-sm",
-                      page === currentPage
-                        ? "bg-black text-white"
-                        : "bg-white text-black border"
-                    )}
-                  >
-                    {page}
-                  </Button>
-                );
-              })}
+              <span className="flex items-center px-2">
+                Trang <span className="mx-1 font-semibold">{currentPage}</span>{" "}
+                / {totalPages}
+              </span>
               <Button
                 variant="outline"
-                size="icon"
+                size="sm"
+                className="px-3"
                 disabled={currentPage === totalPages}
                 onClick={() =>
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
               >
-                <ChevronRight className="w-4 h-4" />
+                Sau →
               </Button>
             </div>
           </div>
