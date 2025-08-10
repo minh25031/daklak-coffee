@@ -20,7 +20,11 @@ import {
   getAllOrders,
   softDeleteOrder,
 } from "@/lib/api/orders";
-import { OrderStatus, OrderStatusLabel } from "@/lib/constants/orderStatus";
+import {
+  OrderStatus,
+  OrderStatusLabel,
+  OrderStatusBadgeClass,
+} from "@/lib/constants/orderStatus";
 import FilterOrderStatusPanel from "@/components/orders/FilterOrderStatusPanel";
 import { toast } from "sonner";
 
@@ -317,7 +321,11 @@ export default function OrdersPage() {
                           : "—"}
                       </td>
                       <td className="px-4 py-2 text-center whitespace-nowrap">
-                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full font-medium border ${
+                            OrderStatusBadgeClass[o.status]
+                          }`}
+                        >
                           {OrderStatusLabel[o.status]}
                         </span>
                       </td>

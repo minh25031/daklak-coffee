@@ -13,9 +13,19 @@ export interface OrderItemViewDto {
   note: string;
 }
 
-// DTO: Payload tạo mới mặt hàng trong đơn hàng
-export interface OrderItemCreateDto {
+// DTO: Payload tạo mặt hàng CHO ĐƠN HÀNG ĐÃ TỒN TẠI (bắt buộc có orderId)
+export interface OrderItemCreateForOrder {
   orderId: string;
+  contractDeliveryItemId: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  discountAmount?: number | null;
+  note?: string | null;
+}
+
+// DTO: Payload tạo mặt hàng NESTED TRONG CREATE ORDER (không có orderId)
+export interface OrderItemCreateInline {
   contractDeliveryItemId: string;
   productId: string;
   quantity: number;
@@ -37,7 +47,7 @@ export interface OrderItemUpdateDto {
 }
 
 // API: Tạo mới mặt hàng đơn hàng
-export async function createOrderItem(payload: OrderItemCreateDto): Promise<OrderItemViewDto> {
+export async function createOrderItem(payload: OrderItemCreateForOrder): Promise<OrderItemViewDto> {
   const res = await api.post("/OrderItems", payload);
   return res.data as OrderItemViewDto;
 }
