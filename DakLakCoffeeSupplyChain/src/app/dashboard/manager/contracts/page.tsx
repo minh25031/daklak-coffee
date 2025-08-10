@@ -193,6 +193,7 @@ export default function ContractsPage() {
             </div>
 
             <Button
+              className="bg-black text-white hover:bg-gray-800"
               onClick={() => router.push("/dashboard/manager/contracts/create")}
             >
               + Tạo hợp đồng mới
