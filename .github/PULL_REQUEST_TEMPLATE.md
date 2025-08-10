@@ -1,7 +1,5 @@
 ## ☕ Tính năng: [Role] – [Tên chức năng ngắn gọn]
 
----
-
 ### 📌 Mục tiêu
 [Mô tả ngắn gọn bạn đang làm gì, thuộc vai trò nào, ở luồng nào?]
 
