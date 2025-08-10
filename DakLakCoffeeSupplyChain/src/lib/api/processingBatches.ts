@@ -52,7 +52,6 @@ export interface ProcessingBatch {
   status: number;
   createdAt: string;
   typeName?: string; // Thêm từ API response mới
-  isDeleted?: boolean; // Thêm field để check soft delete
   progresses: ProcessingBatchProgress[];
   products: ProcessingProduct[];
 }
@@ -76,10 +75,7 @@ export interface UpdateProcessingBatchData {
 export async function getAllProcessingBatches(): Promise<ProcessingBatch[] | null> {
   try {
     const res = await api.get("/ProcessingBatch");
-    // Filter ra những bản ghi chưa bị xóa
-    const activeBatches = res.data?.filter((batch: ProcessingBatch) => !batch.isDeleted) || [];
-    console.log(`✅ Fetched ${res.data?.length || 0} batches, ${activeBatches.length} active (not deleted)`);
-    return activeBatches;
+    return res.data;
   } catch (err) {
     console.error("❌ Lỗi getAllProcessingBatches:", err);
     return [];
@@ -208,13 +204,4 @@ export async function updateProcessingBatch(
   }
 }
 
-export async function softDeleteProcessingBatch(batchId: string): Promise<void> {
-  try {
-    console.log("🗑️ Soft deleting processing batch:", batchId);
-    await api.delete(`/ProcessingBatch/${batchId}`);
-    console.log("✅ Successfully soft deleted processing batch");
-  } catch (err) {
-    console.error("❌ Lỗi softDeleteProcessingBatch:", err);
-    throw err;
-  }
-}
+

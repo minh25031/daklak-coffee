@@ -5,12 +5,20 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
-import StatusBadge from "@/components/processing-batches/StatusBadge";
-import FilterStatusPanel from "@/components/processing-batches/FilterStatusPanel";
-import { Input } from "@/components/ui/input";
 import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
 import { getAllCropSeasons, CropSeasonListItem } from "@/lib/api/cropSeasons";
 import { getAllProcessingMethods, ProcessingMethod } from "@/lib/api/processingMethods";
+import { Package, Clock, TrendingUp, BarChart3, Eye, Edit, Trash2 } from "lucide-react";
+import { ProcessingStatus } from "@/lib/constants/batchStatus";
+
+// Import các component chung
+import ProcessingHeader from "@/components/processing/ProcessingHeader";
+import StatsCards from "@/components/processing/StatsCards";
+import SearchBox from "@/components/processing/SearchBox";
+import StatusFilter from "@/components/processing/StatusFilter";
+import ProcessingTable from "@/components/processing/ProcessingTable";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function ManagerProcessingBatchesPage() {
   const router = useRouter();
@@ -31,6 +39,7 @@ export default function ManagerProcessingBatchesPage() {
   const [coffeeTypes, setCoffeeTypes] = useState<CoffeeType[]>([]);
   const [cropSeasons, setCropSeasons] = useState<CropSeasonListItem[]>([]);
   const [methods, setMethods] = useState<ProcessingMethod[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,6 +65,17 @@ export default function ManagerProcessingBatchesPage() {
       (selectedStatus === null || b.status === selectedStatus) &&
       (!search || b.batchCode.toLowerCase().includes(search.toLowerCase()))
   );
+
+  // Tính toán phân trang
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedData = filtered.slice(startIndex, endIndex);
+
+  // Reset về trang 1 khi thay đổi filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedStatus]);
 
   // Đếm số lượng theo trạng thái
   const statusCounts = batches.reduce<Record<number, number>>((acc, batch) => {
@@ -91,19 +111,13 @@ export default function ManagerProcessingBatchesPage() {
     setOpenDialog(true);
   };
 
-  const handleDelete = (id: string) => {
-    // TODO: Gọi API xóa, sau đó cập nhật lại danh sách
-    setBatches(batches.filter((b) => b.batchId !== id));
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: name === "inputQuantity" ? Number(value) : value }));
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Gọi API tạo/sửa batch, sau đó cập nhật lại danh sách
+    // Handle form submission
     setOpenDialog(false);
   };
 
@@ -111,177 +125,305 @@ export default function ManagerProcessingBatchesPage() {
     router.push(`/dashboard/manager/processing/batches/${id}`);
   };
 
+  const handleDelete = (id: string) => {
+    // MANAGER: Có quyền xóa mềm lô sơ chế
+    if (confirm("Bạn có chắc chắn muốn xóa mềm lô sơ chế này? Lô sẽ được ẩn khỏi danh sách nhưng không bị xóa hoàn toàn.")) {
+      // TODO: Implement soft delete API call
+      console.log("Soft delete batch:", id);
+    }
+  };
+
+  const getStatusInfo = (status: number) => {
+    switch (status) {
+      case ProcessingStatus.NotStarted:
+        return { label: "Chờ xử lý", color: "bg-yellow-100 text-yellow-700", icon: "⏳" };
+      case ProcessingStatus.InProgress:
+        return { label: "Đang xử lý", color: "bg-blue-100 text-blue-700", icon: "🔄" };
+      case ProcessingStatus.Completed:
+        return { label: "Hoàn thành", color: "bg-green-100 text-green-700", icon: "✅" };
+      case ProcessingStatus.Cancelled:
+        return { label: "Đã hủy", color: "bg-red-100 text-red-700", icon: "❌" };
+      default:
+        return { label: "Không xác định", color: "bg-gray-100 text-gray-700", icon: "❓" };
+    }
+  };
+
+  const getCoffeeTypeName = (coffeeTypeId: string) => {
+    if (!coffeeTypeId) return "Chưa xác định";
+  
+    const matched = coffeeTypes.find(
+      ct => ct.coffeeTypeId?.trim().toLowerCase() === coffeeTypeId.trim().toLowerCase()
+    );
+  
+    return matched?.typeName || "Không xác định";
+  };
+
+  // Tạo dữ liệu cho StatsCards
+  const statsData = [
+    {
+      title: "Tổng lô",
+      value: batches.length,
+      icon: Package,
+      color: "blue"
+    },
+    {
+      title: "Chờ xử lý",
+      value: statusCounts[ProcessingStatus.NotStarted] || 0,
+      icon: Clock,
+      color: "yellow"
+    },
+    {
+      title: "Đang xử lý",
+      value: statusCounts[ProcessingStatus.InProgress] || 0,
+      icon: TrendingUp,
+      color: "blue"
+    },
+    {
+      title: "Hoàn thành",
+      value: statusCounts[ProcessingStatus.Completed] || 0,
+      icon: BarChart3,
+      color: "green"
+    }
+  ];
+
+  // Cấu hình cột cho table
+  const columns = [
+    { 
+      key: "batchCode", 
+      title: "Mã lô",
+      render: (value: string) => <span className="font-medium">{value}</span>
+    },
+    { 
+      key: "cropSeasonName", 
+      title: "Mùa vụ",
+      render: (value: string, item: ProcessingBatch) => value || `ID: ${item.cropSeasonId}`
+    },
+    { 
+      key: "methodName", 
+      title: "Phương pháp",
+      render: (value: string, item: ProcessingBatch) => value || `ID: ${item.methodId}`
+    },
+    { 
+      key: "coffeeTypeId", 
+      title: "Loại cà phê",
+      render: (value: string) => getCoffeeTypeName(value)
+    },
+    { 
+      key: "status", 
+      title: "Trạng thái",
+      render: (value: number) => {
+        const statusInfo = getStatusInfo(value);
+        return (
+          <div className="flex items-center justify-center">
+            <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusInfo.color}`}>
+              {statusInfo.label}
+            </span>
+          </div>
+        );
+      },
+      align: "center" as const
+    },
+    { 
+      key: "createdAt", 
+      title: "Ngày tạo",
+      render: (value: string) => value ? new Date(value).toLocaleDateString("vi-VN") : "—"
+    }
+  ];
+
+  // Cấu hình actions cho table - MANAGER: Xem, sửa, và xóa mềm lô
+  const actions = [
+    {
+      label: "Xem",
+      icon: <Eye className="w-3 h-3" />,
+      onClick: (batch: ProcessingBatch) => handleViewDetail(batch.batchId),
+      className: "hover:bg-green-50 hover:border-green-300"
+    },
+    {
+      label: "Sửa",
+      icon: <Edit className="w-3 h-3" />,
+      onClick: (batch: ProcessingBatch) => handleOpenEdit(batch),
+      className: "hover:bg-blue-50 hover:border-blue-300"
+    },
+    {
+      label: "Xóa mềm",
+      icon: <Trash2 className="w-3 h-3" />,
+      onClick: (batch: ProcessingBatch) => handleDelete(batch.batchId),
+      className: "hover:bg-red-50 hover:border-red-300"
+    }
+  ];
+
   return (
-    <main className="p-6 flex gap-6 min-h-screen bg-amber-50">
-      {/* Sidebar filter */}
-      <aside className="w-64 space-y-4">
-        <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
-          <h2 className="text-sm font-medium text-gray-700">Tìm kiếm lô chế biến</h2>
-          <div className="relative">
-            <Input
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <ProcessingHeader
+          title="Quản lý lô sơ chế"
+          description="Theo dõi và quản lý các lô sơ chế cà phê"
+          // MANAGER: Không có quyền tạo lô sơ chế
+          // createButtonText="Thêm lô sơ chế"
+          // onCreateClick={handleOpenCreate}
+        />
+
+        {/* Stats Cards */}
+        <StatsCards stats={statsData} />
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm border p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SearchBox
               placeholder="Tìm kiếm mã lô..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pr-10"
+              onChange={setSearch}
+            />
+            
+            <StatusFilter
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              statusCounts={statusCounts}
+              statusInfoMap={getStatusInfo}
+              totalCount={batches.length}
             />
           </div>
         </div>
-        <FilterStatusPanel
-          selectedStatus={selectedStatus}
-          setSelectedStatus={setSelectedStatus}
-          statusCounts={statusCounts}
-        />
-      </aside>
-      {/* Main content */}
-      <div className="flex-1 bg-white rounded-xl shadow-sm p-4">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-lg font-semibold">Danh sách lô chế biến</span>
-          <Button onClick={handleOpenCreate}>+ Tạo mới</Button>
+
+        {/* Table với header riêng */}
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Danh sách lô sơ chế</h2>
+              <p className="text-sm text-gray-600">Hiển thị {filtered.length} trong tổng số {batches.length} lô</p>
+            </div>
+          </div>
+          <div className="p-0">
+            <ProcessingTable
+              data={paginatedData}
+              columns={columns}
+              actions={actions}
+              loading={loading}
+              emptyMessage="Không tìm thấy lô nào"
+              emptyDescription="Thử thay đổi từ khóa tìm kiếm hoặc thêm lô mới."
+              renderPagination={true}
+              pagination={{
+                currentPage,
+                totalPages,
+                onPageChange: setCurrentPage,
+                itemsPerPage: ITEMS_PER_PAGE,
+                totalItems: filtered.length
+              }}
+            />
+          </div>
         </div>
-        <div className="overflow-x-auto rounded-lg border bg-white shadow">
-          {loading ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">Đang tải dữ liệu...</div>
-          ) : (
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-left">Mã lô</th>
-                  <th className="px-4 py-2 text-left">Mùa vụ</th>
-                  <th className="px-4 py-2 text-left">Phương pháp</th>
-                  <th className="px-4 py-2 text-left">Trạng thái</th>
-                  <th className="px-4 py-2 text-left">Ngày tạo</th>
-                  <th className="px-4 py-2 text-center">Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-4 text-gray-400">Chưa có lô nào</td>
-                  </tr>
-                ) : (
-                  filtered.map((batch) => (
-                    <tr key={batch.batchId} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-2">{batch.batchCode}</td>
-                      <td className="px-4 py-2">{batch.cropSeasonName}</td>
-                      <td className="px-4 py-2">{batch.methodName}</td>
-                      <td className="px-4 py-2"><StatusBadge status={batch.status} /></td>
-                      <td className="px-4 py-2">{new Date(batch.createdAt).toLocaleDateString("vi-VN")}</td>
-                      <td className="px-4 py-2 text-center space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => handleOpenEdit(batch)}>
-                          Sửa
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(batch.batchId)}>
-                          Xóa
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleViewDetail(batch.batchId)}>
-                          Xem chi tiết
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-        {/* Dialog tạo/sửa */}
+
+        {/* Dialog for create/edit */}
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogContent>
-            <DialogTitle>{editBatch ? "Sửa lô chế biến" : "Tạo lô chế biến mới"}</DialogTitle>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <DialogContent className="max-w-md">
+            <DialogTitle>{editBatch ? "Sửa lô sơ chế" : "Thêm lô sơ chế"}</DialogTitle>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block mb-1 font-medium">Mã lô</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mã lô
+                </label>
                 <input
-                  className="w-full border rounded px-3 py-2"
+                  type="text"
                   name="batchCode"
                   value={form.batchCode}
                   onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
-                  placeholder="Nhập mã lô"
                 />
               </div>
+              
               <div>
-                <label className="block mb-1 font-medium">Loại cà phê</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Loại cà phê
+                </label>
                 <select
-                  className="w-full border rounded px-3 py-2"
                   name="coffeeTypeId"
                   value={form.coffeeTypeId}
                   onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 >
                   {coffeeTypes.map((type) => (
-                    <option key={type.coffeeTypeId} value={type.coffeeTypeId}>{type.typeName}</option>
+                    <option key={type.coffeeTypeId} value={type.coffeeTypeId}>
+                      {type.typeName}
+                    </option>
                   ))}
                 </select>
               </div>
+              
               <div>
-                <label className="block mb-1 font-medium">Mùa vụ</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mùa vụ
+                </label>
                 <select
-                  className="w-full border rounded px-3 py-2"
                   name="cropSeasonId"
                   value={form.cropSeasonId}
                   onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 >
                   {cropSeasons.map((season) => (
-                    <option key={season.cropSeasonId} value={season.cropSeasonId}>{season.seasonName}</option>
+                    <option key={season.cropSeasonId} value={season.cropSeasonId}>
+                      {season.seasonName}
+                    </option>
                   ))}
                 </select>
               </div>
+              
               <div>
-                <label className="block mb-1 font-medium">Phương pháp chế biến</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phương pháp
+                </label>
                 <select
-                  className="w-full border rounded px-3 py-2"
                   name="methodId"
                   value={form.methodId}
                   onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 >
-                  {methods.map((m) => (
-                    <option key={m.methodId} value={m.methodId}>{m.name}</option>
+                  {methods.map((method) => (
+                    <option key={method.methodId} value={method.methodId}>
+                      {method.name}
+                    </option>
                   ))}
                 </select>
               </div>
+              
               <div>
-                <label className="block mb-1 font-medium">Khối lượng đầu vào</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Số lượng đầu vào (kg)
+                </label>
                 <input
-                  className="w-full border rounded px-3 py-2"
-                  name="inputQuantity"
                   type="number"
+                  name="inputQuantity"
                   value={form.inputQuantity}
                   onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
-                  min={0}
-                  placeholder="Nhập khối lượng đầu vào"
                 />
               </div>
-              <div>
-                <label className="block mb-1 font-medium">Đơn vị</label>
-                <input
-                  className="w-full border rounded px-3 py-2"
-                  name="inputUnit"
-                  value={form.inputUnit}
-                  onChange={handleChange}
-                  required
-                  placeholder="Nhập đơn vị (ví dụ: kg)"
-                />
-              </div>
-              {editBatch && (
-                <div>
-                  <label className="block mb-1 font-medium">Trạng thái (tự động)</label>
-                  <StatusBadge status={editBatch.status} />
-                </div>
-              )}
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setOpenDialog(false)}>
-                  Huỷ
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="submit"
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  {editBatch ? "Cập nhật" : "Tạo"}
                 </Button>
-                <Button type="submit">Lưu</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpenDialog(false)}
+                  className="flex-1"
+                >
+                  Hủy
+                </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
-  </main>
-);
+    </div>
+  );
 } 

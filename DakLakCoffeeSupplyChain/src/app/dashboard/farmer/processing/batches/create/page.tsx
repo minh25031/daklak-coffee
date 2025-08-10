@@ -27,7 +27,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Package, Coffee, Calendar, Settings, Info, Loader2, CheckCircle } from "lucide-react";
-import PageTitle from "@/components/ui/PageTitle";
+
+// Import các component chung
+import ProcessingHeader from "@/components/processing/ProcessingHeader";
 
 export default function CreateProcessingBatchPage() {
   const router = useRouter();
@@ -212,18 +214,20 @@ export default function CreateProcessingBatchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      <div className="p-6 max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6 max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <PageTitle
-            title="Tạo lô sơ chế mới"
-            subtitle="Thêm lô sơ chế mới vào hệ thống"
-          />
+        <ProcessingHeader
+          title="Tạo lô sơ chế mới"
+          description="Thêm lô sơ chế mới vào hệ thống"
+          showCreateButton={false}
+        />
+        
+        <div className="flex justify-end">
           <Button 
             variant="outline" 
             onClick={() => router.back()}
-            className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+            className="flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
           >
             <ArrowLeft className="w-4 h-4" />
             Quay lại
@@ -231,7 +235,7 @@ export default function CreateProcessingBatchPage() {
         </div>
 
         {/* Info Card */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Info className="w-5 h-5 text-blue-600" />
@@ -247,7 +251,7 @@ export default function CreateProcessingBatchPage() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6 text-white">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <Package className="w-5 h-5" />

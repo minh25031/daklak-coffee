@@ -23,6 +23,7 @@ import {
   FiShoppingCart,
 } from "react-icons/fi";
 
+
 const iconMap = {
   dashboard: <FiPieChart />,
   users: <FiUsers />,
@@ -402,41 +403,9 @@ export function SidebarGroup() {
               >
                 Chất thải lô sơ chế
               </Link>
-              <Link
-                href="/dashboard/farmer/processing/processing-methods"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith(
-                    "/dashboard/farmer/processing/processing-methods"
-                  )
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Phương pháp sơ chế
-              </Link>
-              <Link
-                href="/dashboard/farmer/processing/parameters"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith("/dashboard/farmer/processing/parameters")
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Tham số sơ chế
-              </Link>
-              <Link
-                href="/dashboard/farmer/processing/stages"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith("/dashboard/farmer/processing/stages")
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Công đoạn sơ chế
-              </Link>
+
+
+
               <Link
                 href="/dashboard/farmer/processing/waste-disposals"
                 className={cn(

@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getAllProcessingBatches, ProcessingBatch } from '@/lib/api/processingBatches';
-import { getAllProcessingBatchProgresses, ProcessingBatchProgress } from '@/lib/api/processingBatchProgress';
+import { getAllProcessingBatchProgresses, ProcessingBatchProgress, advanceToNextProcessingProgress, AdvanceProgressWithMediaPayload } from '@/lib/api/processingBatchProgress';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Calendar, User, Package, TrendingUp, FileImage, FileVideo, X, AlertCircle, Scale, Info } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ArrowLeft, Calendar, User, Package, TrendingUp, FileImage, FileVideo, Scale, Info, Plus, Upload } from 'lucide-react';
 import PageTitle from '@/components/ui/PageTitle';
 
 export default function ProgressDetailPage() {
@@ -13,12 +16,20 @@ export default function ProgressDetailPage() {
   const router = useRouter();
   const [batch, setBatch] = useState<ProcessingBatch | null>(null);
   const [progresses, setProgresses] = useState<ProcessingBatchProgress[]>([]);
-  const [selectedMedia, setSelectedMedia] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  
+  // State cho dialog cập nhật progress
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [updateForm, setUpdateForm] = useState({
+    progressDate: new Date().toISOString().slice(0, 16),
+    outputQuantity: 0,
+    outputUnit: 'kg',
+    photoFile: null as File | null,
+    videoFile: null as File | null
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -100,63 +111,80 @@ export default function ProgressDetailPage() {
     setRetryCount(prev => prev + 1);
   };
 
-  const openModal = (media: any) => {
-    setSelectedMedia(media);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedMedia(null);
-  };
-
-  const handleImageError = (mediaId: string) => {
-    setImageErrors(prev => new Set(prev).add(mediaId));
-  };
-
   const formatWeight = (kg: number | string | undefined): string => {
-    const number = Number(kg);
-    if (isNaN(number)) return "-";
-    if (number >= 1000) return `${(number / 1000).toFixed(2)} tấn`;
-    if (number >= 100) return `${(number / 100).toFixed(1)} tạ`;
-    return `${new Intl.NumberFormat("vi-VN").format(number)} kg`;
+    if (!kg) return "0 kg";
+    const num = typeof kg === 'string' ? parseFloat(kg) : kg;
+    return `${new Intl.NumberFormat("vi-VN").format(num)} kg`;
+  };
+
+  const handleFileChange = (field: 'photoFile' | 'videoFile', file: File | null) => {
+    setUpdateForm(prev => ({
+      ...prev,
+      [field]: file
+    }));
+  };
+
+  const handleUpdateProgress = async () => {
+    if (!batch) return;
+
+    try {
+      setIsUpdating(true);
+      
+      const payload: AdvanceProgressWithMediaPayload = {
+        progressDate: updateForm.progressDate,
+        outputQuantity: updateForm.outputQuantity,
+        outputUnit: updateForm.outputUnit,
+        photoFile: updateForm.photoFile || undefined,
+        videoFile: updateForm.videoFile || undefined
+      };
+
+      await advanceToNextProcessingProgress(batch.batchId, payload);
+      
+      // Đóng dialog và refresh data
+      setIsUpdateDialogOpen(false);
+      setUpdateForm({
+        progressDate: new Date().toISOString().slice(0, 16),
+        outputQuantity: 0,
+        outputUnit: 'kg',
+        photoFile: null,
+        videoFile: null
+      });
+      
+      // Refresh data
+      await fetchBatchData();
+      
+    } catch (error: any) {
+      console.error('Error updating progress:', error);
+      alert('Có lỗi xảy ra khi cập nhật tiến trình: ' + (error.message || 'Lỗi không xác định'));
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
         <div className="p-6 max-w-6xl mx-auto space-y-8">
-          {/* Header Skeleton */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="space-y-2">
-              <div className="h-8 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
-            </div>
-            <div className="h-10 bg-gray-200 rounded-lg w-24 animate-pulse"></div>
+            <PageTitle
+              title="Chi tiết tiến trình sơ chế"
+              subtitle="Đang tải dữ liệu..."
+            />
+            <Button 
+              variant="outline" 
+              onClick={() => router.back()}
+              className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Quay lại
+            </Button>
           </div>
-
-          {/* Content Skeleton */}
+          
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6">
-              <div className="h-6 bg-white/20 rounded w-48 animate-pulse"></div>
+            <div className="p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Đang tải dữ liệu...</p>
             </div>
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="space-y-3">
-                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
-                    <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Loading Indicator */}
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-            <p className="text-lg text-gray-600 font-medium">Đang tải dữ liệu...</p>
-            <p className="text-sm text-gray-500">Có thể mất vài giây để tải hoàn tất</p>
           </div>
         </div>
       </div>
@@ -165,32 +193,45 @@ export default function ProgressDetailPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center">
-        <div className="text-center space-y-6 max-w-md mx-auto p-6">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-            <AlertCircle className="w-8 h-8 text-red-600" />
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+        <div className="p-6 max-w-6xl mx-auto space-y-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <PageTitle
+              title="Chi tiết tiến trình sơ chế"
+              subtitle="Có lỗi xảy ra"
+            />
+            <div className="flex gap-3">
+              <Button 
+                onClick={handleRetry}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+              >
+                Thử lại
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => router.back()}
+                className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Quay lại
+              </Button>
+            </div>
           </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-gray-900">Không thể tải dữ liệu</h2>
-            <p className="text-gray-600">{error}</p>
-          </div>
-          <div className="flex gap-3 justify-center">
-            <Button 
-              variant="outline"
-              onClick={handleRetry}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Thử lại
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => router.back()}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Quay lại
-            </Button>
+          
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="p-8 text-center">
+              <div className="flex justify-center mb-4">
+                <Info className="w-16 h-16 text-red-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <Button 
+                onClick={handleRetry}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Thử lại
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -201,7 +242,6 @@ export default function ProgressDetailPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
         <div className="p-6 max-w-6xl mx-auto space-y-8">
-          {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <PageTitle
               title="Chi tiết tiến trình sơ chế"
@@ -217,7 +257,6 @@ export default function ProgressDetailPage() {
             </Button>
           </div>
 
-          {/* No Data State */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="p-8 text-center">
               <div className="flex justify-center mb-4">
@@ -247,15 +286,113 @@ export default function ProgressDetailPage() {
             title="Chi tiết tiến trình sơ chế"
             subtitle={`Lô: ${batch.batchCode} - ${progresses.length} bước đã hoàn thành`}
           />
-          <Button 
-            variant="outline" 
-            onClick={() => router.back()}
-            className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Quay lại
-        </Button>
-      </div>
+          <div className="flex gap-3">
+            <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Plus className="w-4 h-4" />
+                  Cập nhật tiến trình
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Cập nhật tiến trình sơ chế</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="progressDate">Ngày cập nhật</Label>
+                    <Input
+                      id="progressDate"
+                      type="datetime-local"
+                      value={updateForm.progressDate}
+                      onChange={(e) => setUpdateForm(prev => ({ ...prev, progressDate: e.target.value }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="outputQuantity">Sản lượng (kg)</Label>
+                    <Input
+                      id="outputQuantity"
+                      type="number"
+                      value={updateForm.outputQuantity}
+                      onChange={(e) => setUpdateForm(prev => ({ ...prev, outputQuantity: parseFloat(e.target.value) || 0 }))}
+                      placeholder="Nhập sản lượng"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="outputUnit">Đơn vị</Label>
+                    <Input
+                      id="outputUnit"
+                      value={updateForm.outputUnit}
+                      onChange={(e) => setUpdateForm(prev => ({ ...prev, outputUnit: e.target.value }))}
+                      placeholder="kg"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="photoFile">Ảnh (tùy chọn)</Label>
+                    <Input
+                      id="photoFile"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileChange('photoFile', e.target.files?.[0] || null)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="videoFile">Video (tùy chọn)</Label>
+                    <Input
+                      id="videoFile"
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => handleFileChange('videoFile', e.target.files?.[0] || null)}
+                    />
+                  </div>
+                  
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      onClick={handleUpdateProgress}
+                      disabled={isUpdating}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      {isUpdating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Đang cập nhật...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Cập nhật
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsUpdateDialogOpen(false)}
+                      disabled={isUpdating}
+                      className="flex-1"
+                    >
+                      Hủy
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button 
+              variant="outline" 
+              onClick={() => router.back()}
+              className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Quay lại
+            </Button>
+          </div>
+        </div>
 
         {/* Batch Info Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -318,7 +455,7 @@ export default function ProgressDetailPage() {
                   <div>
                     <p className="text-sm text-gray-500">Khối lượng vào</p>
                     <p className="font-semibold text-gray-900">
-                      {new Intl.NumberFormat("vi-VN").format(Number(batch.totalInputQuantity))}
+                      {new Intl.NumberFormat("vi-VN").format(Number(batch.totalInputQuantity))} kg
                     </p>
                   </div>
                 </div>
@@ -344,7 +481,7 @@ export default function ProgressDetailPage() {
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
-              Các bước tiến trình sơ chế
+              Các bước tiến trình sơ chế ({progresses.length} bước)
             </h2>
           </div>
 
@@ -366,9 +503,11 @@ export default function ProgressDetailPage() {
                             {progress.stageName}
                           </h3>
                         </div>
-                        <p className="text-gray-600 text-sm">
-                          {progress.stageDescription}
-                        </p>
+                        {progress.stageDescription && (
+                          <p className="text-gray-600 text-sm">
+                            {progress.stageDescription}
+                          </p>
+                        )}
                       </div>
                     </div>
                     
@@ -398,7 +537,7 @@ export default function ProgressDetailPage() {
                           Hoàn thành
                         </span>
                       </div>
-      </div>
+                    </div>
 
                     {/* Media Section */}
                     {(progress.photoUrl || progress.videoUrl) && (
@@ -414,7 +553,6 @@ export default function ProgressDetailPage() {
                                 alt={`Photo of ${progress.stageName}`} 
                                 className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
                                 onClick={() => progress.photoUrl && window.open(progress.photoUrl, '_blank')}
-                                onError={() => handleImageError(`photo-${idx}`)}
                               />
                             </div>
                           )}
@@ -428,56 +566,34 @@ export default function ProgressDetailPage() {
                                 className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
                               >
                                 <source src={progress.videoUrl} />
-                  </video>
+                              </video>
                             </div>
-                )}
+                          )}
                         </div>
                       </div>
-                )}
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
             ) : (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <TrendingUp className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">Chưa có tiến độ nào</h3>
-                <p className="text-gray-500">Lô sơ chế này chưa có bước tiến trình nào được thực hiện.</p>
+                <p className="text-gray-500 mb-6">Lô sơ chế này chưa có bước tiến trình nào được thực hiện.</p>
+                <Button 
+                  onClick={() => setIsUpdateDialogOpen(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Thêm tiến trình đầu tiên
+                </Button>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* Media Modal */}
-      {isModalOpen && selectedMedia && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="relative max-w-4xl max-h-full">
-            <button
-              onClick={closeModal}
-              className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            {selectedMedia.type === 'image' ? (
-              <img
-                src={selectedMedia.url}
-                alt="Media preview"
-                className="max-w-full max-h-full object-contain"
-              />
-            ) : (
-              <video
-                controls
-                className="max-w-full max-h-full"
-                autoPlay
-              >
-                <source src={selectedMedia.url} />
-              </video>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
