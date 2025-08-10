@@ -276,6 +276,7 @@ export default function ContractDetailPage() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold">Danh sách mặt hàng</h2>
             <Button
+              className="bg-black text-white hover:bg-gray-800"
               onClick={() => {
                 setEditingItem(null); // tạo mới
                 setShowItemFormDialog(true);

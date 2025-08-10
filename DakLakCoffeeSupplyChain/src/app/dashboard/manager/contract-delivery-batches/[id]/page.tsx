@@ -223,6 +223,7 @@ export default function ContractDeliveryBatchDetailPage() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold">Danh sách mặt hàng giao</h2>
             <Button
+              className="bg-black text-white hover:bg-gray-800"
               onClick={() => {
                 setEditingItem(null); // chế độ tạo mới
                 setShowItemFormDialog(true);
