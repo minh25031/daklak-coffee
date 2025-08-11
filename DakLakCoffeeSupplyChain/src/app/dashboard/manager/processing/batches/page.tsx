@@ -141,6 +141,8 @@ export default function ManagerProcessingBatchesPage() {
         return { label: "Đang xử lý", color: "bg-orange-100 text-orange-700 border-orange-200", icon: "🔄" };
       case ProcessingStatus.Completed:
         return { label: "Hoàn thành", color: "bg-green-100 text-green-700 border-green-200", icon: "✅" };
+      case ProcessingStatus.AwaitingEvaluation:
+        return { label: "Chờ đánh giá", color: "bg-orange-100 text-orange-700 border-orange-200", icon: "⏳" };
       case ProcessingStatus.Cancelled:
         return { label: "Đã hủy", color: "bg-red-100 text-red-700 border-red-200", icon: "❌" };
       default:
@@ -183,6 +185,12 @@ export default function ManagerProcessingBatchesPage() {
       value: statusCounts[ProcessingStatus.Completed] || 0,
       icon: BarChart3,
       color: "green"
+    },
+    {
+      title: "Chờ đánh giá",
+      value: statusCounts[ProcessingStatus.AwaitingEvaluation] || 0,
+      icon: Clock,
+      color: "orange"
     }
   ];
 

@@ -10,7 +10,8 @@ export enum ProcessingStatus {
   NotStarted = 0,
   InProgress = 1,
   Completed = 2,
-  Cancelled = 3,
+  AwaitingEvaluation =3,
+  Cancelled = 4,
 }
 
 export interface ProcessingStatusInfo {
@@ -41,6 +42,12 @@ export const ProcessingStatusMap: Record<
     icon: CheckCircle,
     bgClass: "bg-green-100",
     textClass: "text-green-800",
+  },
+  [ProcessingStatus.AwaitingEvaluation]: {
+    label: "Chờ đánh giá",
+    icon: Clock4,
+    bgClass: "bg-orange-100",
+    textClass: "text-orange-800",
   },
   [ProcessingStatus.Cancelled]: {
     label: "Đã huỷ",

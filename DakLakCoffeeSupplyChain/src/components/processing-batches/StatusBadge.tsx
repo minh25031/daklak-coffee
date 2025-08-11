@@ -25,6 +25,9 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     case ProcessingStatus.Completed:
       info = ProcessingStatusMap[ProcessingStatus.Completed];
       break;
+    case ProcessingStatus.AwaitingEvaluation:
+      info = ProcessingStatusMap[ProcessingStatus.AwaitingEvaluation];
+      break;
     case ProcessingStatus.Cancelled:
       info = ProcessingStatusMap[ProcessingStatus.Cancelled];
       break;
