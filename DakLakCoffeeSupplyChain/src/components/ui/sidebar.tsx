@@ -21,6 +21,7 @@ import {
   FiPackage,
   FiCalendar,
   FiShoppingCart,
+  FiBell,
 } from "react-icons/fi";
 
 
@@ -150,6 +151,11 @@ export function SidebarGroup() {
         href: "/dashboard/farmer/warehouse-request",
         icon: <FiTruck />,
       },
+      {
+        title: "Thông báo",
+        href: "/dashboard/notifications",
+        icon: <FiBell />,
+      },
     ],
     admin: [
       { title: "Tổng quan", href: "/dashboard/admin", icon: iconMap.dashboard },
@@ -173,6 +179,11 @@ export function SidebarGroup() {
         href: "/dashboard/admin/settings",
         icon: iconMap.settings,
       },
+      {
+        title: "Thông báo",
+        href: "/dashboard/notifications",
+        icon: <FiBell />,
+      },
     ],
     expert: [
       {
@@ -189,6 +200,11 @@ export function SidebarGroup() {
         title: "Bài viết",
         href: "/dashboard/expert/articles",
         icon: iconMap.articles,
+      },
+      {
+        title: "Thông báo",
+        href: "/dashboard/notifications",
+        icon: <FiBell />,
       },
     ],
     staff: [
@@ -233,6 +249,11 @@ export function SidebarGroup() {
       //   href: "/dashboard/staff/outbound-receipts",
       //   icon: <FiFileText />,
       // },
+      {
+        title: "Thông báo",
+        href: "/dashboard/notifications",
+        icon: <FiBell />,
+      },
     ],
     manager: [
       {
@@ -304,6 +325,11 @@ export function SidebarGroup() {
         title: "Yêu cầu xuất kho",
         href: "/dashboard/manager/warehouse-request",
         icon: <FiClipboard />,
+      },
+      {
+        title: "Thông báo",
+        href: "/dashboard/notifications",
+        icon: <FiBell />,
       },
     ],
   };

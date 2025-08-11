@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useState, useEffect } from "react";
 import { Toaster } from "sonner"; // ✅ thêm dòng này
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 export default function AdminLayout({
   children,
@@ -24,25 +25,27 @@ export default function AdminLayout({
   }, []);
 
   return (
-    <div className="flex h-screen w-full bg-[#fefaf4] overflow-hidden">
-      <Sidebar defaultCollapsed={isCollapsed} onCollapseChange={setIsCollapsed}>
-        <SidebarContent>
-          <SidebarGroup />
-        </SidebarContent>
-        <SidebarFooter role={role} />
-      </Sidebar>
+    <NotificationProvider>
+      <div className="flex h-screen w-full bg-[#fefaf4] overflow-hidden">
+        <Sidebar defaultCollapsed={isCollapsed} onCollapseChange={setIsCollapsed}>
+          <SidebarContent>
+            <SidebarGroup />
+          </SidebarContent>
+          <SidebarFooter role={role} />
+        </Sidebar>
 
-      <div
-        className={`flex flex-col flex-1 transition-all duration-300 ${isCollapsed ? "ml-[64px]" : "ml-[260px]"
-          }`}
-      >
-        <div className="shrink-0">
-          <HeaderDashboard />
+        <div
+          className={`flex flex-col flex-1 transition-all duration-300 ${isCollapsed ? "ml-[64px]" : "ml-[260px]"
+            }`}
+        >
+          <div className="shrink-0">
+            <HeaderDashboard />
+          </div>
+          <div className="flex-1 p-5 bg-orange-50 overflow-auto ">{children}</div>
         </div>
-        <div className="flex-1 p-5 bg-orange-50 overflow-auto ">{children}</div>
-      </div>
 
-      <Toaster richColors />
-    </div>
+        <Toaster richColors />
+      </div>
+    </NotificationProvider>
   );
 }
