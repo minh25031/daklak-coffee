@@ -1,6 +1,6 @@
 import api from "./axios";
 import { OrderStatus } from "@/lib/constants/orderStatus";
-import { OrderItemViewDto } from "@/lib/api/orderItems";
+import { OrderItemViewDto, OrderItemCreateInline, OrderItemUpdateDto} from "@/lib/api/orderItems";
 
 // DTO: Dữ liệu hiển thị của đơn hàng (trang View All)
 export interface OrderViewAllDto {
@@ -40,6 +40,31 @@ export interface OrderViewDetailsDto {
   deliveryBatchCode: string;
   contractNumber: string;
   orderItems: OrderItemViewDto[];
+}
+
+// DTO: Payload tạo mới đơn hàng
+export interface OrderCreateDto {
+  deliveryBatchId: string;
+  deliveryRound?: number | null;
+  orderDate?: string | null;          // ISO (DateTime?)
+  actualDeliveryDate?: string | null; // yyyy-MM-dd (DateOnly)
+  note?: string | null;
+  status: OrderStatus;
+  cancelReason?: string | null;
+  orderItems: OrderItemCreateInline[];   // BE yêu cầu có orderId -> form có thể set "" và BE sẽ thay
+}
+
+// DTO: Payload cập nhật đơn hàng
+export interface OrderUpdateDto {
+  orderId: string;
+  deliveryBatchId: string;
+  deliveryRound?: number | null;
+  orderDate?: string | null;          // ISO
+  actualDeliveryDate?: string | null; // yyyy-MM-dd
+  note?: string | null;
+  status: OrderStatus;
+  cancelReason?: string | null;
+  orderItems: OrderItemUpdateDto[];
 }
 
 // API: Lấy toàn bộ danh sách đơn hàng

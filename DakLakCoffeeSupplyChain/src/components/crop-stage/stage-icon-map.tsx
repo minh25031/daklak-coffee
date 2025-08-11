@@ -29,7 +29,7 @@ export const stageIconMap: Record<string, JSX.Element> = {
             <Candy className="h-4 w-4 text-yellow-600" />
         </div>
     ),
-    HARVESTING: (
+    harvesting: (
         <div className="w-8 h-8 flex items-center justify-center rounded-full bg-amber-100 ml-1">
             <ShoppingBasket className="h-4 w-4 text-amber-700" />
         </div>

@@ -40,9 +40,12 @@ export async function getCropProgressesByDetailId(id: string): Promise<CropProgr
   try {
     const response = await api.get(`/CropProgresses/by-detail/${id}`);
     return response.data.progresses;
-  } catch (error: any) {
-    if (error.response?.status === 404) {
-      return [];
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'response' in error) {
+      const response = (error as { response?: { status?: number } }).response;
+      if (response?.status === 404) {
+        return [];
+      }
     }
     throw error;
   }
@@ -61,7 +64,7 @@ export async function createCropProgress(data: {
   note: string;
   photoUrl?: string;
   videoUrl?: string;
-  actualYield?: number; // Không bắt buộc, trừ khi là HARVESTING
+  actualYield?: number; // Không bắt buộc, trừ khi là harvesting
 }): Promise<CropProgress> {
   const { actualYield, photoUrl, videoUrl, ...restData } = data;
 

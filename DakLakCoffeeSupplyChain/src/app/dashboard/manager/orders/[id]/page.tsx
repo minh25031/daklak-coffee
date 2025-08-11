@@ -419,7 +419,12 @@ export default function OrderDetailPage() {
         <div className="rounded-xl border bg-white p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold">Danh sách sản phẩm</h2>
-            <Button onClick={openCreateDialog}>+ Thêm mặt hàng</Button>
+            <Button
+              className="bg-black text-white hover:bg-gray-800"
+              onClick={openCreateDialog}
+            >
+              + Thêm mặt hàng
+            </Button>
           </div>
 
           <div className="overflow-x-auto">

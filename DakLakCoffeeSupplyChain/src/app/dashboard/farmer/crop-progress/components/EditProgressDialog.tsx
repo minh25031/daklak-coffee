@@ -43,7 +43,7 @@ export function EditProgressDialog({
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (open && progress.stageCode === "HARVESTING") {
+        if (open && progress.stageCode === "harvesting") {
             getCropSeasonDetailById(progress.cropSeasonDetailId)
                 .then((detail) => {
                     if (detail?.actualYield != null) {
@@ -63,7 +63,16 @@ export function EditProgressDialog({
             return;
         }
 
-        if (progress.stageCode === "HARVESTING") {
+        // Kiểm tra ngày không được lớn hơn hoặc bằng hôm nay
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selectedDate = new Date(progressDate);
+        if (selectedDate >= today) {
+            AppToast.error("Ngày ghi nhận không được lớn hơn hoặc bằng hôm nay.");
+            return;
+        }
+
+        if (progress.stageCode === "harvesting") {
             if (!actualYield || actualYield <= 0) {
                 AppToast.error("Vui lòng nhập sản lượng hợp lệ (> 0) cho giai đoạn thu hoạch.");
                 return;
@@ -82,14 +91,25 @@ export function EditProgressDialog({
                 photoUrl: progress.photoUrl,
                 videoUrl: progress.videoUrl,
                 stepIndex: progress.stepIndex ?? 0,
-                actualYield: progress.stageCode === "HARVESTING" ? actualYield : undefined,
+                actualYield: progress.stageCode === "harvesting" ? actualYield : undefined,
             });
 
             AppToast.success("Cập nhật tiến độ thành công!");
             setOpen(false);
             onSuccess();
-        } catch (error: any) {
-            AppToast.error(error.response?.data?.message || "Cập nhật thất bại.");
+        } catch (error: unknown) {
+            let errorMessage = "Cập nhật thất bại.";
+
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else if (typeof error === 'object' && error !== null && 'response' in error) {
+                const response = (error as { response?: { data?: { message?: string } } }).response;
+                if (response?.data?.message) {
+                    errorMessage = response.data.message;
+                }
+            }
+
+            AppToast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -140,7 +160,7 @@ export function EditProgressDialog({
                     </div>
 
                     {/* Sản lượng thực tế nếu là HARVESTING */}
-                    {progress.stageCode === "HARVESTING" && (
+                    {progress.stageCode === "harvesting" && (
                         <div>
                             <Label>Sản lượng thực tế (kg / tấn)</Label>
                             <Input

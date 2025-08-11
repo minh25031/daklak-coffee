@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiCheck, FiEdit } from "react-icons/fi";
 import { Separator } from "@/components/ui/separator";
 import { Package } from "lucide-react";
 
@@ -19,9 +19,12 @@ import { formatQuantity, getErrorMessage } from "@/lib/utils";
 import {
   FarmingCommitment,
   getCommitmentById,
+  updateFarmingCommitmentStatusByFarmer,
 } from "@/lib/api/farmingCommitments";
 import { FarmingCommitmentStatusMap } from "@/lib/constants/FarmingCommitmentStatus";
 import StatusBadge from "@/components/crop-seasons/StatusBadge";
+import { RejectionDialog } from "@/components/ui/rejectionDialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 
 export default function FarmingCommitmentDetailPageForFarmer() {
   const { id } = useParams();
@@ -30,7 +33,14 @@ export default function FarmingCommitmentDetailPageForFarmer() {
   //const [registrations, setRegistrations] = useState<CultivationRegistration[]>([]);
   const [commitment, setCommitment] = useState<FarmingCommitment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [openRejectionDialog, setOpenRejectionDialog] = useState(false);
+  const openRejectDialog = () => setOpenRejectionDialog(true);
   const [error, setError] = useState("");
+  const isPending =
+    commitment?.status === "Pending" || commitment?.status === null;
+  const [dialogType, setDialogType] = useState<string | null>(null);
+  const [loadingConfirm, setLoadingConfirm] = useState(false);
+  const closeDialog = () => setDialogType(null);
 
   useEffect(() => {
     fetchCommitment(id as string);
@@ -56,12 +66,48 @@ export default function FarmingCommitmentDetailPageForFarmer() {
     setLoading(true);
     const data = await getCommitmentById(commitmentId).catch((error) => {
       AppToast.error(getErrorMessage(error));
+      setError(getErrorMessage(error));
       return null;
     });
     setCommitment(data);
     setLoading(false);
   };
 
+  const updateFarmingCommitmentStatus = async (
+    status: number,
+    rejectReason: string | undefined
+  ) => {
+    if (!commitment) return;
+
+    const updatedCommitment = await updateFarmingCommitmentStatusByFarmer(
+      { status, rejectReason },
+      commitment.commitmentId
+    ).catch((error) => {
+      AppToast.error(getErrorMessage(error));
+      return null;
+    });
+
+    if (updatedCommitment) {
+      setCommitment(updatedCommitment);
+      AppToast.success("Đã chấp nhận cam kết thành công");
+    }
+  };
+
+  //#endregion
+
+  //#region Handle functions
+
+  const handleAccept = async () => {
+    if (!commitment) return;
+    setLoadingConfirm(true);
+    await updateFarmingCommitmentStatus(1, undefined);
+    closeDialog();
+    setLoadingConfirm(false);
+  };
+
+  const handleReject = async (rejectReason: string) => {
+    await updateFarmingCommitmentStatus(5, rejectReason);
+  };
   //#endregion
 
   const formatDate = (date?: string) => {
@@ -95,26 +141,26 @@ export default function FarmingCommitmentDetailPageForFarmer() {
             <div className='flex justify-between items-center'>
               <CardTitle>Thông tin cam kết kế hoạch thu mua</CardTitle>
               <div className='flex gap-2'>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  className='bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer'
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/business/farming-commitments/${commitment.commitmentId}/edit`
-                    )
-                  }
-                >
-                  <FiEdit className='mr-1' /> Chỉnh sửa
-                </Button>
-                <Button
-                  size='sm'
-                  variant='destructive'
-                  className='bg-red-100 text-red-800 hover:bg-red-200 cursor-pointer'
-                  onClick={() => alert("Xoá chưa được hỗ trợ")}
-                >
-                  <FiTrash2 className='mr-1' /> Xoá
-                </Button>
+                {isPending && (
+                  <>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='bg-green-200 hover:bg-emerald-400 hover:text-white text-green-800 transition'
+                      onClick={() => setDialogType("accept")}
+                    >
+                      <FiCheck className='inline-block' /> Chấp nhận cam kết
+                    </Button>
+                    <Button
+                      size='sm'
+                      variant='destructive'
+                      className='bg-red-100 text-red-800 hover:bg-red-200 cursor-pointer'
+                      onClick={openRejectDialog}
+                    >
+                      Từ chối cam kết
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -135,19 +181,15 @@ export default function FarmingCommitmentDetailPageForFarmer() {
               <strong>Tổng chi phí:</strong>{" "}
               {commitment.totalPrice.toLocaleString()} VNĐ
             </div>
-            {commitment.note && (
-              <div className='col-span-2'>
-                <strong>Các điều khoản chung:</strong> {commitment.note}
-              </div>
-            )}
+            
             <div>
               <strong>Ngày cam kết được tạo:</strong>{" "}
               {formatDate(commitment.commitmentDate)}
             </div>
-            {commitment.committedAt && (
+            {commitment.approvedAt && (
               <div>
                 <strong>Ngày cam kết được đồng thuận từ 2 phía:</strong>{" "}
-                {formatDate(commitment.committedAt)}
+                {formatDate(commitment.approvedAt)}
               </div>
             )}
             <div>
@@ -157,6 +199,12 @@ export default function FarmingCommitmentDetailPageForFarmer() {
                 map={FarmingCommitmentStatusMap}
               />
             </div>
+
+            {commitment.note && (
+              <div className='col-span-2'>
+                <strong>Các điều khoản chung:</strong> {commitment.note}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -164,18 +212,6 @@ export default function FarmingCommitmentDetailPageForFarmer() {
         <Card>
           <CardHeader className='flex justify-between items-center'>
             <CardTitle>Chi tiết cam kết</CardTitle>
-            <Button
-              size='sm'
-              variant='outline'
-              className='bg-orange-100 text-orange-800 hover:bg-orange-200 cursor-pointer'
-              onClick={() =>
-                router.push(
-                  `/dashboard/manager/farming-commitments/${commitment.commitmentId}/details/create`
-                )
-              }
-            >
-              + Thêm chi tiết cam kết
-            </Button>
           </CardHeader>
           <CardContent>
             {Array.isArray(commitment.farmingCommitmentDetails) &&
@@ -193,11 +229,11 @@ export default function FarmingCommitmentDetailPageForFarmer() {
                     <AccordionContent>
                       <div className='grid grid-cols-2 gap-4 text-sm text-gray-700 py-2'>
                         <div>
-                          <strong>Mã chi tiết:</strong> {detail.commitmentDetailCode}
+                          <strong>Mã chi tiết:</strong>{" "}
+                          {detail.commitmentDetailCode}
                         </div>
                         <div>
-                          <strong>Loại cà phê:</strong>{" "}
-                          {detail.coffeeTypeName}
+                          <strong>Loại cà phê:</strong> {detail.coffeeTypeName}
                         </div>
                         <div>
                           <strong>Giá cả thống nhất:</strong>{" "}
@@ -213,37 +249,8 @@ export default function FarmingCommitmentDetailPageForFarmer() {
                           {formatDate(detail.estimatedDeliveryEnd)}
                         </div>
                         <div className='col-span-2'>
-                          <strong>Các điều khoản cụ thể:</strong>{" "}
-                          {detail.note}
-                        </div>
-                        <div className='col-span-2 flex justify-end gap-2 pt-2'>
-                          <Button
-                            size='sm'
-                            variant='outline'
-                            className='bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer'
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/manager/farming-commitments/${commitment.commitmentId}/details/${detail.commitmentDetailId}/edit`
-                              )
-                            }
-                          >
-                            Chỉnh sửa
-                          </Button>
-                          <Button
-                            size='sm'
-                            variant='destructive'
-                            className='bg-red-100 text-red-800 hover:bg-red-200 cursor-pointer'
-                            onClick={() => {
-                              const confirmDelete = window.confirm(
-                                "Bạn có chắc muốn xoá chi tiết này không?"
-                              );
-                              if (confirmDelete)
-                                alert(`Đã xoá ${detail.coffeeTypeName}`);
-                            }}
-                          >
-                            Xoá
-                          </Button>
-                        </div>
+                          <strong>Các điều khoản cụ thể:</strong> {detail.note}
+                        </div>                        
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -256,6 +263,33 @@ export default function FarmingCommitmentDetailPageForFarmer() {
             )}
           </CardContent>
         </Card>
+
+        <ConfirmDialog
+          open={dialogType !== null}
+          onOpenChange={(open) => {
+            if (!open) closeDialog();
+          }}
+          title='Xác nhận cam kết'
+          description='Bạn có chắc chắn muốn chấp nhận cam kết này không?'
+          confirmText='Chấp nhận'
+          cancelText='Hủy'
+          loading={loadingConfirm}
+          onConfirm={handleAccept}
+        />
+
+        <RejectionDialog
+          open={openRejectionDialog}
+          onOpenChange={setOpenRejectionDialog}
+          title='Từ chối cam kết'
+          description='Vui lòng nhập lý do từ chối cam kết bên dưới.'
+          confirmText='Xác nhận từ chối'
+          cancelText='Hủy'
+          loading={loading}
+          onConfirm={(reason) => {
+            handleReject(reason);
+            setOpenRejectionDialog(false); // đóng dialog sau khi confirm
+          }}
+        />
       </div>
     </div>
   );

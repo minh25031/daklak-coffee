@@ -40,7 +40,7 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
     const [loading, setLoading] = useState(false);
     const [actualYield, setActualYield] = useState<number | undefined>(undefined);
 
-    const STAGE_ORDER = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "HARVESTING"];
+    const STAGE_ORDER = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "harvesting"];
     const createdStageCodes = (existingProgress ?? []).map((p) => p.stageCode);
 
     const canCreateStage = (stageCode: string) => {
@@ -87,6 +87,15 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
             return;
         }
 
+        // Kiểm tra ngày không được lớn hơn hoặc bằng hôm nay
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selectedDate = new Date(progressDate);
+        if (selectedDate >= today) {
+            AppToast.error("Ngày ghi nhận không được lớn hơn hoặc bằng hôm nay.");
+            return;
+        }
+
         if (isHarvestingStage && (actualYield === undefined || actualYield <= 0)) {
             AppToast.error("Vui lòng nhập sản lượng thực tế hợp lệ.");
             return;
@@ -94,7 +103,17 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
 
         setLoading(true);
         try {
-            const payload: any = {
+            const payload: {
+                cropSeasonDetailId: string;
+                stageId: number;
+                stageDescription: string;
+                stepIndex: number;
+                progressDate: string;
+                note: string;
+                photoUrl: string;
+                videoUrl: string;
+                actualYield?: number;
+            } = {
                 cropSeasonDetailId: detailId,
                 stageId: selectedStage.stageId,
                 stageDescription: selectedStage.stageName,
@@ -117,12 +136,20 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
             setActualYield(undefined);
             setProgressDate("");
             if (onSuccess) onSuccess();
-        } catch (err: any) {
-            const msg = err?.response?.data?.message;
-            if (msg?.includes("đã tồn tại")) {
+        } catch (err: unknown) {
+            let msg = "Lỗi khi ghi nhận tiến độ.";
+
+            if (typeof err === 'object' && err !== null && 'response' in err) {
+                const response = (err as { response?: { data?: { message?: string } } }).response;
+                if (response?.data?.message) {
+                    msg = response.data.message;
+                }
+            }
+
+            if (msg.includes("đã tồn tại")) {
                 AppToast.error("Tiến độ hôm nay cho giai đoạn này đã được ghi nhận.");
             } else {
-                AppToast.error(msg || "Lỗi khi ghi nhận tiến độ.");
+                AppToast.error(msg);
             }
         } finally {
             setLoading(false);
