@@ -16,7 +16,7 @@ import {
     createFarmerReport,
 } from '@/lib/api/generalFarmerReports';
 import { SeverityLevelEnum, SeverityLevelLabel } from '@/lib/constants/SeverityLevelEnum';
-import { getCropProgressesByDetailId, CropProgress } from '@/lib/api/cropProgress';
+import { getCropProgressesByDetailId, CropProgressViewAllDto } from '@/lib/api/cropProgress';
 
 export default function CreateReportPage() {
     const router = useRouter();
@@ -24,7 +24,7 @@ export default function CreateReportPage() {
 
     const detailIdFromUrl = searchParams.get("detailId") ?? "";
 
-    const [cropProgressOptions, setCropProgressOptions] = useState<CropProgress[]>([]);
+    const [cropProgressOptions, setCropProgressOptions] = useState<CropProgressViewAllDto[]>([]);
 
     const [form, setForm] = useState<GeneralFarmerReportCreateDto>({
         cropSeasonDetailId: detailIdFromUrl,

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Pencil } from "lucide-react";
 import { AppToast } from "@/components/ui/AppToast";
-import { CropProgress, updateCropProgress } from "@/lib/api/cropProgress";
+import { CropProgress, updateCropProgress, CropProgressUpdateRequest } from "@/lib/api/cropProgress";
 import { getCropSeasonDetailById } from "@/lib/api/cropSeasonDetail";
 
 type Props = {
@@ -81,7 +81,7 @@ export function EditProgressDialog({
 
         try {
             setLoading(true);
-            await updateCropProgress(progress.progressId, {
+            const payload: CropProgressUpdateRequest = {
                 progressId: progress.progressId,
                 cropSeasonDetailId: progress.cropSeasonDetailId,
                 stageId: progress.stageId,
@@ -92,7 +92,9 @@ export function EditProgressDialog({
                 videoUrl: progress.videoUrl,
                 stepIndex: progress.stepIndex ?? 0,
                 actualYield: progress.stageCode === "harvesting" ? actualYield : undefined,
-            });
+            };
+
+            await updateCropProgress(progress.progressId, payload);
 
             AppToast.success("Cập nhật tiến độ thành công!");
             setOpen(false);
@@ -156,13 +158,14 @@ export function EditProgressDialog({
                             onChange={(e) => setNote(e.target.value)}
                             rows={4}
                             placeholder="Nhập ghi chú..."
+                            maxLength={1000}
                         />
                     </div>
 
                     {/* Sản lượng thực tế nếu là HARVESTING */}
                     {progress.stageCode === "harvesting" && (
                         <div>
-                            <Label>Sản lượng thực tế (kg / tấn)</Label>
+                            <Label>Sản lượng thực tế (kg)</Label>
                             <Input
                                 type="number"
                                 min={0}
