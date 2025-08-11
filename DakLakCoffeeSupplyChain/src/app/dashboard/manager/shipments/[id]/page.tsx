@@ -8,6 +8,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Pencil, Trash2 } from "lucide-react";
+import { FiTruck } from "react-icons/fi";
 import {
   Dialog,
   DialogContent,
@@ -99,6 +100,7 @@ export default function ShipmentDetailPage() {
       <div className="w-full max-w-6xl space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-2xl font-semibold text-gray-800">
+            <FiTruck className="text-orange-600 w-6 h-6" />
             <span>Lô giao: {shipment.shipmentCode}</span>
           </div>
           <Button
