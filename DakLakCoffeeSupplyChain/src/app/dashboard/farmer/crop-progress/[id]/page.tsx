@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, CalendarDays, Pencil, Trash } from "lucide-react";
 import { AppToast } from "@/components/ui/AppToast";
 import {
-    CropProgress,
+    CropProgressViewAllDto,
     deleteCropProgress,
     getCropProgressesByDetailId,
 } from "@/lib/api/cropProgress";
@@ -37,7 +37,7 @@ export default function CropProgressPage() {
     const params = useParams();
     const cropSeasonDetailId = params.id as string;
 
-    const [progressList, setProgressList] = useState<CropProgress[]>([]);
+    const [progressList, setProgressList] = useState<CropProgressViewAllDto[]>([]);
     const [seasonDetail, setSeasonDetail] = useState<CropSeasonDetail | null>(null);
     const [allStages, setAllStages] = useState<CropStage[]>([]);
     const [loading, setLoading] = useState(true);
@@ -49,8 +49,8 @@ export default function CropProgressPage() {
             setProgressList(
                 data.sort(
                     (a, b) =>
-                        new Date(a.progressDate).getTime() -
-                        new Date(b.progressDate).getTime()
+                        new Date(a.progressDate || "").getTime() -
+                        new Date(b.progressDate || "").getTime()
                 )
             );
         } catch (error: any) {
@@ -158,7 +158,7 @@ export default function CropProgressPage() {
                                                     <CalendarDays className="inline w-4 h-4 mr-1" />
                                                     {formatDate(progress.progressDate)}
                                                 </Badge>
-                                                {progress.stageName?.toLowerCase() === "thu hoạch" && (
+                                                {progress.stageCode?.toLowerCase() === "harvesting" && (
                                                     <span className="text-xs text-orange-600 font-semibold">
                                                         Tổng thu hoạch: {seasonDetail?.actualYield ?? "-"} kg
                                                     </span>
@@ -170,7 +170,7 @@ export default function CropProgressPage() {
                                                 {progress.note}
                                             </p>
                                         )}
-                                        {progress.stageName?.toLowerCase() === "thu hoạch" && progress.actualYield && (
+                                        {progress.stageCode?.toLowerCase() === "harvesting" && progress.actualYield && (
                                             <p className="text-sm text-gray-700 mt-1">
                                                 👉 Sản lượng thực tế: <strong>{progress.actualYield} kg</strong>
                                             </p>
