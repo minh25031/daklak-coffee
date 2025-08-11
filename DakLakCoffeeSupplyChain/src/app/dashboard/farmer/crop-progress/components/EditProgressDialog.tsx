@@ -16,6 +16,9 @@ import { AppToast } from "@/components/ui/AppToast";
 import { CropProgress, updateCropProgress, CropProgressUpdateRequest } from "@/lib/api/cropProgress";
 import { getCropSeasonDetailById } from "@/lib/api/cropSeasonDetail";
 
+// Constants
+const HARVESTING_STAGE_CODE = "harvesting";
+
 type Props = {
     progress: CropProgress;
     onSuccess: () => void;
@@ -43,7 +46,7 @@ export function EditProgressDialog({
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (open && progress.stageCode === "harvesting") {
+        if (open && progress.stageCode === HARVESTING_STAGE_CODE) {
             getCropSeasonDetailById(progress.cropSeasonDetailId)
                 .then((detail) => {
                     if (detail?.actualYield != null) {
@@ -72,7 +75,7 @@ export function EditProgressDialog({
             return;
         }
 
-        if (progress.stageCode === "harvesting") {
+        if (progress.stageCode === HARVESTING_STAGE_CODE) {
             if (!actualYield || actualYield <= 0) {
                 AppToast.error("Vui lòng nhập sản lượng hợp lệ (> 0) cho giai đoạn thu hoạch.");
                 return;
@@ -85,13 +88,11 @@ export function EditProgressDialog({
                 progressId: progress.progressId,
                 cropSeasonDetailId: progress.cropSeasonDetailId,
                 stageId: progress.stageId,
-                stageDescription: progress.stageName,
                 progressDate,
                 note,
                 photoUrl: progress.photoUrl,
                 videoUrl: progress.videoUrl,
-                stepIndex: progress.stepIndex ?? 0,
-                actualYield: progress.stageCode === "harvesting" ? actualYield : undefined,
+                actualYield: progress.stageCode === HARVESTING_STAGE_CODE ? actualYield : undefined,
             };
 
             await updateCropProgress(progress.progressId, payload);
@@ -163,7 +164,7 @@ export function EditProgressDialog({
                     </div>
 
                     {/* Sản lượng thực tế nếu là HARVESTING */}
-                    {progress.stageCode === "harvesting" && (
+                    {progress.stageCode === HARVESTING_STAGE_CODE && (
                         <div>
                             <Label>Sản lượng thực tế (kg)</Label>
                             <Input

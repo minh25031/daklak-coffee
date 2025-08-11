@@ -31,12 +31,10 @@ export type CropProgressUpdateRequest = {
   progressId: string;
   cropSeasonDetailId: string;
   stageId: number;
-  stageDescription: string;
   progressDate?: string;
   photoUrl?: string;
   videoUrl?: string;
   note?: string;
-  stepIndex?: number;
   actualYield?: number;
 };
 
@@ -47,11 +45,18 @@ export type CropProgressViewAllDto = {
   stepIndex?: number;
   stageName: string;
   stageCode: string;
+  stageDescription: string;
   progressDate?: string;
   note: string;
   photoUrl: string;
   videoUrl: string;
   actualYield?: number;
+  updatedBy?: string;
+  updatedByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  cropSeasonName?: string;
+  cropSeasonDetailName?: string;
 };
 
 export type CropProgressViewDetailsDto = {
@@ -71,6 +76,14 @@ export type CropProgressViewDetailsDto = {
   stepIndex?: number;
   createdAt: string;
   updatedAt: string;
+  cropSeasonName?: string;
+  cropSeasonDetailName?: string;
+  farmerName?: string;
+  cropName?: string;
+  location?: string;
+  status?: string;
+  stageOrderIndex?: number;
+  isFinalStage?: boolean;
 };
 
 // =====================
@@ -102,32 +115,41 @@ export async function getCropProgressesByDetailId(id: string): Promise<CropProgr
 }
 
 // =====================
+// GET BY ID
+// =====================
+
+export async function getCropProgressById(id: string): Promise<CropProgressViewDetailsDto> {
+  const response = await api.get(`/CropProgresses/${id}`);
+  return response.data;
+}
+
+// =====================
 // CREATE
 // =====================
 
 export async function createCropProgress(data: CropProgressCreateRequest): Promise<CropProgressViewDetailsDto> {
   const formData = new FormData();
-  formData.append('cropSeasonDetailId', data.cropSeasonDetailId);
-  formData.append('stageId', data.stageId.toString());
-  formData.append('progressDate', data.progressDate);
+  formData.append("cropSeasonDetailId", data.cropSeasonDetailId);
+  formData.append("stageId", data.stageId.toString());
+  formData.append("progressDate", data.progressDate);
   
   if (data.actualYield !== undefined) {
-    formData.append('actualYield', data.actualYield.toString());
+    formData.append("actualYield", data.actualYield.toString());
   }
   
   if (data.notes) {
-    formData.append('notes', data.notes);
+    formData.append("notes", data.notes);
   }
   
-  if (data.mediaFiles) {
-    data.mediaFiles.forEach((file) => {
-      formData.append('mediaFiles', file);
+  if (data.mediaFiles && data.mediaFiles.length > 0) {
+    data.mediaFiles.forEach((file, index) => {
+      formData.append(`mediaFiles`, file);
     });
   }
 
   const response = await api.post("/CropProgresses", formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   });
   return response.data;
@@ -138,22 +160,45 @@ export async function createCropProgress(data: CropProgressCreateRequest): Promi
 // =====================
 
 export async function updateCropProgress(progressId: string, data: CropProgressUpdateRequest): Promise<CropProgressViewDetailsDto> {
-  // Check if it's a harvesting stage and actualYield is required
-  if (data.stageDescription.toLowerCase().includes("thu hoạch") && 
-      (!data.actualYield || data.actualYield <= 0)) {
-    throw new Error("Sản lượng thực tế phải lớn hơn 0 cho giai đoạn thu hoạch.");
+  const formData = new FormData();
+  formData.append("progressId", data.progressId);
+  formData.append("cropSeasonDetailId", data.cropSeasonDetailId);
+  formData.append("stageId", data.stageId.toString());
+  
+  if (data.progressDate) {
+    formData.append("progressDate", data.progressDate);
+  }
+  
+  if (data.photoUrl) {
+    formData.append("photoUrl", data.photoUrl);
+  }
+  
+  if (data.videoUrl) {
+    formData.append("videoUrl", data.videoUrl);
+  }
+  
+  if (data.note) {
+    formData.append("note", data.note);
+  }
+  
+  if (data.actualYield !== undefined) {
+    formData.append("actualYield", data.actualYield.toString());
   }
 
-  const response = await api.put(`/CropProgresses/${progressId}`, data);
+  const response = await api.put(`/CropProgresses/${progressId}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return response.data;
 }
 
 // =====================
-// DELETE (SOFT)
+// DELETE
 // =====================
 
 export async function deleteCropProgress(progressId: string): Promise<void> {
-  await api.patch(`/CropProgresses/soft-delete/${progressId}`);
+  await api.delete(`/CropProgresses/${progressId}`);
 }
 
 // =====================
@@ -161,5 +206,5 @@ export async function deleteCropProgress(progressId: string): Promise<void> {
 // =====================
 
 export async function hardDeleteCropProgress(progressId: string): Promise<void> {
-  await api.delete(`/CropProgresses/hard/${progressId}`);
+  await api.delete(`/CropProgresses/${progressId}/hard-delete`);
 }
