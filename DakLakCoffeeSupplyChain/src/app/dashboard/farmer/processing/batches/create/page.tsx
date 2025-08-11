@@ -14,11 +14,6 @@ import {
   getCropSeasonsForCurrentUser,
   CropSeasonListItem,
 } from "@/lib/api/cropSeasons";
-
-import {
-  getAllProcessingMethods,
-  ProcessingMethod,
-} from "@/lib/api/processingMethods";
 import {
   Select,
   SelectTrigger,
@@ -26,7 +21,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Package, Coffee, Calendar, Settings, Info, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Package, Coffee, Calendar, Info, Loader2, CheckCircle } from "lucide-react";
 
 // Import các component chung
 import ProcessingHeader from "@/components/processing/ProcessingHeader";
@@ -38,7 +33,6 @@ export default function CreateProcessingBatchPage() {
     coffeeTypeId: "",
     cropSeasonId: "",
     batchCode: "",
-    methodId: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +41,6 @@ export default function CreateProcessingBatchPage() {
 
   const [coffeeTypes, setCoffeeTypes] = useState<CoffeeType[]>([]);
   const [cropSeasons, setCropSeasons] = useState<CropSeasonListItem[]>([]);
-  const [methods, setMethods] = useState<ProcessingMethod[]>([]);
 
   useEffect(() => {
     async function fetchInitial() {
@@ -72,16 +65,11 @@ export default function CreateProcessingBatchPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [cropSeasonsData, methodsData] = await Promise.all([
-          getCropSeasonsForCurrentUser({ page: 1, pageSize: 100 }),
-          getAllProcessingMethods(),
-        ]);
+        const cropSeasonsData = await getCropSeasonsForCurrentUser({ page: 1, pageSize: 100 });
         
         console.log('Crop Seasons:', cropSeasonsData);
-        console.log('Methods:', methodsData);
         
         setCropSeasons(cropSeasonsData);
-        setMethods(methodsData);
       } catch (err) {
         console.error("❌ Lỗi tải dữ liệu:", err);
         AppToast.error("Không thể tải dữ liệu cần thiết");
@@ -120,13 +108,12 @@ export default function CreateProcessingBatchPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const { coffeeTypeId, cropSeasonId, batchCode, methodId } = form;
+    const { coffeeTypeId, cropSeasonId, batchCode } = form;
 
     const missingFields: string[] = [];
     if (!coffeeTypeId) missingFields.push("Loại cà phê");
     if (!cropSeasonId) missingFields.push("Mùa vụ");
     if (!batchCode.trim()) missingFields.push("Mã lô");
-    if (Number(methodId) <= 0) missingFields.push("Phương pháp sơ chế");
 
     if (missingFields.length > 0) {
       AppToast.error("Vui lòng nhập: " + missingFields.join(", "));
@@ -139,7 +126,7 @@ export default function CreateProcessingBatchPage() {
         coffeeTypeId,
         cropSeasonId,
         batchCode: batchCode.trim(),
-        methodId: Number(methodId),
+        methodId: 1, // Mặc định method ID
         inputQuantity: 0, // Sẽ được cập nhật sau khi có thông tin từ crop season
         inputUnit: "kg" // Đơn vị mặc định
       });
@@ -176,7 +163,7 @@ export default function CreateProcessingBatchPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
         <div className="p-6 max-w-4xl mx-auto">
           {/* Header Skeleton */}
           <div className="flex items-center gap-4 mb-8">
@@ -193,7 +180,7 @@ export default function CreateProcessingBatchPage() {
               <div className="h-6 bg-white/20 rounded w-48 animate-pulse"></div>
             </div>
             <div className="p-6 space-y-6">
-              {[...Array(4)].map((_, i) => (
+              {[...Array(3)].map((_, i) => (
                 <div key={i} className="space-y-3">
                   <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
                   <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
@@ -206,7 +193,7 @@ export default function CreateProcessingBatchPage() {
           <div className="text-center space-y-4 mt-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
             <p className="text-lg text-gray-600 font-medium">Đang tải dữ liệu...</p>
-            <p className="text-sm text-gray-500">Đang tải danh sách mùa vụ và phương pháp sơ chế</p>
+            <p className="text-sm text-gray-500">Đang tải danh sách mùa vụ</p>
           </div>
         </div>
       </div>
@@ -214,7 +201,7 @@ export default function CreateProcessingBatchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <ProcessingHeader
@@ -244,7 +231,7 @@ export default function CreateProcessingBatchPage() {
               <h3 className="font-semibold text-blue-900">Hướng dẫn tạo lô sơ chế</h3>
               <p className="text-sm text-blue-700">
                 Vui lòng chọn mùa vụ trước, sau đó chọn loại cà phê tương ứng. 
-                Nhập mã lô và chọn phương pháp sơ chế phù hợp.
+                Nhập mã lô để tạo lô sơ chế mới.
               </p>
             </div>
           </div>
@@ -336,32 +323,6 @@ export default function CreateProcessingBatchPage() {
               />
             </div>
 
-            {/* Phương pháp */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Settings className="w-4 h-4 text-indigo-600" />
-                Phương pháp sơ chế *
-              </label>
-              <Select
-                value={form.methodId}
-                onValueChange={(v) => handleChange("methodId", v)}
-              >
-                <SelectTrigger className="w-full h-12 border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors">
-                  <SelectValue placeholder="Chọn phương pháp" />
-                </SelectTrigger>
-                <SelectContent>
-                  {methods.map((m) => (
-                    <SelectItem key={m.methodId.toString()} value={m.methodId.toString()}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {methods.length === 0 && (
-                <p className="text-sm text-red-600">Không có phương pháp sơ chế nào khả dụng</p>
-              )}
-            </div>
-
             {/* Submit Button */}
             <div className="flex justify-end pt-4">
               <Button 
@@ -384,20 +345,6 @@ export default function CreateProcessingBatchPage() {
             </div>
           </div>
         </div>
-
-        {/* Debug Info (chỉ hiển thị trong development) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <h3 className="font-semibold text-gray-900 mb-2">Debug Info:</h3>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>Crop Seasons: {cropSeasons.length}</p>
-              <p>Coffee Types: {coffeeTypes.length}</p>
-              <p>Methods: {methods.length}</p>
-              <p>Selected Season: {form.cropSeasonId}</p>
-              <p>Selected Coffee Type: {form.coffeeTypeId}</p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

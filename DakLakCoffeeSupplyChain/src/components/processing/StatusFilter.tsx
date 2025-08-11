@@ -24,10 +24,10 @@ export default function StatusFilter({
     <div className="flex gap-2 flex-wrap">
       <button
         onClick={() => onStatusChange(null)}
-        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
           selectedStatus === null
-            ? "bg-green-100 text-green-700 border border-green-300"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            ? "bg-orange-100 text-orange-700 border border-orange-300 shadow-sm"
+            : "bg-white/95 text-gray-700 hover:bg-orange-50 hover:border-orange-200 border border-gray-200"
         }`}
       >
         Tất cả ({totalCount})
@@ -40,10 +40,10 @@ export default function StatusFilter({
           <button
             key={status}
             onClick={() => onStatusChange(statusNum)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               selectedStatus === statusNum
-                ? "bg-green-100 text-green-700 border border-green-300"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-orange-100 text-orange-700 border border-orange-300 shadow-sm"
+                : "bg-white/95 text-gray-700 hover:bg-orange-50 hover:border-orange-200 border border-gray-200"
             }`}
           >
             {statusInfo.label} ({count})

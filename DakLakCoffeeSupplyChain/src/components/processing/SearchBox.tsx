@@ -18,12 +18,12 @@ export default function SearchBox({
 }: SearchBoxProps) {
   return (
     <div className={`relative ${className}`}>
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-400" />
       <Input
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="pl-10 border-gray-300 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+        className="pl-10 border-gray-300 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
       />
     </div>
   );

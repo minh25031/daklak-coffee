@@ -52,7 +52,7 @@ export default function Batches() {
   const filtered = batches.filter(
     (b) =>
       (selectedStatus === null || b.status === selectedStatus) &&
-      (!search || b.batchCode.toLowerCase().includes(search.toLowerCase()))
+      (!search || (b.batchCode?.toLowerCase() || '').includes(search.toLowerCase()))
   );
 
   // Tính toán phân trang
@@ -91,7 +91,7 @@ export default function Batches() {
     if (!coffeeTypeId) return "Chưa xác định";
   
     const matched = coffeeTypes.find(
-      ct => ct.coffeeTypeId?.trim().toLowerCase() === coffeeTypeId.trim().toLowerCase()
+      ct => (ct.coffeeTypeId?.trim().toLowerCase() || '') === (coffeeTypeId?.trim().toLowerCase() || '')
     );
   
     return matched?.typeName || "Không xác định";
@@ -193,7 +193,7 @@ export default function Batches() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <ProcessingHeader
@@ -207,7 +207,7 @@ export default function Batches() {
         <StatsCards stats={statsData} />
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border p-4">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchBox
               placeholder="Tìm kiếm mã lô..."
@@ -226,10 +226,10 @@ export default function Batches() {
         </div>
 
         {/* Table với header riêng */}
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="p-4 border-b border-gray-200">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200">
+          <div className="p-4 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Danh sách lô sơ chế</h2>
+              <h2 className="text-lg font-semibold text-gray-800">Danh sách lô sơ chế</h2>
               <p className="text-sm text-gray-600">Hiển thị {filtered.length} trong tổng số {batches.length} lô</p>
             </div>
           </div>

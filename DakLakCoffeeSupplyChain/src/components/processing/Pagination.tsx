@@ -24,8 +24,8 @@ export default function Pagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-      <div className="text-sm text-gray-500">
+    <div className="flex items-center justify-between px-4 py-3 border-t border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
+      <div className="text-sm text-gray-600">
         Hiển thị {startItem} đến {endItem} trong tổng số {totalItems} mục
       </div>
       
@@ -35,7 +35,7 @@ export default function Pagination({
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 border-orange-200 hover:bg-orange-50 hover:border-orange-300 transition-all duration-200"
         >
           <ChevronLeft className="w-4 h-4" />
           Trước
@@ -47,7 +47,10 @@ export default function Pagination({
             variant={page === currentPage ? "default" : "outline"}
             size="sm"
             onClick={() => onPageChange(page)}
-            className={page === currentPage ? "bg-green-600 hover:bg-green-700" : ""}
+            className={page === currentPage 
+              ? "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white transition-all duration-200" 
+              : "border-orange-200 hover:bg-orange-50 hover:border-orange-300 transition-all duration-200"
+            }
           >
             {page}
           </Button>
@@ -58,7 +61,7 @@ export default function Pagination({
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 border-orange-200 hover:bg-orange-50 hover:border-orange-300 transition-all duration-200"
         >
           Sau
           <ChevronRight className="w-4 h-4" />

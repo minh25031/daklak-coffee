@@ -136,15 +136,15 @@ export default function ManagerProcessingBatchesPage() {
   const getStatusInfo = (status: number) => {
     switch (status) {
       case ProcessingStatus.NotStarted:
-        return { label: "Chờ xử lý", color: "bg-yellow-100 text-yellow-700", icon: "⏳" };
+        return { label: "Chờ xử lý", color: "bg-amber-100 text-amber-700 border-amber-200", icon: "⏳" };
       case ProcessingStatus.InProgress:
-        return { label: "Đang xử lý", color: "bg-blue-100 text-blue-700", icon: "🔄" };
+        return { label: "Đang xử lý", color: "bg-orange-100 text-orange-700 border-orange-200", icon: "🔄" };
       case ProcessingStatus.Completed:
-        return { label: "Hoàn thành", color: "bg-green-100 text-green-700", icon: "✅" };
+        return { label: "Hoàn thành", color: "bg-green-100 text-green-700 border-green-200", icon: "✅" };
       case ProcessingStatus.Cancelled:
-        return { label: "Đã hủy", color: "bg-red-100 text-red-700", icon: "❌" };
+        return { label: "Đã hủy", color: "bg-red-100 text-red-700 border-red-200", icon: "❌" };
       default:
-        return { label: "Không xác định", color: "bg-gray-100 text-gray-700", icon: "❓" };
+        return { label: "Không xác định", color: "bg-gray-100 text-gray-700 border-gray-200", icon: "❓" };
     }
   };
 
@@ -164,19 +164,19 @@ export default function ManagerProcessingBatchesPage() {
       title: "Tổng lô",
       value: batches.length,
       icon: Package,
-      color: "blue"
+      color: "orange"
     },
     {
       title: "Chờ xử lý",
       value: statusCounts[ProcessingStatus.NotStarted] || 0,
       icon: Clock,
-      color: "yellow"
+      color: "amber"
     },
     {
       title: "Đang xử lý",
       value: statusCounts[ProcessingStatus.InProgress] || 0,
       icon: TrendingUp,
-      color: "blue"
+      color: "orange"
     },
     {
       title: "Hoàn thành",
@@ -191,7 +191,7 @@ export default function ManagerProcessingBatchesPage() {
     { 
       key: "batchCode", 
       title: "Mã lô",
-      render: (value: string) => <span className="font-medium">{value}</span>
+      render: (value: string) => <span className="font-medium text-gray-800">{value}</span>
     },
     { 
       key: "cropSeasonName", 
@@ -215,7 +215,7 @@ export default function ManagerProcessingBatchesPage() {
         const statusInfo = getStatusInfo(value);
         return (
           <div className="flex items-center justify-center">
-            <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusInfo.color}`}>
+            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusInfo.color}`}>
               {statusInfo.label}
             </span>
           </div>
@@ -236,24 +236,24 @@ export default function ManagerProcessingBatchesPage() {
       label: "Xem",
       icon: <Eye className="w-3 h-3" />,
       onClick: (batch: ProcessingBatch) => handleViewDetail(batch.batchId),
-      className: "hover:bg-green-50 hover:border-green-300"
+      className: "hover:bg-green-50 hover:border-green-300 hover:text-green-700"
     },
     {
       label: "Sửa",
       icon: <Edit className="w-3 h-3" />,
       onClick: (batch: ProcessingBatch) => handleOpenEdit(batch),
-      className: "hover:bg-blue-50 hover:border-blue-300"
+      className: "hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
     },
     {
       label: "Xóa mềm",
       icon: <Trash2 className="w-3 h-3" />,
       onClick: (batch: ProcessingBatch) => handleDelete(batch.batchId),
-      className: "hover:bg-red-50 hover:border-red-300"
+      className: "hover:bg-red-50 hover:border-red-300 hover:text-red-700"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <ProcessingHeader
@@ -268,7 +268,7 @@ export default function ManagerProcessingBatchesPage() {
         <StatsCards stats={statsData} />
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border p-4">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchBox
               placeholder="Tìm kiếm mã lô..."
@@ -287,10 +287,10 @@ export default function ManagerProcessingBatchesPage() {
         </div>
 
         {/* Table với header riêng */}
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="p-4 border-b border-gray-200">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200">
+          <div className="p-4 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Danh sách lô sơ chế</h2>
+              <h2 className="text-lg font-semibold text-gray-800">Danh sách lô sơ chế</h2>
               <p className="text-sm text-gray-600">Hiển thị {filtered.length} trong tổng số {batches.length} lô</p>
             </div>
           </div>
@@ -316,8 +316,8 @@ export default function ManagerProcessingBatchesPage() {
 
         {/* Dialog for create/edit */}
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogContent className="max-w-md">
-            <DialogTitle>{editBatch ? "Sửa lô sơ chế" : "Thêm lô sơ chế"}</DialogTitle>
+          <DialogContent className="max-w-md bg-white/95 backdrop-blur-sm border border-orange-200">
+            <DialogTitle className="text-gray-800">{editBatch ? "Sửa lô sơ chế" : "Thêm lô sơ chế"}</DialogTitle>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -328,7 +328,7 @@ export default function ManagerProcessingBatchesPage() {
                   name="batchCode"
                   value={form.batchCode}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                   required
                 />
               </div>
@@ -341,7 +341,7 @@ export default function ManagerProcessingBatchesPage() {
                   name="coffeeTypeId"
                   value={form.coffeeTypeId}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                   required
                 >
                   {coffeeTypes.map((type) => (
@@ -360,7 +360,7 @@ export default function ManagerProcessingBatchesPage() {
                   name="cropSeasonId"
                   value={form.cropSeasonId}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                   required
                 >
                   {cropSeasons.map((season) => (
@@ -379,7 +379,7 @@ export default function ManagerProcessingBatchesPage() {
                   name="methodId"
                   value={form.methodId}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                   required
                 >
                   {methods.map((method) => (
@@ -399,7 +399,7 @@ export default function ManagerProcessingBatchesPage() {
                   name="inputQuantity"
                   value={form.inputQuantity}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                   required
                 />
               </div>
@@ -407,7 +407,7 @@ export default function ManagerProcessingBatchesPage() {
               <div className="flex gap-3 pt-4">
                 <Button
                   type="submit"
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white transition-all duration-200"
                 >
                   {editBatch ? "Cập nhật" : "Tạo"}
                 </Button>
@@ -415,7 +415,7 @@ export default function ManagerProcessingBatchesPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setOpenDialog(false)}
-                  className="flex-1"
+                  className="flex-1 border-orange-200 text-gray-700 hover:bg-orange-50 hover:border-orange-300 transition-colors"
                 >
                   Hủy
                 </Button>

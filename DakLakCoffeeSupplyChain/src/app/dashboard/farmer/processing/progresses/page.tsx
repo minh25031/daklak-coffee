@@ -86,7 +86,7 @@ export default function ProcessingProgressesPage() {
   });
 
   const filtered = groupedProgresses.filter((group) =>
-    group.batchCode?.toLowerCase().includes(search.toLowerCase())
+    (group.batchCode?.toLowerCase() || '').includes(search.toLowerCase())
   );
 
   // Tính toán phân trang
@@ -238,7 +238,7 @@ export default function ProcessingProgressesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-200 via-amber-100 to-orange-300">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <ProcessingHeader

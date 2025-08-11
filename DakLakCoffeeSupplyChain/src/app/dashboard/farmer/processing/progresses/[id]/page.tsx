@@ -218,16 +218,16 @@ export default function ProgressDetailPage() {
             </div>
           </div>
           
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 overflow-hidden">
             <div className="p-8 text-center">
               <div className="flex justify-center mb-4">
-                <Info className="w-16 h-16 text-red-400" />
+                <Info className="w-16 h-16 text-orange-400" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
               <p className="text-gray-600 mb-6">{error}</p>
               <Button 
                 onClick={handleRetry}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-orange-600 hover:bg-orange-700"
               >
                 Thử lại
               </Button>
@@ -240,7 +240,7 @@ export default function ProgressDetailPage() {
 
   if (!batch) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
         <div className="p-6 max-w-6xl mx-auto space-y-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <PageTitle
@@ -277,8 +277,8 @@ export default function ProgressDetailPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
       <div className="p-6 max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -290,7 +290,7 @@ export default function ProgressDetailPage() {
             <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
               <DialogTrigger asChild>
                 <Button 
-                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
                 >
                   <Plus className="w-4 h-4" />
                   Cập nhật tiến trình
@@ -356,7 +356,7 @@ export default function ProgressDetailPage() {
                     <Button
                       onClick={handleUpdateProgress}
                       disabled={isUpdating}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      className="flex-1 bg-orange-600 hover:bg-orange-700"
                     >
                       {isUpdating ? (
                         <>
@@ -395,8 +395,8 @@ export default function ProgressDetailPage() {
         </div>
 
         {/* Batch Info Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6 text-white">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-white">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <Package className="w-5 h-5" />
               Thông tin lô sơ chế

@@ -19,11 +19,11 @@ export default function ProcessingHeader({
   onCreateClick
 }: ProcessingHeaderProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
+    <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 p-6">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Coffee className="w-7 h-7 text-green-600" />
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <Coffee className="w-7 h-7 text-orange-500" />
             {title}
           </h1>
           {description && (
@@ -33,7 +33,7 @@ export default function ProcessingHeader({
         {showCreateButton && onCreateClick && (
           <Button
             onClick={onCreateClick}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md"
           >
             <Plus className="w-4 h-4" />
             {createButtonText}
