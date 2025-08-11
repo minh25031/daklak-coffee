@@ -45,12 +45,26 @@ export async function createWarehouseInboundRequest(
 export async function getAllInboundRequests() {
   const token = localStorage.getItem("token");
   const res = await fetch(ENDPOINT, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
-  return await res.json();
+
+  const ct = res.headers.get("content-type") || "";
+
+  // ⚠️ Nếu !ok thì đọc text để hiện lỗi, đừng parse JSON
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+
+  // Chỉ parse JSON khi đúng content-type
+  if (ct.includes("application/json")) {
+    return await res.json();
+  } else {
+    const text = await res.text();
+    return { status: 0, message: text };
+  }
 }
+
 
 export async function getInboundRequestById(id: string) {
   const token = localStorage.getItem("token");

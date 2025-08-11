@@ -51,7 +51,7 @@ export default function OutboundReceiptDetailPage() {
     fetchDetail();
   }, [id]);
 
-  const isConfirmed = detail?.note?.includes('[Đã xác nhận lúc');
+  const isConfirmed = detail?.note?.includes('[CONFIRMED:');
 
   const handleConfirm = async () => {
     setError('');
