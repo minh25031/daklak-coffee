@@ -6,6 +6,8 @@ export interface ProcessingWaste {
   wasteType: string;
   quantity: number;
   unit: string;
+  batchId?: string;
+  disposalMethod?: string;
   createdAt: string;
 }
 

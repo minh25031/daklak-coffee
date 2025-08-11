@@ -213,7 +213,7 @@ export default function ViewProcessingBatch() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
         <div className="p-6 max-w-6xl mx-auto space-y-8">
           {/* Header Skeleton */}
           <div className="flex items-center gap-4">
@@ -225,8 +225,8 @@ export default function ViewProcessingBatch() {
           </div>
 
           {/* Content Skeleton */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6">
               <div className="h-6 bg-white/20 rounded w-48 animate-pulse"></div>
             </div>
             <div className="p-6 space-y-6">
@@ -243,7 +243,7 @@ export default function ViewProcessingBatch() {
 
           {/* Loading Indicator */}
           <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
             <p className="text-lg text-gray-600 font-medium">Đang tải dữ liệu...</p>
             <p className="text-sm text-gray-500">Có thể mất vài giây để tải hoàn tất</p>
           </div>
@@ -254,10 +254,10 @@ export default function ViewProcessingBatch() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 flex items-center justify-center">
         <div className="text-center space-y-6 max-w-md mx-auto p-6">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-            <AlertCircle className="w-8 h-8 text-red-600" />
+          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="w-8 h-8 text-orange-600" />
           </div>
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-gray-900">Không thể tải dữ liệu</h2>
@@ -278,7 +278,7 @@ export default function ViewProcessingBatch() {
 
   if (!batch) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
             <AlertCircle className="w-8 h-8 text-gray-400" />
@@ -299,12 +299,12 @@ export default function ViewProcessingBatch() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
       <div className="p-6 max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
               Chi tiết lô sơ chế
             </h1>
             <p className="text-gray-600">Thông tin chi tiết về lô sơ chế và tiến trình xử lý</p>
@@ -331,7 +331,7 @@ export default function ViewProcessingBatch() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium">Khối lượng vào</p>
@@ -339,36 +339,36 @@ export default function ViewProcessingBatch() {
                   {formatNumber(batch.totalInputQuantity)}
                 </p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-xl">
-                <Scale className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-orange-100 rounded-xl">
+                <Scale className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium">Khối lượng ra</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-2xl font-bold text-amber-600">
                   {formatWeight(totalOutputQuantity)}
                 </p>
               </div>
-              <div className="p-3 bg-green-100 rounded-xl">
-                <Package className="w-6 h-6 text-green-600" />
+              <div className="p-3 bg-amber-100 rounded-xl">
+                <Package className="w-6 h-6 text-amber-600" />
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium">Số bước hoàn thành</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-orange-600">
                   {batch.progresses?.length || 0}
                 </p>
               </div>
-              <div className="p-3 bg-purple-100 rounded-xl">
-                <TrendingUp className="w-6 h-6 text-purple-600" />
+              <div className="p-3 bg-orange-100 rounded-xl">
+                <TrendingUp className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </div>
@@ -389,8 +389,8 @@ export default function ViewProcessingBatch() {
         </div>
 
         {/* Main Info Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6 text-white">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-white">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <Package className="w-5 h-5" />
               Thông tin lô sơ chế

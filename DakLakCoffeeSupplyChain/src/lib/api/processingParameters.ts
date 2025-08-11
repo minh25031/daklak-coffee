@@ -2,12 +2,17 @@ import api from "./axios";
 
 export interface ProcessingParameter {
   parameterId: string;
+  parameterCode: string;
   parameterName: string;
   value: string;
   unit: string;
   parameterType: string;
   parameterValue: string;
   description: string;
+  minValue?: number;
+  maxValue?: number;
+  targetValue?: number;
+  isRequired: boolean;
   isActive: boolean;
 }
 

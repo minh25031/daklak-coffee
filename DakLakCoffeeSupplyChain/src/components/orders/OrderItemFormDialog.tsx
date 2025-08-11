@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import {
   createOrderItem,
   updateOrderItem,
-  OrderItemCreateDto,
+  OrderItemCreateForOrder,
   OrderItemUpdateDto,
 } from "@/lib/api/orderItems";
 import {
@@ -62,7 +62,7 @@ export default function OrderItemFormDialog({
   onSuccess,
 }: OrderItemFormDialogProps) {
   const [formData, setFormData] = useState<
-    OrderItemCreateDto | OrderItemUpdateDto
+    OrderItemCreateForOrder | OrderItemUpdateDto
   >({
     orderId,
     contractDeliveryItemId: "",
@@ -180,15 +180,18 @@ export default function OrderItemFormDialog({
       return;
     }
 
-    if ((formData.discountAmount ?? 0) < 0) {
-      toast.error("Chiết khấu không được âm.");
+    if (
+      (formData.discountAmount ?? 0) < 0 ||
+      (formData.discountAmount ?? 0) > 100
+    ) {
+      toast.error("Chiết khấu phải nằm trong khoảng 0–100%.");
       return;
     }
 
     setLoading(true);
     try {
       if (mode === "create") {
-        await createOrderItem(formData as OrderItemCreateDto);
+        await createOrderItem(formData as OrderItemCreateForOrder);
         toast.success("Đã thêm mặt hàng đơn hàng thành công!");
       } else {
         await updateOrderItem(formData as OrderItemUpdateDto);
@@ -285,40 +288,68 @@ export default function OrderItemFormDialog({
             </Select>
           </div>
 
+          {/* Số lượng (kg) */}
           <div className="grid gap-1">
-            <Label htmlFor="quantity">Số lượng</Label>
-            <Input
-              id="quantity"
-              name="quantity"
-              type="number"
-              value={formData.quantity ?? 0}
-              onChange={handleChange}
-              min={0}
-            />
+            <Label htmlFor="quantity">Số lượng (kg)</Label>
+            <div className="relative">
+              <Input
+                id="quantity"
+                name="quantity"
+                type="number"
+                value={formData.quantity ?? 0}
+                onChange={handleChange}
+                min={0}
+                step={1}
+                placeholder="vd: 500"
+                className="pr-14"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                kg
+              </span>
+            </div>
           </div>
 
+          {/* Đơn giá (VNĐ/kg) */}
           <div className="grid gap-1">
-            <Label htmlFor="unitPrice">Đơn giá</Label>
-            <Input
-              id="unitPrice"
-              name="unitPrice"
-              type="number"
-              value={formData.unitPrice ?? 0}
-              onChange={handleChange}
-              min={0}
-            />
+            <Label htmlFor="unitPrice">Đơn giá (VNĐ/kg)</Label>
+            <div className="relative">
+              <Input
+                id="unitPrice"
+                name="unitPrice"
+                type="number"
+                value={formData.unitPrice ?? 0}
+                onChange={handleChange}
+                min={0}
+                step={100} // hoặc 1000 tuỳ quy định
+                placeholder="vd: 95000"
+                className="pr-24"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                VNĐ/kg
+              </span>
+            </div>
           </div>
 
+          {/* Chiết khấu (%) */}
           <div className="grid gap-1">
-            <Label htmlFor="discountAmount">Chiết khấu</Label>
-            <Input
-              id="discountAmount"
-              name="discountAmount"
-              type="number"
-              value={formData.discountAmount ?? 0}
-              onChange={handleChange}
-              min={0}
-            />
+            <Label htmlFor="discountAmount">Chiết khấu (%)</Label>
+            <div className="relative">
+              <Input
+                id="discountAmount"
+                name="discountAmount"
+                type="number"
+                value={formData.discountAmount ?? 0}
+                onChange={handleChange}
+                min={0}
+                max={100}
+                step={1}
+                placeholder="vd: 10"
+                className="pr-10"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                %
+              </span>
+            </div>
           </div>
 
           <div className="grid gap-1">

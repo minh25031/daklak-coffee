@@ -2,8 +2,12 @@ import api from "./axios";
 
 export interface ProcessingStages {
   stageId: string;
+  stageCode: string;
   stageName: string;
   description: string;
+  estimatedDuration?: number;
+  sequenceOrder?: number;
+  isActive: boolean;
   createdAt: string;
 }
 
