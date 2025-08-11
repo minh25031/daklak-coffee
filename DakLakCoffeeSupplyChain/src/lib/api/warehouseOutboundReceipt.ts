@@ -2,6 +2,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const ENDPOINT = `${API_BASE_URL}/WarehouseOutboundReceipts`;
 
 export interface CreateOutboundReceiptInput {
+  warehouseId: string;
+  inventoryId: string;
   exportedQuantity: number;
   note?: string;
   destination?: string;
@@ -12,30 +14,39 @@ export interface ConfirmOutboundReceiptInput {
   destinationNote?: string;
 }
 
-// 📥 Lấy tất cả phiếu xuất kho thuộc công ty staff
+// 👉 kiểu dữ liệu summary trả về từ BE
+export interface OutboundRequestSummary {
+  requestedQuantity: number;
+  confirmedQuantity: number;
+  createdQuantity: number;
+  draftQuantity: number;
+  remainingByConfirm: number;
+  remainingHardCap: number;
+  inventoryAvailable: number;
+}
+
 export async function getAllOutboundReceipts() {
   const token = localStorage.getItem("token");
   const res = await fetch(`${ENDPOINT}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-
   if (!res.ok) throw new Error(await res.text());
   return await res.json();
 }
 
-// 🔍 Xem chi tiết phiếu xuất
 export async function getOutboundReceiptById(id: string) {
   const token = localStorage.getItem("token");
   const res = await fetch(`${ENDPOINT}/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-
   if (!res.ok) throw new Error(await res.text());
   return await res.json();
 }
 
-// ✍️ Tạo phiếu xuất kho (gắn với outbound request)
-export async function createOutboundReceipt(outboundRequestId: string, input: CreateOutboundReceiptInput) {
+export async function createOutboundReceipt(
+  outboundRequestId: string,
+  input: CreateOutboundReceiptInput
+) {
   const token = localStorage.getItem("token");
   const res = await fetch(`${ENDPOINT}/${outboundRequestId}/receipt`, {
     method: "POST",
@@ -45,13 +56,14 @@ export async function createOutboundReceipt(outboundRequestId: string, input: Cr
     },
     body: JSON.stringify(input),
   });
-
   if (!res.ok) throw new Error(await res.text());
-  return await res.text(); // thường trả về id hoặc message
+  return await res.text();
 }
 
-// ✅ Xác nhận phiếu xuất kho
-export async function confirmOutboundReceipt(receiptId: string, input: ConfirmOutboundReceiptInput) {
+export async function confirmOutboundReceipt(
+  receiptId: string,
+  input: ConfirmOutboundReceiptInput
+) {
   const token = localStorage.getItem("token");
   const res = await fetch(`${ENDPOINT}/${receiptId}/confirm`, {
     method: "PUT",
@@ -61,7 +73,18 @@ export async function confirmOutboundReceipt(receiptId: string, input: ConfirmOu
     },
     body: JSON.stringify(input),
   });
-
   if (!res.ok) throw new Error(await res.text());
-  return await res.json(); // có thể chứa message, id
+  return await res.json();
+}
+
+// ✅ THÊM HÀM NÀY & EXPORT
+export async function getOutboundRequestSummary(
+  outboundRequestId: string
+): Promise<OutboundRequestSummary> {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${ENDPOINT}/${outboundRequestId}/summary`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return await res.json();
 }

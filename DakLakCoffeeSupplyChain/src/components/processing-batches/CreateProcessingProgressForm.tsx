@@ -27,6 +27,10 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
     outputUnit: "kg",
     photoFiles: [] as File[],
     videoFiles: [] as File[],
+    parameterName: "",
+    parameterValue: "",
+    unit: "",
+    recordedAt: new Date().toISOString(),
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -35,7 +39,7 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
   useEffect(() => {
     const fetchBatches = async () => {
       const res = await getAllProcessingBatches();
-      const filtered = (res || []).filter((b) => b.status === ProcessingStatus.NotStarted || b.status === ProcessingStatus.InProgress);
+      const filtered = (res || []).filter((b) => b.status === ProcessingStatus.NotStarted || b.status === ProcessingStatus.InProgress || b.status === ProcessingStatus.AwaitingEvaluation);
       setBatches(filtered);
     };
     fetchBatches();
@@ -193,6 +197,10 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
         outputUnit: form.outputUnit,
         photoFiles: compressedPhotos,
         videoFiles: form.videoFiles || undefined,
+        parameterName: form.parameterName || undefined,
+        parameterValue: form.parameterValue || undefined,
+        unit: form.unit || undefined,
+        recordedAt: form.recordedAt || undefined,
       });
 
       setSuccess("Tạo tiến trình thành công!");
@@ -265,6 +273,48 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
       <div>
         <label className="block font-medium mb-1">Đơn vị</label>
         <Input name="outputUnit" value={form.outputUnit} onChange={handleChange} required />
+      </div>
+
+      {/* Parameters Section */}
+      <div>
+        <label className="block font-medium mb-1">Thông số kỹ thuật (tùy chọn)</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Tên thông số</label>
+            <Input
+              type="text"
+              name="parameterName"
+              value={form.parameterName}
+              onChange={handleChange}
+              placeholder="VD: Nhiệt độ, Độ ẩm..."
+              className="text-sm"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Giá trị</label>
+            <Input
+              type="text"
+              name="parameterValue"
+              value={form.parameterValue}
+              onChange={handleChange}
+              placeholder="VD: 25, 80%..."
+              className="text-sm"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Đơn vị</label>
+            <Input
+              type="text"
+              name="unit"
+              value={form.unit}
+              onChange={handleChange}
+              placeholder="VD: °C, %, kg..."
+              className="text-sm"
+            />
+          </div>
+        </div>
       </div>
 
       <div>

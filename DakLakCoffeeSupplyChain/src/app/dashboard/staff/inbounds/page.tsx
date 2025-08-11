@@ -19,16 +19,13 @@ export default function InboundRequestListPage() {
 
   useEffect(() => {
     async function fetchRequests() {
-      try {
-        const res = await getAllInboundRequests();
-        if (res.status === 1) {
-          setRequests(res.data);
-        } else {
-          toast.error("Không thể tải danh sách yêu cầu.");
-        }
-      } catch (err) {
-        toast.error("Lỗi khi tải dữ liệu.");
-      }
+     try {
+  const res = await getAllInboundRequests();
+  if (res.status === 1) setRequests(res.data);
+  else toast.error(res.message || "Không thể tải danh sách yêu cầu.");
+} catch (err: any) {
+  toast.error(err.message || "Lỗi khi tải dữ liệu.");
+}
     }
 
     fetchRequests();

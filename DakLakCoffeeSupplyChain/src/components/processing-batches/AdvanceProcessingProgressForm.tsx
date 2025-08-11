@@ -23,6 +23,9 @@ export default function AdvanceProcessingProgressForm({ batchId, latestProgress,
   const [outputUnit, setOutputUnit] = useState("kg");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [parameterName, setParameterName] = useState("");
+  const [parameterValue, setParameterValue] = useState("");
+  const [unit, setUnit] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +50,10 @@ export default function AdvanceProcessingProgressForm({ batchId, latestProgress,
         outputUnit,
         photoFile: compressedPhoto,
         videoFile: videoFile ?? undefined,
+        parameterName: parameterName || undefined,
+        parameterValue: parameterValue || undefined,
+        unit: unit || undefined,
+        recordedAt: new Date().toISOString(),
       });
 
       onSuccess?.();
@@ -90,6 +97,45 @@ export default function AdvanceProcessingProgressForm({ batchId, latestProgress,
       <div>
         <label className="block mb-1 text-sm font-medium">Video minh hoạ</label>
         <Input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] || null)} />
+      </div>
+
+      {/* Parameters Section */}
+      <div>
+        <label className="block mb-1 text-sm font-medium">Thông số kỹ thuật (tùy chọn)</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Tên thông số</label>
+            <Input
+              type="text"
+              value={parameterName}
+              onChange={(e) => setParameterName(e.target.value)}
+              placeholder="VD: Nhiệt độ, Độ ẩm..."
+              className="text-sm"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Giá trị</label>
+            <Input
+              type="text"
+              value={parameterValue}
+              onChange={(e) => setParameterValue(e.target.value)}
+              placeholder="VD: 25, 80%..."
+              className="text-sm"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Đơn vị</label>
+            <Input
+              type="text"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              placeholder="VD: °C, %, kg..."
+              className="text-sm"
+            />
+          </div>
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}

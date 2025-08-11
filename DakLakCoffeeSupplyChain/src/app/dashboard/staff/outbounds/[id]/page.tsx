@@ -43,7 +43,7 @@ export default function ViewOutboundRequestDetailStaff() {
     try {
       const result = await acceptOutboundRequest(data.outboundRequestId);
       alert('✅ ' + result.message);
-      router.push('/dashboard/staff/warehouse-request');
+      router.push('/dashboard/staff/outbounds');
     } catch (err: any) {
       alert('❌ ' + err.message);
     }
@@ -119,6 +119,11 @@ export default function ViewOutboundRequestDetailStaff() {
             {data.orderItemId && (
               <div className="md:col-span-2">
                 <strong>Liên kết đơn hàng:</strong> {data.orderItemId}
+                {data.orderItemProductName && (
+                  <span className="ml-2 text-gray-600">
+                    ({data.orderItemProductName} - {data.orderItemQuantity} {data.orderItemUnit})
+                  </span>
+                )}
               </div>
             )}
 

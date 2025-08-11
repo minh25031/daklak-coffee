@@ -96,7 +96,7 @@ export default function OutboundReceiptListPage() {
               </thead>
               <tbody>
                 {receipts.map((r) => {
-                  const isConfirmed = r.note?.includes('[Đã xác nhận lúc');
+                  const isConfirmed = r.note?.includes('[CONFIRMED:');
                   return (
                     <tr key={r.outboundReceiptId} className="border-t">
                       <td className="p-2 border">{r.outboundReceiptCode}</td>
