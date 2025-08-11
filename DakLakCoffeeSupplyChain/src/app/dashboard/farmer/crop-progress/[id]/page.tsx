@@ -1,4 +1,4 @@
-// Full updated version of CropProgressPage with accurate yield handling
+    // Full updated version of CropProgressPage with accurate yield handling
 "use client";
 
 import { useEffect, useState } from "react";
@@ -53,9 +53,12 @@ export default function CropProgressPage() {
                         new Date(b.progressDate || "").getTime()
                 )
             );
-        } catch (error: any) {
-            if (error.response?.status !== 404) {
-                AppToast.error("Đã xảy ra lỗi khi tải dữ liệu tiến độ.");
+        } catch (error: unknown) {
+            if (typeof error === 'object' && error !== null && 'response' in error) {
+                const response = (error as { response?: { status?: number } }).response;
+                if (response?.status !== 404) {
+                    AppToast.error("Đã xảy ra lỗi khi tải dữ liệu tiến độ.");
+                }
             }
             setProgressList([]);
         } finally {
@@ -67,7 +70,7 @@ export default function CropProgressPage() {
         try {
             const detail = await getCropSeasonDetailById(cropSeasonDetailId);
             setSeasonDetail(detail);
-        } catch (err) {
+        } catch {
             AppToast.error("Không thể lấy thông tin vùng trồng.");
         }
     };
@@ -261,10 +264,15 @@ export default function CropProgressPage() {
                                                         await deleteCropProgress(progress.progressId);
                                                         AppToast.success("Xoá tiến độ thành công!");
                                                         reloadData();
-                                                    } catch (error: any) {
-                                                        AppToast.error(
-                                                            error.response?.data?.message || "Xoá thất bại."
-                                                        );
+                                                    } catch (error: unknown) {
+                                                        let errorMessage = "Xoá thất bại.";
+                                                        if (typeof error === 'object' && error !== null && 'response' in error) {
+                                                            const response = (error as { response?: { data?: { message?: string } } }).response;
+                                                            if (response?.data?.message) {
+                                                                errorMessage = response.data.message;
+                                                            }
+                                                        }
+                                                        AppToast.error(errorMessage);
                                                     }
                                                 }}
                                             >
