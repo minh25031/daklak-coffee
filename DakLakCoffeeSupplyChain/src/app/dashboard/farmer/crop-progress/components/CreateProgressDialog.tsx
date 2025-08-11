@@ -25,6 +25,9 @@ import { Upload, X, Image, Video } from "lucide-react";
 import { createCropProgress, CropProgressCreateRequest } from "@/lib/api/cropProgress";
 import { getCropStages, CropStage } from "@/lib/api/cropStage";
 
+// Constants
+const HARVESTING_STAGE_CODE = "harvesting";
+
 interface Props {
     detailId: string;
     onSuccess?: () => void;
@@ -42,7 +45,7 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
     const [mediaFiles, setMediaFiles] = useState<File[]>([]);
     const [dragActive, setDragActive] = useState(false);
 
-    const STAGE_ORDER = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "harvesting"];
+    const STAGE_ORDER = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", HARVESTING_STAGE_CODE];
     const createdStageCodes = (existingProgress ?? []).map((p) => p.stageCode);
 
     const canCreateStage = (stageCode: string) => {
@@ -59,7 +62,7 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
     };
 
     const selectedStage = stageOptions.find((s) => s.stageId === stageId);
-    const isHarvestingStage = selectedStage?.stageCode === "harvesting";
+    const isHarvestingStage = selectedStage?.stageCode === HARVESTING_STAGE_CODE;
     const allStagesCompleted = STAGE_ORDER.every((code) => createdStageCodes.includes(code));
 
     useEffect(() => {

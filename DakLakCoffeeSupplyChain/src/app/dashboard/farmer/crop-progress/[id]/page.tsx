@@ -32,6 +32,9 @@ import {
 } from "@/lib/api/cropSeasonDetail";
 import { CropStage, getCropStages } from "@/lib/api/cropStage";
 
+// Constants
+const HARVESTING_STAGE_CODE = "harvesting";
+
 export default function CropProgressPage() {
     const router = useRouter();
     const params = useParams();
@@ -46,13 +49,24 @@ export default function CropProgressPage() {
         try {
             setLoading(true);
             const data = await getCropProgressesByDetailId(cropSeasonDetailId);
-            setProgressList(
-                data.sort(
-                    (a, b) =>
-                        new Date(a.progressDate || "").getTime() -
-                        new Date(b.progressDate || "").getTime()
-                )
-            );
+            
+            // Sắp xếp theo thứ tự giai đoạn thay vì theo ngày
+            const stageOrder = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "harvesting"];
+            
+            const sortedData = data.sort((a, b) => {
+                const aIndex = stageOrder.indexOf(a.stageCode?.toUpperCase() || "");
+                const bIndex = stageOrder.indexOf(b.stageCode?.toUpperCase() || "");
+                
+                // Nếu cùng giai đoạn thì sắp xếp theo ngày
+                if (aIndex === bIndex) {
+                    return new Date(a.progressDate || "").getTime() - new Date(b.progressDate || "").getTime();
+                }
+                
+                // Sắp xếp theo thứ tự giai đoạn
+                return aIndex - bIndex;
+            });
+            
+            setProgressList(sortedData);
         } catch (error: unknown) {
             if (typeof error === 'object' && error !== null && 'response' in error) {
                 const response = (error as { response?: { status?: number } }).response;
@@ -142,6 +156,20 @@ export default function CropProgressPage() {
                                         ? `✅ Đã cập nhật: ${progressList.length} / ${allStages.length} (${Math.round((progressList.length / allStages.length) * 100)}%)`
                                         : "✅ Đã cập nhật: Đang tải giai đoạn..."}
                                 </p>
+                                {progressList.length > 0 && (
+                                    <>
+                                        {progressList[0].cropSeasonName && (
+                                            <p className="text-sm text-gray-700">
+                                                🌾 Mùa vụ: <strong>{progressList[0].cropSeasonName}</strong>
+                                            </p>
+                                        )}
+                                        {progressList[0].cropSeasonDetailName && (
+                                            <p className="text-sm text-gray-700">
+                                                📍 Vùng trồng: <strong>{progressList[0].cropSeasonDetailName}</strong>
+                                            </p>
+                                        )}
+                                    </>
+                                )}
                                 <p className="text-sm font-semibold text-orange-700">
                                     🎯 Sản lượng thu hoạch: {totalYield > 0 ? `${totalYield} kg` : "Chưa có ghi nhận"}
                                 </p>
@@ -153,27 +181,48 @@ export default function CropProgressPage() {
                                         className="relative p-5 rounded-xl border shadow hover:shadow-lg transition-all bg-gray-50"
                                     >
                                         <div className="flex items-center justify-between mb-2">
-                                            <h3 className="font-semibold text-lg text-emerald-700">
-                                                {index + 1}. {progress.stageName}
-                                            </h3>
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-lg text-emerald-700">
+                                                    {progress.stepIndex ? `${progress.stepIndex}.` : `${index + 1}.`} {progress.stageName}
+                                                </h3>
+                                                {progress.stageDescription && (
+                                                    <p className="text-sm text-gray-600 mt-1 italic">
+                                                        {progress.stageDescription}
+                                                    </p>
+                                                )}
+                                            </div>
                                             <div className="flex flex-col items-end space-y-1 text-right">
                                                 <Badge className="text-xs bg-emerald-100 text-emerald-700">
                                                     <CalendarDays className="inline w-4 h-4 mr-1" />
                                                     {formatDate(progress.progressDate)}
                                                 </Badge>
-                                                {progress.stageCode?.toLowerCase() === "harvesting" && (
+                                                {progress.stageCode?.toLowerCase() === HARVESTING_STAGE_CODE && (
                                                     <span className="text-xs text-orange-600 font-semibold">
                                                         Tổng thu hoạch: {seasonDetail?.actualYield ?? "-"} kg
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
+
+
+
+
+
+                                        {/* Thông tin người cập nhật - chỉ hiển thị nếu có */}
+                                        {progress.updatedByName && (
+                                            <div className="text-xs text-gray-500 mb-3">
+                                                👤 Cập nhật bởi: {progress.updatedByName}
+                                            </div>
+                                        )}
+
+
+
                                         {progress.note && (
                                             <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">
                                                 {progress.note}
                                             </p>
                                         )}
-                                        {progress.stageCode?.toLowerCase() === "harvesting" && progress.actualYield && (
+                                        {progress.stageCode?.toLowerCase() === HARVESTING_STAGE_CODE && progress.actualYield && (
                                             <p className="text-sm text-gray-700 mt-1">
                                                 👉 Sản lượng thực tế: <strong>{progress.actualYield} kg</strong>
                                             </p>
