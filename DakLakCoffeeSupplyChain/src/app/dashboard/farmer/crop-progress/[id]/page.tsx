@@ -44,18 +44,41 @@ export default function CropProgressPage() {
     const [seasonDetail, setSeasonDetail] = useState<CropSeasonDetail | null>(null);
     const [allStages, setAllStages] = useState<CropStage[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentHarvestYield, setCurrentHarvestYield] = useState<number>(0); // Thêm state để theo dõi sản lượng thu hoạch
+    const [availableStagesCount, setAvailableStagesCount] = useState<number>(0); // Thêm state để theo dõi số stage có thể tạo
 
     const reloadData = async () => {
         try {
             setLoading(true);
             const data = await getCropProgressesByDetailId(cropSeasonDetailId);
             
+            console.log("Raw data from backend:", data);
+            console.log("Stage codes found:", data.map(p => ({ name: p.stageName, code: p.stageCode })));
+            
             // Sắp xếp theo thứ tự giai đoạn thay vì theo ngày
-            const stageOrder = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "harvesting"];
+            const stageOrder = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "HARVESTING"];
             
             const sortedData = data.sort((a, b) => {
-                const aIndex = stageOrder.indexOf(a.stageCode?.toUpperCase() || "");
-                const bIndex = stageOrder.indexOf(b.stageCode?.toUpperCase() || "");
+                // Chuẩn hóa stageCode để so sánh
+                const aStageCode = a.stageCode?.toUpperCase() || "";
+                const bStageCode = b.stageCode?.toUpperCase() || "";
+                
+                console.log(`Sorting: ${a.stageName} (${a.stageCode}) vs ${b.stageName} (${b.stageCode})`);
+                console.log(`Normalized: ${aStageCode} vs ${bStageCode}`);
+                
+                const aIndex = stageOrder.indexOf(aStageCode);
+                const bIndex = stageOrder.indexOf(bStageCode);
+                
+                console.log(`Indices: ${aIndex} vs ${bIndex}`);
+                
+                // Nếu cả hai đều không tìm thấy trong stageOrder, sắp xếp theo ngày
+                if (aIndex === -1 && bIndex === -1) {
+                    return new Date(a.progressDate || "").getTime() - new Date(b.progressDate || "").getTime();
+                }
+                
+                // Nếu một trong hai không tìm thấy, ưu tiên cái tìm thấy
+                if (aIndex === -1) return 1;
+                if (bIndex === -1) return -1;
                 
                 // Nếu cùng giai đoạn thì sắp xếp theo ngày
                 if (aIndex === bIndex) {
@@ -84,6 +107,10 @@ export default function CropProgressPage() {
         try {
             const detail = await getCropSeasonDetailById(cropSeasonDetailId);
             setSeasonDetail(detail);
+            // Cập nhật sản lượng thu hoạch hiện tại
+            if (detail?.actualYield) {
+                setCurrentHarvestYield(detail.actualYield);
+            }
         } catch {
             AppToast.error("Không thể lấy thông tin vùng trồng.");
         }
@@ -94,12 +121,26 @@ export default function CropProgressPage() {
             reloadData();
             loadSeasonDetail();
             getCropStages()
-                .then(setAllStages)
+                .then((stages) => {
+                    console.log('Stages loaded from API:', stages);
+                    setAllStages(stages);
+                    // Cập nhật availableStagesCount khi stages được load
+                    setAvailableStagesCount(stages.length);
+                    console.log('Updated availableStagesCount to:', stages.length);
+                })
                 .catch(() => {
                     AppToast.error("Không thể tải danh sách giai đoạn.");
                 });
         }
     }, [cropSeasonDetailId]);
+
+    // Theo dõi thay đổi của allStages để cập nhật availableStagesCount
+    useEffect(() => {
+        if (allStages.length > 0) {
+            console.log('allStages changed, updating availableStagesCount to:', allStages.length);
+            setAvailableStagesCount(allStages.length);
+        }
+    }, [allStages]);
 
     const formatDate = (date: string | undefined) => {
         if (!date) return "-";
@@ -129,13 +170,28 @@ export default function CropProgressPage() {
                             >
                                 📝 Gửi báo cáo tiến độ
                             </Button>
-                            <CreateProgressDialog
-                                detailId={cropSeasonDetailId}
-                                existingProgress={progressList.map((p) => ({
-                                    stageCode: p.stageCode,
-                                }))}
-                                onSuccess={reloadData}
-                            />
+                            {(() => {
+                                console.log('Button display logic:', {
+                                    progressListLength: progressList.length,
+                                    availableStagesCount,
+                                    shouldShowButton: progressList.length < availableStagesCount
+                                });
+                                return null;
+                            })()}
+                            {progressList.length < availableStagesCount && (
+                                <CreateProgressDialog
+                                    detailId={cropSeasonDetailId}
+                                    existingProgress={progressList.map((p) => ({
+                                        stageCode: p.stageCode,
+                                    }))}
+                                    onSuccess={reloadData}
+                                    onStagesLoaded={(availableStagesCount) => {
+                                        // Callback để biết số stage thực tế có thể tạo
+                                        console.log('Available stages count:', availableStagesCount);
+                                        setAvailableStagesCount(availableStagesCount);
+                                    }}
+                                />
+                            )}
                         </div>
                     </div>
                 </CardHeader>
@@ -149,12 +205,12 @@ export default function CropProgressPage() {
                         <>
                             <div className="mb-6 space-y-1">
                                 <p className="text-sm text-gray-700">
-                                    🧩 Giai đoạn chuẩn: {allStages.length > 0 ? allStages.length : "-"} bước
+                                    �� Giai đoạn chuẩn: {availableStagesCount > 0 ? availableStagesCount : allStages.length} bước
                                 </p>
                                 <p className="text-sm text-gray-700">
-                                    {allStages.length > 0
-                                        ? `✅ Đã cập nhật: ${progressList.length} / ${allStages.length} (${Math.round((progressList.length / allStages.length) * 100)}%)`
-                                        : "✅ Đã cập nhật: Đang tải giai đoạn..."}
+                                    {availableStagesCount > 0
+                                        ? `✅ Đã cập nhật: ${progressList.length} / ${availableStagesCount} (${Math.round((progressList.length / availableStagesCount) * 100)}%)`
+                                        : `✅ Đã cập nhật: ${progressList.length} / ${allStages.length} (${Math.round((progressList.length / allStages.length) * 100)}%)`}
                                 </p>
                                 {progressList.length > 0 && (
                                     <>
@@ -171,7 +227,7 @@ export default function CropProgressPage() {
                                     </>
                                 )}
                                 <p className="text-sm font-semibold text-orange-700">
-                                    🎯 Sản lượng thu hoạch: {totalYield > 0 ? `${totalYield} kg` : "Chưa có ghi nhận"}
+                                    🎯 Sản lượng thu hoạch: {currentHarvestYield > 0 ? `${currentHarvestYield} kg` : "Chưa có ghi nhận"}
                                 </p>
                             </div>
                             <div className="space-y-8">
@@ -183,7 +239,7 @@ export default function CropProgressPage() {
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex-1">
                                                 <h3 className="font-semibold text-lg text-emerald-700">
-                                                    {progress.stepIndex ? `${progress.stepIndex}.` : `${index + 1}.`} {progress.stageName}
+                                                    {index + 1}. {progress.stageName}
                                                 </h3>
                                                 {progress.stageDescription && (
                                                     <p className="text-sm text-gray-600 mt-1 italic">
@@ -287,6 +343,25 @@ export default function CropProgressPage() {
                                                 onSuccess={() => {
                                                     reloadData();
                                                     loadSeasonDetail();
+                                                }}
+                                                onSeasonDetailUpdate={(newYield) => {
+                                                    // Cập nhật sản lượng ngay lập tức trong UI
+                                                    console.log('onSeasonDetailUpdate called with yield:', newYield);
+                                                    console.log('Current seasonDetail:', seasonDetail);
+                                                    
+                                                    // Cập nhật cả hai state để đảm bảo UI được refresh
+                                                    setCurrentHarvestYield(newYield);
+                                                    
+                                                    if (seasonDetail) {
+                                                        const updatedSeasonDetail = {
+                                                            ...seasonDetail,
+                                                            actualYield: newYield
+                                                        };
+                                                        console.log('Updating seasonDetail to:', updatedSeasonDetail);
+                                                        setSeasonDetail(updatedSeasonDetail);
+                                                    } else {
+                                                        console.log('seasonDetail is null, cannot update');
+                                                    }
                                                 }}
                                                 triggerButton={
                                                     <Button

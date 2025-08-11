@@ -28,13 +28,15 @@ import { getCropStages, CropStage } from "@/lib/api/cropStage";
 // Constants
 const HARVESTING_STAGE_CODE = "harvesting";
 
-interface Props {
+type Props = {
     detailId: string;
-    onSuccess?: () => void;
-    existingProgress?: { stageCode: string }[];
-}
+    existingProgress: { stageCode: string }[];
+    onSuccess: () => void;
+    disabled?: boolean;
+    onStagesLoaded?: (availableStagesCount: number) => void; // Callback để thông báo số stage có thể tạo
+};
 
-export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: Props) {
+export function CreateProgressDialog({ detailId, onSuccess, existingProgress, disabled, onStagesLoaded }: Props) {
     const [note, setNote] = useState("");
     const [stageOptions, setStageOptions] = useState<CropStage[]>([]);
     const [stageId, setStageId] = useState<number | null>(null);
@@ -72,6 +74,7 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
                 setStageOptions(stages);
                 const next = stages.find((s) => canCreateStage(s.stageCode));
                 if (next) setStageId(next.stageId);
+                if (onStagesLoaded) onStagesLoaded(stages.length);
             } catch {
                 AppToast.error("Không thể tải danh sách giai đoạn.");
             }
@@ -199,7 +202,13 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
         <Dialog open={open} onOpenChange={setOpen}>
             {!allStagesCompleted && (
                 <DialogTrigger asChild>
-                    <Button>Ghi nhận tiến độ</Button>
+                    <Button 
+                        variant="default" 
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                        disabled={disabled}
+                    >
+                        Ghi nhận tiến độ
+                    </Button>
                 </DialogTrigger>
             )}
             <DialogContent className="max-w-md">

@@ -31,10 +31,12 @@ export type CropProgressUpdateRequest = {
   progressId: string;
   cropSeasonDetailId: string;
   stageId: number;
+  stageDescription: string;
   progressDate?: string;
-  photoUrl?: string;
-  videoUrl?: string;
+  photoUrl?: string; // Optional - backend will preserve existing if not provided
+  videoUrl?: string; // Optional - backend will preserve existing if not provided
   note?: string;
+  stepIndex?: number;
   actualYield?: number;
 };
 
@@ -142,7 +144,7 @@ export async function createCropProgress(data: CropProgressCreateRequest): Promi
   }
   
   if (data.mediaFiles && data.mediaFiles.length > 0) {
-    data.mediaFiles.forEach((file, index) => {
+    data.mediaFiles.forEach((file) => {
       formData.append(`mediaFiles`, file);
     });
   }
@@ -160,37 +162,43 @@ export async function createCropProgress(data: CropProgressCreateRequest): Promi
 // =====================
 
 export async function updateCropProgress(progressId: string, data: CropProgressUpdateRequest): Promise<CropProgressViewDetailsDto> {
-  const formData = new FormData();
-  formData.append("progressId", data.progressId);
-  formData.append("cropSeasonDetailId", data.cropSeasonDetailId);
-  formData.append("stageId", data.stageId.toString());
-  
-  if (data.progressDate) {
-    formData.append("progressDate", data.progressDate);
+  try {
+    console.log('Updating crop progress:', { progressId, data });
+    
+    const response = await api.put(`/CropProgresses/${progressId}`, data);
+    
+    console.log('Update response:', response.data);
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Update crop progress error:', error);
+    
+    if (typeof error === 'object' && error !== null && 'response' in error) {
+      const response = (error as { response?: { status?: number; data?: { message?: string; errors?: Record<string, string[]>; title?: string } } }).response;
+      console.error('Error response:', response);
+      
+      if (response?.data) {
+        // Handle validation errors from backend
+        if (response.data.errors && typeof response.data.errors === 'object') {
+          const errorMessages = Object.values(response.data.errors).flat();
+          if (errorMessages.length > 0) {
+            throw new Error(errorMessages.join(', '));
+          }
+        }
+        
+        // Handle general error message
+        if (response.data.message) {
+          throw new Error(response.data.message);
+        }
+        
+        // Handle title if available
+        if (response.data.title) {
+          throw new Error(response.data.title);
+        }
+      }
+    }
+    
+    throw error;
   }
-  
-  if (data.photoUrl) {
-    formData.append("photoUrl", data.photoUrl);
-  }
-  
-  if (data.videoUrl) {
-    formData.append("videoUrl", data.videoUrl);
-  }
-  
-  if (data.note) {
-    formData.append("note", data.note);
-  }
-  
-  if (data.actualYield !== undefined) {
-    formData.append("actualYield", data.actualYield.toString());
-  }
-
-  const response = await api.put(`/CropProgresses/${progressId}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return response.data;
 }
 
 // =====================
@@ -198,7 +206,7 @@ export async function updateCropProgress(progressId: string, data: CropProgressU
 // =====================
 
 export async function deleteCropProgress(progressId: string): Promise<void> {
-  await api.delete(`/CropProgresses/${progressId}`);
+  await api.patch(`/CropProgresses/soft-delete/${progressId}`);
 }
 
 // =====================
