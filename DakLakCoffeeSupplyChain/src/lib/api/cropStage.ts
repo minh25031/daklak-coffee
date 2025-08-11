@@ -12,6 +12,7 @@ export async function getCropStages(): Promise<CropStage[]> {
   const response = await api.get("/CropStages");
   return response.data.map((s: CropStage) => ({
     ...s,
-    stageCode: s.stageCode, 
+    // Ensure stageCode is always a string and trim whitespace
+    stageCode: String(s.stageCode || "").trim().toLowerCase(),
   }));
 }
