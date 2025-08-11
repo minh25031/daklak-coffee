@@ -12,8 +12,18 @@ import {
 } from "@/lib/constants/shipmentDeliveryStatus";
 import FilterStatusPanel from "@/components/ui/filterStatusPanel";
 import { cn } from "@/lib/utils";
-import { ShipmentViewAllDto, getAllShipments, softDeleteShipment } from "@/lib/api/shipments";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  ShipmentViewAllDto,
+  getAllShipments,
+  softDeleteShipment,
+} from "@/lib/api/shipments";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function ShipmentsPage() {
   const [shipments, setShipments] = useState<ShipmentViewAllDto[]>([]);
@@ -26,7 +36,8 @@ export default function ShipmentsPage() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [shipmentToDelete, setShipmentToDelete] = useState<ShipmentViewAllDto | null>(null);
+  const [shipmentToDelete, setShipmentToDelete] =
+    useState<ShipmentViewAllDto | null>(null);
 
   useEffect(() => {
     getAllShipments().then((data) => {
@@ -332,18 +343,29 @@ export default function ShipmentsPage() {
             <DialogHeader>
               <DialogTitle>Xoá lô giao?</DialogTitle>
               <DialogDescription>
-                Bạn có chắc chắn muốn xoá lô giao <strong>{shipmentToDelete?.shipmentCode}</strong>? Hành động này không thể hoàn tác.
+                Bạn có chắc chắn muốn xoá lô giao{" "}
+                <strong>{shipmentToDelete?.shipmentCode}</strong>? Hành động này
+                không thể hoàn tác.
               </DialogDescription>
             </DialogHeader>
             <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Huỷ</Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Huỷ
+              </Button>
               <Button
                 variant="destructive"
                 onClick={async () => {
                   if (!shipmentToDelete) return;
                   try {
                     await softDeleteShipment(shipmentToDelete.shipmentId);
-                    setShipments(prev => prev.filter(x => x.shipmentId !== shipmentToDelete.shipmentId));
+                    setShipments((prev) =>
+                      prev.filter(
+                        (x) => x.shipmentId !== shipmentToDelete.shipmentId
+                      )
+                    );
                   } finally {
                     setShowDeleteDialog(false);
                     setShipmentToDelete(null);
