@@ -1,4 +1,4 @@
-// Full updated version of CropProgressPage with accurate yield handling
+    // Full updated version of CropProgressPage with accurate yield handling
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, CalendarDays, Pencil, Trash } from "lucide-react";
 import { AppToast } from "@/components/ui/AppToast";
 import {
-    CropProgress,
+    CropProgressViewAllDto,
     deleteCropProgress,
     getCropProgressesByDetailId,
 } from "@/lib/api/cropProgress";
@@ -32,12 +32,15 @@ import {
 } from "@/lib/api/cropSeasonDetail";
 import { CropStage, getCropStages } from "@/lib/api/cropStage";
 
+// Constants
+const HARVESTING_STAGE_CODE = "harvesting";
+
 export default function CropProgressPage() {
     const router = useRouter();
     const params = useParams();
     const cropSeasonDetailId = params.id as string;
 
-    const [progressList, setProgressList] = useState<CropProgress[]>([]);
+    const [progressList, setProgressList] = useState<CropProgressViewAllDto[]>([]);
     const [seasonDetail, setSeasonDetail] = useState<CropSeasonDetail | null>(null);
     const [allStages, setAllStages] = useState<CropStage[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,16 +49,30 @@ export default function CropProgressPage() {
         try {
             setLoading(true);
             const data = await getCropProgressesByDetailId(cropSeasonDetailId);
-            setProgressList(
-                data.sort(
-                    (a, b) =>
-                        new Date(a.progressDate).getTime() -
-                        new Date(b.progressDate).getTime()
-                )
-            );
-        } catch (error: any) {
-            if (error.response?.status !== 404) {
-                AppToast.error("Đã xảy ra lỗi khi tải dữ liệu tiến độ.");
+            
+            // Sắp xếp theo thứ tự giai đoạn thay vì theo ngày
+            const stageOrder = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "harvesting"];
+            
+            const sortedData = data.sort((a, b) => {
+                const aIndex = stageOrder.indexOf(a.stageCode?.toUpperCase() || "");
+                const bIndex = stageOrder.indexOf(b.stageCode?.toUpperCase() || "");
+                
+                // Nếu cùng giai đoạn thì sắp xếp theo ngày
+                if (aIndex === bIndex) {
+                    return new Date(a.progressDate || "").getTime() - new Date(b.progressDate || "").getTime();
+                }
+                
+                // Sắp xếp theo thứ tự giai đoạn
+                return aIndex - bIndex;
+            });
+            
+            setProgressList(sortedData);
+        } catch (error: unknown) {
+            if (typeof error === 'object' && error !== null && 'response' in error) {
+                const response = (error as { response?: { status?: number } }).response;
+                if (response?.status !== 404) {
+                    AppToast.error("Đã xảy ra lỗi khi tải dữ liệu tiến độ.");
+                }
             }
             setProgressList([]);
         } finally {
@@ -67,7 +84,7 @@ export default function CropProgressPage() {
         try {
             const detail = await getCropSeasonDetailById(cropSeasonDetailId);
             setSeasonDetail(detail);
-        } catch (err) {
+        } catch {
             AppToast.error("Không thể lấy thông tin vùng trồng.");
         }
     };
@@ -139,6 +156,20 @@ export default function CropProgressPage() {
                                         ? `✅ Đã cập nhật: ${progressList.length} / ${allStages.length} (${Math.round((progressList.length / allStages.length) * 100)}%)`
                                         : "✅ Đã cập nhật: Đang tải giai đoạn..."}
                                 </p>
+                                {progressList.length > 0 && (
+                                    <>
+                                        {progressList[0].cropSeasonName && (
+                                            <p className="text-sm text-gray-700">
+                                                🌾 Mùa vụ: <strong>{progressList[0].cropSeasonName}</strong>
+                                            </p>
+                                        )}
+                                        {progressList[0].cropSeasonDetailName && (
+                                            <p className="text-sm text-gray-700">
+                                                📍 Vùng trồng: <strong>{progressList[0].cropSeasonDetailName}</strong>
+                                            </p>
+                                        )}
+                                    </>
+                                )}
                                 <p className="text-sm font-semibold text-orange-700">
                                     🎯 Sản lượng thu hoạch: {totalYield > 0 ? `${totalYield} kg` : "Chưa có ghi nhận"}
                                 </p>
@@ -150,27 +181,48 @@ export default function CropProgressPage() {
                                         className="relative p-5 rounded-xl border shadow hover:shadow-lg transition-all bg-gray-50"
                                     >
                                         <div className="flex items-center justify-between mb-2">
-                                            <h3 className="font-semibold text-lg text-emerald-700">
-                                                {index + 1}. {progress.stageName}
-                                            </h3>
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-lg text-emerald-700">
+                                                    {progress.stepIndex ? `${progress.stepIndex}.` : `${index + 1}.`} {progress.stageName}
+                                                </h3>
+                                                {progress.stageDescription && (
+                                                    <p className="text-sm text-gray-600 mt-1 italic">
+                                                        {progress.stageDescription}
+                                                    </p>
+                                                )}
+                                            </div>
                                             <div className="flex flex-col items-end space-y-1 text-right">
                                                 <Badge className="text-xs bg-emerald-100 text-emerald-700">
                                                     <CalendarDays className="inline w-4 h-4 mr-1" />
                                                     {formatDate(progress.progressDate)}
                                                 </Badge>
-                                                {progress.stageName?.toLowerCase() === "thu hoạch" && (
+                                                {progress.stageCode?.toLowerCase() === HARVESTING_STAGE_CODE && (
                                                     <span className="text-xs text-orange-600 font-semibold">
                                                         Tổng thu hoạch: {seasonDetail?.actualYield ?? "-"} kg
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
+
+
+
+
+
+                                        {/* Thông tin người cập nhật - chỉ hiển thị nếu có */}
+                                        {progress.updatedByName && (
+                                            <div className="text-xs text-gray-500 mb-3">
+                                                👤 Cập nhật bởi: {progress.updatedByName}
+                                            </div>
+                                        )}
+
+
+
                                         {progress.note && (
                                             <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">
                                                 {progress.note}
                                             </p>
                                         )}
-                                        {progress.stageName?.toLowerCase() === "thu hoạch" && progress.actualYield && (
+                                        {progress.stageCode?.toLowerCase() === HARVESTING_STAGE_CODE && progress.actualYield && (
                                             <p className="text-sm text-gray-700 mt-1">
                                                 👉 Sản lượng thực tế: <strong>{progress.actualYield} kg</strong>
                                             </p>
@@ -261,10 +313,15 @@ export default function CropProgressPage() {
                                                         await deleteCropProgress(progress.progressId);
                                                         AppToast.success("Xoá tiến độ thành công!");
                                                         reloadData();
-                                                    } catch (error: any) {
-                                                        AppToast.error(
-                                                            error.response?.data?.message || "Xoá thất bại."
-                                                        );
+                                                    } catch (error: unknown) {
+                                                        let errorMessage = "Xoá thất bại.";
+                                                        if (typeof error === 'object' && error !== null && 'response' in error) {
+                                                            const response = (error as { response?: { data?: { message?: string } } }).response;
+                                                            if (response?.data?.message) {
+                                                                errorMessage = response.data.message;
+                                                            }
+                                                        }
+                                                        AppToast.error(errorMessage);
                                                     }
                                                 }}
                                             >

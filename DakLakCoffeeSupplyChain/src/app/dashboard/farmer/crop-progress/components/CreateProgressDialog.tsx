@@ -20,9 +20,13 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { AppToast } from "@/components/ui/AppToast";
+import { Upload, X, Image, Video } from "lucide-react";
 
-import { createCropProgress } from "@/lib/api/cropProgress";
+import { createCropProgress, CropProgressCreateRequest } from "@/lib/api/cropProgress";
 import { getCropStages, CropStage } from "@/lib/api/cropStage";
+
+// Constants
+const HARVESTING_STAGE_CODE = "harvesting";
 
 interface Props {
     detailId: string;
@@ -31,7 +35,6 @@ interface Props {
 }
 
 export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: Props) {
-    console.log("CreateProgressDialog mounted with detailId:", existingProgress);
     const [note, setNote] = useState("");
     const [stageOptions, setStageOptions] = useState<CropStage[]>([]);
     const [stageId, setStageId] = useState<number | null>(null);
@@ -39,8 +42,10 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [actualYield, setActualYield] = useState<number | undefined>(undefined);
+    const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+    const [dragActive, setDragActive] = useState(false);
 
-    const STAGE_ORDER = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "harvesting"];
+    const STAGE_ORDER = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", HARVESTING_STAGE_CODE];
     const createdStageCodes = (existingProgress ?? []).map((p) => p.stageCode);
 
     const canCreateStage = (stageCode: string) => {
@@ -56,10 +61,8 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
         return hasAllPrevious && !alreadyExists;
     };
 
-
     const selectedStage = stageOptions.find((s) => s.stageId === stageId);
-    const isHarvestingStage = selectedStage?.stageCode === "harvesting";
-
+    const isHarvestingStage = selectedStage?.stageCode === HARVESTING_STAGE_CODE;
     const allStagesCompleted = STAGE_ORDER.every((code) => createdStageCodes.includes(code));
 
     useEffect(() => {
@@ -75,6 +78,54 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
         };
         fetchStages();
     }, []);
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const files = Array.from(e.dataTransfer.files);
+            const validFiles = files.filter(file => 
+                file.type.startsWith('image/') || file.type.startsWith('video/')
+            );
+            
+            if (validFiles.length !== files.length) {
+                AppToast.error("Chỉ chấp nhận file ảnh hoặc video.");
+            }
+            
+            setMediaFiles(prev => [...prev, ...validFiles]);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files);
+            const validFiles = files.filter(file => 
+                file.type.startsWith('image/') || file.type.startsWith('video/')
+            );
+            
+            if (validFiles.length !== files.length) {
+                AppToast.error("Chỉ chấp nhận file ảnh hoặc video.");
+            }
+            
+            setMediaFiles(prev => [...prev, ...validFiles]);
+        }
+    };
+
+    const removeFile = (index: number) => {
+        setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    };
 
     const handleSubmit = async () => {
         if (!stageId || !selectedStage) {
@@ -97,31 +148,18 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
         }
 
         if (isHarvestingStage && (actualYield === undefined || actualYield <= 0)) {
-            AppToast.error("Vui lòng nhập sản lượng thực tế hợp lệ.");
+            AppToast.error("Vui lòng nhập sản lượng thực tế hợp lệ (> 0) cho giai đoạn thu hoạch.");
             return;
         }
 
         setLoading(true);
         try {
-            const payload: {
-                cropSeasonDetailId: string;
-                stageId: number;
-                stageDescription: string;
-                stepIndex: number;
-                progressDate: string;
-                note: string;
-                photoUrl: string;
-                videoUrl: string;
-                actualYield?: number;
-            } = {
+            const payload: CropProgressCreateRequest = {
                 cropSeasonDetailId: detailId,
                 stageId: selectedStage.stageId,
-                stageDescription: selectedStage.stageName,
-                stepIndex: selectedStage.orderIndex,
                 progressDate,
-                note,
-                photoUrl: "",
-                videoUrl: "",
+                notes: note,
+                mediaFiles: mediaFiles.length > 0 ? mediaFiles : undefined,
             };
 
             if (isHarvestingStage) {
@@ -135,6 +173,7 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
             setNote("");
             setActualYield(undefined);
             setProgressDate("");
+            setMediaFiles([]);
             if (onSuccess) onSuccess();
         } catch (err: unknown) {
             let msg = "Lỗi khi ghi nhận tiến độ.";
@@ -241,7 +280,68 @@ export function CreateProgressDialog({ detailId, onSuccess, existingProgress }: 
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
                                 placeholder="Nhập nội dung tiến độ..."
+                                maxLength={1000}
                             />
+                        </div>
+
+                        {/* Media Upload */}
+                        <div>
+                            <Label>Ảnh/Video (tùy chọn)</Label>
+                            <div
+                                className={`border-2 border-dashed rounded-lg p-4 text-center ${
+                                    dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                                }`}
+                                onDragEnter={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDragOver={handleDrag}
+                                onDrop={handleDrop}
+                            >
+                                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                                <p className="text-sm text-gray-600 mb-2">
+                                    Kéo thả file hoặc click để chọn
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => document.getElementById('file-input')?.click()}
+                                >
+                                    Chọn file
+                                </Button>
+                                <input
+                                    id="file-input"
+                                    type="file"
+                                    multiple
+                                    accept="image/*,video/*"
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                />
+                            </div>
+                            
+                            {/* Display selected files */}
+                            {mediaFiles.length > 0 && (
+                                <div className="mt-3 space-y-2">
+                                    {mediaFiles.map((file, index) => (
+                                        <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                            {file.type.startsWith('image/') ? (
+                                                <Image className="h-4 w-4 text-blue-500" />
+                                            ) : (
+                                                <Video className="h-4 w-4 text-red-500" />
+                                            )}
+                                            <span className="text-sm flex-1 truncate">{file.name}</span>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => removeFile(index)}
+                                                className="h-6 w-6 p-0"
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-end">

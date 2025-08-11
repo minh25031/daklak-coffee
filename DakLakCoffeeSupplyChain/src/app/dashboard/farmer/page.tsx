@@ -25,7 +25,7 @@ import {
 } from "chart.js";
 import { Line, Doughnut } from "react-chartjs-2";
 import { getCropSeasonsForCurrentUser } from "@/lib/api/cropSeasons";
-import { getAllCropProgresses, CropProgress } from "@/lib/api/cropProgress";
+import { getAllCropProgresses, CropProgressViewAllDto } from "@/lib/api/cropProgress";
 
 ChartJS.register(
     CategoryScale,
@@ -146,7 +146,7 @@ export default function FarmerDashboard() {
                 // Handle crop progress data with error catching
                 try {
                     const progresses = await getAllCropProgresses();
-                    const grouped: Record<string, CropProgress[]> = {};
+                    const grouped: Record<string, CropProgressViewAllDto[]> = {};
 
                     for (const p of progresses) {
                         if (!grouped[p.cropSeasonDetailId]) {
