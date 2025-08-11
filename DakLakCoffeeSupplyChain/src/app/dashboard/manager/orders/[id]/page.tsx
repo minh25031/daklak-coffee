@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Pencil, Trash2, Info, Package } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatQuantity, formatDiscount } from "@/lib/utils";
 import { OrderViewDetailsDto, getOrderDetails } from "@/lib/api/orders";
 import {
   OrderItemViewDto,
@@ -382,7 +382,7 @@ export default function OrderDetailPage() {
 
             <div className="flex items-center gap-1">
               <strong>Tổng giá trị (VNĐ):</strong>
-              <Tooltip content="Tổng giá trị tiền của đơn hàng (sau đối soát).">
+              <Tooltip content="Tổng giá trị tiền của đơn hàng.">
                 <Info className="w-3 h-3 text-gray-400" />
               </Tooltip>
               <span className="ml-1">
@@ -441,7 +441,7 @@ export default function OrderDetailPage() {
                     Đơn giá (VNĐ)
                   </th>
                   <th className="px-4 py-2 text-center whitespace-nowrap">
-                    Giảm giá (VNĐ)
+                    Giảm giá (%)
                   </th>
                   <th className="px-4 py-2 text-center whitespace-nowrap">
                     Thành tiền (VNĐ)
@@ -465,7 +465,9 @@ export default function OrderDetailPage() {
                     >
                       <td className="px-4 py-2">{it.productName}</td>
                       <td className="px-4 py-2 text-center">
-                        {it.quantity ?? "—"}
+                        {it.quantity != null
+                          ? formatQuantity(it.quantity)
+                          : "—"}
                       </td>
                       <td className="px-4 py-2 text-center">
                         {it.unitPrice != null
@@ -474,7 +476,7 @@ export default function OrderDetailPage() {
                       </td>
                       <td className="px-4 py-2 text-center">
                         {it.discountAmount != null
-                          ? formatCurrency(it.discountAmount)
+                          ? `${it.discountAmount}%`
                           : "—"}
                       </td>
                       <td className="px-4 py-2 text-center">
