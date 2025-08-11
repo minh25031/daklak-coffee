@@ -23,6 +23,8 @@ import type {
 } from "@/lib/api/shipments";
 import { formatDate, formatQuantity } from "@/lib/utils";
 import { ShipmentDeliveryStatusMap } from "@/lib/constants/shipmentDeliveryStatus";
+import ShipmentDetailsFormDialog from "@/components/shipments/ShipmentDetailsFormDialog";
+import { getOrderDetails } from "@/lib/api/orders";
 
 export default function ShipmentDetailPage() {
   const params = useParams();
@@ -37,6 +39,19 @@ export default function ShipmentDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [detailToDelete, setDetailToDelete] =
     useState<ShipmentDetailViewDto | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [editingDetail, setEditingDetail] =
+    useState<ShipmentDetailViewDto | null>(null);
+  const [orderItemOptions, setOrderItemOptions] = useState<
+    { orderItemId: string; productName: string }[]
+  >([]);
+  const [orderCode, setOrderCode] = useState<string>("");
+
+  const unitLabelMap: Record<string, string> = {
+    Kg: "Kg",
+    Ta: "Tạ",
+    Tan: "Tấn",
+  };
 
   useEffect(() => {
     if (!shipmentId) return;
@@ -45,6 +60,17 @@ export default function ShipmentDetailPage() {
       .then((data) => {
         setShipment(data);
         setLoading(false);
+        // Fetch order items for this shipment's order
+        if (data?.orderId) {
+          getOrderDetails(data.orderId)
+            .then((order) => {
+              setOrderItemOptions(order.orderItems || []);
+              setOrderCode(order.orderCode);
+            })
+            .catch(() => {
+              setOrderItemOptions([]);
+            });
+        }
       })
       .catch((err) => {
         setError(
@@ -170,11 +196,10 @@ export default function ShipmentDetailPage() {
             <h2 className="text-base font-semibold">Danh sách sản phẩm giao</h2>
             <Button
               className="bg-black text-white hover:bg-gray-800"
-              onClick={() =>
-                router.push(
-                  `/dashboard/manager/shipments/${shipment.shipmentId}/edit`
-                )
-              }
+              onClick={() => {
+                setEditingDetail(null);
+                setShowDetailsDialog(true);
+              }}
             >
               + Thêm sản phẩm giao
             </Button>
@@ -216,19 +241,20 @@ export default function ShipmentDetailPage() {
                           ? Number(item.quantity).toLocaleString()
                           : "—"}
                       </td>
-                      <td className="px-4 py-2 text-center">{item.unit}</td>
+                      <td className="px-4 py-2 text-center">
+                        {unitLabelMap[item.unit] ?? item.unit}
+                      </td>
                       <td className="px-4 py-2">{item.note || "—"}</td>
                       <td className="px-4 py-2 whitespace-nowrap">
                         <div className="flex justify-center gap-[2px]">
-                          <Tooltip content="Chỉnh sửa lô giao">
+                          <Tooltip content="Chỉnh sửa sản phẩm giao">
                             <Button
                               variant="ghost"
                               className="h-7 w-7 p-[2px]"
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/manager/shipments/${shipment.shipmentId}/edit`
-                                )
-                              }
+                              onClick={() => {
+                                setEditingDetail(item);
+                                setShowDetailsDialog(true);
+                              }}
                             >
                               <Pencil className="h-4 w-4 text-yellow-500" />
                             </Button>
@@ -305,6 +331,36 @@ export default function ShipmentDetailPage() {
             ← Quay lại
           </Button>
         </div>
+
+        <ShipmentDetailsFormDialog
+          open={showDetailsDialog}
+          onOpenChange={setShowDetailsDialog}
+          mode={editingDetail ? "edit" : "create"}
+          shipmentId={shipment.shipmentId}
+          orderCode={orderCode || shipment.orderCode}
+          orderItems={orderItemOptions.map((oi) => ({
+            orderItemId: oi.orderItemId,
+            label: oi.productName,
+          }))}
+          initialData={editingDetail ?? undefined}
+          onSuccess={async () => {
+            // refetch để đồng bộ dữ liệu mới nhất
+            const refreshed = await ShipmentsApi.getShipmentDetails(
+              shipment.shipmentId
+            );
+            setShipment(refreshed);
+            // refresh order items as well
+            if (refreshed?.orderId) {
+              try {
+                const order = await getOrderDetails(refreshed.orderId);
+                setOrderItemOptions(order.orderItems || []);
+                setOrderCode(order.orderCode);
+              } catch {
+                // ignore
+              }
+            }
+          }}
+        />
 
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <DialogContent>
