@@ -169,6 +169,8 @@ export default function ProcessingProgressesPage() {
         return { label: "Đang xử lý", color: "bg-blue-100 text-blue-700" };
       case ProcessingStatus.Completed:
         return { label: "Hoàn thành", color: "bg-green-100 text-green-700" };
+      case ProcessingStatus.AwaitingEvaluation:
+        return { label: "Chờ đánh giá", color: "bg-orange-100 text-orange-700" };
       case ProcessingStatus.Cancelled:
         return { label: "Đã hủy", color: "bg-red-100 text-red-700" };
       default:

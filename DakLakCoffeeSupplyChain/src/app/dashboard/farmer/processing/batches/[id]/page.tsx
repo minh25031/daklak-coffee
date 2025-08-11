@@ -501,7 +501,7 @@ export default function ViewProcessingBatch() {
                 Tiến độ sơ chế
               </h2>
 
-              {batch.status !== ProcessingStatus.Completed &&
+              {batch.status !== ProcessingStatus.Completed && batch.status !== ProcessingStatus.AwaitingEvaluation &&
                 (!batch.progresses || batch.progresses.length === 0 ? (
                   <Button
                     onClick={() => setOpenCreateModal(true)}

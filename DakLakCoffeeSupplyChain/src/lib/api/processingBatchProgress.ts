@@ -64,6 +64,10 @@ export interface CreateProgressWithMediaPayload {
   outputUnit: string;
   photoFiles?: File[];
   videoFiles?: File[];
+  parameterName?: string;
+  parameterValue?: string;
+  unit?: string;
+  recordedAt?: string;
 }
 
 export interface AdvanceProgressWithMediaPayload {
@@ -72,6 +76,10 @@ export interface AdvanceProgressWithMediaPayload {
   outputUnit: string;
   photoFile?: File;
   videoFile?: File;
+  parameterName?: string;
+  parameterValue?: string;
+  unit?: string;
+  recordedAt?: string;
 }
 export async function getAllProcessingBatchProgresses(): Promise<ProcessingBatchProgress[]> {
   try {
@@ -155,6 +163,20 @@ export async function createProcessingBatchProgressWithMedia(
   formData.append("outputQuantity", payload.outputQuantity.toString());
   formData.append("outputUnit", payload.outputUnit);
   
+  // Thêm parameters nếu có
+  if (payload.parameterName) {
+    formData.append("parameterName", payload.parameterName);
+  }
+  if (payload.parameterValue) {
+    formData.append("parameterValue", payload.parameterValue);
+  }
+  if (payload.unit) {
+    formData.append("unit", payload.unit);
+  }
+  if (payload.recordedAt) {
+    formData.append("recordedAt", payload.recordedAt);
+  }
+  
   // Thêm files vào mediaFiles array như backend mong đợi
   if (payload.photoFiles) {
     payload.photoFiles.forEach(file => formData.append("mediaFiles", file));
@@ -211,14 +233,40 @@ export async function advanceToNextProcessingProgress(
   formData.append("progressDate", payload.progressDate);
   formData.append("outputQuantity", payload.outputQuantity.toString());
   formData.append("outputUnit", payload.outputUnit);
-  if (payload.photoFile) formData.append("photoFile", payload.photoFile);
-  if (payload.videoFile) formData.append("videoFile", payload.videoFile);
+  
+  // Thêm parameters nếu có
+  if (payload.parameterName) {
+    formData.append("parameterName", payload.parameterName);
+  }
+  if (payload.parameterValue) {
+    formData.append("parameterValue", payload.parameterValue);
+  }
+  if (payload.unit) {
+    formData.append("unit", payload.unit);
+  }
+  if (payload.recordedAt) {
+    formData.append("recordedAt", payload.recordedAt);
+  }
+  
+  if (payload.photoFile) formData.append("photoFiles", payload.photoFile);
+  if (payload.videoFile) formData.append("videoFiles", payload.videoFile);
+
+  console.log("📤 API: advanceToNextProcessingProgress");
+  console.log("📤 BatchId:", batchId);
+  console.log("📤 FormData entries:");
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}:`, value);
+  }
+
   try {
     await api.post(`/ProcessingBatchsProgress/${batchId}/advance`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-  } catch (err) {
+    console.log("✅ Advance API call successful");
+  } catch (err: any) {
     console.error("❌ advanceToNextProcessingProgress:", err);
+    console.error("❌ Error response data:", err?.response?.data);
+    console.error("❌ Error response status:", err?.response?.status);
     throw err;
   }
 }
