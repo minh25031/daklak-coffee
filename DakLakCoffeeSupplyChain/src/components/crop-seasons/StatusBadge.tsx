@@ -20,11 +20,11 @@ export default function StatusBadge({ status, map }: Props) {
     const colorClass = cn(
         'inline-flex items-center justify-center min-w-[5rem] h-6 px-2 text-xs font-semibold rounded-full border transition-all duration-200 shadow-sm',
         {
-            'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-green-400 shadow-green-200': info?.color === 'green',
-            'bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-yellow-400 shadow-yellow-200': info?.color === 'yellow',
-            'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-blue-400 shadow-blue-200': info?.color === 'blue',
-            'bg-gradient-to-r from-red-500 to-pink-500 text-white border-red-400 shadow-red-200': info?.color === 'red',
-            'bg-gradient-to-r from-gray-500 to-slate-500 text-white border-gray-400 shadow-gray-200': !info || info?.color === 'gray',
+            'bg-green-100 text-green-800 border-green-200': info?.color === 'green',
+            'bg-yellow-100 text-yellow-800 border-yellow-200': info?.color === 'yellow',
+            'bg-blue-100 text-blue-800 border-blue-200': info?.color === 'blue',
+            'bg-red-100 text-red-800 border-red-200': info?.color === 'red',
+            'bg-gray-100 text-gray-800 border-gray-200': !info || info?.color === 'gray',
         }
     );
 

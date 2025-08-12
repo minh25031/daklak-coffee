@@ -1,7 +1,7 @@
-    // Full updated version of CropProgressPage with accurate yield handling
+// Full updated version of CropProgressPage with accurate yield handling
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
     Card,
@@ -38,7 +38,7 @@ const HARVESTING_STAGE_CODE = "harvesting";
 export default function CropProgressPage() {
     const router = useRouter();
     const params = useParams();
-    const cropSeasonDetailId = params.id as string;
+    const cropSeasonDetailId = params?.id as string;
 
     const [progressList, setProgressList] = useState<CropProgressViewAllDto[]>([]);
     const [seasonDetail, setSeasonDetail] = useState<CropSeasonDetail | null>(null);
@@ -47,48 +47,48 @@ export default function CropProgressPage() {
     const [currentHarvestYield, setCurrentHarvestYield] = useState<number>(0); // Thêm state để theo dõi sản lượng thu hoạch
     const [availableStagesCount, setAvailableStagesCount] = useState<number>(0); // Thêm state để theo dõi số stage có thể tạo
 
-    const reloadData = async () => {
+    const reloadData = useCallback(async () => {
         try {
             setLoading(true);
             const data = await getCropProgressesByDetailId(cropSeasonDetailId);
-            
+
             console.log("Raw data from backend:", data);
             console.log("Stage codes found:", data.map(p => ({ name: p.stageName, code: p.stageCode })));
-            
+
             // Sắp xếp theo thứ tự giai đoạn thay vì theo ngày
             const stageOrder = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "HARVESTING"];
-            
+
             const sortedData = data.sort((a, b) => {
                 // Chuẩn hóa stageCode để so sánh
                 const aStageCode = a.stageCode?.toUpperCase() || "";
                 const bStageCode = b.stageCode?.toUpperCase() || "";
-                
+
                 console.log(`Sorting: ${a.stageName} (${a.stageCode}) vs ${b.stageName} (${b.stageCode})`);
                 console.log(`Normalized: ${aStageCode} vs ${bStageCode}`);
-                
+
                 const aIndex = stageOrder.indexOf(aStageCode);
                 const bIndex = stageOrder.indexOf(bStageCode);
-                
+
                 console.log(`Indices: ${aIndex} vs ${bIndex}`);
-                
+
                 // Nếu cả hai đều không tìm thấy trong stageOrder, sắp xếp theo ngày
                 if (aIndex === -1 && bIndex === -1) {
                     return new Date(a.progressDate || "").getTime() - new Date(b.progressDate || "").getTime();
                 }
-                
+
                 // Nếu một trong hai không tìm thấy, ưu tiên cái tìm thấy
                 if (aIndex === -1) return 1;
                 if (bIndex === -1) return -1;
-                
+
                 // Nếu cùng giai đoạn thì sắp xếp theo ngày
                 if (aIndex === bIndex) {
                     return new Date(a.progressDate || "").getTime() - new Date(b.progressDate || "").getTime();
                 }
-                
+
                 // Sắp xếp theo thứ tự giai đoạn
                 return aIndex - bIndex;
             });
-            
+
             setProgressList(sortedData);
         } catch (error: unknown) {
             if (typeof error === 'object' && error !== null && 'response' in error) {
@@ -101,9 +101,9 @@ export default function CropProgressPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [cropSeasonDetailId]);
 
-    const loadSeasonDetail = async () => {
+    const loadSeasonDetail = useCallback(async () => {
         try {
             const detail = await getCropSeasonDetailById(cropSeasonDetailId);
             setSeasonDetail(detail);
@@ -114,7 +114,38 @@ export default function CropProgressPage() {
         } catch {
             AppToast.error("Không thể lấy thông tin vùng trồng.");
         }
-    };
+    }, [cropSeasonDetailId]);
+
+    const handleEditSuccess = useCallback(() => {
+        reloadData();
+        loadSeasonDetail();
+    }, [reloadData, loadSeasonDetail]);
+
+    const handleSeasonDetailUpdate = useCallback((newYield: number) => {
+        // Cập nhật sản lượng ngay lập tức trong UI
+        console.log('onSeasonDetailUpdate called with yield:', newYield);
+        console.log('Current seasonDetail:', seasonDetail);
+
+        // Cập nhật cả hai state để đảm bảo UI được refresh
+        setCurrentHarvestYield(newYield);
+
+        if (seasonDetail) {
+            const updatedSeasonDetail = {
+                ...seasonDetail,
+                actualYield: newYield
+            };
+            console.log('Updating seasonDetail to:', updatedSeasonDetail);
+            setSeasonDetail(updatedSeasonDetail);
+        } else {
+            console.log('seasonDetail is null, cannot update');
+        }
+    }, [seasonDetail]);
+
+    const handleStagesLoaded = useCallback((availableStagesCount: number) => {
+        // Callback để biết số stage thực tế có thể tạo
+        console.log('Available stages count:', availableStagesCount);
+        setAvailableStagesCount(availableStagesCount);
+    }, []);
 
     useEffect(() => {
         if (cropSeasonDetailId) {
@@ -132,7 +163,7 @@ export default function CropProgressPage() {
                     AppToast.error("Không thể tải danh sách giai đoạn.");
                 });
         }
-    }, [cropSeasonDetailId]);
+    }, [cropSeasonDetailId, reloadData, loadSeasonDetail]);
 
     // Theo dõi thay đổi của allStages để cập nhật availableStagesCount
     useEffect(() => {
@@ -148,7 +179,7 @@ export default function CropProgressPage() {
         return isNaN(d.getTime()) ? "-" : d.toLocaleDateString("vi-VN");
     };
 
-    const totalYield = Number(seasonDetail?.actualYield || 0);
+
 
     return (
         <div className="max-w-5xl mx-auto py-10 px-4 space-y-6">
@@ -170,14 +201,7 @@ export default function CropProgressPage() {
                             >
                                 📝 Gửi báo cáo tiến độ
                             </Button>
-                            {(() => {
-                                console.log('Button display logic:', {
-                                    progressListLength: progressList.length,
-                                    availableStagesCount,
-                                    shouldShowButton: progressList.length < availableStagesCount
-                                });
-                                return null;
-                            })()}
+
                             {progressList.length < availableStagesCount && (
                                 <CreateProgressDialog
                                     detailId={cropSeasonDetailId}
@@ -185,11 +209,7 @@ export default function CropProgressPage() {
                                         stageCode: p.stageCode,
                                     }))}
                                     onSuccess={reloadData}
-                                    onStagesLoaded={(availableStagesCount) => {
-                                        // Callback để biết số stage thực tế có thể tạo
-                                        console.log('Available stages count:', availableStagesCount);
-                                        setAvailableStagesCount(availableStagesCount);
-                                    }}
+                                    onStagesLoaded={handleStagesLoaded}
                                 />
                             )}
                         </div>
@@ -340,29 +360,8 @@ export default function CropProgressPage() {
                                         <div className="flex gap-2 mt-4">
                                             <EditProgressDialog
                                                 progress={progress}
-                                                onSuccess={() => {
-                                                    reloadData();
-                                                    loadSeasonDetail();
-                                                }}
-                                                onSeasonDetailUpdate={(newYield) => {
-                                                    // Cập nhật sản lượng ngay lập tức trong UI
-                                                    console.log('onSeasonDetailUpdate called with yield:', newYield);
-                                                    console.log('Current seasonDetail:', seasonDetail);
-                                                    
-                                                    // Cập nhật cả hai state để đảm bảo UI được refresh
-                                                    setCurrentHarvestYield(newYield);
-                                                    
-                                                    if (seasonDetail) {
-                                                        const updatedSeasonDetail = {
-                                                            ...seasonDetail,
-                                                            actualYield: newYield
-                                                        };
-                                                        console.log('Updating seasonDetail to:', updatedSeasonDetail);
-                                                        setSeasonDetail(updatedSeasonDetail);
-                                                    } else {
-                                                        console.log('seasonDetail is null, cannot update');
-                                                    }
-                                                }}
+                                                onSuccess={handleEditSuccess}
+                                                onSeasonDetailUpdate={handleSeasonDetailUpdate}
                                                 triggerButton={
                                                     <Button
                                                         variant="ghost"

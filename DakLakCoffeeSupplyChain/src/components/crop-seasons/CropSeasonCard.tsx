@@ -89,7 +89,7 @@ export default function CropSeasonCard({ season, onDeleted }: Props) {
                         onClick={() =>
                             router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}`)
                         }
-                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md"
+                        className="text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-md"
                         title="Xem chi tiết"
                     >
                         <FaEye className="w-3 h-3" />
@@ -103,7 +103,7 @@ export default function CropSeasonCard({ season, onDeleted }: Props) {
                                 `/dashboard/farmer/crop-seasons/${season.cropSeasonId}/edit`
                             )
                         }
-                        className="text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-md"
+                        className="text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-md"
                         title="Sửa"
                     >
                         <FaEdit className="w-3 h-3" />

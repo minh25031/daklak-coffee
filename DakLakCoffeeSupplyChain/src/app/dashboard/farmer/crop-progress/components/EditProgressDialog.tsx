@@ -62,16 +62,16 @@ export function EditProgressDialog({
         }
     }, [open, progress]);
 
-    // Theo dõi thay đổi sản lượng để cập nhật UI ngay lập tức
-    useEffect(() => {
-        if (progress.stageCode === HARVESTING_STAGE_CODE && actualYield && onSeasonDetailUpdate) {
-            // Chỉ gọi callback khi sản lượng thực sự thay đổi
-            if (actualYield !== progress.actualYield) {
-                console.log('Harvest yield changed, calling callback with:', actualYield);
-                onSeasonDetailUpdate(actualYield);
-            }
-        }
-    }, [actualYield, progress.actualYield, progress.stageCode, onSeasonDetailUpdate]);
+    // Remove the problematic useEffect that was causing infinite loops
+    // useEffect(() => {
+    //     if (progress.stageCode === HARVESTING_STAGE_CODE && actualYield && onSeasonDetailUpdate) {
+    //         // Chỉ gọi callback khi sản lượng thực sự thay đổi
+    //         if (actualYield !== progress.actualYield) {
+    //             console.log('Harvest yield changed, calling callback with:', actualYield);
+    //             onSeasonDetailUpdate(actualYield);
+    //         }
+    //     }
+    // }, [actualYield, progress.actualYield, progress.stageCode, onSeasonDetailUpdate]);
 
     const handleSubmit = async () => {
         if (!progressDate) {
@@ -118,10 +118,10 @@ export function EditProgressDialog({
 
             AppToast.success("Cập nhật tiến độ thành công!");
             setOpen(false);
-            
+
             // Reload cả danh sách tiến độ và thông tin vùng trồng
             onSuccess();
-            
+
             // Cập nhật sản lượng ngay lập tức nếu là giai đoạn thu hoạch
             if (progress.stageCode === HARVESTING_STAGE_CODE && actualYield) {
                 console.log('Update successful, harvest yield:', actualYield);
