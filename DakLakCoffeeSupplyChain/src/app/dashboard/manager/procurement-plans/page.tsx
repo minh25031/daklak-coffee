@@ -230,7 +230,8 @@ export default function BusinessProcurementPlansPage() {
               onClick={() =>
                 router.push("/dashboard/manager/procurement-plans/create")
               }
-              className='bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium text-sm cursor-pointer'
+              //className='bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium text-sm cursor-pointer'
+              variant='default'
             >
               + Tạo kế hoạch mới
             </Button>

@@ -12,7 +12,8 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import { FiEdit, FiInfo, FiTrash2, FiXCircle } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import * as Tooltip from "@radix-ui/react-tooltip";
+import { Tooltip } from "@/components/ui/tooltip";
+import StatusBadge from "../crop-seasons/StatusBadge";
 
 export default function ProcurementPlanCard({
   plan,
@@ -40,27 +41,11 @@ export default function ProcurementPlanCard({
         </Link>
       </td>
 
-      <td className='px-4 py-3'>{plan.totalQuantity} kg</td>
-      <td className='px-4 py-3'>{plan.progressPercentage}%</td>
+      <td className='px-4 py-3'>{plan.totalQuantity.toLocaleString()} kg</td>
+      <td className='px-4 py-3 text-center'>{plan.progressPercentage}%</td>
 
       <td className='px-4 py-3'>
-        <Badge
-          className={cn(
-            "inline-flex items-center justify-center w-32 h-8 px-2 py-1 text-xs font-medium rounded-full border text-center",
-            plan.status === "Open"
-              ? "bg-green-100 text-green-700 border-green-500"
-              : plan.status === "Closed"
-              ? "bg-gray-100 text-gray-700 border-gray-500"
-              : plan.status === "Cancelled"
-              ? "bg-rose-100 text-rose-700 border-rose-500"
-              : plan.status === "Draft"
-              ? "bg-blue-100 text-blue-700 border-blue-500"
-              : "bg-red-100 text-red-700 border-red-500"
-          )}
-        >
-          {ProcurementPlanStatusMap[plan.status as ProcurementPlanStatusValue]
-            ?.label || plan.status}
-        </Badge>
+        <StatusBadge status={plan.status} map={ProcurementPlanStatusMap} />
       </td>
 
       <td className='px-4 py-3'>
@@ -74,9 +59,30 @@ export default function ProcurementPlanCard({
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content className='min-w-[100px] bg-white rounded-md shadow-lg p-1 border text-sm z-[100]'>
-              <DropdownMenu.Item className='px-3 py-2 hover:bg-gray-100 rounded cursor-pointer flex items-center'>
-                <FiEdit className='mr-1' /> Chỉnh sửa
-              </DropdownMenu.Item>
+              <Tooltip
+                content={
+                  plan.status !== "Draft"
+                    ? `Chỉ có thể chỉnh sửa khi kế hoạch đang là bản nháp`
+                    : "Chỉnh sửa kế hoạch"
+                }
+                side='bottom'
+                align='center'
+              >
+                <DropdownMenu.Item
+                  className='px-3 py-2 hover:bg-gray-100 rounded cursor-pointer flex items-center'
+                  disabled={plan.status !== "Draft"}
+                  style={{
+                    cursor: plan.status !== "Draft" ? "not-allowed" : "pointer",
+                  }}
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/manager/procurement-plans/${plan.planId}/edit`
+                    )
+                  }
+                >
+                  <FiEdit className='mr-1' /> Chỉnh sửa
+                </DropdownMenu.Item>
+              </Tooltip>
               <DropdownMenu.Item
                 className='px-3 py-2 hover:bg-gray-100 rounded cursor-pointer flex items-center'
                 onClick={() =>
@@ -126,52 +132,42 @@ export default function ProcurementPlanCard({
                 <DropdownMenu.Separator className='h-px bg-gray-200 my-1' />
               )}
 
-              <Tooltip.Provider>
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
-                    <span>
-                      <DropdownMenu.Item
-                        className='px-3 py-2 text-red-600 hover:bg-red-50 rounded cursor-pointer flex items-center'
-                        onClick={() => {
-                          if (
-                            Array.isArray(plan.commitments) &&
-                            plan.commitments.length > 0
-                          )
-                            return;
-                          openCancelDialog?.();
-                        }}
-                        style={{
-                          cursor:
-                            plan.commitments?.length > 0
-                              ? "not-allowed"
-                              : "pointer",
-                          display:
-                            plan.status === "Cancelled"
-                              ? "none"
-                              : plan.status === "Draft"
-                              ? "none"
-                              : plan.status === "Closed"
-                              ? "none"
-                              : undefined,
-                        }}
-                      >
-                        <FiXCircle className='mr-1' />
-                        Hủy kế hoạch
-                      </DropdownMenu.Item>
-                    </span>
-                  </Tooltip.Trigger>
-                  {plan.commitments?.length > 0 && (
-                    <Tooltip.Content
-                      side='top'
-                      align='center'
-                      className='bg-gray-900 text-white text-xs rounded px-2 py-1 shadow-lg'
-                    >
-                      Kế hoạch này không thể hủy vì đã có cam kết
-                      <Tooltip.Arrow className='fill-gray-900' />
-                    </Tooltip.Content>
-                  )}
-                </Tooltip.Root>
-              </Tooltip.Provider>
+              <Tooltip
+                content={
+                  plan.commitments?.length > 0
+                    ? "Không thể hủy kế hoạch đã có cam kết"
+                    : "Hủy kế hoạch"
+                }
+                side='bottom'
+                align='center'
+              >
+                <DropdownMenu.Item
+                  className='px-3 py-2 text-red-600 hover:bg-red-50 rounded cursor-pointer flex items-center'
+                  onClick={() => {
+                    if (
+                      Array.isArray(plan.commitments) &&
+                      plan.commitments.length > 0
+                    )
+                      return;
+                    openCancelDialog?.();
+                  }}
+                  style={{
+                    cursor:
+                      plan.commitments?.length > 0 ? "not-allowed" : "pointer",
+                    display:
+                      plan.status === "Cancelled"
+                        ? "none"
+                        : plan.status === "Draft"
+                        ? "none"
+                        : plan.status === "Closed"
+                        ? "none"
+                        : undefined,
+                  }}
+                >
+                  <FiXCircle className='mr-1' />
+                  Hủy kế hoạch
+                </DropdownMenu.Item>
+              </Tooltip>
 
               <DropdownMenu.Item
                 className='px-3 py-2 text-red-600 hover:bg-red-50 rounded cursor-pointer flex items-center'

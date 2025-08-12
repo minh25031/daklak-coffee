@@ -24,12 +24,15 @@ export type ProcurementPlan = {
   status: string | number;
   procurementPlansDetails: Partial<ProcurementPlansDetails>[];
   commitments: Partial<FarmingCommitment>[];
+  procurementPlansDetailsUpdateDto: Partial<ProcurementPlansDetails>[];
+  procurementPlansDetailsCreateDto: Partial<ProcurementPlansDetails>[];
 };
 
 export type ProcurementPlansDetails = {
   planDetailsId: string;
   planDetailCode: string;
   planId: string;
+  coffeeTypeId: string;
   coffeeType: {
     coffeeTypeId: string;
     typeCode: string;
@@ -39,6 +42,7 @@ export type ProcurementPlansDetails = {
     typicalRegion: string;
     specialtyLevel: string;
   };
+  processMethodId: number;
   processingMethodName: string;
   targetQuantity: number;
   targetRegion: string;
@@ -76,6 +80,11 @@ export async function getProcurementPlanDetailById(planId: string): Promise<Proc
 export async function createProcurementPlan(data: Partial<ProcurementPlan>): Promise<ProcurementPlan | null> {
   const response = await api.post(`/ProcurementPlans`, data)
   return response.data
+}
+
+export async function updateProcurementPlan(planId: string, data: Partial<ProcurementPlan>): Promise<ProcurementPlan | null> {
+  const response = await api.patch(`/ProcurementPlans/Update/${planId}`, data);
+  return response.data;
 }
 
 export async function updateProcurementPlanStatus(

@@ -150,7 +150,7 @@ export default function RegistrationCard({
 
         {/* Nút mở rộng */}
         <Button
-          variant='outline'
+          variant='secondaryGradient'
           size='sm'
           className='flex items-center gap-1'
           onClick={toggleExpanded}
@@ -220,7 +220,7 @@ export default function RegistrationCard({
                     <>
                       <Button
                         size='sm'
-                        variant='secondary'
+                        variant='secondaryGradient'
                         onClick={() => {
                           router.push(
                             `/dashboard/manager/farming-commitments/[id]/edit?registrationId=${registrationId}&registrationDetailId=${detail.cultivationRegistrationDetailId}&wantedPrice=${detail.wantedPrice}&estimatedYield=${detail.estimatedYield}`
@@ -233,9 +233,8 @@ export default function RegistrationCard({
                   ) : isApproved && !isCommitmentCreated ? (
                     <Button
                         size='sm'
-                        variant='secondary' // hoặc style bạn muốn
+                        variant='secondaryGradient'
                         onClick={() => {
-                          // Chuyển trang tạo cam kết, truyền query params
                           router.push(
                             `/dashboard/manager/farming-commitments/create?registrationId=${registrationId}&registrationDetailId=${detail.cultivationRegistrationDetailId}&wantedPrice=${detail.wantedPrice}&estimatedYield=${detail.estimatedYield}`
                           );
@@ -249,7 +248,7 @@ export default function RegistrationCard({
                   ) : (
                     <Button
                       size='sm'
-                      variant='outline'
+                      variant='approveGradient'
                       disabled={
                         loadingApprovalId ===
                         detail.cultivationRegistrationDetailId
@@ -260,7 +259,7 @@ export default function RegistrationCard({
                           detail.cultivationRegistrationDetailId
                         )
                       }
-                      className='bg-green-200 hover:bg-emerald-400 hover:text-white text-green-800 transition'
+                      //className='bg-green-200 hover:bg-emerald-400 hover:text-white text-green-800 transition'
                     >
                       <FiCheck className='inline-block' /> Duyệt chi tiết đơn
                     </Button>
