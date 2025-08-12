@@ -59,8 +59,7 @@ export default function Header() {
               href="/marketplace"
               className="text-gray-700 hover:text-orange-600 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-orange-50"
             >
-              Sàn giao dịch
-            </Link>
+              Sàn thu mua cà phê           </Link>
 
             {isLoggedIn && userName ? (
               <DropdownMenu.Root>
