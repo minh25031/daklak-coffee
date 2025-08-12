@@ -61,11 +61,12 @@ export default function BusinessFarmingCommitmentPage() {
       return acc;
     },
     {
-      Pending_farmer: 0,
+      Pending: 0,
       Active: 0,
       Completed: 0,
       Cancelled: 0,
       Breached: 0,
+      Rejected: 0,
     }
   );
 
