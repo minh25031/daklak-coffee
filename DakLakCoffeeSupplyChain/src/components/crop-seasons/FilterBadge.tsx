@@ -66,7 +66,7 @@ export default function FilterBadge({
         colors.border,
         colors.text,
         !active && colors.hover,
-        active && 'shadow-md transform scale-105'
+        active && 'shadow-md'
       )}
       onClick={onClick}
     >
@@ -75,7 +75,7 @@ export default function FilterBadge({
           className={cn(
             'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200',
             active
-              ? `bg-${color}-500 text-white shadow-md`
+              ? `bg-${color}-500 text-white`
               : `bg-${color}-100 text-${color}-700`
           )}
         >
