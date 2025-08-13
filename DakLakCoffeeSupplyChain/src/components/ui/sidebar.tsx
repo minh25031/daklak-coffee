@@ -115,6 +115,11 @@ export function SidebarGroup() {
   const pathname = usePathname();
   const [role, setRole] = useState<string | null>(null);
   const [processingOpen, setProcessingOpen] = useState(false);
+  const [warehouseOpen, setWarehouseOpen] = useState(false);
+  const [contractOpen, setContractOpen] = useState(false);
+  const [orderOpen, setOrderOpen] = useState(false);
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     const storedRole = localStorage.getItem("user_role"); // slug: "admin", "expert", ...
@@ -262,71 +267,6 @@ export function SidebarGroup() {
         icon: iconMap.dashboard,
       },
       {
-        title: "Hợp đồng cung ứng",
-        href: "/dashboard/manager/contracts",
-        icon: iconMap.contracts,
-      },
-      {
-        title: "Lịch giao hàng",
-        href: "/dashboard/manager/contract-delivery-batches",
-        icon: <FiCalendar />,
-      },
-      {
-        title: "Kế hoạch thu mua",
-        href: "/dashboard/manager/procurement-plans",
-        icon: iconMap.crops,
-      },
-      {
-        title: "Cam kết với nông dân",
-        href: "/dashboard/manager/farming-commitments",
-        icon: iconMap.contracts,
-      },
-      {
-        title: "Đơn hàng",
-        href: "/dashboard/manager/orders",
-        icon: <FiShoppingCart />,
-      },
-      {
-        title: "Lô giao hàng",
-        href: "/dashboard/manager/shipments",
-        icon: <FiTruck />,
-      },
-      {
-        title: "Khách hàng doanh nghiệp",
-        href: "/dashboard/manager/business-buyers",
-        icon: <FiUsers />,
-      },
-      {
-        title: "Sản phẩm",
-        href: "/dashboard/manager/products",
-        icon: <FiPackage />,
-      },
-      {
-        title: "Nông dân",
-        href: "/dashboard/manager/farmers",
-        icon: iconMap.users,
-      },
-      {
-        title: "Lô chế biến",
-        href: "/dashboard/manager/processing/batches",
-        icon: <FiBookOpen />,
-      },
-      {
-        title: "Báo cáo",
-        href: "/dashboard/manager/reports",
-        icon: iconMap.reports,
-      },
-      {
-        title: "Kho hàng",
-        href: "/dashboard/manager/warehouses",
-        icon: <FiSettings />,
-      },
-      {
-        title: "Yêu cầu xuất kho",
-        href: "/dashboard/manager/warehouse-request",
-        icon: <FiClipboard />,
-      },
-      {
         title: "Thông báo",
         href: "/dashboard/notifications",
         icon: <FiBell />,
@@ -418,29 +358,236 @@ export function SidebarGroup() {
           )}
         </div>
       )}
+
+
+      {/* Dropdown: HỢP ĐỒNG & GIAO HÀNG cho MANAGER */}
       {role === "manager" && (
         <div>
           <button
             className={cn(
               "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
+              pathname.startsWith("/dashboard/manager/contracts") ||
+              pathname.startsWith("/dashboard/manager/contract-delivery-batches") ||
+              pathname.startsWith("/dashboard/manager/procurement-plans") ||
+              pathname.startsWith("/dashboard/manager/farming-commitments")
+                ? "bg-orange-100 text-orange-700 shadow-sm"
+                : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+            )}
+            onClick={() => setContractOpen((v) => !v)}
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="shrink-0 w-5 text-center">
+                <FiFileText />
+              </span>
+              <span className="truncate">Hợp đồng & Giao hàng</span>
+            </div>
+            <FiChevronDown
+              className={cn("transition-transform duration-200", contractOpen && "rotate-180")}
+            />
+          </button>
+          {contractOpen && (
+            <div className="pl-8 space-y-1">
+              <Link
+                href="/dashboard/manager/contracts"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/contracts"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Hợp đồng cung ứng
+              </Link>
+              <Link
+                href="/dashboard/manager/contract-delivery-batches"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/contract-delivery-batches"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Lịch giao hàng
+              </Link>
+              <Link
+                href="/dashboard/manager/procurement-plans"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/procurement-plans"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Kế hoạch thu mua
+              </Link>
+              <Link
+                href="/dashboard/manager/farming-commitments"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/farming-commitments"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Cam kết với nông dân
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dropdown: ĐƠN HÀNG & GIAO HÀNG cho MANAGER */}
+      {role === "manager" && (
+        <div>
+          <button
+            className={cn(
+              "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
+              pathname.startsWith("/dashboard/manager/orders") ||
+              pathname.startsWith("/dashboard/manager/shipments")
+                ? "bg-orange-100 text-orange-700 shadow-sm"
+                : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+            )}
+            onClick={() => setOrderOpen((v) => !v)}
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="shrink-0 w-5 text-center">
+                <FiShoppingCart />
+              </span>
+              <span className="truncate">Đơn hàng & Giao hàng</span>
+            </div>
+            <FiChevronDown
+              className={cn("transition-transform duration-200", orderOpen && "rotate-180")}
+            />
+          </button>
+          {orderOpen && (
+            <div className="pl-8 space-y-1">
+              <Link
+                href="/dashboard/manager/orders"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/orders"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Đơn hàng
+              </Link>
+              <Link
+                href="/dashboard/manager/shipments"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/shipments"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Lô giao hàng
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dropdown: KHÁCH HÀNG & SẢN PHẨM cho MANAGER */}
+      {role === "manager" && (
+        <div>
+          <button
+            className={cn(
+              "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
+              pathname.startsWith("/dashboard/manager/business-buyers") ||
+              pathname.startsWith("/dashboard/manager/products") ||
+              pathname.startsWith("/dashboard/manager/farmers")
+                ? "bg-orange-100 text-orange-700 shadow-sm"
+                : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+            )}
+            onClick={() => setCustomerOpen((v) => !v)}
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="shrink-0 w-5 text-center">
+                <FiUsers />
+              </span>
+              <span className="truncate">Khách hàng & Sản phẩm</span>
+            </div>
+            <FiChevronDown
+              className={cn("transition-transform duration-200", customerOpen && "rotate-180")}
+            />
+          </button>
+          {customerOpen && (
+            <div className="pl-8 space-y-1">
+              <Link
+                href="/dashboard/manager/business-buyers"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/business-buyers"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Khách hàng doanh nghiệp
+              </Link>
+              <Link
+                href="/dashboard/manager/products"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/products"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Sản phẩm
+              </Link>
+              <Link
+                href="/dashboard/manager/farmers"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/farmers"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Nông dân
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dropdown: BÁO CÁO & CHẾ BIẾN cho MANAGER */}
+      {role === "manager" && (
+        <div>
+          <button
+            className={cn(
+              "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
+              pathname.startsWith("/dashboard/manager/reports") ||
               pathname.startsWith("/dashboard/manager/processing")
                 ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
-            onClick={() => setProcessingOpen((v) => !v)}
+            onClick={() => setReportOpen((v) => !v)}
           >
             <div className="flex items-center gap-2 overflow-hidden">
               <span className="shrink-0 w-5 text-center">
-                <FiBookOpen />
+                <FiBarChart2 />
               </span>
-              <span className="truncate">Chế biến</span>
+              <span className="truncate">Báo cáo & Chế biến</span>
             </div>
             <FiChevronDown
-              className={cn("transition-transform duration-200", processingOpen && "rotate-180")}
+              className={cn("transition-transform duration-200", reportOpen && "rotate-180")}
             />
           </button>
-          {processingOpen && (
+          {reportOpen && (
             <div className="pl-8 space-y-1">
+              <Link
+                href="/dashboard/manager/reports"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/reports"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Báo cáo
+              </Link>
               <Link
                 href="/dashboard/manager/processing/batches"
                 className={cn(
@@ -456,9 +603,7 @@ export function SidebarGroup() {
                 href="/dashboard/manager/processing/evaluations"
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                  pathname.startsWith(
-                    "/dashboard/manager/processing/evaluations"
-                  )
+                  pathname.startsWith("/dashboard/manager/processing/evaluations")
                     ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
@@ -469,9 +614,7 @@ export function SidebarGroup() {
                 href="/dashboard/manager/processing/progresses"
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                  pathname.startsWith(
-                    "/dashboard/manager/processing/progresses"
-                  )
+                  pathname.startsWith("/dashboard/manager/processing/progresses")
                     ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
@@ -504,9 +647,7 @@ export function SidebarGroup() {
                 href="/dashboard/manager/processing/parameters"
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                  pathname.startsWith(
-                    "/dashboard/manager/processing/parameters"
-                  )
+                  pathname.startsWith("/dashboard/manager/processing/parameters")
                     ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
@@ -528,9 +669,7 @@ export function SidebarGroup() {
                 href="/dashboard/manager/processing/waste-disposals"
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                  pathname.startsWith(
-                    "/dashboard/manager/processing/waste-disposals"
-                  )
+                  pathname.startsWith("/dashboard/manager/processing/waste-disposals")
                     ? "bg-orange-100 text-orange-700 shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
@@ -542,78 +681,86 @@ export function SidebarGroup() {
         </div>
       )}
 
-      {/* Dropdown: VẬN HÀNH KHO cho MANAGER */}
-      {role === "manager" && (
-        <>
-          {(() => {
-            const links = [
-              {
-                label: "Yêu cầu xuất kho",
-                href: "/dashboard/manager/warehouse-request",
-                activeMatch: (path: string) =>
-                  path === "/dashboard/manager/warehouse-request",
-              },
-              {
-                label: "Kho hàng",
-                href: "/dashboard/manager/warehouses",
-                activeMatch: (path: string) =>
-                  path === "/dashboard/manager/warehouses",
-              },
-              {
-                label: "Lịch sử tồn kho",
-                href: "/dashboard/manager/inventory-logs",
-                activeMatch: (path: string) =>
-                  path === "/dashboard/manager/warehouse-request",
-              },
-            ];
+             {/* Dropdown: QUẢN LÝ KHO cho MANAGER */}
+       {role === "manager" && (
+         <>
+           {(() => {
+             const warehouseLinks = [
+               {
+                 label: "Kho hàng",
+                 href: "/dashboard/manager/warehouses",
+                 activeMatch: (path: string) =>
+                   path === "/dashboard/manager/warehouses",
+               },
+               {
+                 label: "Tồn kho",
+                 href: "/dashboard/manager/inventories",
+                 activeMatch: (path: string) =>
+                   path.startsWith("/dashboard/manager/inventories"),
+               },
+               {
+                 label: "Lịch sử tồn kho",
+                 href: "/dashboard/manager/inventory-logs",
+                 activeMatch: (path: string) =>
+                   path.startsWith("/dashboard/manager/inventory-logs"),
+               },
+               {
+                 label: "Yêu cầu xuất kho",
+                 href: "/dashboard/manager/warehouse-request",
+                 activeMatch: (path: string) =>
+                   path === "/dashboard/manager/warehouse-request",
+               },
+             ];
 
-            const isActive = links.some((item) => item.activeMatch(pathname));
+             const isDropdownActive = warehouseLinks.some((item) =>
+               item.activeMatch(pathname)
+             );
 
-            return (
-              <div>
-                <button
-                  className={cn(
-                    "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
-                    isActive
-                      ? "bg-orange-100 text-orange-700 shadow-sm"
-                      : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                  )}
-                  onClick={() => setProcessingOpen((v) => !v)}
-                >
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <span className="shrink-0 w-5 text-center">
-                      <FiClipboard />
-                    </span>
-                    <span className="truncate">Vận hành kho</span>
-                  </div>
-                  <FiChevronDown
-                    className={cn("transition-transform duration-200", processingOpen && "rotate-180")}
-                  />
-                </button>
+             return (
+               <div>
+                 <button
+                   className={cn(
+                     "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
+                     isDropdownActive
+                       ? "bg-orange-100 text-orange-700 shadow-sm"
+                       : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                   )}
+                   onClick={() => setWarehouseOpen((v) => !v)}
+                 >
+                   <div className="flex items-center gap-2 overflow-hidden">
+                     <span className="shrink-0 w-5 text-center">
+                       <FiSettings />
+                     </span>
+                     <span className="truncate">Quản lý kho</span>
+                   </div>
+                   <FiChevronDown
+                     className={cn("transition-transform duration-200", warehouseOpen && "rotate-180")}
+                   />
+                 </button>
 
-                {processingOpen && (
-                  <div className="pl-8 space-y-1">
-                    {links.map(({ label, href, activeMatch }) => (
-                      <Link
-                        key={href}
-                        href={href}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                          activeMatch(pathname)
-                            ? "bg-orange-100 text-orange-700 shadow-sm"
-                            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                        )}
-                      >
-                        {label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </>
-      )}
+                 {warehouseOpen && (
+                   <div className="pl-8 space-y-1">
+                     {warehouseLinks.map(({ label, href, activeMatch }) => (
+                       <Link
+                         key={href}
+                         href={href}
+                         className={cn(
+                           "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                           activeMatch(pathname)
+                             ? "bg-orange-100 text-orange-700 shadow-sm"
+                             : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                         )}
+                       >
+                         {label}
+                       </Link>
+                     ))}
+                   </div>
+                 )}
+               </div>
+             );
+           })()}
+         </>
+       )}
 
       {role === "staff" && (
         <>
@@ -730,7 +877,7 @@ export function SidebarGroup() {
                       ? "bg-orange-100 text-orange-700 shadow-sm"
                       : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                   )}
-                  onClick={() => setProcessingOpen((v) => !v)}
+                  onClick={() => setWarehouseOpen((v) => !v)}
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
                     <span className="shrink-0 w-5 text-center">
@@ -739,11 +886,11 @@ export function SidebarGroup() {
                     <span className="truncate">Quản lý kho</span>
                   </div>
                   <FiChevronDown
-                    className={cn("transition-transform duration-200", processingOpen && "rotate-180")}
+                    className={cn("transition-transform duration-200", warehouseOpen && "rotate-180")}
                   />
                 </button>
 
-                {processingOpen && (
+                {warehouseOpen && (
                   <div className="pl-8 space-y-1">
                     {warehouseLinks.map(({ label, href, activeMatch }) => (
                       <Link
