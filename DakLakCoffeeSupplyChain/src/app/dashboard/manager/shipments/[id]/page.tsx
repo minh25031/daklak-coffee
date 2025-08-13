@@ -9,13 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Pencil, Trash2 } from "lucide-react";
 import { FiTruck } from "react-icons/fi";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 import * as ShipmentsApi from "@/lib/api/shipments";
 import type {
   ShipmentDetailViewDto,
@@ -362,59 +356,45 @@ export default function ShipmentDetailPage() {
           }}
         />
 
-        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Xoá sản phẩm khỏi lô giao?</DialogTitle>
-              <DialogDescription>
-                Bạn có chắc chắn muốn xoá{" "}
-                <strong>{detailToDelete?.productName}</strong> khỏi lô giao
-                không? Hành động này không thể hoàn tác.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteDialog(false)}
-              >
-                Huỷ
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={async () => {
-                  if (!detailToDelete) return;
-                  try {
-                    await ShipmentsApi.softDeleteShipmentDetail(
-                      detailToDelete.shipmentDetailId
-                    );
-                    setShipment((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            shipmentDetails: (
-                              prev.shipmentDetails || []
-                            ).filter(
-                              (d) =>
-                                d.shipmentDetailId !==
-                                detailToDelete.shipmentDetailId
-                            ),
-                          }
-                        : prev
-                    );
-                  } catch (err) {
-                    console.error(err);
-                    alert("Không thể xoá sản phẩm khỏi lô giao.");
-                  } finally {
-                    setShowDeleteDialog(false);
-                    setDetailToDelete(null);
-                  }
-                }}
-              >
-                Xoá
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title="Xoá sản phẩm khỏi lô giao?"
+          description={
+            <span>
+              Bạn có chắc chắn muốn xoá{" "}
+              <strong>{detailToDelete?.productName ?? "mặt hàng"}</strong> khỏi
+              lô giao? Hành động này không thể hoàn tác.
+            </span>
+          }
+          confirmText="Xoá"
+          cancelText="Huỷ"
+          onConfirm={async () => {
+            if (!detailToDelete) return;
+            try {
+              await ShipmentsApi.softDeleteShipmentDetail(
+                detailToDelete.shipmentDetailId
+              );
+              setShipment((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      shipmentDetails: (prev.shipmentDetails || []).filter(
+                        (d) =>
+                          d.shipmentDetailId !== detailToDelete.shipmentDetailId
+                      ),
+                    }
+                  : prev
+              );
+            } catch (err) {
+              console.error(err);
+              alert("Không thể xoá sản phẩm khỏi lô giao.");
+            } finally {
+              setShowDeleteDialog(false);
+              setDetailToDelete(null);
+            }
+          }}
+        />
       </div>
     </div>
   );

@@ -4,14 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 import { Pencil, Trash2, Info, Package } from "lucide-react";
 import { formatDate, formatQuantity, formatDiscount } from "@/lib/utils";
 import { OrderViewDetailsDto, getOrderDetails } from "@/lib/api/orders";
@@ -587,33 +580,22 @@ export default function OrderDetailPage() {
         />
 
         {/* Delete Item dialog */}
-        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Xoá mặt hàng?</DialogTitle>
-              <DialogDescription>
-                Bạn có chắc chắn muốn xoá mặt hàng{" "}
-                <strong>{itemToDelete?.productName}</strong> khỏi đơn hàng
-                không? Hành động này sẽ ẩn khỏi danh sách và không thể hoàn tác.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteDialog(false)}
-              >
-                Huỷ
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteItem}
-                disabled={deleting}
-              >
-                {deleting ? "Đang xoá..." : "Xoá"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title="Xoá mặt hàng?"
+          description={
+            <span>
+              Bạn có chắc chắn muốn xoá mặt hàng{" "}
+              <strong>{itemToDelete?.productName}</strong> khỏi đơn hàng không?
+              Hành động này sẽ ẩn khỏi danh sách và không thể hoàn tác.
+            </span>
+          }
+          confirmText={deleting ? "Đang xoá..." : "Xoá"}
+          cancelText="Huỷ"
+          onConfirm={handleDeleteItem}
+          loading={deleting}
+        />
       </div>
     </div>
   );

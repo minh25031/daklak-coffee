@@ -15,9 +15,13 @@ import {
 import {
   getAllBusinessBuyers,
   BusinessBuyerDto,
+  softDeleteBusinessBuyer,
 } from "@/lib/api/businessBuyers";
 import { Tooltip } from "@/components/ui/tooltip";
 import PageTitle from "@/components/ui/PageTitle";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
+import { AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function BusinessBuyersPage() {
   const [buyers, setBuyers] = useState<BusinessBuyerDto[]>([]);
@@ -27,6 +31,11 @@ export default function BusinessBuyersPage() {
   const router = useRouter();
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [buyerToDelete, setBuyerToDelete] = useState<BusinessBuyerDto | null>(
+    null
+  );
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     getAllBusinessBuyers().then(
@@ -68,6 +77,25 @@ export default function BusinessBuyersPage() {
       year: "numeric",
     }).format(d);
   };
+
+  async function handleDelete() {
+    if (!buyerToDelete) return;
+    try {
+      setDeleting(true);
+      await softDeleteBusinessBuyer(buyerToDelete.buyerId);
+      setBuyers((prev) =>
+        prev.filter((x) => x.buyerId !== buyerToDelete.buyerId)
+      );
+      setShowDeleteDialog(false);
+      setBuyerToDelete(null);
+      toast.success("Đã xoá khách hàng doanh nghiệp thành công");
+    } catch (e) {
+      console.error("Xoá khách hàng thất bại:", e);
+      toast.error("Xoá khách hàng thất bại");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-amber-50 p-6 gap-6">
@@ -197,7 +225,14 @@ export default function BusinessBuyersPage() {
                             </Button>
                           </Tooltip>
                           <Tooltip content="Xoá">
-                            <Button variant="ghost" className="p-[2px] w-7 h-7">
+                            <Button
+                              variant="ghost"
+                              className="p-[2px] w-7 h-7"
+                              onClick={() => {
+                                setBuyerToDelete(b);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </Button>
                           </Tooltip>
@@ -242,6 +277,28 @@ export default function BusinessBuyersPage() {
           </div>
         )}
       </main>
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title={
+          <div className="flex items-center justify-center gap-2 text-red-600">
+            <AlertTriangle className="w-5 h-5" /> Xoá khách hàng?
+          </div>
+        }
+        description={
+          <div className="mt-1 text-gray-700 text-center">
+            Bạn có chắc chắn muốn xoá khách hàng
+            <span className="font-semibold"> {buyerToDelete?.companyName}</span>
+            ?
+            <br />
+            Hành động này không thể hoàn tác.
+          </div>
+        }
+        confirmText={deleting ? "Đang xoá..." : "Xóa"}
+        cancelText="Hủy"
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </div>
   );
 }

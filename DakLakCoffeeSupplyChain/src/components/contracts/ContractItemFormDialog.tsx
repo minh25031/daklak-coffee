@@ -7,13 +7,8 @@ import {
   createContractItem,
   updateContractItem,
 } from "@/lib/api/contractItems";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import * as BaseDialog from "@/components/ui/dialog";
+import { FormDialog } from "@/components/ui/formDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -164,15 +159,15 @@ export default function ContractItemFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
+    <BaseDialog.Dialog open={open} onOpenChange={onOpenChange}>
+      <FormDialog.Content size="sm">
+        <BaseDialog.DialogHeader className="px-5 pt-5 pb-0">
+          <BaseDialog.DialogTitle>
             {mode === "create" ? "Thêm mặt hàng" : "Cập nhật mặt hàng"}
-          </DialogTitle>
-        </DialogHeader>
+          </BaseDialog.DialogTitle>
+        </BaseDialog.DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-2 px-5 py-4">
           {/* Loại cà phê */}
           <div className="grid gap-1">
             <Label htmlFor="coffeeTypeId">Loại cà phê</Label>
@@ -253,7 +248,7 @@ export default function ContractItemFormDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <div className="px-5 pb-5 flex justify-end gap-3">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -261,11 +256,15 @@ export default function ContractItemFormDialog({
           >
             Huỷ
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
+          <Button
+            className="bg-orange-500 hover:bg-orange-600 text-white"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
             {loading ? "Đang lưu..." : mode === "create" ? "Thêm" : "Cập nhật"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </FormDialog.Content>
+    </BaseDialog.Dialog>
   );
 }

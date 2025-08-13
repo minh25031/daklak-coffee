@@ -5,10 +5,10 @@ import { Label } from "./label";
 
 type Props = {
   label?: string;
-  value?: string;                      // yyyy-MM-dd | undefined
+  value?: string; // yyyy-MM-dd | undefined
   onChange: (value: string | undefined) => void;
   required?: boolean;
-  placeholder?: string;                // để TS không báo lỗi
+  placeholder?: string; // để TS không báo lỗi
   disabled?: boolean;
   className?: string;
 };
@@ -27,10 +27,10 @@ export function DatePicker({
       {label && <Label className="text-sm">{label}</Label>}
       <Input
         type="date"
-        value={value ?? ""}             // input date dùng "" khi undefined
+        value={value ?? ""} // input date dùng "" khi undefined
         onChange={(e) => onChange(e.target.value || undefined)}
         required={required}
-        placeholder={placeholder}       // có thể bị browser bỏ qua
+        placeholder={placeholder} // có thể bị browser bỏ qua
         disabled={disabled}
         className={className}
       />

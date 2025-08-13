@@ -5,12 +5,21 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import OrderForm from "@/components/orders/OrderForm";
-import { getOrderDetails, type OrderViewDetailsDto, type OrderUpdateDto } from "@/lib/api/orders";
+import {
+  getOrderDetails,
+  type OrderViewDetailsDto,
+  type OrderUpdateDto,
+} from "@/lib/api/orders";
 
 export default function OrderEditPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
+  const id =
+    typeof params?.id === "string"
+      ? params.id
+      : Array.isArray(params?.id)
+      ? params.id[0]
+      : "";
 
   const [initialData, setInitialData] = useState<OrderUpdateDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,7 +37,7 @@ export default function OrderEditPage() {
           orderId: d.orderId,
           deliveryBatchId: d.deliveryBatchId,
           deliveryRound: d.deliveryRound ?? null,
-          orderDate: d.orderDate ?? null,                   // ISO | null
+          orderDate: d.orderDate ?? null, // ISO | null
           actualDeliveryDate: d.actualDeliveryDate ?? null, // yyyy-MM-dd | null
           note: d.note ?? null,
           status: d.status,
@@ -59,12 +68,25 @@ export default function OrderEditPage() {
     };
   }, [id]);
 
-  if (loading) return <div className="max-w-6xl mx-auto py-10 text-center text-muted-foreground">Loading order...</div>;
-  if (!initialData) return <div className="max-w-6xl mx-auto py-10 text-center text-destructive">Order not found.</div>;
+  if (loading)
+    return (
+      <div className="max-w-6xl mx-auto py-10 text-center text-muted-foreground">
+        Loading order...
+      </div>
+    );
+  if (!initialData)
+    return (
+      <div className="max-w-6xl mx-auto py-10 text-center text-destructive">
+        Order not found.
+      </div>
+    );
 
   return (
     <div className="max-w-6xl mx-auto py-6">
-      <OrderForm initialData={initialData} onSuccess={() => router.push("/dashboard/manager/orders")} />
+      <OrderForm
+        initialData={initialData}
+        onSuccess={() => router.push("/dashboard/manager/orders")}
+      />
     </div>
   );
 }

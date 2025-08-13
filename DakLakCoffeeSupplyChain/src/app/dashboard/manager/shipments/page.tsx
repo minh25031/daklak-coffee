@@ -17,13 +17,7 @@ import {
   getAllShipments,
   softDeleteShipment,
 } from "@/lib/api/shipments";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 
 export default function ShipmentsPage() {
   const [shipments, setShipments] = useState<ShipmentViewAllDto[]>([]);
@@ -338,45 +332,32 @@ export default function ShipmentsPage() {
             </div>
           </div>
         )}
-        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Xoá lô giao?</DialogTitle>
-              <DialogDescription>
-                Bạn có chắc chắn muốn xoá lô giao{" "}
-                <strong>{shipmentToDelete?.shipmentCode}</strong>? Hành động này
-                không thể hoàn tác.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteDialog(false)}
-              >
-                Huỷ
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={async () => {
-                  if (!shipmentToDelete) return;
-                  try {
-                    await softDeleteShipment(shipmentToDelete.shipmentId);
-                    setShipments((prev) =>
-                      prev.filter(
-                        (x) => x.shipmentId !== shipmentToDelete.shipmentId
-                      )
-                    );
-                  } finally {
-                    setShowDeleteDialog(false);
-                    setShipmentToDelete(null);
-                  }
-                }}
-              >
-                Xoá
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title="Xoá lô giao?"
+          description={
+            <span>
+              Bạn có chắc chắn muốn xoá lô giao{" "}
+              <strong>{shipmentToDelete?.shipmentCode}</strong>? Hành động này
+              không thể hoàn tác.
+            </span>
+          }
+          confirmText="Xoá"
+          cancelText="Huỷ"
+          onConfirm={async () => {
+            if (!shipmentToDelete) return;
+            try {
+              await softDeleteShipment(shipmentToDelete.shipmentId);
+              setShipments((prev) =>
+                prev.filter((x) => x.shipmentId !== shipmentToDelete.shipmentId)
+              );
+            } finally {
+              setShowDeleteDialog(false);
+              setShipmentToDelete(null);
+            }
+          }}
+        />
       </main>
     </div>
   );

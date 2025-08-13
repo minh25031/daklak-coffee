@@ -15,13 +15,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 import { softDeleteContract } from "@/lib/api/contracts";
 import { Tooltip } from "@/components/ui/tooltip";
 
@@ -355,30 +349,21 @@ export default function ContractsPage() {
           </div>
         )}
       </main>
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xóa hợp đồng?</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa hợp đồng{" "}
-              <strong>{contractToDelete?.contractTitle}</strong>? Hành động này
-              không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Hủy
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Xóa
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Xoá hợp đồng?"
+        description={
+          <span>
+            Bạn có chắc chắn muốn xoá hợp đồng{" "}
+            <strong>{contractToDelete?.contractTitle}</strong>? Hành động này
+            không thể hoàn tác.
+          </span>
+        }
+        confirmText="Xóa"
+        cancelText="Hủy"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

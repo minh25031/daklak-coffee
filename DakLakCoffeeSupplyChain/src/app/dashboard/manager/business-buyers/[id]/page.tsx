@@ -209,7 +209,10 @@ export default function BusinessBuyerDetailsPage() {
 
         {/* Footer */}
         <div className="flex justify-end mt-4">
-          <Button variant="outline" onClick={() => router.back()}>
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/dashboard/manager/business-buyers`)}
+          >
             ← Quay lại
           </Button>
         </div>
