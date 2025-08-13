@@ -13,7 +13,11 @@ import {
   FiCoffee,
   FiTrendingUp,
   FiCheckCircle,
-  FiClock as FiPending
+  FiClock as FiPending,
+  FiShoppingCart,
+  FiBriefcase,
+  FiSend,
+  FiTag
 } from "react-icons/fi";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -258,6 +262,46 @@ export default function ManagerDashboard() {
             title="Báo cáo sản lượng"
             description="Thống kê về sản lượng, chất lượng và tiến độ."
           />
+
+          {/* Đơn hàng */}
+          <Link href="/dashboard/manager/orders">
+            <DashboardCard
+              icon={<FiShoppingCart className="text-orange-500 text-xl" />}
+              title="Đơn hàng"
+              description="Quản lý và theo dõi các đơn hàng bán ra."
+              isLink
+            />
+          </Link>
+
+          {/* Lô giao hàng */}
+          <Link href="/dashboard/manager/shipments">
+            <DashboardCard
+              icon={<FiSend className="text-orange-500 text-xl" />}
+              title="Lô giao hàng"
+              description="Quản lý các lô giao hàng/shipments từ kho tới khách."
+              isLink
+            />
+          </Link>
+
+          {/* Khách hàng doanh nghiệp */}
+          <Link href="/dashboard/manager/business-buyers">
+            <DashboardCard
+              icon={<FiBriefcase className="text-orange-500 text-xl" />}
+              title="Khách hàng doanh nghiệp"
+              description="Danh sách khách hàng B2B, tạo mới và quản lý quan hệ."
+              isLink
+            />
+          </Link>
+
+          {/* Sản phẩm */}
+          <Link href="/dashboard/manager/products">
+            <DashboardCard
+              icon={<FiTag className="text-orange-500 text-xl" />}
+              title="Sản phẩm"
+              description="Quản lý danh mục sản phẩm, quy cách và giá."
+              isLink
+            />
+          </Link>
         </div>
       </div>
     </div>
