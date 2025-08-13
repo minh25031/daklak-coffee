@@ -1,167 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
+import { ArrowLeft, Package, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AppToast } from "@/components/ui/AppToast";
-import { Textarea } from "@/components/ui/textarea";
 
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, TrendingUp, Package, Calendar, Info, Loader2, CheckCircle, FileText } from "lucide-react";
-
-// Import các component chung
-import ProcessingHeader from "@/components/processing/ProcessingHeader";
-import { createProcessingProgress, getProcessingBatchesForCurrentUser, ProcessingBatchListItem } from "@/lib/api/processingProgresses";
+// Import component form đã được sửa
+import CreateProcessingProgressForm from "@/components/processing-batches/CreateProcessingProgressForm";
 
 export default function CreateProcessingProgressPage() {
   const router = useRouter();
-
-  const [form, setForm] = useState({
-    batchId: "",
-    stage: "",
-    description: "",
-    completedQuantity: 0,
-    completedUnit: "kg",
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const [batches, setBatches] = useState<ProcessingBatchListItem[]>([]);
-
-  // ✅ Load danh sách lô sơ chế
-  useEffect(() => {
-    async function fetchBatches() {
-      try {
-        setLoading(true);
-        const batchesData = await getProcessingBatchesForCurrentUser({ page: 1, pageSize: 100 });
-        console.log('Processing Batches:', batchesData);
-        setBatches(batchesData);
-      } catch (err) {
-        console.error("❌ Lỗi tải danh sách lô:", err);
-        AppToast.error("Không thể tải danh sách lô sơ chế");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchBatches();
-  }, []);
-
-  const handleChange = (name: string, value: string | number) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    const { batchId, stage, description, completedQuantity, completedUnit } = form;
-
-    const missingFields: string[] = [];
-    if (!batchId) missingFields.push("Lô sơ chế");
-    if (!stage.trim()) missingFields.push("Giai đoạn");
-    if (!description.trim()) missingFields.push("Mô tả");
-    if (completedQuantity <= 0) missingFields.push("Số lượng hoàn thành");
-
-    if (missingFields.length > 0) {
-      AppToast.error("Vui lòng nhập: " + missingFields.join(", "));
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      await createProcessingProgress({
-        batchId,
-        stage: stage.trim(),
-        description: description.trim(),
-        completedQuantity,
-        completedUnit,
-      });
-
-      AppToast.success("Thêm tiến độ sơ chế thành công!");
-      router.push("/dashboard/farmer/processing/progresses");
-    } catch (err: any) {
-      console.error("❌ Lỗi tạo progress:", err);
-      
-      let errorMessage = "Thêm tiến độ sơ chế thất bại!";
-      
-      if (err?.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err?.message) {
-        errorMessage = err.message;
-      } else if (err?.response?.status === 400) {
-        errorMessage = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.";
-      } else if (err?.response?.status === 404) {
-        errorMessage = "Không tìm thấy lô sơ chế. Vui lòng thử lại.";
-      } else if (err?.response?.status === 409) {
-        errorMessage = "Tiến độ đã tồn tại hoặc thông tin bị trùng lặp.";
-      } else if (err?.response?.status >= 500) {
-        errorMessage = "Lỗi hệ thống. Vui lòng thử lại sau.";
-      }
-      
-      AppToast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
-        <div className="p-6 max-w-4xl mx-auto">
-          {/* Header Skeleton */}
-          <div className="flex items-center gap-4 mb-8">
-            <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse"></div>
-            <div className="space-y-2">
-              <div className="h-8 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
-            </div>
-          </div>
-
-          {/* Form Skeleton */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6">
-              <div className="h-6 bg-white/20 rounded w-48 animate-pulse"></div>
-            </div>
-            <div className="p-6 space-y-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
-                  <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Loading Indicator */}
-          <div className="text-center space-y-4 mt-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-            <p className="text-lg text-gray-600 font-medium">Đang tải dữ liệu...</p>
-            <p className="text-sm text-gray-500">Đang tải danh sách lô sơ chế</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <ProcessingHeader
-          title="Thêm tiến độ sơ chế"
-          description="Cập nhật tiến độ cho lô sơ chế"
-          showCreateButton={false}
-        />
-        
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Package className="w-6 h-6 text-orange-600" />
+              Thêm tiến độ sơ chế
+            </h1>
+            <p className="text-gray-600 mt-1">Cập nhật tiến độ cho lô sơ chế</p>
+          </div>
           <Button 
             variant="outline" 
             onClick={() => router.back()}
@@ -181,8 +41,7 @@ export default function CreateProcessingProgressPage() {
             <div className="space-y-1">
               <h3 className="font-semibold text-blue-900">Hướng dẫn thêm tiến độ</h3>
               <p className="text-sm text-blue-700">
-                Chọn lô sơ chế và nhập thông tin tiến độ mới. 
-                Mô tả chi tiết giai đoạn và số lượng đã hoàn thành.
+                Chọn lô sơ chế và nhập khối lượng đầu ra. Hệ thống sẽ tự động lấy giai đoạn đầu tiên và tạo tiến độ.
               </p>
             </div>
           </div>
@@ -192,120 +51,17 @@ export default function CreateProcessingProgressPage() {
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6 text-white">
             <h2 className="text-xl font-semibold flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
+              <Package className="w-5 h-5" />
               Thông tin tiến độ
             </h2>
           </div>
           
-          <div className="p-6 space-y-6">
-            {/* Lô sơ chế */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Package className="w-4 h-4 text-green-600" />
-                Lô sơ chế *
-              </label>
-              <Select
-                value={form.batchId}
-                onValueChange={(v) => handleChange("batchId", v)}
-              >
-                <SelectTrigger className="w-full h-12 border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors">
-                  <SelectValue placeholder="Chọn lô sơ chế" />
-                </SelectTrigger>
-                <SelectContent>
-                  {batches.map((batch) => (
-                    <SelectItem key={batch.batchId} value={batch.batchId}>
-                      {batch.batchCode} - {batch.coffeeTypeName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {batches.length === 0 && (
-                <p className="text-sm text-red-600">Không có lô sơ chế nào khả dụng</p>
-              )}
-            </div>
-
-            {/* Giai đoạn */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-orange-600" />
-                Giai đoạn *
-              </label>
-              <Input
-                value={form.stage}
-                onChange={(e) => handleChange("stage", e.target.value)}
-                placeholder="Nhập giai đoạn sơ chế (VD: Thu hái, Phơi khô, Xay xát...)"
-                className="h-12 border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors"
-              />
-            </div>
-
-            {/* Mô tả */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-purple-600" />
-                Mô tả *
-              </label>
-              <Textarea
-                value={form.description}
-                onChange={(e) => handleChange("description", e.target.value)}
-                placeholder="Mô tả chi tiết về giai đoạn sơ chế, phương pháp, điều kiện..."
-                className="min-h-[100px] border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors"
-              />
-            </div>
-
-            {/* Số lượng hoàn thành */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Số lượng hoàn thành *
-                </label>
-                <Input
-                  type="number"
-                  value={form.completedQuantity}
-                  onChange={(e) => handleChange("completedQuantity", parseFloat(e.target.value) || 0)}
-                  placeholder="0"
-                  className="h-12 border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Đơn vị
-                </label>
-                <Select
-                  value={form.completedUnit}
-                  onValueChange={(v) => handleChange("completedUnit", v)}
-                >
-                  <SelectTrigger className="w-full h-12 border-gray-200 hover:border-green-300 focus:border-green-500 transition-colors">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="kg">Kilogram (kg)</SelectItem>
-                    <SelectItem value="g">Gram (g)</SelectItem>
-                    <SelectItem value="ton">Tấn (ton)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex justify-end pt-4">
-              <Button 
-                onClick={handleSubmit} 
-                disabled={isSubmitting}
-                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Đang thêm...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5" />
-                    Thêm tiến độ
-                  </>
-                )}
-              </Button>
-            </div>
+          <div className="p-6">
+            <CreateProcessingProgressForm 
+              onSuccess={() => {
+                router.push("/dashboard/farmer/processing/progresses");
+              }}
+            />
           </div>
         </div>
       </div>

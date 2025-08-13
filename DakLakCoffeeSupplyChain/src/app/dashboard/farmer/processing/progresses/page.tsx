@@ -161,7 +161,7 @@ export default function ProcessingProgressesPage() {
       key: "batchStatus", 
       title: "Trạng thái lô",
       render: (value: any, item: GroupedProgress) => {
-        const getStatusInfo = (status: number) => {
+        const getStatusInfo = (status: ProcessingStatus) => {
           switch (status) {
       case ProcessingStatus.NotStarted:
               return { label: "Chờ xử lý", color: "bg-yellow-100 text-yellow-700" };
@@ -222,21 +222,20 @@ export default function ProcessingProgressesPage() {
     }
   ];
 
-  // Cấu hình actions cho table - FARMER: Chỉ xem chi tiết, cập nhật trong detail page
+  // Cấu hình actions cho table - FARMER: Có thể xem chi tiết và thêm tiến trình
   const actions = [
     {
       label: "Xem chi tiết",
       icon: <Eye className="w-3 h-3" />,
       onClick: (group: GroupedProgress) => router.push(`/dashboard/farmer/processing/progresses/${group.batchId}`),
       className: "hover:bg-green-50 hover:border-green-300 text-green-700"
+    },
+    {
+      label: "Thêm tiến trình",
+      icon: <Plus className="w-3 h-3" />,
+      onClick: (group: GroupedProgress) => router.push(`/dashboard/farmer/processing/progresses/create?batchId=${group.batchId}`),
+      className: "hover:bg-blue-50 hover:border-blue-300 text-blue-700"
     }
-    // FARMER: Không có quyền thêm tiến trình từ list, chỉ cập nhật trong detail page
-    // {
-    //   label: "Thêm tiến trình",
-    //   icon: <Plus className="w-3 h-3" />,
-    //   onClick: (group: GroupedProgress) => router.push(`/dashboard/farmer/processing/progresses/create?batchId=${group.batchId}`),
-    //   className: "hover:bg-blue-50 hover:border-blue-300 text-blue-700"
-    // }
   ];
 
   return (
@@ -246,9 +245,8 @@ export default function ProcessingProgressesPage() {
         <ProcessingHeader
             title="Quản lý tiến trình sơ chế"
           description={`Theo dõi và cập nhật tiến trình xử lý cà phê của bạn • ${batches.length} lô • ${progresses.length} tiến trình`}
-          // FARMER: Không có nút tạo mới ở đây, chỉ cập nhật trong detail page
-          // createButtonText="Thêm tiến trình"
-          // onCreateClick={() => router.push("/dashboard/farmer/processing/progresses/create")}
+          createButtonText="Thêm tiến trình"
+          onCreateClick={() => router.push("/dashboard/farmer/processing/progresses/create")}
         />
 
         {/* Search */}

@@ -62,7 +62,7 @@ export default function ManagerProcessingBatchesPage() {
   // Lọc theo trạng thái và tìm kiếm
   const filtered = batches.filter(
     (b) =>
-      (selectedStatus === null || b.status === selectedStatus) &&
+      (selectedStatus === null || (b.status as any) === selectedStatus) &&
       (!search || b.batchCode.toLowerCase().includes(search.toLowerCase()))
   );
 
@@ -78,7 +78,7 @@ export default function ManagerProcessingBatchesPage() {
   }, [search, selectedStatus]);
 
   // Đếm số lượng theo trạng thái
-  const statusCounts = batches.reduce<Record<number, number>>((acc, batch) => {
+  const statusCounts = batches.reduce<Record<any, number>>((acc, batch) => {
     acc[batch.status] = (acc[batch.status] || 0) + 1;
     return acc;
   }, {});
@@ -134,7 +134,38 @@ export default function ManagerProcessingBatchesPage() {
   };
 
   const getStatusInfo = (status: number) => {
-    switch (status) {
+    // Debug: Log status để xem giá trị thực tế
+    console.log("🔍 Manager getStatusInfo received status:", status, "type:", typeof status);
+    
+    // Xử lý status có thể là number hoặc string
+    let statusString: string;
+    if (typeof status === 'number') {
+      // Nếu là number, chuyển đổi theo mapping
+      switch (status) {
+        case 0: statusString = ProcessingStatus.NotStarted; break;
+        case 1: statusString = ProcessingStatus.InProgress; break;
+        case 2: statusString = ProcessingStatus.Completed; break;
+        case 3: statusString = ProcessingStatus.AwaitingEvaluation; break;
+        case 4: statusString = ProcessingStatus.Cancelled; break;
+        default: statusString = status.toString();
+      }
+    } else {
+      statusString = status;
+    }
+    
+    console.log("🔍 Manager converted statusString:", statusString);
+    
+    // Kiểm tra xem status có trong enum không
+    const isValidStatus = Object.values(ProcessingStatus).includes(statusString as ProcessingStatus);
+    
+    console.log("🔍 Manager is valid status:", isValidStatus);
+    
+    if (!isValidStatus) {
+      return { label: `Không xác định (${statusString})`, color: "bg-gray-100 text-gray-700 border-gray-200", icon: "❓" };
+    }
+    
+    // Sử dụng statusString để so sánh
+    switch (statusString) {
       case ProcessingStatus.NotStarted:
         return { label: "Chờ xử lý", color: "bg-amber-100 text-amber-700 border-amber-200", icon: "⏳" };
       case ProcessingStatus.InProgress:
@@ -392,7 +423,7 @@ export default function ManagerProcessingBatchesPage() {
                 >
                   {methods.map((method) => (
                     <option key={method.methodId} value={method.methodId}>
-                      {method.name}
+                      {method.methodName}
                     </option>
                   ))}
                 </select>

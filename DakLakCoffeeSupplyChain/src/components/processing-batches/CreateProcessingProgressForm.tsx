@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
-
 import { createProcessingBatchProgressWithMedia } from "@/lib/api/processingBatchProgress";
 import imageCompression from "browser-image-compression";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
+import MediaUploadSection from "./MediaUploadSection";
 
 
 type Props = {
@@ -22,7 +22,7 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     batchId: defaultBatchId,
-    progressDate: "",
+    progressDate: new Date().toISOString().split("T")[0], // Mặc định hôm nay
     outputQuantity: 0,
     outputUnit: "kg",
     photoFiles: [] as File[],
@@ -34,7 +34,7 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [dragActive, setDragActive] = useState(false);
+
 
   useEffect(() => {
     const fetchBatches = async () => {
@@ -47,47 +47,18 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (e.target instanceof HTMLInputElement && e.target.type === "file") {
-      if (name === "photoFiles" || name === "videoFiles") {
-        const files = Array.from(e.target.files || []);
-        setForm((prev) => ({ ...prev, [name]: files }));
-      } else {
-        const file = e.target.files?.[0] || null;
-        setForm((prev) => ({ ...prev, [name]: file }));
-      }
-    } else {
-      setForm((prev) => ({
-        ...prev,
-        [name]: name === "outputQuantity" ? Number(value) : value,
-      }));
-    }
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "outputQuantity" ? Number(value) : value,
+    }));
   };
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+  const handlePhotoFilesChange = (files: File[]) => {
+    setForm(prev => ({ ...prev, photoFiles: files }));
   };
 
-  const handleDrop = (e: React.DragEvent, type: 'photo' | 'video') => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    const videoFiles = files.filter(file => file.type.startsWith('video/'));
-
-    if (type === 'photo' && imageFiles.length > 0) {
-      setForm(prev => ({ ...prev, photoFiles: [...prev.photoFiles, ...imageFiles] }));
-    }
-    if (type === 'video' && videoFiles.length > 0) {
-      setForm(prev => ({ ...prev, videoFiles: [...prev.videoFiles, ...videoFiles] }));
-    }
+  const handleVideoFilesChange = (files: File[]) => {
+    setForm(prev => ({ ...prev, videoFiles: files }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,8 +80,24 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
       return;
     }
 
+    // Validate date không được trong tương lai
+    const selectedDate = new Date(form.progressDate);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // Set to end of today
+    if (selectedDate > today) {
+      setError("Ngày thực hiện không được trong tương lai");
+      setLoading(false);
+      return;
+    }
+
     if (form.outputQuantity <= 0) {
       setError("Khối lượng đầu ra phải lớn hơn 0");
+      setLoading(false);
+      return;
+    }
+
+    if (!form.outputUnit.trim()) {
+      setError("Vui lòng nhập đơn vị");
       setLoading(false);
       return;
     }
@@ -317,95 +304,12 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
         </div>
       </div>
 
-      <div>
-        <label className="block font-medium mb-1">Ảnh (upload) - Kéo thả hoặc click chọn nhiều ảnh</label>
-        <p className="text-sm text-gray-500 mb-2">Giới hạn: 10MB/file, tối đa 10 files, tổng 50MB</p>
-        <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={(e) => handleDrop(e, 'photo')}
-        >
-          <div className="space-y-2">
-            <div className="text-gray-600">
-              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <p className="mt-2">Kéo thả ảnh vào đây hoặc</p>
-            </div>
-            <Input 
-              type="file" 
-              name="photoFiles" 
-              accept="image/*" 
-              onChange={handleChange} 
-              multiple 
-              className="hidden"
-              id="photo-input"
-            />
-            <label htmlFor="photo-input" className="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-              Chọn ảnh
-            </label>
-          </div>
-        </div>
-        {form.photoFiles.length > 0 && (
-          <div className="mt-2 text-sm text-gray-600">
-            <p>Đã chọn {form.photoFiles.length} ảnh:</p>
-            <ul className="list-disc list-inside">
-              {form.photoFiles.map((file, index) => (
-                <li key={index}>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      <div>
-        <label className="block font-medium mb-1">Video (upload) - Kéo thả hoặc click chọn nhiều video</label>
-        <p className="text-sm text-gray-500 mb-2">Giới hạn: 100MB/file, tối đa 10 files, tổng 50MB</p>
-        <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={(e) => handleDrop(e, 'video')}
-        >
-          <div className="space-y-2">
-            <div className="text-gray-600">
-              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <p className="mt-2">Kéo thả video vào đây hoặc</p>
-            </div>
-            <Input 
-              type="file" 
-              name="videoFiles" 
-              accept="video/*" 
-              onChange={handleChange} 
-              multiple 
-              className="hidden"
-              id="video-input"
-            />
-            <label htmlFor="video-input" className="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-              Chọn video
-            </label>
-          </div>
-        </div>
-        {form.videoFiles.length > 0 && (
-          <div className="mt-2 text-sm text-gray-600">
-            <p>Đã chọn {form.videoFiles.length} video:</p>
-            <ul className="list-disc list-inside">
-              {form.videoFiles.map((file, index) => (
-                <li key={index}>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+      <MediaUploadSection
+        photoFiles={form.photoFiles}
+        videoFiles={form.videoFiles}
+        onPhotoFilesChange={handlePhotoFilesChange}
+        onVideoFilesChange={handleVideoFilesChange}
+      />
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
       {success && <p className="text-green-600 text-sm">{success}</p>}

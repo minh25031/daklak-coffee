@@ -7,9 +7,9 @@ import {
   getProcessingBatchById,
   ProcessingBatch,
 } from "@/lib/api/processingBatches";
+import { getEvaluationsByBatch, ProcessingBatchEvaluation, getEvaluationResultDisplayName, getEvaluationResultColor } from "@/lib/api/processingBatchEvaluations";
 import StatusBadge from "@/components/processing-batches/StatusBadge";
-import { 
-  Loader, 
+import {
   PlusCircle, 
   ArrowLeft, 
   ArrowRight,
@@ -19,15 +19,17 @@ import {
   Settings, 
   Coffee, 
   TrendingUp, 
-  Eye, 
   Edit,
-  Info,
   AlertCircle,
   FileImage,
   Video,
   Scale,
   X,
-  Maximize2
+  ClipboardCheck,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Clock
 } from "lucide-react";
 import {
   Dialog,
@@ -51,6 +53,7 @@ export default function ViewProcessingBatch() {
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openAdvanceModal, setOpenAdvanceModal] = useState(false);
   const [latestProgress, setLatestProgress] = useState<ProcessingBatchProgress | null>(null);
+  const [evaluations, setEvaluations] = useState<ProcessingBatchEvaluation[]>([]);
   
   // Media viewer dialog states
   const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
@@ -104,7 +107,7 @@ export default function ViewProcessingBatch() {
   }, [batch?.progresses]);
 
   // Hàm mở media viewer với tất cả media
-  const openMediaViewer = useCallback((media: { url: string; type: 'image' | 'video'; caption?: string }, mediaIndex: number) => {
+  const openMediaViewer = useCallback((media: { url: string; type: 'image' | 'video'; caption?: string }) => {
     // Thu thập tất cả media từ tất cả progresses
     const allMediaList: Array<{ url: string; type: 'image' | 'video'; caption?: string }> = [];
     let targetIndex = 0;
@@ -191,9 +194,10 @@ export default function ViewProcessingBatch() {
           const data = await getProcessingBatchById(id);
           setBatch(data);
           
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('Error fetching batch:', err);
-          setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
+          const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tải dữ liệu';
+          setError(errorMessage);
         } finally {
           setLoading(false);
         }
@@ -210,6 +214,22 @@ export default function ViewProcessingBatch() {
       setLatestProgress(latest);
     }
   }, [batch]);
+
+  useEffect(() => {
+    const fetchEvaluations = async () => {
+      if (typeof id === "string") {
+        try {
+          const data = await getEvaluationsByBatch(id);
+          setEvaluations(data);
+        } catch (err: unknown) {
+          console.error('Error fetching evaluations:', err);
+          const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tải đánh giá';
+          setError(errorMessage);
+        }
+      }
+    };
+    fetchEvaluations();
+  }, [id]);
 
   if (loading) {
     return (
@@ -303,30 +323,80 @@ export default function ViewProcessingBatch() {
       <div className="p-6 max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-              Chi tiết lô sơ chế
-            </h1>
-            <p className="text-gray-600">Thông tin chi tiết về lô sơ chế và tiến trình xử lý</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline"
-              onClick={() => router.push(`/dashboard/farmer/processing/batches/${id}/edit`)}
-              className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
-            >
-              <Edit className="w-4 h-4" />
-              Chỉnh sửa
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => router.back()}
-              className="flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Quay lại
-            </Button>
-          </div>
+                     <div className="space-y-2">
+             <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+               Chi tiết lô sơ chế
+             </h1>
+             <p className="text-gray-600">Thông tin chi tiết về lô sơ chế và tiến trình xử lý</p>
+             
+             {/* Thông báo trạng thái */}
+             {batch.status === ProcessingStatus.Completed && (
+               <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm">
+                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                 <span>✅ Đã hoàn thành tất cả các bước</span>
+               </div>
+             )}
+             
+             {batch.status === ProcessingStatus.AwaitingEvaluation && (
+               <div className="flex items-center gap-2 text-orange-600 bg-orange-50 px-3 py-1 rounded-full text-sm">
+                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                 <span>⏳ Đang chờ đánh giá</span>
+               </div>
+             )}
+             
+             {batch.status !== ProcessingStatus.Completed && 
+              batch.status !== ProcessingStatus.AwaitingEvaluation && 
+              batch.progresses && batch.progresses.length > 0 && (
+               <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-sm">
+                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                 <span>🔄 Có thể cập nhật bước tiếp theo</span>
+               </div>
+             )}
+           </div>
+                     <div className="flex items-center gap-3">
+             {/* Nút cập nhật tiến trình - chỉ hiển thị khi có thể cập nhật */}
+             {batch.progresses && batch.progresses.length > 0 && 
+              batch.status !== ProcessingStatus.Completed && 
+              batch.status !== ProcessingStatus.AwaitingEvaluation && (
+               <Button 
+                 onClick={() => setOpenAdvanceModal(true)}
+                 className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white transition-all duration-200"
+               >
+                 <PlusCircle className="w-4 h-4" />
+                 Cập nhật tiến trình
+               </Button>
+             )}
+
+             {/* Nút tạo tiến trình đầu tiên - chỉ hiển thị khi chưa có progress */}
+             {(!batch.progresses || batch.progresses.length === 0) && (
+               <Button 
+                 onClick={() => setOpenCreateModal(true)}
+                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200"
+               >
+                 <PlusCircle className="w-4 h-4" />
+                 Tạo tiến trình đầu tiên
+               </Button>
+             )}
+
+
+
+             <Button 
+               variant="outline"
+               onClick={() => router.push(`/dashboard/farmer/processing/batches/${id}/edit`)}
+               className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+             >
+               <Edit className="w-4 h-4" />
+               Chỉnh sửa
+             </Button>
+             <Button 
+               variant="outline"
+               onClick={() => router.back()}
+               className="flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+             >
+               <ArrowLeft className="w-4 h-4" />
+               Quay lại
+             </Button>
+           </div>
         </div>
 
         {/* Stats Cards */}
@@ -385,6 +455,43 @@ export default function ViewProcessingBatch() {
                 <Settings className="w-6 h-6 text-orange-600" />
               </div>
             </div>
+            
+            {/* Thông báo khi batch bị đánh giá Fail */}
+            {batch.status === ProcessingStatus.InProgress && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-red-800 mb-1">
+                      ⚠️ Lô sơ chế cần cải thiện
+                    </h4>
+                    <p className="text-sm text-red-700 mb-3">
+                      Lô sơ chế của bạn đã được đánh giá không đạt. Vui lòng xem chi tiết đánh giá và cải thiện theo hướng dẫn.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-red-700 border-red-300 hover:bg-red-100"
+                        onClick={() => {
+                          // TODO: Mở modal xem chi tiết đánh giá
+                          alert("Tính năng xem chi tiết đánh giá sẽ được phát triển");
+                        }}
+                      >
+                        Xem chi tiết đánh giá
+                      </Button>
+                      <Button 
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => setOpenAdvanceModal(true)}
+                      >
+                        Cập nhật tiến trình
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -501,26 +608,45 @@ export default function ViewProcessingBatch() {
                 Tiến độ sơ chế
               </h2>
 
-              {batch.status !== ProcessingStatus.Completed && batch.status !== ProcessingStatus.AwaitingEvaluation &&
-                (!batch.progresses || batch.progresses.length === 0 ? (
-                  <Button
-                    onClick={() => setOpenCreateModal(true)}
-                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                  >
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Tạo tiến trình đầu tiên
-                  </Button>
-                ) : (
-                  latestProgress && (
-                    <Button
-                      onClick={() => setOpenAdvanceModal(true)}
-                      className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                    >
-                      <PlusCircle className="w-4 h-4 mr-2" />
-                      Cập nhật bước tiếp theo
-                    </Button>
-                  )
-                ))}
+              {/* Hiển thị nút tạo tiến trình đầu tiên nếu chưa có progress nào */}
+              {(!batch.progresses || batch.progresses.length === 0) && (
+                <Button
+                  onClick={() => setOpenCreateModal(true)}
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                >
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Tạo tiến trình đầu tiên
+                </Button>
+              )}
+
+              {/* Hiển thị nút cập nhật bước tiếp theo nếu đã có progress và chưa hoàn thành */}
+              {batch.progresses && batch.progresses.length > 0 && 
+               batch.status !== ProcessingStatus.Completed && 
+               batch.status !== ProcessingStatus.AwaitingEvaluation && (
+                <Button
+                  onClick={() => setOpenAdvanceModal(true)}
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                >
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Cập nhật bước tiếp theo
+                </Button>
+              )}
+
+              {/* Hiển thị thông báo nếu đã hoàn thành */}
+              {batch.status === ProcessingStatus.Completed && (
+                <div className="flex items-center gap-2 text-white/80">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-sm">Đã hoàn thành tất cả các bước</span>
+                </div>
+              )}
+
+              {/* Hiển thị thông báo nếu đang chờ đánh giá */}
+              {batch.status === ProcessingStatus.AwaitingEvaluation && (
+                <div className="flex items-center gap-2 text-white/80">
+                  <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                  <span className="text-sm">Đang chờ đánh giá</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -580,48 +706,104 @@ export default function ViewProcessingBatch() {
                     {progress.mediaFiles && progress.mediaFiles.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-gray-100">
                         <h4 className="text-sm font-medium text-gray-700 mb-3">Tài liệu đính kèm</h4>
-                        <div className="flex gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                           {progress.mediaFiles.map((media, mediaIdx) => (
-                            <div key={mediaIdx} className="flex items-center gap-2">
+                            <div key={mediaIdx} className="relative group">
                               {media.mediaType === 'image' ? (
-                                <>
-                                  <FileImage className="w-4 h-4 text-green-600" />
-                                  <span className="text-sm text-gray-600">Ảnh</span>
-                                  <div className="relative group">
-                                    <img 
-                                      src={media.mediaUrl} 
-                                      alt={media.caption || `Photo of ${progress.stageName}`} 
-                                      className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
-                                      loading="lazy"
-                                      onClick={() => openMediaViewer({
-                                        url: media.mediaUrl,
-                                        type: 'image',
-                                        caption: media.caption
-                                      }, 0)}
-                                    />
+                                <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
+                                  <img 
+                                    src={media.mediaUrl} 
+                                    alt={media.caption || `Ảnh ${mediaIdx + 1} của ${progress.stageName}`} 
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                    loading="lazy"
+                                    onClick={() => openMediaViewer({
+                                      url: media.mediaUrl,
+                                      type: 'image',
+                                      caption: media.caption
+                                    })}
+                                  />
+                                  <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-md font-medium">
+                                    Ảnh
                                   </div>
-                                </>
+                                </div>
                               ) : media.mediaType === 'video' ? (
-                                <>
-                                  <Video className="w-4 h-4 text-blue-600" />
-                                  <span className="text-sm text-gray-600">Video</span>
-                                  <div className="relative group">
-                                    <video 
-                                      className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
-                                      preload="metadata"
-                                      onClick={() => openMediaViewer({
-                                        url: media.mediaUrl,
-                                        type: 'video',
-                                        caption: media.caption
-                                      }, 0)}
-                                    >
-                                      <source src={media.mediaUrl} />
-                                    </video>
+                                <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
+                                  <video 
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                    preload="metadata"
+                                    onClick={() => openMediaViewer({
+                                      url: media.mediaUrl,
+                                      type: 'video',
+                                      caption: media.caption
+                                    })}
+                                  >
+                                    <source src={media.mediaUrl} />
+                                  </video>
+                                  <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-md font-medium">
+                                    Video
                                   </div>
-                                </>
+                                  {/* Play button overlay */}
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="bg-black bg-opacity-40 rounded-full p-2">
+                                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z"/>
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </div>
                               ) : null}
+                              {media.caption && (
+                                <p className="text-xs text-gray-600 mt-2 truncate" title={media.caption}>
+                                  {media.caption}
+                                </p>
+                              )}
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Legacy Media Support (for backward compatibility) */}
+                    {(!progress.mediaFiles || progress.mediaFiles.length === 0) && (progress.photoUrl || progress.videoUrl) && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Tài liệu đính kèm (Cũ)</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {progress.photoUrl && (
+                            <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
+                              <img 
+                                src={progress.photoUrl} 
+                                alt={`Photo of ${progress.stageName}`} 
+                                className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => progress.photoUrl && window.open(progress.photoUrl, '_blank')}
+                              />
+                              <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-md font-medium">
+                                Ảnh
+                              </div>
+                            </div>
+                          )}
+                          
+                          {progress.videoUrl && (
+                            <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
+                              <video 
+                                className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                preload="metadata"
+                                onClick={() => progress.videoUrl && window.open(progress.videoUrl, '_blank')}
+                              >
+                                <source src={progress.videoUrl} />
+                              </video>
+                              <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-md font-medium">
+                                Video
+                              </div>
+                              {/* Play button overlay */}
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="bg-black bg-opacity-40 rounded-full p-2">
+                                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -701,6 +883,116 @@ export default function ViewProcessingBatch() {
           </div>
         )}
 
+                          {/* Evaluations Section */}
+         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+           <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-6 text-white">
+             <h2 className="text-xl font-semibold flex items-center gap-2">
+               <ClipboardCheck className="w-5 h-5" />
+               Đánh giá lô sơ chế
+             </h2>
+             <p className="text-blue-100 mt-1">Kết quả đánh giá từ chuyên gia nông nghiệp</p>
+           </div>
+           
+           <div className="p-6">
+             {evaluations.length > 0 ? (
+               <div className="space-y-4">
+                 {evaluations.map((evaluation, idx) => (
+                   <div
+                     key={`${evaluation.evaluationId}-${idx}`}
+                     className="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg p-6"
+                   >
+                     {/* Header với kết quả đánh giá */}
+                     <div className="flex items-center justify-between mb-4">
+                       <div className="flex items-center gap-3">
+                         <div className="p-2 bg-blue-100 rounded-lg">
+                           <ClipboardCheck className="w-5 h-5 text-blue-600" />
+                         </div>
+                         <div>
+                           <h3 className="font-semibold text-gray-900">Đánh giá #{evaluation.evaluationCode}</h3>
+                           <p className="text-sm text-gray-500">Mã đánh giá: {evaluation.evaluationCode}</p>
+                         </div>
+                       </div>
+                       <div className="flex items-center gap-2">
+                         <span className={`px-3 py-1 text-sm font-medium rounded-full ${getEvaluationResultColor(evaluation.evaluationResult)}`}>
+                           {getEvaluationResultDisplayName(evaluation.evaluationResult)}
+                         </span>
+                       </div>
+                     </div>
+                     
+                     {/* Thông tin chi tiết */}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                       <div className="flex items-center gap-2 text-sm text-gray-600">
+                         <Calendar className="w-4 h-4 text-gray-500" />
+                         <span className="font-medium">Ngày đánh giá:</span>
+                         <span>{evaluation.evaluatedAt ? new Date(evaluation.evaluatedAt).toLocaleDateString('vi-VN') : 'Chưa có ngày'}</span>
+                       </div>
+                       
+                       <div className="flex items-center gap-2 text-sm text-gray-600">
+                         <User className="w-4 h-4 text-gray-500" />
+                         <span className="font-medium">Đánh giá bởi:</span>
+                         <span>{evaluation.evaluatedBy ? `Chuyên gia ${evaluation.evaluatedBy}` : 'Hệ thống'}</span>
+                       </div>
+                     </div>
+                     
+                     {/* Nhận xét chính */}
+                     {evaluation.comments && (
+                       <div className="mb-4">
+                         <h4 className="text-sm font-medium text-gray-700 mb-2">Nhận xét:</h4>
+                         <div className="bg-gray-50 rounded-lg p-3">
+                           <p className="text-sm text-gray-800">{evaluation.comments}</p>
+                         </div>
+                       </div>
+                     )}
+                     
+                     {/* Phản hồi chi tiết */}
+                     {evaluation.detailedFeedback && (
+                       <div className="mb-4">
+                         <h4 className="text-sm font-medium text-gray-700 mb-2">Phản hồi chi tiết:</h4>
+                         <div className="bg-blue-50 rounded-lg p-3">
+                           <p className="text-sm text-gray-800">{evaluation.detailedFeedback}</p>
+                         </div>
+                       </div>
+                     )}
+                     
+                     {/* Khuyến nghị */}
+                     {evaluation.recommendations && (
+                       <div className="mb-4">
+                         <h4 className="text-sm font-medium text-gray-700 mb-2">Khuyến nghị cải thiện:</h4>
+                         <div className="bg-green-50 rounded-lg p-3">
+                           <p className="text-sm text-gray-800">{evaluation.recommendations}</p>
+                         </div>
+                       </div>
+                     )}
+                     
+                     {/* Tiến trình có vấn đề */}
+                     {evaluation.problematicSteps && evaluation.problematicSteps.length > 0 && (
+                       <div>
+                         <h4 className="text-sm font-medium text-gray-700 mb-2">Tiến trình cần cải thiện:</h4>
+                         <div className="bg-yellow-50 rounded-lg p-3">
+                           <ul className="text-sm text-gray-800 space-y-1">
+                             {evaluation.problematicSteps.map((step, stepIdx) => (
+                               <li key={stepIdx} className="flex items-center gap-2">
+                                 <AlertTriangle className="w-3 h-3 text-yellow-600" />
+                                 {step}
+                               </li>
+                             ))}
+                           </ul>
+                         </div>
+                       </div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+             ) : (
+               <div className="text-center py-8">
+                 <ClipboardCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                 <p className="text-gray-500 text-lg font-medium mb-2">Chưa có đánh giá</p>
+                 <p className="text-gray-400 text-sm">Lô sơ chế này chưa được đánh giá bởi chuyên gia</p>
+               </div>
+             )}
+           </div>
+         </div>
+
         {/* Modals */}
         <Dialog open={openCreateModal} onOpenChange={setOpenCreateModal}>
           <DialogContent className="sm:max-w-lg">
@@ -718,12 +1010,7 @@ export default function ViewProcessingBatch() {
         </Dialog>
 
         <Dialog open={openAdvanceModal} onOpenChange={setOpenAdvanceModal}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-semibold">
-                Cập nhật sau bước: {latestProgress?.stageName}
-              </DialogTitle>
-            </DialogHeader>
+          <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto p-0">
             {latestProgress && (
               <AdvanceProcessingProgressForm
                 batchId={batch.batchId}
@@ -740,18 +1027,8 @@ export default function ViewProcessingBatch() {
         {/* Media Viewer Dialog */}
         <Dialog open={mediaViewerOpen} onOpenChange={setMediaViewerOpen}>
           <DialogContent 
-            className="media-viewer-overlay w-screen h-screen max-w-none max-h-none overflow-hidden p-0 bg-black border-0 shadow-none !fixed !inset-0 !top-0 !left-0 !right-0 !bottom-0"
+            className="media-viewer-overlay"
             showCloseButton={false}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 999999
-            }}
           >
             {/* Header */}
             <div className="absolute top-4 right-4 z-50">
@@ -793,47 +1070,43 @@ export default function ViewProcessingBatch() {
                 {currentMediaIndex + 1} / {allMedia.length}
               </div>
             )}
-{/* Media Content */}
-<div className="absolute inset-0 flex items-center justify-center bg-black z-40">
-  {selectedMedia?.type === 'image' ? (
-    <div className="flex flex-col items-center justify-center">
-      <img 
-        src={selectedMedia.url} 
-        alt={selectedMedia.caption || 'Hình ảnh'} 
-        className="object-contain"
-        style={{
-          maxWidth: '100vw',
-          maxHeight: '100vh',
-        }}
-      />
-      {selectedMedia.caption && (
-        <p className="mt-4 text-sm text-white text-center max-w-2xl bg-black/60 px-4 py-2 rounded-lg">
-          {selectedMedia.caption}
-        </p>
-      )}
-    </div>
-  ) : selectedMedia?.type === 'video' ? (
-    <div className="flex flex-col items-center justify-center">
-      <video 
-        controls 
-        autoPlay
-        className="object-contain"
-        style={{
-          maxWidth: '100vw',
-          maxHeight: '100vh',
-        }}
-      >
-        <source src={selectedMedia.url} />
-        Trình duyệt của bạn không hỗ trợ video.
-      </video>
-      {selectedMedia.caption && (
-        <p className="mt-4 text-sm text-white text-center max-w-2xl bg-black/60 px-4 py-2 rounded-lg">
-          {selectedMedia.caption}
-        </p>
-      )}
-    </div>
-  ) : null}
-</div>
+            {/* Media Content */}
+            <div className="media-viewer-content">
+              {selectedMedia?.type === 'image' ? (
+                <div className="flex flex-col items-center justify-center w-full h-full">
+                  <img 
+                    src={selectedMedia.url} 
+                    alt={selectedMedia.caption || 'Hình ảnh'} 
+                    className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                  />
+                  {selectedMedia.caption && (
+                    <div className="mt-4">
+                      <p className="text-sm text-white text-center max-w-2xl bg-black/80 px-4 py-2 rounded-lg backdrop-blur-sm">
+                        {selectedMedia.caption}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : selectedMedia?.type === 'video' ? (
+                <div className="flex flex-col items-center justify-center w-full h-full">
+                  <video 
+                    controls 
+                    autoPlay
+                    className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                  >
+                    <source src={selectedMedia.url} />
+                    Trình duyệt của bạn không hỗ trợ video.
+                  </video>
+                  {selectedMedia.caption && (
+                    <div className="mt-4">
+                      <p className="text-sm text-white text-center max-w-2xl bg-black/80 px-4 py-2 rounded-lg backdrop-blur-sm">
+                        {selectedMedia.caption}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
   
 
             {/* Keyboard Instructions */}

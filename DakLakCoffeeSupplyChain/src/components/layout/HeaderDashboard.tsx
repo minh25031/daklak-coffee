@@ -23,7 +23,7 @@ const pathTitleMap: Record<string, string> = {
 
     "crop-seasons": "Mùa vụ",
     batches: "Danh sách lô sơ chế",
-    evaluations: "Đánh giá lô sơ chế",
+            evaluations: "Phân tích bất thường",
     progresses: "Tiến trình lô sơ chế",
     wastes: "Chất thải lô sơ chế",
     "processing-methods": "Phương pháp sơ chế",

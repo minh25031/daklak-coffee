@@ -10,38 +10,44 @@ interface StatusBadgeProps {
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  // Đảm bảo status là number
-  const numericStatus = typeof status === 'string' ? parseInt(status, 10) : status;
+  // Debug: Log status để xem giá trị thực tế
+  console.log("🔍 StatusBadge received status:", status, "type:", typeof status);
   
-  // Sử dụng switch case để đảm bảo mapping đúng
-  let info;
-  switch (numericStatus) {
-    case ProcessingStatus.NotStarted:
-      info = ProcessingStatusMap[ProcessingStatus.NotStarted];
-      break;
-    case ProcessingStatus.InProgress:
-      info = ProcessingStatusMap[ProcessingStatus.InProgress];
-      break;
-    case ProcessingStatus.Completed:
-      info = ProcessingStatusMap[ProcessingStatus.Completed];
-      break;
-    case ProcessingStatus.AwaitingEvaluation:
-      info = ProcessingStatusMap[ProcessingStatus.AwaitingEvaluation];
-      break;
-    case ProcessingStatus.Cancelled:
-      info = ProcessingStatusMap[ProcessingStatus.Cancelled];
-      break;
-    default:
-      info = null;
+  // Xử lý status có thể là string hoặc number
+  let statusString: string;
+  if (typeof status === 'number') {
+    // Nếu là number, chuyển đổi theo mapping
+    switch (status) {
+      case 0: statusString = ProcessingStatus.NotStarted; break;
+      case 1: statusString = ProcessingStatus.InProgress; break;
+      case 2: statusString = ProcessingStatus.Completed; break;
+      case 3: statusString = ProcessingStatus.AwaitingEvaluation; break;
+      case 4: statusString = ProcessingStatus.Cancelled; break;
+      default: statusString = status.toString();
+    }
+  } else {
+    statusString = status;
   }
-
-  if (!info) {
+  
+  console.log("🔍 Converted statusString:", statusString);
+  console.log("🔍 Available enum values:", Object.values(ProcessingStatus));
+  
+  // Kiểm tra xem status có trong enum không
+  const isValidStatus = Object.values(ProcessingStatus).includes(statusString as ProcessingStatus);
+  
+  console.log("🔍 Is valid status:", isValidStatus);
+  
+  if (!isValidStatus) {
     return (
       <span className="px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700">
-        Trạng thái {status}
+        Không xác định ({statusString})
       </span>
     );
   }
+
+  const info = ProcessingStatusMap[statusString as ProcessingStatus];
+
+
 
   const Icon = info.icon;
 
