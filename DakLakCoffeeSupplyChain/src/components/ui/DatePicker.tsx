@@ -10,6 +10,7 @@ type Props = {
   required?: boolean;
   placeholder?: string;                // để TS không báo lỗi
   disabled?: boolean;
+  className?: string;
 };
 
 export function DatePicker({
@@ -19,6 +20,7 @@ export function DatePicker({
   required,
   placeholder = "yyyy-MM-dd",
   disabled,
+  className,
 }: Props) {
   return (
     <div className="space-y-1">
@@ -30,6 +32,7 @@ export function DatePicker({
         required={required}
         placeholder={placeholder}       // có thể bị browser bỏ qua
         disabled={disabled}
+        className={className}
       />
     </div>
   );

@@ -32,6 +32,7 @@ export interface ShipmentDetailViewDto {
   createdAt: string;
 }
 
+// Dùng khi tạo chi tiết CHO LÔ GIAO ĐÃ TỒN TẠI (cần shipmentId)
 export interface ShipmentDetailCreateDto {
   shipmentId: string;
   orderItemId: string;
@@ -63,6 +64,52 @@ export interface ShipmentViewDetailsDto {
     orderItemId: string;
     productName: string;
   }[];
+}
+
+// Dùng khi tạo mới một lô giao kèm chi tiết (KHÔNG có shipmentId trong từng detail)
+export interface ShipmentDetailCreateInline {
+  orderItemId: string;
+  quantity: number;
+  unit: string;
+  note?: string;
+}
+
+export interface ShipmentCreateDto {
+  orderId: string;
+  deliveryStaffId: string;
+  shippedQuantity?: number | null;
+  shippedAt?: string | null; // ISO
+  deliveryStatus: ShipmentDeliveryStatusValue;
+  receivedAt?: string | null; // ISO
+  shipmentDetails: ShipmentDetailCreateInline[];
+}
+
+export interface ShipmentUpdateDto extends ShipmentCreateDto {
+  shipmentId: string;
+  shipmentDetails: ShipmentDetailUpdateDto[];
+}
+
+export async function createShipment(payload: ShipmentCreateDto): Promise<string | null> {
+  const res = await api.post("/Shipments", payload);
+  const data = res.data;
+  if (!data) return null;
+  if (typeof data === "string") return data;
+  if (typeof data === "object") {
+    return (
+      (data as any).shipmentId ||
+      (data as any).id ||
+      (data as any).data?.shipmentId ||
+      null
+    );
+  }
+  return null;
+}
+
+export async function updateShipment(
+  shipmentId: string,
+  payload: ShipmentUpdateDto
+): Promise<void> {
+  await api.put(`/Shipments/${shipmentId}`, payload);
 }
 
 export async function getShipmentDetails(
