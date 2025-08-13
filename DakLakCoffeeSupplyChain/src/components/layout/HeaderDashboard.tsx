@@ -34,6 +34,7 @@ const pathTitleMap: Record<string, string> = {
     consultations: "Tư vấn",
     articles: "Bài viết",
     contracts: "Hợp đồng",
+    "business-buyers": "Khách hàng doanh nghiệp",
     reports: "Báo cáo",
     users: "Quản lý người dùng",
     settings: "Cài đặt",
