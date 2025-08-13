@@ -49,11 +49,11 @@ export default function EditShipmentPage() {
   return (
     <ShipmentForm
       initialData={initialData}
-      onSuccess={() => router.push(`/dashboard/manager/shipments/${shipmentId}`)}
+      onSuccess={() =>
+        router.push(`/dashboard/manager/shipments/${shipmentId}`)
+      }
       deliveryStaffOptions={staffOptions}
       orderCodeDisplay={orderCode}
     />
   );
 }
-
-

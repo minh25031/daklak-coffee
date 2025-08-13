@@ -17,7 +17,7 @@ import {
   FiShoppingCart,
   FiBriefcase,
   FiSend,
-  FiTag
+  FiTag,
 } from "react-icons/fi";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -28,7 +28,7 @@ export default function ManagerDashboard() {
     total: 0,
     pending: 0,
     processing: 0,
-    completed: 0
+    completed: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -39,9 +39,9 @@ export default function ManagerDashboard() {
         if (batches) {
           const stats = {
             total: batches.length,
-            pending: batches.filter(b => b.status === 0).length, // NotStarted
-            processing: batches.filter(b => b.status === 1).length, // InProgress
-            completed: batches.filter(b => b.status === 2).length // Completed
+            pending: batches.filter((b) => b.status === 0).length, // NotStarted
+            processing: batches.filter((b) => b.status === 1).length, // InProgress
+            completed: batches.filter((b) => b.status === 2).length, // Completed
           };
           setProcessingStats(stats);
         }
@@ -60,8 +60,12 @@ export default function ManagerDashboard() {
       <div className="p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Tổng quan Business Manager</h1>
-          <p className="text-gray-600">Quản lý và theo dõi toàn bộ hoạt động kinh doanh</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Tổng quan Business Manager
+          </h1>
+          <p className="text-gray-600">
+            Quản lý và theo dõi toàn bộ hoạt động kinh doanh
+          </p>
         </div>
 
         {/* Processing Statistics Section */}
@@ -71,7 +75,7 @@ export default function ManagerDashboard() {
               <FiCoffee className="text-orange-500" />
               Thống kê sơ chế cà phê
             </h2>
-            <Link 
+            <Link
               href="/dashboard/manager/processing/batches"
               className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
@@ -113,7 +117,9 @@ export default function ManagerDashboard() {
 
           {/* Processing Chart */}
           <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Biểu đồ tiến độ sơ chế</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Biểu đồ tiến độ sơ chế
+            </h3>
             <div className="h-64 flex items-end justify-center gap-4">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
@@ -308,16 +314,16 @@ export default function ManagerDashboard() {
   );
 }
 
-function StatsCard({ 
-  title, 
-  value, 
-  icon, 
-  color, 
-  loading 
-}: { 
-  title: string; 
-  value: number; 
-  icon: React.ReactNode; 
+function StatsCard({
+  title,
+  value,
+  icon,
+  color,
+  loading,
+}: {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
   color: string;
   loading: boolean;
 }) {
@@ -325,7 +331,7 @@ function StatsCard({
     blue: "bg-blue-100 text-blue-600",
     yellow: "bg-yellow-100 text-yellow-600",
     green: "bg-green-100 text-green-600",
-    red: "bg-red-100 text-red-600"
+    red: "bg-red-100 text-red-600",
   };
 
   return (
@@ -337,7 +343,11 @@ function StatsCard({
             {loading ? "..." : value}
           </p>
         </div>
-        <div className={`p-3 rounded-lg ${colorClasses[color as keyof typeof colorClasses]}`}>
+        <div
+          className={`p-3 rounded-lg ${
+            colorClasses[color as keyof typeof colorClasses]
+          }`}
+        >
           {icon}
         </div>
       </div>
@@ -345,24 +355,27 @@ function StatsCard({
   );
 }
 
-function ChartBar({ 
-  label, 
-  value, 
-  max, 
-  color 
-}: { 
-  label: string; 
-  value: number; 
-  max: number; 
+function ChartBar({
+  label,
+  value,
+  max,
+  color,
+}: {
+  label: string;
+  value: number;
+  max: number;
   color: string;
 }) {
   const height = max > 0 ? (value / max) * 100 : 0;
-  
+
   return (
     <div className="flex flex-col items-center">
       <div className="text-sm font-medium text-gray-900 mb-2">{value}</div>
-      <div className="w-16 bg-gray-200 rounded-t-lg" style={{ height: '200px' }}>
-        <div 
+      <div
+        className="w-16 bg-gray-200 rounded-t-lg"
+        style={{ height: "200px" }}
+      >
+        <div
           className={`${color} rounded-t-lg transition-all duration-500`}
           style={{ height: `${height}%` }}
         ></div>

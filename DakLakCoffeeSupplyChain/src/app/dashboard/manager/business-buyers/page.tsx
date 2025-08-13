@@ -4,8 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Eye, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
-import { getAllBusinessBuyers, BusinessBuyerDto } from "@/lib/api/businessBuyers";
+import {
+  Search,
+  Eye,
+  Pencil,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import {
+  getAllBusinessBuyers,
+  BusinessBuyerDto,
+} from "@/lib/api/businessBuyers";
 import { Tooltip } from "@/components/ui/tooltip";
 import PageTitle from "@/components/ui/PageTitle";
 
@@ -19,7 +29,9 @@ export default function BusinessBuyersPage() {
   const [endDate, setEndDate] = useState<string>("");
 
   useEffect(() => {
-    getAllBusinessBuyers().then((data) => Array.isArray(data) && setBuyers(data));
+    getAllBusinessBuyers().then(
+      (data) => Array.isArray(data) && setBuyers(data)
+    );
   }, []);
 
   const filtered = useMemo(() => {
@@ -42,12 +54,19 @@ export default function BusinessBuyersPage() {
   }, [buyers, search, startDate, endDate]);
 
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
-  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paged = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const formatDate = (iso?: string) => {
     if (!iso) return "";
     const d = new Date(iso);
-    return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
+    return new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(d);
   };
 
   return (
@@ -55,7 +74,9 @@ export default function BusinessBuyersPage() {
       {/* Sidebar */}
       <aside className="w-64 space-y-4">
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
-          <h2 className="text-sm font-medium text-gray-700">Tìm kiếm khách hàng DN</h2>
+          <h2 className="text-sm font-medium text-gray-700">
+            Tìm kiếm khách hàng DN
+          </h2>
           <div className="relative">
             <Input
               placeholder="Tìm kiếm..."
@@ -70,12 +91,24 @@ export default function BusinessBuyersPage() {
           </div>
           <div className="flex flex-col gap-3 pt-2">
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700">Từ ngày</label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <label className="text-sm font-medium text-gray-700">
+                Từ ngày
+              </label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700">Đến ngày</label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <label className="text-sm font-medium text-gray-700">
+                Đến ngày
+              </label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
           </div>
         </div>
@@ -86,7 +119,14 @@ export default function BusinessBuyersPage() {
         <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
           <div className="flex justify-between items-center gap-4 flex-wrap">
             <div />
-            <Button className="bg-black text-white hover:bg-gray-800" onClick={() => router.push("/dashboard/manager/business-buyers/create")}>+ Thêm khách hàng</Button>
+            <Button
+              className="bg-black text-white hover:bg-gray-800"
+              onClick={() =>
+                router.push("/dashboard/manager/business-buyers/create")
+              }
+            >
+              + Thêm khách hàng
+            </Button>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
@@ -103,24 +143,56 @@ export default function BusinessBuyersPage() {
               <tbody>
                 {paged.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">Không tìm thấy khách hàng</td>
+                    <td
+                      colSpan={5}
+                      className="text-center py-8 text-sm text-muted-foreground"
+                    >
+                      Không tìm thấy khách hàng
+                    </td>
                   </tr>
                 ) : (
                   paged.map((b) => (
-                    <tr key={b.buyerId} className="border-t text-sm hover:bg-gray-50">
-                      <td className="px-4 py-2 whitespace-nowrap">{b.companyName}</td>
-                      <td className="px-4 py-2 whitespace-nowrap">{b.contactPerson}</td>
-                      <td className="px-4 py-2 whitespace-nowrap">{b.position}</td>
-                      <td className="px-4 py-2 text-center whitespace-nowrap">{formatDate(b.createdAt)}</td>
+                    <tr
+                      key={b.buyerId}
+                      className="border-t text-sm hover:bg-gray-50"
+                    >
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {b.companyName}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {b.contactPerson}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {b.position}
+                      </td>
+                      <td className="px-4 py-2 text-center whitespace-nowrap">
+                        {formatDate(b.createdAt)}
+                      </td>
                       <td className="px-4 py-2 whitespace-nowrap">
                         <div className="flex items-center gap-[2px] justify-center">
                           <Tooltip content="Xem chi tiết">
-                            <Button variant="ghost" className="p-[2px] w-7 h-7" onClick={() => router.push(`/dashboard/manager/business-buyers/${b.buyerId}`)}>
+                            <Button
+                              variant="ghost"
+                              className="p-[2px] w-7 h-7"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/manager/business-buyers/${b.buyerId}`
+                                )
+                              }
+                            >
                               <Eye className="w-4 h-4 text-blue-500" />
                             </Button>
                           </Tooltip>
                           <Tooltip content="Chỉnh sửa">
-                            <Button variant="ghost" className="p-[2px] w-7 h-7" onClick={() => router.push(`/dashboard/manager/business-buyers/${b.buyerId}/edit`)}>
+                            <Button
+                              variant="ghost"
+                              className="p-[2px] w-7 h-7"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/manager/business-buyers/${b.buyerId}/edit`
+                                )
+                              }
+                            >
                               <Pencil className="w-4 h-4 text-yellow-500" />
                             </Button>
                           </Tooltip>
@@ -143,13 +215,27 @@ export default function BusinessBuyersPage() {
         {totalPages > 1 && (
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">
-              Hiển thị {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, filtered.length)} trong {filtered.length} khách hàng
+              Hiển thị {(currentPage - 1) * pageSize + 1}-
+              {Math.min(currentPage * pageSize, filtered.length)} trong{" "}
+              {filtered.length} khách hàng
             </span>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={currentPage === totalPages}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+              >
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -159,5 +245,3 @@ export default function BusinessBuyersPage() {
     </div>
   );
 }
-
-
