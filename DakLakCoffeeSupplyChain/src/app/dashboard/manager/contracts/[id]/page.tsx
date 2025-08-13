@@ -25,14 +25,7 @@ import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { FileText, Pencil, Trash2 } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 import ContractItemFormDialog from "@/components/contracts/ContractItemFormDialog";
 import { getCoffeeTypes, CoffeeType } from "@/lib/api/coffeeType";
 import { formatQuantity, formatDate, formatDiscount } from "@/lib/utils";
@@ -448,29 +441,21 @@ export default function ContractDetailPage() {
           }}
         />
       </div>
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xoá mặt hàng?</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xoá mặt hàng{" "}
-              <strong>{itemToDelete?.coffeeTypeName}</strong> khỏi hợp đồng
-              không? Hành động này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Huỷ
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Xoá
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Xoá mặt hàng?"
+        description={
+          <span>
+            Bạn có chắc chắn muốn xoá mặt hàng{" "}
+            <strong>{itemToDelete?.coffeeTypeName}</strong> khỏi hợp đồng không?
+            Hành động này không thể hoàn tác.
+          </span>
+        }
+        confirmText="Xoá"
+        cancelText="Huỷ"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
