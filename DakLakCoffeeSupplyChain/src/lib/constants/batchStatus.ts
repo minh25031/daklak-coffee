@@ -7,11 +7,11 @@ import {
 } from "lucide-react";
 
 export enum ProcessingStatus {
-  NotStarted = 0,
-  InProgress = 1,
-  Completed = 2,
-  AwaitingEvaluation =3,
-  Cancelled = 4,
+  NotStarted = "NotStarted",
+  InProgress = "InProgress",
+  Completed = "Completed",
+  AwaitingEvaluation = "AwaitingEvaluation",
+  Cancelled = "Cancelled",
 }
 
 export interface ProcessingStatusInfo {

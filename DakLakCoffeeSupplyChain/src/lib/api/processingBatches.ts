@@ -1,6 +1,7 @@
 import api from "./axios";
 import { useRouter } from "next/navigation";
 import { ProcessingBatchProgress } from "./processingBatchProgress";
+import { ProcessingStatus } from "@/lib/constants/batchStatus";
 
 
 export interface ProcessingProgress {
@@ -49,7 +50,7 @@ export interface ProcessingBatch {
   stageCount: number;
   totalInputQuantity: number;
   totalOutputQuantity: number;
-  status: number;
+  status: ProcessingStatus;
   createdAt: string;
   typeName?: string; // Thêm từ API response mới
   progresses: ProcessingBatchProgress[];
@@ -74,7 +75,12 @@ export interface UpdateProcessingBatchData {
 
 export async function getAllProcessingBatches(): Promise<ProcessingBatch[] | null> {
   try {
+    console.log("🔍 DEBUG: Calling GET /ProcessingBatch API...");
     const res = await api.get("/ProcessingBatch");
+    console.log("🔍 DEBUG: GET /ProcessingBatch response:", res);
+    console.log("🔍 DEBUG: Response data:", res.data);
+    console.log("🔍 DEBUG: Response data type:", typeof res.data);
+    console.log("🔍 DEBUG: Response data length:", Array.isArray(res.data) ? res.data.length : "Not an array");
     return res.data;
   } catch (err) {
     console.error("❌ Lỗi getAllProcessingBatches:", err);

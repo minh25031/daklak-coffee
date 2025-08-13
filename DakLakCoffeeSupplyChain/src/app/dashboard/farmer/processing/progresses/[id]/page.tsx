@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getAllProcessingBatches, ProcessingBatch } from '@/lib/api/processingBatches';
-import { getAllProcessingBatchProgresses, ProcessingBatchProgress, advanceToNextProcessingProgress, AdvanceProgressWithMediaPayload } from '@/lib/api/processingBatchProgress';
+import { getAllProcessingBatchProgresses, ProcessingBatchProgress } from '@/lib/api/processingBatchProgress';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Calendar, User, Package, TrendingUp, FileImage, FileVideo, Scale, Info, Plus, Upload } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Package, TrendingUp, FileImage, FileVideo, Scale, Info, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import PageTitle from '@/components/ui/PageTitle';
+import AdvanceProcessingProgressForm from '@/components/processing-batches/AdvanceProcessingProgressForm';
 
 export default function ProgressDetailPage() {
   const { id } = useParams();
@@ -22,14 +21,12 @@ export default function ProgressDetailPage() {
   
   // State cho dialog cập nhật progress
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-  const [updateForm, setUpdateForm] = useState({
-    progressDate: new Date().toISOString().slice(0, 16),
-    outputQuantity: 0,
-    outputUnit: 'kg',
-    photoFile: null as File | null,
-    videoFile: null as File | null
-  });
-  const [isUpdating, setIsUpdating] = useState(false);
+  
+  // State cho media viewer
+  const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: 'image' | 'video'; caption?: string } | null>(null);
+  const [allMedia, setAllMedia] = useState<Array<{ url: string; type: 'image' | 'video'; caption?: string }>>([]);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
   useEffect(() => {
     if (!id) {
@@ -107,6 +104,52 @@ export default function ProgressDetailPage() {
     }
   }
 
+  // Hàm mở media viewer với tất cả media
+  const openMediaViewer = useCallback((media: { url: string; type: 'image' | 'video'; caption?: string }) => {
+    // Thu thập tất cả media từ tất cả progresses
+    const allMediaList: Array<{ url: string; type: 'image' | 'video'; caption?: string }> = [];
+    let targetIndex = 0;
+    let foundTarget = false;
+    
+    progresses.forEach(progress => {
+      if (progress.mediaFiles) {
+        progress.mediaFiles.forEach((mediaFile, idx) => {
+          allMediaList.push({
+            url: mediaFile.mediaUrl,
+            type: mediaFile.mediaType,
+            caption: mediaFile.caption
+          });
+          
+          // Tìm index của media được click
+          if (mediaFile.mediaUrl === media.url && !foundTarget) {
+            targetIndex = allMediaList.length - 1;
+            foundTarget = true;
+          }
+        });
+      }
+    });
+
+    setAllMedia(allMediaList);
+    setCurrentMediaIndex(targetIndex);
+    setSelectedMedia(media);
+    setMediaViewerOpen(true);
+  }, [progresses]);
+
+  // Hàm chuyển media
+  const navigateMedia = useCallback((direction: 'prev' | 'next') => {
+    if (allMedia.length === 0) return;
+    
+    let newIndex = currentMediaIndex;
+    if (direction === 'prev') {
+      newIndex = currentMediaIndex > 0 ? currentMediaIndex - 1 : allMedia.length - 1;
+    } else {
+      newIndex = currentMediaIndex < allMedia.length - 1 ? currentMediaIndex + 1 : 0;
+    }
+    
+    setCurrentMediaIndex(newIndex);
+    setSelectedMedia(allMedia[newIndex]);
+  }, [allMedia, currentMediaIndex]);
+
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
   };
@@ -117,49 +160,7 @@ export default function ProgressDetailPage() {
     return `${new Intl.NumberFormat("vi-VN").format(num)} kg`;
   };
 
-  const handleFileChange = (field: 'photoFile' | 'videoFile', file: File | null) => {
-    setUpdateForm(prev => ({
-      ...prev,
-      [field]: file
-    }));
-  };
 
-  const handleUpdateProgress = async () => {
-    if (!batch) return;
-
-    try {
-      setIsUpdating(true);
-      
-      const payload: AdvanceProgressWithMediaPayload = {
-        progressDate: updateForm.progressDate,
-        outputQuantity: updateForm.outputQuantity,
-        outputUnit: updateForm.outputUnit,
-        photoFile: updateForm.photoFile || undefined,
-        videoFile: updateForm.videoFile || undefined
-      };
-
-      await advanceToNextProcessingProgress(batch.batchId, payload);
-      
-      // Đóng dialog và refresh data
-      setIsUpdateDialogOpen(false);
-      setUpdateForm({
-        progressDate: new Date().toISOString().slice(0, 16),
-        outputQuantity: 0,
-        outputUnit: 'kg',
-        photoFile: null,
-        videoFile: null
-      });
-      
-      // Refresh data
-      await fetchBatchData();
-      
-    } catch (error: any) {
-      console.error('Error updating progress:', error);
-      alert('Có lỗi xảy ra khi cập nhật tiến trình: ' + (error.message || 'Lỗi không xác định'));
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -296,91 +297,24 @@ export default function ProgressDetailPage() {
                   Cập nhật tiến trình
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Cập nhật tiến trình sơ chế</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="progressDate">Ngày cập nhật</Label>
-                    <Input
-                      id="progressDate"
-                      type="datetime-local"
-                      value={updateForm.progressDate}
-                      onChange={(e) => setUpdateForm(prev => ({ ...prev, progressDate: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="outputQuantity">Sản lượng (kg)</Label>
-                    <Input
-                      id="outputQuantity"
-                      type="number"
-                      value={updateForm.outputQuantity}
-                      onChange={(e) => setUpdateForm(prev => ({ ...prev, outputQuantity: parseFloat(e.target.value) || 0 }))}
-                      placeholder="Nhập sản lượng"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="outputUnit">Đơn vị</Label>
-                    <Input
-                      id="outputUnit"
-                      value={updateForm.outputUnit}
-                      onChange={(e) => setUpdateForm(prev => ({ ...prev, outputUnit: e.target.value }))}
-                      placeholder="kg"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="photoFile">Ảnh (tùy chọn)</Label>
-                    <Input
-                      id="photoFile"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange('photoFile', e.target.files?.[0] || null)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="videoFile">Video (tùy chọn)</Label>
-                    <Input
-                      id="videoFile"
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => handleFileChange('videoFile', e.target.files?.[0] || null)}
-                    />
-                  </div>
-                  
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      onClick={handleUpdateProgress}
-                      disabled={isUpdating}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700"
-                    >
-                      {isUpdating ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Đang cập nhật...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4 mr-2" />
-                          Cập nhật
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsUpdateDialogOpen(false)}
-                      disabled={isUpdating}
-                      className="flex-1"
-                    >
-                      Hủy
-                    </Button>
-                  </div>
-                </div>
+                {batch && progresses.length > 0 && (
+                  <AdvanceProcessingProgressForm
+                    batchId={batch.batchId}
+                    latestProgress={{
+                      stageName: progresses[progresses.length - 1].stageName,
+                      stepIndex: progresses[progresses.length - 1].stepIndex,
+                      progressDate: progresses[progresses.length - 1].progressDate,
+                    }}
+                    onSuccess={() => {
+                      setIsUpdateDialogOpen(false);
+                      fetchBatchData(); // Refresh data
+                    }}
+                  />
+                )}
               </DialogContent>
             </Dialog>
             <Button 
@@ -540,33 +474,104 @@ export default function ProgressDetailPage() {
                     </div>
 
                     {/* Media Section */}
-                    {(progress.photoUrl || progress.videoUrl) && (
+                    {(progress.mediaFiles && progress.mediaFiles.length > 0) && (
                       <div className="mt-4 pt-4 border-t border-gray-100">
                         <h4 className="text-sm font-medium text-gray-700 mb-3">Tài liệu đính kèm</h4>
-                        <div className="flex gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {progress.mediaFiles.map((media, mediaIndex) => (
+                            <div key={media.mediaId} className="relative group">
+                              {media.mediaType === 'image' ? (
+                                <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
+                                  <img 
+                                    src={media.mediaUrl} 
+                                    alt={media.caption || `Ảnh ${mediaIndex + 1} của ${progress.stageName}`} 
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => openMediaViewer({
+                                      url: media.mediaUrl,
+                                      type: 'image',
+                                      caption: media.caption
+                                    })}
+                                  />
+                                  <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-md font-medium">
+                                    Ảnh
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
+                                  <video 
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                    preload="metadata"
+                                    onClick={() => openMediaViewer({
+                                      url: media.mediaUrl,
+                                      type: 'video',
+                                      caption: media.caption
+                                    })}
+                                  >
+                                    <source src={media.mediaUrl} type="video/mp4" />
+                                  </video>
+                                  <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-md font-medium">
+                                    Video
+                                  </div>
+                                  {/* Play button overlay */}
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="bg-black bg-opacity-40 rounded-full p-2">
+                                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z"/>
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              {media.caption && (
+                                <p className="text-xs text-gray-600 mt-2 truncate" title={media.caption}>
+                                  {media.caption}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Legacy Media Support (for backward compatibility) */}
+                    {(!progress.mediaFiles || progress.mediaFiles.length === 0) && (progress.photoUrl || progress.videoUrl) && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Tài liệu đính kèm (Cũ)</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                           {progress.photoUrl && (
-                            <div className="flex items-center gap-2">
-                              <FileImage className="w-4 h-4 text-green-600" />
-                              <span className="text-sm text-gray-600">Ảnh</span>
+                            <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
                               <img 
                                 src={progress.photoUrl} 
                                 alt={`Photo of ${progress.stageName}`} 
-                                className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
+                                className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                                 onClick={() => progress.photoUrl && window.open(progress.photoUrl, '_blank')}
                               />
+                              <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-md font-medium">
+                                Ảnh
+                              </div>
                             </div>
                           )}
                           
                           {progress.videoUrl && (
-                            <div className="flex items-center gap-2">
-                              <FileVideo className="w-4 h-4 text-blue-600" />
-                              <span className="text-sm text-gray-600">Video</span>
+                            <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
                               <video 
-                                controls 
-                                className="h-12 w-auto rounded shadow cursor-pointer hover:opacity-80 transition-opacity"
+                                className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                preload="metadata"
+                                onClick={() => progress.videoUrl && window.open(progress.videoUrl, '_blank')}
                               >
                                 <source src={progress.videoUrl} />
                               </video>
+                              <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-md font-medium">
+                                Video
+                              </div>
+                              {/* Play button overlay */}
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="bg-black bg-opacity-40 rounded-full p-2">
+                                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -594,6 +599,93 @@ export default function ProgressDetailPage() {
           </div>
         </div>
       </div>
+
+              {/* Media Viewer Dialog */}
+        <Dialog open={mediaViewerOpen} onOpenChange={setMediaViewerOpen}>
+          <DialogContent 
+            className="media-viewer-overlay"
+            showCloseButton={false}
+          >
+          {/* Header */}
+          <div className="absolute top-4 right-4 z-50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMediaViewerOpen(false)}
+              className="h-10 w-10 p-0 bg-black/60 hover:bg-red-600 text-white border-white/40 rounded-full shadow-lg hover:shadow-red-500/30 transition-all duration-200"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Navigation Buttons */}
+          {allMedia.length > 1 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateMedia('prev')}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 h-12 w-12 p-0 bg-black/60 hover:bg-white/20 text-white border-white/40 rounded-full z-50 shadow-lg hover:shadow-white/20 transition-all duration-200"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateMedia('next')}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 h-12 w-12 p-0 bg-black/60 hover:bg-white/20 text-white border-white/40 rounded-full z-50 shadow-lg hover:shadow-white/20 transition-all duration-200"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </Button>
+            </>
+          )}
+
+          {/* Media Counter */}
+          {allMedia.length > 1 && (
+            <div className="absolute top-4 left-4 z-50 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
+              {currentMediaIndex + 1} / {allMedia.length}
+            </div>
+          )}
+
+          {/* Media Content */}
+          <div className="media-viewer-content">
+            {selectedMedia?.type === 'image' ? (
+              <div className="flex flex-col items-center justify-center w-full h-full">
+                <img 
+                  src={selectedMedia.url} 
+                  alt={selectedMedia.caption || 'Hình ảnh'} 
+                  className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                />
+                {selectedMedia.caption && (
+                  <div className="mt-4">
+                    <p className="text-sm text-white text-center max-w-2xl bg-black/80 px-4 py-2 rounded-lg backdrop-blur-sm">
+                      {selectedMedia.caption}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : selectedMedia?.type === 'video' ? (
+              <div className="flex flex-col items-center justify-center w-full h-full">
+                <video 
+                  controls 
+                  autoPlay
+                  className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                >
+                  <source src={selectedMedia.url} />
+                  Trình duyệt của bạn không hỗ trợ video.
+                </video>
+                {selectedMedia.caption && (
+                  <div className="mt-4">
+                    <p className="text-sm text-white text-center max-w-2xl bg-black/80 px-4 py-2 rounded-lg backdrop-blur-sm">
+                      {selectedMedia.caption}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

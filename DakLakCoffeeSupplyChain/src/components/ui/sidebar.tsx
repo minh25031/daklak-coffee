@@ -186,6 +186,11 @@ export function SidebarGroup() {
         icon: iconMap.consultation,
       },
       {
+        title: "Đánh giá",
+        href: "/dashboard/expert/evaluations",
+        icon: <FiBarChart2 />,
+      },
+      {
         title: "Bài viết",
         href: "/dashboard/expert/articles",
         icon: iconMap.articles,
@@ -426,19 +431,7 @@ export function SidebarGroup() {
               >
                 Danh sách lô chế biến
               </Link>
-              <Link
-                href="/dashboard/manager/processing/evaluations"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                  pathname.startsWith(
-                    "/dashboard/manager/processing/evaluations"
-                  )
-                    ? "bg-orange-100 text-orange-700 shadow-sm"
-                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                )}
-              >
-                Đánh giá lô chế biến
-              </Link>
+
               <Link
                 href="/dashboard/manager/processing/progresses"
                 className={cn(

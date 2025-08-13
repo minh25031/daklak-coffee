@@ -10,6 +10,7 @@ import { Eye, Edit, TrendingUp, Package, Calendar } from "lucide-react";
 import ProcessingHeader from "@/components/processing/ProcessingHeader";
 import SearchBox from "@/components/processing/SearchBox";
 import ProcessingTable from "@/components/processing/ProcessingTable";
+import { ProcessingStatus } from "@/lib/constants/batchStatus";
 
 interface GroupedProgress {
   batchId: string;
@@ -135,16 +136,54 @@ export default function ManagerProcessingProgressesPage() {
       title: "Trạng thái lô",
       render: (value: any, item: GroupedProgress) => {
         const getStatusInfo = (status: number) => {
-          switch (status) {
-            case 0: return { label: "Chờ xử lý", color: "bg-yellow-100 text-yellow-700" };
-            case 1: return { label: "Đang xử lý", color: "bg-blue-100 text-blue-700" };
-            case 2: return { label: "Hoàn thành", color: "bg-green-100 text-green-700" };
-            case 3: return { label: "Đã hủy", color: "bg-red-100 text-red-700" };
-            default: return { label: "Không xác định", color: "bg-gray-100 text-gray-700" };
+          // Debug: Log status để xem giá trị thực tế
+          console.log("🔍 Manager Progresses getStatusInfo received status:", status, "type:", typeof status);
+          
+          // Xử lý status có thể là number hoặc string
+          let statusString: string;
+          if (typeof status === 'number') {
+            // Nếu là number, chuyển đổi theo mapping
+            switch (status) {
+              case 0: statusString = ProcessingStatus.NotStarted; break;
+              case 1: statusString = ProcessingStatus.InProgress; break;
+              case 2: statusString = ProcessingStatus.Completed; break;
+              case 3: statusString = ProcessingStatus.AwaitingEvaluation; break;
+              case 4: statusString = ProcessingStatus.Cancelled; break;
+              default: statusString = status.toString();
+            }
+          } else {
+            statusString = status;
+          }
+          
+          console.log("🔍 Manager Progresses converted statusString:", statusString);
+          
+          // Kiểm tra xem status có trong enum không
+          const isValidStatus = Object.values(ProcessingStatus).includes(statusString as ProcessingStatus);
+          
+          console.log("🔍 Manager Progresses is valid status:", isValidStatus);
+          
+          if (!isValidStatus) {
+            return { label: `Không xác định (${statusString})`, color: "bg-gray-100 text-gray-700" };
+          }
+          
+          // Sử dụng statusString để so sánh
+          switch (statusString) {
+            case ProcessingStatus.NotStarted:
+              return { label: "Chờ xử lý", color: "bg-yellow-100 text-yellow-700" };
+            case ProcessingStatus.InProgress:
+              return { label: "Đang xử lý", color: "bg-blue-100 text-blue-700" };
+            case ProcessingStatus.Completed:
+              return { label: "Hoàn thành", color: "bg-green-100 text-green-700" };
+            case ProcessingStatus.AwaitingEvaluation:
+              return { label: "Chờ đánh giá", color: "bg-orange-100 text-orange-700" };
+            case ProcessingStatus.Cancelled:
+              return { label: "Đã hủy", color: "bg-red-100 text-red-700" };
+            default:
+              return { label: "Không xác định", color: "bg-gray-100 text-gray-700" };
           }
         };
         
-        const statusInfo = getStatusInfo(item.batch.status);
+        const statusInfo = getStatusInfo(item.batch.status as any);
         return (
           <div className="flex items-center justify-center">
             <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusInfo.color}`}>

@@ -3,18 +3,18 @@ import api from "./axios";
 export interface ProcessingMethod {
   methodId: number;
   methodCode: string;
-  name: string;
+  methodName: string; // Thay đổi từ 'name' thành 'methodName'
   description: string;
-  steps: string;
+  steps: number; // Thay đổi từ 'string' thành 'number'
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateProcessingMethodData {
   methodCode: string;
-  name: string;
+  methodName: string; // Thay đổi từ 'name' thành 'methodName'
   description: string;
-  steps: string;
+  steps: number; // Thay đổi từ 'string' thành 'number'
 }
 
 export async function getAllProcessingMethods(): Promise<ProcessingMethod[]> {

@@ -74,8 +74,8 @@ export interface AdvanceProgressWithMediaPayload {
   progressDate: string;
   outputQuantity: number;
   outputUnit: string;
-  photoFile?: File;
-  videoFile?: File;
+  photoFiles?: File[];
+  videoFiles?: File[];
   parameterName?: string;
   parameterValue?: string;
   unit?: string;
@@ -156,9 +156,8 @@ export async function deleteProcessingBatchProgress(id: string): Promise<void> {
 export async function createProcessingBatchProgressWithMedia(
   batchId: string,
   payload: CreateProgressWithMediaPayload
-): Promise<void> {
+): Promise<any> {
   const formData = new FormData();
-  formData.append("processingBatchId", batchId);
   formData.append("progressDate", payload.progressDate);
   formData.append("outputQuantity", payload.outputQuantity.toString());
   formData.append("outputUnit", payload.outputUnit);
@@ -177,12 +176,14 @@ export async function createProcessingBatchProgressWithMedia(
     formData.append("recordedAt", payload.recordedAt);
   }
   
-  // Thêm files vào mediaFiles array như backend mong đợi
+  // Thêm photo files
   if (payload.photoFiles) {
-    payload.photoFiles.forEach(file => formData.append("mediaFiles", file));
+    payload.photoFiles.forEach(file => formData.append("photoFiles", file));
   }
+  
+  // Thêm video files
   if (payload.videoFiles) {
-    payload.videoFiles.forEach(file => formData.append("mediaFiles", file));
+    payload.videoFiles.forEach(file => formData.append("videoFiles", file));
   }
 
   console.log("📤 API: createProcessingBatchProgressWithMedia");
@@ -193,10 +194,11 @@ export async function createProcessingBatchProgressWithMedia(
   }
 
   try {
-    await api.post(`/ProcessingBatchsProgress/${batchId}/upload`, formData, {
+    const response = await api.post(`/ProcessingBatchsProgress/${batchId}/upload`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     console.log("✅ API call successful");
+    return response.data;
   } catch (err: any) {
     console.error("❌ createProcessingBatchProgressWithMedia:", err);
     console.error("❌ Error response data:", err?.response?.data);
@@ -228,7 +230,7 @@ export async function createProcessingBatchProgressWithMedia(
 export async function advanceToNextProcessingProgress(
   batchId: string,
   payload: AdvanceProgressWithMediaPayload
-): Promise<void> {
+): Promise<any> {
   const formData = new FormData();
   formData.append("progressDate", payload.progressDate);
   formData.append("outputQuantity", payload.outputQuantity.toString());
@@ -248,8 +250,15 @@ export async function advanceToNextProcessingProgress(
     formData.append("recordedAt", payload.recordedAt);
   }
   
-  if (payload.photoFile) formData.append("photoFiles", payload.photoFile);
-  if (payload.videoFile) formData.append("videoFiles", payload.videoFile);
+  // Thêm photo files
+  if (payload.photoFiles) {
+    payload.photoFiles.forEach(file => formData.append("photoFiles", file));
+  }
+  
+  // Thêm video files
+  if (payload.videoFiles) {
+    payload.videoFiles.forEach(file => formData.append("videoFiles", file));
+  }
 
   console.log("📤 API: advanceToNextProcessingProgress");
   console.log("📤 BatchId:", batchId);
@@ -259,10 +268,11 @@ export async function advanceToNextProcessingProgress(
   }
 
   try {
-    await api.post(`/ProcessingBatchsProgress/${batchId}/advance`, formData, {
+    const response = await api.post(`/ProcessingBatchsProgress/${batchId}/advance`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     console.log("✅ Advance API call successful");
+    return response.data;
   } catch (err: any) {
     console.error("❌ advanceToNextProcessingProgress:", err);
     console.error("❌ Error response data:", err?.response?.data);
