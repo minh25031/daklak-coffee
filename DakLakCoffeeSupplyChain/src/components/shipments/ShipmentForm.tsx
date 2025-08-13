@@ -15,7 +15,10 @@ import {
   createShipment,
   updateShipment,
 } from "@/lib/api/shipments";
-import { ShipmentDeliveryStatusMap, ShipmentDeliveryStatusValue } from "@/lib/constants/shipmentDeliveryStatus";
+import {
+  ShipmentDeliveryStatusMap,
+  ShipmentDeliveryStatusValue,
+} from "@/lib/constants/shipmentDeliveryStatus";
 import { fromDateOnly, toDateOnly } from "@/lib/utils";
 
 type Props = {
@@ -42,13 +45,23 @@ type FormState = {
   }[];
 };
 
-export default function ShipmentForm({ initialData, onSuccess, orderId, deliveryStaffOptions = [], orderCodeDisplay }: Props) {
+export default function ShipmentForm({
+  initialData,
+  onSuccess,
+  orderId,
+  deliveryStaffOptions = [],
+  orderCodeDisplay,
+}: Props) {
   const isEdit = !!initialData?.shipmentId;
   const router = useRouter();
 
   const [formData, setFormData] = useState<FormState | null>(null);
-  const [orderItems, setOrderItems] = useState<{ orderItemId: string; productName: string }[]>([]);
-  const [orderOptions, setOrderOptions] = useState<{ orderId: string; orderCode: string }[]>([]);
+  const [orderItems, setOrderItems] = useState<
+    { orderItemId: string; productName: string }[]
+  >([]);
+  const [orderOptions, setOrderOptions] = useState<
+    { orderId: string; orderCode: string }[]
+  >([]);
 
   useEffect(() => {
     if (initialData) {
@@ -56,9 +69,13 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
         orderId: initialData.orderId,
         deliveryStaffId: initialData.deliveryStaffId,
         shippedQuantity: initialData.shippedQuantity ?? null,
-        shippedAt: initialData.shippedAt ? new Date(initialData.shippedAt) : undefined,
+        shippedAt: initialData.shippedAt
+          ? new Date(initialData.shippedAt)
+          : undefined,
         deliveryStatus: initialData.deliveryStatus,
-        receivedAt: initialData.receivedAt ? new Date(initialData.receivedAt) : undefined,
+        receivedAt: initialData.receivedAt
+          ? new Date(initialData.receivedAt)
+          : undefined,
         shipmentDetails: (initialData.shipmentDetails || []).map((d: any) => ({
           shipmentDetailId: d.shipmentDetailId,
           orderItemId: d.orderItemId,
@@ -104,7 +121,12 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
     (async () => {
       try {
         const list = await getAllOrders();
-        setOrderOptions((list || []).map((o) => ({ orderId: o.orderId, orderCode: o.orderCode })));
+        setOrderOptions(
+          (list || []).map((o) => ({
+            orderId: o.orderId,
+            orderCode: o.orderCode,
+          }))
+        );
       } catch {
         setOrderOptions([]);
       }
@@ -113,7 +135,9 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
 
   if (!formData) {
     return (
-      <div className="text-gray-500 text-center py-10">Đang khởi tạo biểu mẫu chuyến giao...</div>
+      <div className="text-gray-500 text-center py-10">
+        Đang khởi tạo biểu mẫu chuyến giao...
+      </div>
     );
   }
 
@@ -172,12 +196,21 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const data = formData;
+    if (!formData) {
+      toast.error("Biểu mẫu chưa sẵn sàng, vui lòng thử lại.");
+      return;
+    }
+    const data: FormState = formData;
     if (!data.orderId) return toast.error("Vui lòng chọn đơn hàng.");
-    if (!data.deliveryStaffId) return toast.error("Vui lòng chọn nhân viên giao.");
+    if (!data.deliveryStaffId)
+      return toast.error("Vui lòng chọn nhân viên giao.");
 
-    const shippedAtStr = data.shippedAt ? toDateOnly(data.shippedAt) : undefined;
-    const receivedAtStr = data.receivedAt ? toDateOnly(data.receivedAt) : undefined;
+    const shippedAtStr = data.shippedAt
+      ? toDateOnly(data.shippedAt)
+      : undefined;
+    const receivedAtStr = data.receivedAt
+      ? toDateOnly(data.receivedAt)
+      : undefined;
 
     try {
       if (isEdit && initialData) {
@@ -236,7 +269,10 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
   const receivedStr = toDateOnly(formData.receivedAt);
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-5xl mx-auto bg-white border rounded-2xl shadow p-8 space-y-8">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-5xl mx-auto bg-white border rounded-2xl shadow p-8 space-y-8"
+    >
       <h2 className="text-2xl font-semibold text-center mb-6">
         {isEdit ? "Chỉnh sửa lô giao" : "Tạo lô giao mới"}
       </h2>
@@ -246,7 +282,11 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">Đơn hàng</label>
           {isEdit ? (
-            <Input value={orderCodeDisplay || formData.orderId} disabled className="h-10" />
+            <Input
+              value={orderCodeDisplay || formData.orderId}
+              disabled
+              className="h-10"
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <select
@@ -266,7 +306,9 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
                 className="h-10"
                 onChange={(e) => {
                   const code = e.target.value.trim().toLowerCase();
-                  const found = orderOptions.find((o) => o.orderCode.toLowerCase() === code);
+                  const found = orderOptions.find(
+                    (o) => o.orderCode.toLowerCase() === code
+                  );
                   if (found) handleChange("orderId", found.orderId);
                 }}
               />
@@ -299,7 +341,9 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
             min={0}
             step={0.1}
             value={formData.shippedQuantity ?? 0}
-            onChange={(e) => handleChange("shippedQuantity", Number(e.target.value))}
+            onChange={(e) =>
+              handleChange("shippedQuantity", Number(e.target.value))
+            }
             className="h-10"
           />
         </div>
@@ -308,7 +352,12 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
           <select
             className="w-full p-2 border rounded h-10"
             value={formData.deliveryStatus}
-            onChange={(e) => handleChange("deliveryStatus", e.target.value as ShipmentDeliveryStatusValue)}
+            onChange={(e) =>
+              handleChange(
+                "deliveryStatus",
+                e.target.value as ShipmentDeliveryStatusValue
+              )
+            }
           >
             {/* Chỉ cho phép chọn các trạng thái hợp lệ khi tạo/sửa */}
             <option value="Pending">Đang chờ</option>
@@ -322,17 +371,27 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">Ngày bắt đầu giao</label>
-          <DatePicker className="h-10" value={shippedStr} onChange={(d) => handleChange("shippedAt", fromDateOnly(d))} />
+          <DatePicker
+            className="h-10"
+            value={shippedStr}
+            onChange={(d) => handleChange("shippedAt", fromDateOnly(d))}
+          />
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">Ngày nhận (nếu có)</label>
-          <DatePicker className="h-10" value={receivedStr} onChange={(d) => handleChange("receivedAt", fromDateOnly(d))} />
+          <DatePicker
+            className="h-10"
+            value={receivedStr}
+            onChange={(d) => handleChange("receivedAt", fromDateOnly(d))}
+          />
         </div>
       </div>
 
       {/* Danh sách sản phẩm giao */}
       <div>
-        <label className="block mb-1 text-sm font-medium">Danh sách sản phẩm giao</label>
+        <label className="block mb-1 text-sm font-medium">
+          Danh sách sản phẩm giao
+        </label>
         {(formData.shipmentDetails?.length ?? 0) > 0 && (
           <div className="hidden md:grid md:grid-cols-6 gap-3 mb-1 text-xs font-medium text-muted-foreground">
             <span>Mặt hàng đơn hàng</span>
@@ -384,18 +443,28 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
               className="md:col-span-3 h-10"
             />
 
-            <Button type="button" variant="destructive" onClick={() => removeRow(idx)}>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => removeRow(idx)}
+            >
               Xoá
             </Button>
           </div>
         ))}
 
         <div className="flex items-center justify-between mt-2">
-          <Button type="button" variant="outline" onClick={addRow} disabled={!formData.orderId}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addRow}
+            disabled={!formData.orderId}
+          >
             + Thêm dòng
           </Button>
           <div className="text-sm text-gray-600">
-            Tổng khối lượng dòng: <strong>{sumQuantity().toLocaleString()}</strong> kg
+            Tổng khối lượng dòng:{" "}
+            <strong>{sumQuantity().toLocaleString()}</strong> kg
           </div>
         </div>
       </div>
@@ -411,5 +480,3 @@ export default function ShipmentForm({ initialData, onSuccess, orderId, delivery
     </form>
   );
 }
-
-
