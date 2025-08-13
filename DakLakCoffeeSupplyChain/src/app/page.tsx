@@ -29,7 +29,7 @@ export default function HomePage() {
             <div className="flex gap-4 flex-wrap">
               <Link href="/marketplace">
                 <Button className="bg-[#FD7622] text-white px-6 py-3 hover:bg-[#e55f12] rounded-full shadow">
-                  Khám phá Marketplace
+                  Khám phá sàn thu mua cà phê
                 </Button>
               </Link>
               {!isLoggedIn && (

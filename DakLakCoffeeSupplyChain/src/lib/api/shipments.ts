@@ -32,6 +32,19 @@ export interface ShipmentDetailViewDto {
   createdAt: string;
 }
 
+// Dùng khi tạo chi tiết CHO LÔ GIAO ĐÃ TỒN TẠI (cần shipmentId)
+export interface ShipmentDetailCreateDto {
+  shipmentId: string;
+  orderItemId: string;
+  quantity: number;
+  unit: string; // ProductUnit as string
+  note?: string;
+}
+
+export interface ShipmentDetailUpdateDto extends ShipmentDetailCreateDto {
+  shipmentDetailId: string;
+}
+
 export interface ShipmentViewDetailsDto {
   shipmentId: string;
   shipmentCode: string;
@@ -46,6 +59,57 @@ export interface ShipmentViewDetailsDto {
   createdAt: string;
   createdByName: string;
   shipmentDetails: ShipmentDetailViewDto[];
+  // optional: include order items for selection when adding shipment details
+  orderItems?: {
+    orderItemId: string;
+    productName: string;
+  }[];
+}
+
+// Dùng khi tạo mới một lô giao kèm chi tiết (KHÔNG có shipmentId trong từng detail)
+export interface ShipmentDetailCreateInline {
+  orderItemId: string;
+  quantity: number;
+  unit: string;
+  note?: string;
+}
+
+export interface ShipmentCreateDto {
+  orderId: string;
+  deliveryStaffId: string;
+  shippedQuantity?: number | null;
+  shippedAt?: string | null; // ISO
+  deliveryStatus: ShipmentDeliveryStatusValue;
+  receivedAt?: string | null; // ISO
+  shipmentDetails: ShipmentDetailCreateInline[];
+}
+
+export interface ShipmentUpdateDto extends ShipmentCreateDto {
+  shipmentId: string;
+  shipmentDetails: ShipmentDetailUpdateDto[];
+}
+
+export async function createShipment(payload: ShipmentCreateDto): Promise<string | null> {
+  const res = await api.post("/Shipments", payload);
+  const data = res.data;
+  if (!data) return null;
+  if (typeof data === "string") return data;
+  if (typeof data === "object") {
+    return (
+      (data as any).shipmentId ||
+      (data as any).id ||
+      (data as any).data?.shipmentId ||
+      null
+    );
+  }
+  return null;
+}
+
+export async function updateShipment(
+  shipmentId: string,
+  payload: ShipmentUpdateDto
+): Promise<void> {
+  await api.put(`/Shipments/${shipmentId}`, payload);
 }
 
 export async function getShipmentDetails(
@@ -62,6 +126,26 @@ export async function softDeleteShipmentDetail(
   shipmentDetailId: string
 ): Promise<void> {
   await api.patch(`/ShipmentDetails/soft-delete/${shipmentDetailId}`);
+}
+
+export async function createShipmentDetail(
+  payload: ShipmentDetailCreateDto
+): Promise<ShipmentDetailViewDto> {
+  const { data } = await api.post<ShipmentDetailViewDto>(
+    "/ShipmentDetails",
+    payload
+  );
+  return data;
+}
+
+export async function updateShipmentDetail(
+  payload: ShipmentDetailUpdateDto
+): Promise<ShipmentDetailViewDto> {
+  const { data } = await api.put<ShipmentDetailViewDto>(
+    `/ShipmentDetails/${payload.shipmentDetailId}`,
+    payload
+  );
+  return data;
 }
 
 // Xoá mềm một lô giao

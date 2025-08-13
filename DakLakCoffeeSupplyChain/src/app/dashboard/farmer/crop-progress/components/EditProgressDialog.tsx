@@ -22,12 +22,14 @@ const HARVESTING_STAGE_CODE = "harvesting";
 type Props = {
     progress: CropProgress;
     onSuccess: () => void;
+    onSeasonDetailUpdate?: (newYield: number) => void; // Callback để cập nhật sản lượng ngay lập tức
     triggerButton?: React.ReactNode;
 };
 
 export function EditProgressDialog({
     progress,
     onSuccess,
+    onSeasonDetailUpdate,
     triggerButton,
 }: Props) {
     const [open, setOpen] = useState(false);
@@ -60,9 +62,25 @@ export function EditProgressDialog({
         }
     }, [open, progress]);
 
+    // Remove the problematic useEffect that was causing infinite loops
+    // useEffect(() => {
+    //     if (progress.stageCode === HARVESTING_STAGE_CODE && actualYield && onSeasonDetailUpdate) {
+    //         // Chỉ gọi callback khi sản lượng thực sự thay đổi
+    //         if (actualYield !== progress.actualYield) {
+    //             console.log('Harvest yield changed, calling callback with:', actualYield);
+    //             onSeasonDetailUpdate(actualYield);
+    //         }
+    //     }
+    // }, [actualYield, progress.actualYield, progress.stageCode, onSeasonDetailUpdate]);
+
     const handleSubmit = async () => {
         if (!progressDate) {
             AppToast.error("Vui lòng chọn ngày ghi nhận.");
+            return;
+        }
+
+        if (!note.trim()) {
+            AppToast.error("Vui lòng nhập ghi chú.");
             return;
         }
 
@@ -88,10 +106,11 @@ export function EditProgressDialog({
                 progressId: progress.progressId,
                 cropSeasonDetailId: progress.cropSeasonDetailId,
                 stageId: progress.stageId,
+                stageDescription: progress.stageName || "", // Thêm trường bắt buộc
                 progressDate,
                 note,
-                photoUrl: progress.photoUrl,
-                videoUrl: progress.videoUrl,
+                photoUrl: "", // Để trống để backend giữ nguyên ảnh cũ
+                videoUrl: "", // Để trống để backend giữ nguyên video cũ
                 actualYield: progress.stageCode === HARVESTING_STAGE_CODE ? actualYield : undefined,
             };
 
@@ -99,7 +118,18 @@ export function EditProgressDialog({
 
             AppToast.success("Cập nhật tiến độ thành công!");
             setOpen(false);
+
+            // Reload cả danh sách tiến độ và thông tin vùng trồng
             onSuccess();
+
+            // Cập nhật sản lượng ngay lập tức nếu là giai đoạn thu hoạch
+            if (progress.stageCode === HARVESTING_STAGE_CODE && actualYield) {
+                console.log('Update successful, harvest yield:', actualYield);
+                // Cập nhật local state
+                setSeasonDetailYield(actualYield);
+                // Gọi callback để cập nhật parent component
+                onSeasonDetailUpdate?.(actualYield);
+            }
         } catch (error: unknown) {
             let errorMessage = "Cập nhật thất bại.";
 
@@ -141,7 +171,7 @@ export function EditProgressDialog({
 
                     {/* Ngày ghi nhận */}
                     <div>
-                        <Label>Ngày ghi nhận</Label>
+                        <Label>Ngày ghi nhận <span className="text-red-500">*</span></Label>
                         <Input
                             type="date"
                             value={progressDate}
@@ -153,20 +183,24 @@ export function EditProgressDialog({
 
                     {/* Ghi chú */}
                     <div>
-                        <Label>Ghi chú</Label>
+                        <Label>Ghi chú <span className="text-red-500">*</span></Label>
                         <Textarea
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             rows={4}
                             placeholder="Nhập ghi chú..."
                             maxLength={1000}
+                            required
                         />
+                        <div className="text-xs text-gray-500 mt-1">
+                            {note.length}/1000 ký tự
+                        </div>
                     </div>
 
                     {/* Sản lượng thực tế nếu là HARVESTING */}
                     {progress.stageCode === HARVESTING_STAGE_CODE && (
                         <div>
-                            <Label>Sản lượng thực tế (kg)</Label>
+                            <Label>Sản lượng thực tế (kg) <span className="text-red-500">*</span></Label>
                             <Input
                                 type="number"
                                 min={0}
@@ -177,6 +211,7 @@ export function EditProgressDialog({
                                     const value = Number(e.target.value);
                                     setActualYield(isNaN(value) ? undefined : value);
                                 }}
+                                required
                             />
                             {seasonDetailYield !== undefined && (
                                 <p className="text-xs text-muted-foreground mt-1">
@@ -185,6 +220,12 @@ export function EditProgressDialog({
                             )}
                         </div>
                     )}
+
+                    {/* Thông báo về media */}
+                    <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
+                        <p>📷 <strong>Lưu ý:</strong> Ảnh/video hiện tại sẽ được giữ nguyên.</p>
+                        <p>Để thay đổi media, vui lòng xóa và tạo lại tiến độ.</p>
+                    </div>
 
                     {/* Nút lưu */}
                     <div className="flex justify-end pt-2">

@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useEffect, useState } from "react";
-import { FiBell, FiMail, FiSmile, FiSearch } from "react-icons/fi";
+import { FiMail, FiSmile, FiSearch } from "react-icons/fi";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { Input } from "@/components/ui/input";
 import { roleRawToDisplayName } from "@/lib/constants/role";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -33,6 +34,10 @@ const pathTitleMap: Record<string, string> = {
     consultations: "Tư vấn",
     articles: "Bài viết",
     contracts: "Hợp đồng",
+    "business-buyers": "Khách hàng doanh nghiệp",
+    orders: "Đơn hàng",
+    shipments: "Lô giao hàng",
+    "contract-delivery-batches": "Lịch giao hàng",
     reports: "Báo cáo",
     users: "Quản lý người dùng",
     settings: "Cài đặt",
@@ -108,7 +113,7 @@ export default function HeaderDashboard() {
             {/* Icons + Avatar + Dropdown */}
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                    <IconWithBadge icon={<FiBell size={18} />} count={23} />
+                    <NotificationBell />
                     <IconWithBadge icon={<FiMail size={18} />} count={68} />
                     <IconWithBadge icon={<FiSmile size={18} />} count={14} />
                 </div>

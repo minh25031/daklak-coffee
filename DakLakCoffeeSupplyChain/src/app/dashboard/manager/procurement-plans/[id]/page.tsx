@@ -8,7 +8,7 @@ import {
 } from "@/lib/api/procurementPlans";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiEdit } from "react-icons/fi";
 import { Separator } from "@/components/ui/separator";
 import { Package } from "lucide-react";
 import StatusBadge from "@/components/crop-seasons/StatusBadge";
@@ -93,28 +93,30 @@ export default function ProcurementPlanDetailPage() {
           <CardHeader>
             <div className='flex justify-between items-center'>
               <CardTitle>Thông tin kế hoạch thu mua</CardTitle>
-              <div className='flex gap-2'>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  className='bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer'
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/business/procurement-plans/${plan.planId}/edit`
-                    )
-                  }
-                >
-                  <FiEdit className='mr-1' /> Chỉnh sửa
-                </Button>
-                <Button
-                  size='sm'
-                  variant='destructive'
-                  className='bg-red-100 text-red-800 hover:bg-red-200 cursor-pointer'
-                  onClick={() => alert("Xoá chưa được hỗ trợ")}
-                >
-                  <FiTrash2 className='mr-1' /> Xoá
-                </Button>
-              </div>
+              {plan.status === "Draft" && (
+                <div className='flex gap-2'>
+                  <Button
+                    size='sm'
+                    variant='secondaryGradient'
+                    //className='bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer'
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/manager/procurement-plans/${plan.planId}/edit`
+                      )
+                    }
+                  >
+                    <FiEdit className='mr-1' /> Chỉnh sửa
+                  </Button>
+                  {/* <Button
+                    size='sm'
+                    variant='destructiveGradient'
+                    //className='bg-red-100 text-red-800 hover:bg-red-200 cursor-pointer'
+                    onClick={() => alert("Xoá chưa được hỗ trợ")}
+                  >
+                    <FiTrash2 className='mr-1' /> Xoá
+                  </Button> */}
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent className='grid grid-cols-2 gap-4 text-sm'>
@@ -151,18 +153,19 @@ export default function ProcurementPlanDetailPage() {
         <Card>
           <CardHeader className='flex justify-between items-center'>
             <CardTitle>Chi tiết kế hoạch</CardTitle>
-            <Button
-              size='sm'
-              variant='outline'
-              className='bg-orange-100 text-orange-800 hover:bg-orange-200 cursor-pointer'
-              onClick={() =>
-                router.push(
-                  `/dashboard/manager/procurement-plans/${plan.planId}/details/create`
-                )
-              }
-            >
-              + Thêm chi tiết kế hoạch
-            </Button>
+            {plan.status === "Draft" && (
+              <Button
+                size='sm'
+                variant='secondaryGradient'
+                onClick={() =>
+                  router.push(
+                    `/dashboard/manager/procurement-plans/${plan.planId}/edit`
+                  )
+                }
+              >
+                + Thêm chi tiết kế hoạch
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {Array.isArray(plan.procurementPlansDetails) &&
@@ -218,10 +221,12 @@ export default function ProcurementPlanDetailPage() {
                           <strong>Mô tả:</strong>{" "}
                           {detail.coffeeType?.description}
                         </div>
-                        <div className='col-span-2'>
-                          <strong>Ghi chú:</strong> {detail.note}
-                        </div>
-                        <div className='col-span-2 flex justify-end gap-2 pt-2'>
+                        {detail.note && (
+                          <div className='col-span-2'>
+                            <strong>Ghi chú:</strong> {detail.note}
+                          </div>
+                        )}
+                        {/* <div className='col-span-2 flex justify-end gap-2 pt-2'>
                           <Button
                             size='sm'
                             variant='outline'
@@ -248,7 +253,7 @@ export default function ProcurementPlanDetailPage() {
                           >
                             Xoá
                           </Button>
-                        </div>
+                        </div> */}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
