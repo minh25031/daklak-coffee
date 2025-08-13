@@ -19,8 +19,13 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function FarmerInboundRequestListPage() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -29,7 +34,6 @@ export default function FarmerInboundRequestListPage() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 3;
   const router = useRouter();
 
   useEffect(() => {
@@ -50,10 +54,15 @@ export default function FarmerInboundRequestListPage() {
   const handleCancel = async (id: string) => {
     if (!confirm("Bạn có chắc muốn huỷ yêu cầu này không?")) return;
     setLoadingId(id);
-    const res = await cancelInboundRequest(id);
-    toast(res.message);
-    setRequests((prev) => prev.filter((r) => r.inboundRequestId !== id));
-    setLoadingId(null);
+    try {
+      const res = await cancelInboundRequest(id);
+      toast.success(res.message);
+      setRequests((prev) => prev.filter((r) => r.inboundRequestId !== id));
+    } catch (error: any) {
+      toast.error("Lỗi khi huỷ yêu cầu: " + error.message);
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   const getStatusLabel = (status: string) => {
@@ -83,68 +92,127 @@ export default function FarmerInboundRequestListPage() {
       (!selectedStatus || r.status === selectedStatus) &&
       r.requestCode.toLowerCase().includes(search.toLowerCase())
   );
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // Tính toán phân trang
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedData = filtered.slice(startIndex, endIndex);
+
+  // Reset về trang 1 khi thay đổi filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedStatus]);
 
   const statusCounts = requests.reduce<Record<string, number>>((acc, r) => {
     acc[r.status] = (acc[r.status] || 0) + 1;
     return acc;
   }, {});
 
+  // Tính toán thống kê
+  const totalRequests = requests.length;
+  const pendingRequests = requests.filter(r => r.status === 'Pending').length;
+  const approvedRequests = requests.filter(r => r.status === 'Approved').length;
+  const totalQuantity = requests.reduce((sum, r) => sum + (r.requestedQuantity || 0), 0);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 py-10 px-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-200 via-amber-100 to-orange-300 py-6 px-4">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-green-600 bg-clip-text text-transparent">
-              Yêu cầu nhập kho
-            </h1>
-            <p className="text-gray-600">Theo dõi và quản lý các yêu cầu đã gửi</p>
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-orange-100">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">
+                Yêu cầu nhập kho
+              </h1>
+              <p className="text-gray-600 text-sm">
+                Theo dõi và quản lý các yêu cầu đã gửi
+              </p>
+            </div>
+            <Button
+              onClick={() => router.push("/dashboard/farmer/warehouse-request/create")}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg shadow-sm flex items-center gap-2"
+            >
+              <PackagePlus className="w-5 h-5" />
+              Gửi yêu cầu mới
+            </Button>
           </div>
-          <Button
-            onClick={() => router.push("/dashboard/farmer/warehouse-request/create")}
-            className="bg-gradient-to-r from-orange-500 to-green-500 text-white px-6 py-3 rounded-xl shadow-md flex items-center gap-2"
-          >
-            <PackagePlus className="w-5 h-5" />
-            Gửi yêu cầu mới
-          </Button>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+            <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-100 text-xs">Tổng yêu cầu</p>
+                  <p className="text-xl font-bold">{totalRequests}</p>
+                </div>
+                <Package className="w-6 h-6 text-orange-200" />
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-yellow-100 text-xs">Chờ duyệt</p>
+                  <p className="text-xl font-bold">{pendingRequests}</p>
+                </div>
+                <Clock className="w-6 h-6 text-yellow-200" />
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-xs">Đã duyệt</p>
+                  <p className="text-xl font-bold">{approvedRequests}</p>
+                </div>
+                <TrendingUp className="w-6 h-6 text-green-200" />
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-xs">Tổng số lượng</p>
+                  <p className="text-xl font-bold">{totalQuantity.toFixed(1)} kg</p>
+                </div>
+                <Package className="w-6 h-6 text-blue-200" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Search + Filter */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Filter */}
-          <div className="md:col-span-1">
-            <div className="bg-white p-6 rounded-xl shadow border space-y-6">
-              <div>
-                <h2 className="font-semibold mb-2 flex gap-2 items-center">
-                  <Search className="w-5 h-5 text-gray-600" />
-                  Tìm kiếm
-                </h2>
-                <div className="relative">
-                  <Input
-                    placeholder="Tìm mã yêu cầu..."
-                    value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="pr-10"
-                  />
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                </div>
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          <aside className="w-64 space-y-4">
+            {/* Search Card */}
+            <div className="bg-white rounded-lg shadow-sm p-4 border border-orange-100">
+              <h2 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <Search className="w-4 h-4 text-orange-600" />
+                Tìm kiếm yêu cầu
+              </h2>
+              <div className="relative">
+                <Input
+                  placeholder="Tìm mã yêu cầu..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pr-10 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
+            </div>
 
-              <div>
-                <h2 className="font-semibold mb-2 flex gap-2 items-center">
-                  <Filter className="w-5 h-5 text-gray-600" />
-                  Trạng thái
+            {/* Filter Panel */}
+            <div className="bg-white rounded-lg shadow-sm border border-orange-100">
+              <div className="p-4 border-b border-orange-100">
+                <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-orange-600" />
+                  Lọc theo trạng thái
                 </h2>
+              </div>
+              <div className="p-4">
                 <div className="space-y-2">
                   <button
-                    onClick={() => { setSelectedStatus(null); setCurrentPage(1); }}
+                    onClick={() => setSelectedStatus(null)}
                     className={`w-full text-left p-3 rounded-lg transition-all ${
-                      selectedStatus === null ? "bg-green-100 border text-green-700" : "hover:bg-gray-100"
+                      selectedStatus === null ? "bg-orange-100 border border-orange-300 text-orange-700" : "hover:bg-gray-100"
                     }`}
                   >
                     Tất cả ({requests.length})
@@ -152,10 +220,10 @@ export default function FarmerInboundRequestListPage() {
                   {Object.entries(statusCounts).map(([status, count]) => (
                     <button
                       key={status}
-                      onClick={() => { setSelectedStatus(status); setCurrentPage(1); }}
+                      onClick={() => setSelectedStatus(status)}
                       className={`w-full text-left p-3 rounded-lg transition-all ${
                         selectedStatus === status
-                          ? "bg-green-100 border text-green-700"
+                          ? "bg-orange-100 border border-orange-300 text-orange-700"
                           : "hover:bg-gray-100"
                       }`}
                     >
@@ -165,129 +233,181 @@ export default function FarmerInboundRequestListPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </aside>
 
-          {/* Cards */}
-          <div className="md:col-span-3 space-y-4">
-            <div className="text-gray-600">
-              Hiển thị {filtered.length} yêu cầu
-            </div>
+          {/* Main Content */}
+          <main className="flex-1">
+            <div className="bg-white rounded-lg shadow-sm border border-orange-100">
+              <div className="p-4 border-b border-orange-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Danh sách yêu cầu nhập kho</h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Hiển thị {filtered.length} yêu cầu • {totalRequests} tổng cộng
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">
+                      {totalPages > 1 ? `Trang ${currentPage} / ${totalPages}` : "Tất cả yêu cầu"}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-            {loading ? (
-              <div className="text-center py-12 text-gray-500">Đang tải dữ liệu...</div>
-            ) : paged.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">Không tìm thấy yêu cầu nào.</div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paged.map((req) => (
-                  <div
-                    key={req.inboundRequestId}
-                    className="bg-white border border-gray-100 rounded-xl shadow p-6 hover:shadow-lg transition-all flex flex-col justify-between"
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-semibold text-gray-900 text-lg mb-1">
-                          Mã yêu cầu: {req.requestCode}
-                        </h3>
-                        <div className="text-xs text-gray-500 flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          {new Date(req.createdAt).toLocaleDateString("vi-VN")}
-                        </div>
-                      </div>
-                      <div className="bg-orange-100 p-2 rounded-full">
-                        <Package className="w-5 h-5 text-orange-600" />
-                      </div>
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500">Đang tải dữ liệu...</p>
+                </div>
+              ) : paginatedData.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 text-lg font-medium mb-2">Không tìm thấy yêu cầu nào</p>
+                  <p className="text-gray-400 text-sm">
+                    {search || selectedStatus ? 'Thử thay đổi bộ lọc tìm kiếm' : 'Bạn chưa có yêu cầu nhập kho nào'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Mã yêu cầu
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Số lượng
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Lô xử lý
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Ngày tạo
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Trạng thái
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Hành động
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {paginatedData.map((req) => (
+                        <tr key={req.inboundRequestId} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-900">{req.requestCode}</span>
+                              <span className="text-xs text-gray-500">ID: {req.inboundRequestId.slice(-6)}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900 font-medium">
+                              {req.requestedQuantity} kg
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="text-sm text-gray-900">{req.batchCode || "N/A"}</span>
+                              <span className="text-xs text-gray-500">{req.coffeeType || "Không rõ"}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="text-sm text-gray-900">
+                                {new Date(req.createdAt).toLocaleDateString("vi-VN")}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(req.createdAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <Badge className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(req.status)}`}>
+                              {getStatusLabel(req.status)}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push(`/dashboard/farmer/warehouse-request/${req.inboundRequestId}`)}
+                                className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Xem
+                              </Button>
+                              {req.status === "Pending" && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  disabled={loadingId === req.inboundRequestId}
+                                  onClick={() => handleCancel(req.inboundRequestId)}
+                                >
+                                  <XCircle className="w-4 h-4 mr-1" />
+                                  Huỷ
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {!loading && totalPages > 1 && (
+                <div className="p-4 border-t border-orange-100">
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-gray-500">
+                      Hiển thị {startIndex + 1}–{endIndex} trong {filtered.length} yêu cầu
                     </div>
-
-                    <div className="space-y-2 mb-4">
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Số lượng:</span> {req.requestedQuantity} kg
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Lô:</span> {req.batchCode || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Loại cà phê:</span> {req.coffeeType || "Không rõ"}
-                      </div>
-                      <div>
-                        <Badge className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(req.status)}`}>
-                          {getStatusLabel(req.status)}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/dashboard/farmer/warehouse-request/${req.inboundRequestId}`)}
-                        className="flex items-center gap-2"
+                        size="icon"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        className="border-orange-200 hover:border-orange-300"
                       >
-                        <Eye className="w-4 h-4" />
-                        Xem
+                        <ChevronLeft className="w-4 h-4" />
                       </Button>
-                      {req.status === "Pending" && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={loadingId === req.inboundRequestId}
-                          onClick={() => handleCancel(req.inboundRequestId)}
-                          className="flex items-center gap-2"
-                        >
-                          <XCircle className="w-4 h-4" />
-                          Huỷ
-                        </Button>
-                      )}
+                      {[...Array(totalPages)].map((_, i) => {
+                        const page = i + 1;
+                        return (
+                          <Button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`rounded-md px-3 py-1 text-sm ${
+                              page === currentPage
+                                ? "bg-orange-600 text-white"
+                                : "bg-white text-gray-700 border border-orange-200 hover:border-orange-300"
+                            }`}
+                          >
+                            {page}
+                          </Button>
+                        );
+                      })}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        className="border-orange-200 hover:border-orange-300"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* Pagination */}
-            {!loading && totalPages > 1 && (
-              <div className="flex justify-between items-center mt-6">
-                <div className="text-sm text-gray-500">
-                  Hiển thị {(currentPage - 1) * pageSize + 1}–
-                  {Math.min(currentPage * pageSize, filtered.length)} trong {filtered.length} yêu cầu
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  {[...Array(totalPages)].map((_, i) => {
-                    const page = i + 1;
-                    return (
-                      <Button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`rounded-md px-3 py-1 text-sm ${
-                          page === currentPage
-                            ? "bg-black text-white"
-                            : "bg-white text-black border"
-                        }`}
-                      >
-                        {page}
-                      </Button>
-                    );
-                  })}
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </main>
         </div>
       </div>
     </div>
