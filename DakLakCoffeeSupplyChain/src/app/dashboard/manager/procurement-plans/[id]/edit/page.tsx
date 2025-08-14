@@ -176,9 +176,9 @@ export default function EditProcurementPlanPage() {
         if (detail.maxPriceRange < detail.minPriceRange)
           newErrors[`maxPriceRange-${index}`] =
             "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu.";
-        if (detail.expectedYieldPerHectare <= 0)
-          newErrors[`expectedYieldPerHectare-${index}`] =
-            "Sản lượng dự kiến trên 1 ha phải lớn hơn 0.";
+        // if (detail.expectedYieldPerHectare <= 0)
+        //   newErrors[`expectedYieldPerHectare-${index}`] =
+        //     "Sản lượng dự kiến trên 1 ha phải lớn hơn 0.";
       });
     }
     setErrors(newErrors);
@@ -187,10 +187,14 @@ export default function EditProcurementPlanPage() {
 
   // Submit cập nhật kế hoạch
   const handleSubmit = async () => {
-    if (!formData) return;
+    if (!formData) {
+      AppToast.error(getErrorMessage(errors));
+      return;
+    }
     setIsSubmitting(true);
     if (!validateForm(formData)) {
       setIsSubmitting(false);
+      AppToast.error(getErrorMessage(errors));
       return;
     }
 

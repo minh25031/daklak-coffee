@@ -47,18 +47,20 @@ export default function FarmingCommitmentCard({
 
       <td className='px-4 py-3 text-center align-middle'>
         <BasicDropdown>
-          <DropdownMenu.Item
+            <DropdownMenu.Item
             className='px-3 py-2 hover:bg-gray-100 rounded cursor-pointer flex items-center'
             disabled={commitment.status !== "Pending"}
             style={{
               cursor: commitment.status !== "Pending" ? "not-allowed" : "pointer",
             }}
             onClick={() => {
+              if (commitment.status === "Pending") {
               router.push(`/dashboard/manager/farming-commitments/${commitment.commitmentId}/edit?registrationId=${commitment.registrationId}`);
-          }}
-          >
+              }
+            }}
+            >
             <FiEdit className='mr-1' /> Chỉnh sửa
-          </DropdownMenu.Item>
+            </DropdownMenu.Item>
           <DropdownMenu.Item
             className='px-3 py-2 hover:bg-gray-100 rounded cursor-pointer flex items-center'
             onClick={() => {

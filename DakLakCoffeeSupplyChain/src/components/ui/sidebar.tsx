@@ -21,6 +21,7 @@ import {
 
   FiShoppingCart,
   FiBell,
+  FiActivity,
 } from "react-icons/fi";
 
 
@@ -34,6 +35,7 @@ const iconMap = {
   articles: <FiBookOpen />,
   consultation: <FiFeather />,
   crops: <FiClipboard />,
+  market: <FiActivity />
 };
 
 // ===== Sidebar Layout =====
@@ -134,6 +136,11 @@ export function SidebarGroup() {
         title: "Tổng quan",
         href: "/dashboard/farmer",
         icon: iconMap.dashboard,
+      },
+      {
+        title: "Sàn thu mua cà phê",
+        href: "/marketplace",
+        icon: iconMap.market,
       },
       {
         title: "Cam kết kế hoạch thu mua",

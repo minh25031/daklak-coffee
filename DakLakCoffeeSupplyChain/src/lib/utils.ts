@@ -72,6 +72,26 @@ export function getErrorMessage(errorResponse: unknown): string {
     }
   }
 
+  // Nếu errorResponse là object lỗi form local: { [field: string]: string }
+  // Xem validation form trong tạo procurement plan làm vd
+  if (
+    errorResponse &&
+    typeof errorResponse === 'object' &&
+    !Array.isArray(errorResponse)
+  ) {
+    // Lọc các prop mà giá trị là chuỗi (có thể là lỗi)
+    const allMessages: string[] = [];
+    for (const key in errorResponse) {
+      const val = (errorResponse as any)[key];
+      if (typeof val === 'string' && val.trim() !== '') {
+        allMessages.push(val);
+      }
+    }
+    if (allMessages.length) {
+      return allMessages.join('<br/>');
+    }
+  }
+
   // Nếu có title thì dùng làm fallback
   if (
     errorResponse &&

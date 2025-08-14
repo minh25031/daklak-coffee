@@ -143,7 +143,7 @@ export default function ProcurementPlanDetailPage() {
             </div>
             {plan.description && (
               <div className='col-span-2'>
-                <strong>Ghi chú:</strong> {plan.description}
+                <strong>Mô tả:</strong> {plan.description}
               </div>
             )}
           </CardContent>
