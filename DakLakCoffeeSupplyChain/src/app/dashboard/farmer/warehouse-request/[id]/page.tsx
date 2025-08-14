@@ -47,7 +47,7 @@ export default function FarmerInboundRequestDetailPage() {
           setData(result.data);
 
           const batches = await getAllProcessingBatches();
-          const thisBatch = batches.find(b => b.batchId === result.data.batchId);
+          const thisBatch = (batches || []).find(b => b.batchId === result.data.batchId);
           setBatchData(thisBatch || null);
 
           const progresses = await getAllProcessingBatchProgresses();
@@ -95,8 +95,15 @@ export default function FarmerInboundRequestDetailPage() {
     }
   };
 
+  // Tính toán số lượng còn lại chính xác
   const totalProcessed = batchProgresses.reduce((sum, p) => sum + (p.outputQuantity ?? 0), 0);
-  const remaining = totalProcessed - (data?.requestedQuantity ?? 0);
+  
+  // Số lượng còn lại = đã sơ chế - đã yêu cầu trong request hiện tại
+  // Lưu ý: Đây chỉ là số lượng còn lại của request hiện tại, không phải của toàn bộ batch
+  const remainingForThisRequest = Math.max(0, totalProcessed - (data?.requestedQuantity ?? 0));
+  
+  // Số lượng còn lại thực tế của batch (cần tính từ tất cả requests và receipts)
+  const remainingForBatch = batchData ? (batchData.totalOutputQuantity || 0) - (data?.requestedQuantity ?? 0) : 0;
 
   if (loading) {
     return (
@@ -194,7 +201,7 @@ export default function FarmerInboundRequestDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-xs">Còn lại</p>
-                  <p className="text-xl font-bold">{Math.max(0, remaining)} kg</p>
+                  <p className="text-xl font-bold">{Math.max(0, remainingForThisRequest)} kg</p>
                 </div>
                 <Repeat2 className="w-6 h-6 text-blue-200" />
               </div>
@@ -252,7 +259,7 @@ export default function FarmerInboundRequestDetailPage() {
                   <DetailItem icon={<Coffee />} label="Loại cà phê" value={data.coffeeType} />
                   <DetailItem icon={<Leaf />} label="Mùa vụ" value={data.seasonCode} />
                   <DetailItem icon={<PackageCheck />} label="Tổng lượng đã sơ chế" value={`${totalProcessed} kg`} />
-                  <DetailItem icon={<Repeat2 />} label="Còn lại có thể gửi" value={`${Math.max(0, remaining)} kg`} />
+                  <DetailItem icon={<Repeat2 />} label="Còn lại có thể gửi" value={`${Math.max(0, remainingForBatch)} kg`} />
                 </div>
               </CardContent>
             </Card>
@@ -280,7 +287,7 @@ export default function FarmerInboundRequestDetailPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Còn lại:</span>
-                    <span className="font-medium text-blue-600">{Math.max(0, remaining)} kg</span>
+                    <span className="font-medium text-blue-600">{Math.max(0, remainingForThisRequest)} kg</span>
                   </div>
                   <div className="pt-2 border-t border-orange-100">
                     <div className="flex items-center justify-between">
@@ -337,7 +344,7 @@ function DetailItem({ icon, label, value }: { icon: React.ReactNode; label: stri
       <div className="p-2 bg-orange-100 rounded-md text-orange-600">{icon}</div>
       <div>
         <p className="text-xs text-gray-500 font-medium">{label}</p>
-        <p className="font-semibold text-gray-800">{value}</p>
+        <div className="font-semibold text-gray-800">{value}</div>
       </div>
     </div>
   );

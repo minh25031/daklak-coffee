@@ -8,9 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Search, Eye, Package, TrendingUp, Clock, CheckCircle, XCircle, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Eye, Package, TrendingUp, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 
 export default function InboundRequestListPage() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -189,13 +188,6 @@ export default function InboundRequestListPage() {
                   <SelectItem value="Cancelled">Đã huỷ</SelectItem>
                 </SelectContent>
               </Select>
-              
-              <Link href="/dashboard/staff/inbounds/create">
-                <Button className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Tạo mới
-                </Button>
-              </Link>
             </div>
           </div>
 
@@ -264,7 +256,7 @@ export default function InboundRequestListPage() {
                       <th className="px-4 py-3 text-left border-b border-green-200">Mã yêu cầu</th>
                       <th className="px-4 py-3 text-left border-b border-green-200">Nông dân</th>
                       <th className="px-4 py-3 text-left border-b border-green-200">Lô sản xuất</th>
-                      <th className="px-4 py-3 text-left border-b border-green-200">Số lượng</th>
+                      <th className="px-4 py-3 text-right border-b border-green-200">Số lượng</th>
                       <th className="px-4 py-3 text-left border-b border-green-200">Ngày tạo</th>
                       <th className="px-4 py-3 text-center border-b border-green-200">Trạng thái</th>
                       <th className="px-4 py-3 text-center border-b border-green-200">Hành động</th>

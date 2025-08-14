@@ -175,7 +175,7 @@ function DetailItem({
       <div className="p-2 bg-white rounded-lg shadow-sm border border-gray-100">{icon}</div>
       <div>
         <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</p>
-        <p className="font-semibold text-gray-900 text-sm">{value}</p>
+        <div className="font-semibold text-gray-900 text-sm">{value}</div>
       </div>
     </div>
   );
