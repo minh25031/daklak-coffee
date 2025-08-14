@@ -78,10 +78,10 @@ export default function CreateProcurementPlanPage() {
           newErrors[`maxPriceRange-${index}`] =
             "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu.";
         }
-        if (detail.expectedYieldPerHectare <= 0) {
-          newErrors[`expectedYieldPerHectare-${index}`] =
-            "Sản lượng dự kiến trên 1 ha phải lớn hơn 0.";
-        }
+        // if (detail.expectedYieldPerHectare <= 0) {
+        //   newErrors[`expectedYieldPerHectare-${index}`] =
+        //     "Sản lượng dự kiến trên 1 ha phải lớn hơn 0.";
+        // }
       });
     }
     setErrors(newErrors);
@@ -118,6 +118,7 @@ export default function CreateProcurementPlanPage() {
       AppToast.error(getErrorMessage(error));
       return [];
     });
+    console.log("processData: ", data);
     setAvailableProcessingMethods(data);
     setLoading(false);
   };
@@ -170,6 +171,7 @@ export default function CreateProcurementPlanPage() {
 
     if (!validateForm()) {
       setIsSubmitting(false);
+      AppToast.error(getErrorMessage(errors));
       return;
     }
 
