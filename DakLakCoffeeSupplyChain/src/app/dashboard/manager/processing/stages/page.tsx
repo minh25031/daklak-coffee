@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAllProcessingStagess, ProcessingStages } from "@/lib/api/processingStages";
-import { Eye, Edit, Trash2, Plus, Settings, Clock, CheckCircle } from "lucide-react";
+import { getAllProcessingStages, ProcessingStage } from "@/lib/api/processingStages";
+import { Eye, Edit, Trash2, Plus, Settings, Clock, CheckCircle, Search } from "lucide-react";
 
 // Import các component chung
 import ProcessingHeader from "@/components/processing/ProcessingHeader";
@@ -12,7 +12,7 @@ import ProcessingTable from "@/components/processing/ProcessingTable";
 
 export default function ManagerProcessingStagesPage() {
   const router = useRouter();
-  const [stages, setStages] = useState<ProcessingStages[]>([]);
+  const [stages, setStages] = useState<ProcessingStage[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,7 +23,7 @@ export default function ManagerProcessingStagesPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const stageData = await getAllProcessingStagess();
+        const stageData = await getAllProcessingStages();
         setStages(stageData || []);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -35,9 +35,7 @@ export default function ManagerProcessingStagesPage() {
   }, []);
 
   const filtered = stages.filter((stage) =>
-    stage.stageName?.toLowerCase().includes(search.toLowerCase()) ||
-    stage.stageCode?.toLowerCase().includes(search.toLowerCase()) ||
-    stage.description?.toLowerCase().includes(search.toLowerCase())
+    stage.stageName?.toLowerCase().includes(search.toLowerCase())
   );
 
   // Tính toán phân trang
@@ -62,10 +60,12 @@ export default function ManagerProcessingStagesPage() {
   // Cấu hình cột cho table
   const columns = [
     { 
-      key: "stageCode", 
-      title: "Mã giai đoạn",
+      key: "stageId", 
+      title: "ID",
       render: (value: string) => (
-        <span className="font-medium text-blue-600">{value}</span>
+        <span className="font-medium text-blue-600">
+          {typeof value === 'string' ? value.slice(-6) : value}
+        </span>
       )
     },
     { 
@@ -76,44 +76,7 @@ export default function ManagerProcessingStagesPage() {
       )
     },
     { 
-      key: "description", 
-      title: "Mô tả",
-      render: (value: string) => (
-        <span className="text-sm text-gray-600 line-clamp-2">
-          {value || "Không có mô tả"}
-        </span>
-      )
-    },
-    { 
-      key: "estimatedDuration", 
-      title: "Thời gian ước tính",
-      render: (value: number) => {
-        if (!value) return "—";
-        
-        const hours = Math.floor(value / 60);
-        const minutes = value % 60;
-        
-        if (hours > 0) {
-          return (
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium">
-                {hours}h {minutes > 0 ? `${minutes}m` : ""}
-              </span>
-            </div>
-          );
-        } else {
-          return (
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium">{minutes}m</span>
-            </div>
-          );
-        }
-      }
-    },
-    { 
-      key: "sequenceOrder", 
+      key: "orderIndex", 
       title: "Thứ tự",
       render: (value: number) => (
         <div className="flex items-center justify-center">
@@ -125,12 +88,39 @@ export default function ManagerProcessingStagesPage() {
       align: "center" as const
     },
     { 
-      key: "isActive", 
+      key: "methodId", 
+      title: "Phương pháp",
+      render: (value: number) => (
+        <span className="text-sm text-gray-600">ID: {value}</span>
+      )
+    },
+    { 
+      key: "isRequired", 
+      title: "Bắt buộc",
+      render: (value: boolean) => (
+        <div className="flex items-center justify-center">
+          {value ? (
+            <span className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+              <CheckCircle className="w-3 h-3" />
+              Bắt buộc
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+              <Settings className="w-3 h-3" />
+              Tùy chọn
+            </span>
+          )}
+        </div>
+      ),
+      align: "center" as const
+    },
+    { 
+      key: "isDeleted", 
       title: "Trạng thái",
       render: (value: boolean) => {
         return (
           <div className="flex items-center justify-center">
-            {value ? (
+            {!value ? (
               <span className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                 <CheckCircle className="w-3 h-3" />
                 Hoạt động
@@ -138,28 +128,13 @@ export default function ManagerProcessingStagesPage() {
             ) : (
               <span className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                 <Settings className="w-3 h-3" />
-                Không hoạt động
+                Đã xóa
               </span>
             )}
           </div>
         );
       },
       align: "center" as const
-    },
-    { 
-      key: "createdAt", 
-      title: "Ngày tạo",
-      render: (value: string) => {
-        if (!value) return "—";
-        
-        const date = new Date(value);
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">{date.toLocaleDateString("vi-VN")}</span>
-            <span className="text-xs text-gray-500">{date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}</span>
-          </div>
-        );
-      }
     }
   ];
 
@@ -168,28 +143,27 @@ export default function ManagerProcessingStagesPage() {
     {
       label: "Xem",
       icon: <Eye className="w-3 h-3" />,
-      onClick: (stage: ProcessingStages) => router.push(`/dashboard/manager/processing/stages/${stage.stageId}`),
+      onClick: (stage: ProcessingStage) => router.push(`/dashboard/manager/processing/stages/${stage.stageId}`),
       className: "hover:bg-green-50 hover:border-green-300"
     },
     {
       label: "Sửa",
       icon: <Edit className="w-3 h-3" />,
-      onClick: (stage: ProcessingStages) => router.push(`/dashboard/manager/processing/stages/${stage.stageId}/edit`),
+      onClick: (stage: ProcessingStage) => router.push(`/dashboard/manager/processing/stages/${stage.stageId}/edit`),
       className: "hover:bg-blue-50 hover:border-blue-300"
     },
     {
       label: "Xóa mềm",
       icon: <Trash2 className="w-3 h-3" />,
-      onClick: (stage: ProcessingStages) => handleDelete(stage.stageId),
+      onClick: (stage: ProcessingStage) => handleDelete(stage.stageId),
       className: "hover:bg-red-50 hover:border-red-300"
     }
   ];
 
   // Tính toán thống kê
   const totalStages = stages.length;
-  const activeStages = stages.filter(s => s.isActive).length;
-  const inactiveStages = stages.filter(s => !s.isActive).length;
-  const totalDuration = stages.reduce((sum, stage) => sum + (stage.estimatedDuration || 0), 0);
+  const activeStages = stages.filter(s => !s.isDeleted).length;
+  const inactiveStages = stages.filter(s => s.isDeleted).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -246,9 +220,9 @@ export default function ManagerProcessingStagesPage() {
                 <Clock className="w-6 h-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Tổng thời gian</p>
+                <p className="text-sm font-medium text-gray-600">Phương pháp</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {Math.floor(totalDuration / 60)}h {totalDuration % 60}m
+                  {new Set(stages.map(s => s.methodId)).size}
                 </p>
               </div>
             </div>
@@ -268,7 +242,7 @@ export default function ManagerProcessingStagesPage() {
             <div className="text-sm text-gray-600">
               {search && (
                 <span className="flex items-center gap-1">
-                  <span>🔍</span>
+                  <Search className="w-4 h-4" />
                   <span>Tìm thấy {filtered.length} kết quả</span>
                 </span>
               )}

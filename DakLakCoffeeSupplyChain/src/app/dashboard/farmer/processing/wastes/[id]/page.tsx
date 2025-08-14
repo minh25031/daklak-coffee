@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AppToast } from "@/components/ui/AppToast";
 import { getProcessingWasteById, ProcessingWaste } from "@/lib/api/processingWastes";
-import { ArrowLeft, Trash2, Package, Calendar, Info, FileText, TrendingUp, Eye } from "lucide-react";
+import { ArrowLeft, Trash2, Package, Calendar, Info, FileText, TrendingUp, Eye, AlertTriangle } from "lucide-react";
 
 // Import các component chung
 import ProcessingHeader from "@/components/processing/ProcessingHeader";
@@ -18,7 +18,7 @@ export default function ProcessingWasteDetailPage() {
   const [waste, setWaste] = useState<ProcessingWaste | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Load chi tiết chất thải
+      // Load chi tiết chất thải
   useEffect(() => {
     async function fetchWaste() {
       try {
@@ -31,7 +31,7 @@ export default function ProcessingWasteDetailPage() {
           router.push("/dashboard/farmer/processing/wastes");
         }
       } catch (err) {
-        console.error("❌ Lỗi tải chi tiết chất thải:", err);
+        console.error("Lỗi tải chi tiết chất thải:", err);
         AppToast.error("Không thể tải thông tin chất thải");
         router.push("/dashboard/farmer/processing/wastes");
       } finally {
@@ -85,7 +85,7 @@ export default function ProcessingWasteDetailPage() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
         <div className="p-6 max-w-4xl mx-auto">
                    <div className="text-center space-y-4">
-           <div className="text-orange-600 text-6xl">⚠️</div>
+           <AlertTriangle className="w-16 h-16 text-orange-600" />
            <h1 className="text-2xl font-bold text-gray-900">Không tìm thấy thông tin chất thải</h1>
            <p className="text-gray-600">Thông tin chất thải bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
            <Button onClick={() => router.push("/dashboard/farmer/processing/wastes")}>

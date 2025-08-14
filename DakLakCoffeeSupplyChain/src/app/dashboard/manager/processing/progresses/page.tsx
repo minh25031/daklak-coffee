@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
 import { getAllProcessingBatchProgresses, ProcessingBatchProgress } from "@/lib/api/processingBatchProgress";
-import { Eye, Edit, TrendingUp, Package, Calendar } from "lucide-react";
+import { Eye, Edit, TrendingUp, Package, Calendar, Search } from "lucide-react";
 
 // Import các component chung
 import ProcessingHeader from "@/components/processing/ProcessingHeader";
@@ -137,7 +137,7 @@ export default function ManagerProcessingProgressesPage() {
       render: (value: any, item: GroupedProgress) => {
         const getStatusInfo = (status: number) => {
           // Debug: Log status để xem giá trị thực tế
-          console.log("🔍 Manager Progresses getStatusInfo received status:", status, "type:", typeof status);
+          console.log("Manager Progresses getStatusInfo received status:", status, "type:", typeof status);
           
           // Xử lý status có thể là number hoặc string
           let statusString: string;
@@ -155,12 +155,12 @@ export default function ManagerProcessingProgressesPage() {
             statusString = status;
           }
           
-          console.log("🔍 Manager Progresses converted statusString:", statusString);
+                      console.log("Manager Progresses converted statusString:", statusString);
           
           // Kiểm tra xem status có trong enum không
           const isValidStatus = Object.values(ProcessingStatus).includes(statusString as ProcessingStatus);
           
-          console.log("🔍 Manager Progresses is valid status:", isValidStatus);
+                      console.log("Manager Progresses is valid status:", isValidStatus);
           
           if (!isValidStatus) {
             return { label: `Không xác định (${statusString})`, color: "bg-gray-100 text-gray-700" };
@@ -269,7 +269,7 @@ export default function ManagerProcessingProgressesPage() {
             <div className="text-sm text-gray-600">
               {search && (
                 <span className="flex items-center gap-1">
-                  <span>🔍</span>
+                  <Search className="w-4 h-4" />
                   <span>Tìm thấy {filtered.length} kết quả</span>
                 </span>
               )}

@@ -59,6 +59,7 @@ export interface CreateProgressDto {
 export interface UpdateProgressDto extends Partial<CreateProgressDto> {}
 
 export interface CreateProgressWithMediaPayload {
+  stageId?: string; // Thêm StageId để validation
   progressDate: string;
   outputQuantity: number;
   outputUnit: string;
@@ -71,9 +72,12 @@ export interface CreateProgressWithMediaPayload {
 }
 
 export interface AdvanceProgressWithMediaPayload {
+  stageId?: string; // Stage được chọn từ dropdown
+  currentStageId?: string; // Stage hiện tại để backend validate
   progressDate: string;
   outputQuantity: number;
   outputUnit: string;
+  stageDescription?: string; // Thêm description cho stage
   photoFiles?: File[];
   videoFiles?: File[];
   parameterName?: string;
@@ -158,6 +162,12 @@ export async function createProcessingBatchProgressWithMedia(
   payload: CreateProgressWithMediaPayload
 ): Promise<any> {
   const formData = new FormData();
+  
+  // Thêm StageId nếu có
+  if (payload.stageId) {
+    formData.append("stageId", payload.stageId);
+  }
+  
   formData.append("progressDate", payload.progressDate);
   formData.append("outputQuantity", payload.outputQuantity.toString());
   formData.append("outputUnit", payload.outputUnit);
@@ -232,9 +242,25 @@ export async function advanceToNextProcessingProgress(
   payload: AdvanceProgressWithMediaPayload
 ): Promise<any> {
   const formData = new FormData();
+  
+  // Thêm StageId nếu có
+  if (payload.stageId) {
+    formData.append("stageId", payload.stageId);
+  }
+  
+  // Thêm currentStageId nếu có
+  if (payload.currentStageId) {
+    formData.append("currentStageId", payload.currentStageId);
+  }
+  
   formData.append("progressDate", payload.progressDate);
   formData.append("outputQuantity", payload.outputQuantity.toString());
   formData.append("outputUnit", payload.outputUnit);
+  
+  // Thêm stageDescription nếu có
+  if (payload.stageDescription) {
+    formData.append("stageDescription", payload.stageDescription);
+  }
   
   // Thêm parameters nếu có
   if (payload.parameterName) {

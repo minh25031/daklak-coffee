@@ -210,4 +210,30 @@ export async function updateProcessingBatch(
   }
 }
 
+// Lấy tất cả batch của một farmer cụ thể cho Business Manager
+export async function getProcessingBatchesByFarmerForBusinessManager(farmerId: string): Promise<ProcessingBatch[]> {
+  try {
+    console.log("👨‍💼 Business Manager đang lấy batch của farmer:", farmerId);
+    const res = await api.get(`/ProcessingBatch/business-manager/farmer/${farmerId}`);
+    console.log("✅ Đã lấy được", res.data?.length || 0, "batch của farmer");
+    return res.data || [];
+  } catch (err) {
+    console.error("❌ Lỗi getProcessingBatchesByFarmerForBusinessManager:", err);
+    return [];
+  }
+}
+
+// Lấy danh sách farmers có batches cho Business Manager
+export async function getFarmersWithBatchesForBusinessManager(): Promise<{farmerId: string; farmerName: string; batchCount: number}[]> {
+  try {
+    console.log("👨‍💼 Business Manager đang lấy danh sách farmers có batches...");
+    const res = await api.get(`/ProcessingBatch/business-manager/farmers`);
+    console.log("✅ Đã lấy được", res.data?.length || 0, "farmers có batches");
+    return res.data || [];
+  } catch (err) {
+    console.error("❌ Lỗi getFarmersWithBatchesForBusinessManager:", err);
+    return [];
+  }
+}
+
 
