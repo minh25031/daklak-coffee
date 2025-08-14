@@ -49,7 +49,7 @@ export function getErrorMessage(errorResponse: unknown): string {
     return errorResponse;
   }
 
-  // Trường hợp dạng object với errors
+  // Trường hợp dạng object với errors (validation errors từ backend)
   if (
     errorResponse &&
     typeof errorResponse === 'object' &&
@@ -63,12 +63,35 @@ export function getErrorMessage(errorResponse: unknown): string {
     for (const field in errorObj) {
       const fieldErrors = errorObj[field];
       if (Array.isArray(fieldErrors)) {
-        allMessages.push(...fieldErrors); // mỗi lỗi là một dòng
+        // Thêm tên field vào message để user biết lỗi ở đâu
+        const fieldName = getFieldDisplayName(field);
+        fieldErrors.forEach(error => {
+          allMessages.push(`${fieldName}: ${error}`);
+        });
       }
     }
 
     if (allMessages.length > 0) {
-      return allMessages.join('<br/>');
+      return allMessages.join('\n');
+    }
+  }
+
+  // Nếu errorResponse là object lỗi form local: { [field: string]: string }
+  if (
+    errorResponse &&
+    typeof errorResponse === 'object' &&
+    !Array.isArray(errorResponse)
+  ) {
+    // Lọc các prop mà giá trị là chuỗi (có thể là lỗi)
+    const allMessages: string[] = [];
+    for (const key in errorResponse) {
+      const val = (errorResponse as any)[key];
+      if (typeof val === 'string' && val.trim() !== '') {
+        allMessages.push(val);
+      }
+    }
+    if (allMessages.length) {
+      return allMessages.join('\n');
     }
   }
 
@@ -84,6 +107,34 @@ export function getErrorMessage(errorResponse: unknown): string {
 
   // Fallback cuối cùng
   return 'Đã có lỗi không xác định xảy ra.';
+}
+
+// Helper function để chuyển đổi tên field thành tên hiển thị thân thiện
+function getFieldDisplayName(field: string): string {
+  const fieldMap: Record<string, string> = {
+    'buyerId': 'Đối tác',
+    'contractNumber': 'Số hợp đồng',
+    'contractTitle': 'Tiêu đề hợp đồng',
+    'contractFileUrl': 'File hợp đồng',
+    'deliveryRounds': 'Số đợt giao hàng',
+    'totalQuantity': 'Tổng khối lượng',
+    'totalValue': 'Tổng giá trị',
+    'startDate': 'Ngày bắt đầu',
+    'endDate': 'Ngày kết thúc',
+    'signedAt': 'Ngày ký',
+    'status': 'Trạng thái',
+    'cancelReason': 'Lý do hủy',
+    'contractItems': 'Danh sách mặt hàng',
+    'coffeeTypeId': 'Loại cà phê',
+    'quantity': 'Số lượng',
+    'unitPrice': 'Đơn giá',
+    'discountAmount': 'Chiết khấu',
+    'note': 'Ghi chú',
+    'contractId': 'ID hợp đồng',
+    'contractItemId': 'ID mặt hàng hợp đồng'
+  };
+  
+  return fieldMap[field] || field;
 }
 
 

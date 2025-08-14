@@ -17,6 +17,11 @@ interface Props {
   batchId: string;
   latestProgress: ProcessingBatchProgress;
   batchStatus?: string; // Thêm batch status
+  failedStageInfo?: { // Thêm thông tin stage bị fail
+    stageId: number;
+    stageName: string;
+    failureDetails: string;
+  };
   onSuccess?: () => void;
 }
 
@@ -24,6 +29,7 @@ export default function AdvanceProcessingProgressForm({
   batchId,
   latestProgress,
   batchStatus,
+  failedStageInfo,
   onSuccess,
 }: Props) {
   const [progressDate, setProgressDate] = useState(
@@ -45,15 +51,15 @@ export default function AdvanceProcessingProgressForm({
   const [selectedStageId, setSelectedStageId] = useState<string>("");
   const [loadingStages, setLoadingStages] = useState(false);
 
-  // Tính toán button text dựa trên batch status
+  // Tính toán button text dựa trên failedStageInfo
   const getButtonText = () => {
     if (loading) return "Đang lưu...";
     
-    if (batchStatus === ProcessingStatus.InProgress) {
+    if (failedStageInfo) {
       return "Cập nhật lại bước không đạt";
     }
     
-    return "Xác nhận cập nhật";
+    return "Cập nhật tiến trình";
   };
 
   // Load available stages khi component mount
@@ -86,12 +92,19 @@ export default function AdvanceProcessingProgressForm({
            
            setAvailableStages(availableStages);
            
-           // Tự động chọn stage tiếp theo
-           const currentStageIndex = availableStages.findIndex(s => s.stageId === latestProgress.stageId);
-           if (currentStageIndex >= 0 && currentStageIndex < availableStages.length - 1) {
-             setSelectedStageId(availableStages[currentStageIndex + 1].stageId);
+           // Tự động chọn stage bị fail hoặc stage tiếp theo
+           if (failedStageInfo) {
+             // Nếu có stage bị fail, chọn stage đó
+             const failedStage = availableStages.find(s => s.stageId === failedStageInfo.stageId.toString());
+             setSelectedStageId(failedStage?.stageId || availableStages[0]?.stageId || "");
            } else {
-             setSelectedStageId(availableStages[currentStageIndex]?.stageId || "");
+             // Nếu không có stage bị fail, chọn stage tiếp theo
+             const currentStageIndex = availableStages.findIndex(s => s.stageId === latestProgress.stageId);
+             if (currentStageIndex >= 0 && currentStageIndex < availableStages.length - 1) {
+               setSelectedStageId(availableStages[currentStageIndex + 1].stageId);
+             } else {
+               setSelectedStageId(availableStages[currentStageIndex]?.stageId || "");
+             }
            }
         }
       } catch (err) {
@@ -109,11 +122,7 @@ export default function AdvanceProcessingProgressForm({
     setLoading(true);
     setError(null);
 
-    if (!selectedStageId) {
-      setError("Vui lòng chọn công đoạn thực hiện");
-      setLoading(false);
-      return;
-    }
+         // Không cần validate selectedStageId vì đã tự động chọn
     if (!progressDate) {
       setError("Vui lòng chọn ngày thực hiện");
       setLoading(false);
@@ -221,7 +230,7 @@ export default function AdvanceProcessingProgressForm({
             Cập nhật tiến trình sơ chế
           </h2>
           <p className="text-orange-100 text-xs">
-            Bước tiếp theo: {latestProgress.stageName}
+            {failedStageInfo ? `Công đoạn cần cải thiện: ${failedStageInfo.stageName}` : `Bước tiếp theo: ${latestProgress.stageName}`}
           </p>
         </div>
       </div>
@@ -229,13 +238,30 @@ export default function AdvanceProcessingProgressForm({
       {/* Content - Horizontal layout */}
       <div className="p-6">
         {/* Info row */}
-        <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-2 text-xs text-blue-700">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="font-medium">Thông tin bước hiện tại:</span>
-            <span><strong>{latestProgress.stageName}</strong> (Bước {latestProgress.stepIndex})</span>
+        <div className={`mb-4 p-3 border rounded-lg ${
+          failedStageInfo 
+            ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' 
+            : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+        }`}>
+          <div className={`flex items-center gap-2 text-xs ${
+            failedStageInfo ? 'text-red-700' : 'text-blue-700'
+          }`}>
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
+              failedStageInfo ? 'bg-red-500' : 'bg-blue-500'
+            }`}></div>
+            <span className="font-medium">
+              {failedStageInfo ? 'Thông tin bước Lỗi:' : 'Thông tin bước hiện tại:'}
+            </span>
+            <span><strong>{failedStageInfo ? failedStageInfo.stageName : latestProgress.stageName}</strong> 
+              {failedStageInfo ? '' : ` (Bước ${latestProgress.stepIndex})`}
+            </span>
             <span className="ml-4">Ngày trước: {new Date(latestProgress.progressDate).toLocaleDateString("vi-VN")}</span>
           </div>
+          {failedStageInfo && (
+            <div className="mt-2 text-xs text-red-600">
+              <strong>Lý do không đạt:</strong> {failedStageInfo.failureDetails}
+            </div>
+          )}
         </div>
 
         {/* Main form - 3 columns horizontal layout */}
@@ -252,32 +278,18 @@ export default function AdvanceProcessingProgressForm({
               Thông tin cơ bản
             </h3>
 
-            <div className="space-y-3">
-              {/* Stage Selection */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Công đoạn thực hiện
-                </label>
-                {loadingStages ? (
-                  <div className="w-full h-10 bg-gray-100 rounded-md flex items-center justify-center text-sm text-gray-500">
-                    Đang tải danh sách công đoạn...
-                  </div>
-                ) : (
-                  <select
-                    value={selectedStageId}
-                    onChange={(e) => setSelectedStageId(e.target.value)}
-                    className="w-full h-10 text-sm border border-gray-300 rounded-md px-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    required
-                  >
-                    <option value="">Chọn công đoạn...</option>
-                    {availableStages.map((stage) => (
-                      <option key={stage.stageId} value={stage.stageId}>
-                        Bước {stage.orderIndex}: {stage.stageName}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
+                         <div className="space-y-3">
+               {/* Hiển thị thông tin stage bị fail khi có failedStageInfo */}
+               {failedStageInfo && (
+                 <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">
+                     Công đoạn cần cải thiện
+                   </label>
+                   <div className="w-full h-10 bg-red-50 border border-red-200 rounded-md px-3 flex items-center text-sm text-red-700 font-medium">
+                     {failedStageInfo.stageName}
+                   </div>
+                 </div>
+               )}
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">

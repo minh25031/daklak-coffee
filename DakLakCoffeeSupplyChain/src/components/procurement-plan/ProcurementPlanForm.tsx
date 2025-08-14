@@ -393,7 +393,7 @@ export default function ProcurementPlanForm({
               <div>
                 <Label htmlFor={`expectedYieldPerHectare-${index}`}>
                   Sản lượng dự kiến trên 1 ha (kg)
-                  <span className='text-red-500'>*</span>
+                  {/* <span className='text-red-500'>*</span> */}
                 </Label>
                 <Input
                   id={`expectedYieldPerHectare-${index}`}
@@ -403,11 +403,11 @@ export default function ProcurementPlanForm({
                   value={detail.expectedYieldPerHectare}
                   onChange={(e) => handleDetailChange(index, e)}
                 />
-                {errors[`expectedYieldPerHectare-${index}`] && (
+                {/* {errors[`expectedYieldPerHectare-${index}`] && (
                   <p className='text-red-500 text-xs'>
                     {errors[`expectedYieldPerHectare-${index}`]}
                   </p>
-                )}
+                )} */}
               </div>
 
               <div>

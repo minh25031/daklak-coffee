@@ -33,6 +33,7 @@ export default function PlanDetailPage() {
     []
   );
   const [loading, setLoading] = useState(true);
+  const [isFarmer, setIsFarmer] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -44,7 +45,7 @@ export default function PlanDetailPage() {
   const fetchPlan = async (planId: string) => {
     setLoading(true);
     const data = await getProcurementPlanDetailById(planId).catch((error) => {
-      AppToast.error(getErrorMessage(error));
+      //AppToast.error(getErrorMessage(error));
       return null;
     });
     //console.log("Fetched Procurement Plans:", data);
@@ -56,12 +57,26 @@ export default function PlanDetailPage() {
     setLoading(true);
     const data = await getCultivationRegistrationsByPlanId(planId).catch(
       (error) => {
-        AppToast.error(getErrorMessage(error));
+        //AppToast.error(getErrorMessage(error));
         return [];
       }
     );
     setRegistrations(data);
+    checkFarmerAccount();
     setLoading(false);
+  };
+
+  const checkFarmerAccount = () => {
+    const accountRole = localStorage.getItem("user_role");
+    if (!accountRole) {
+      setIsFarmer(false);
+      return;
+    }
+    try {
+      setIsFarmer(accountRole === "farmer");
+    } catch (error) {
+      setIsFarmer(false);
+    }
   };
 
   function isLoggedIn() {
@@ -155,10 +170,10 @@ export default function PlanDetailPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isLoggedIn()) {
-      AppToast.error("Bạn cần đăng nhập để đăng ký kế hoạch!");
-      return;
-    }
+    // if (!isLoggedIn()) {
+    //   AppToast.error("Bạn cần đăng nhập để đăng ký kế hoạch!");
+    //   return;
+    // }
 
     if (!validateForm()) return;
 
@@ -556,12 +571,13 @@ export default function PlanDetailPage() {
               >
                 <Button
                   type='button'
+                  variant='default'
                   disabled={
                     formData.cultivationRegistrationDetailsCreateViewDto
                       .length >= plan.procurementPlansDetails.length
                   }
                   onClick={handleAddDetail}
-                  className='px-4 py-2 border border-orange-500 text-orange-700 font-bold hover:bg-orange-500 bg-orange-50 hover:text-white transition'
+                  //className='px-4 py-2 border border-orange-500 text-orange-700 font-bold hover:bg-orange-500 bg-orange-50 hover:text-white transition'
                 >
                   + Thêm chi tiết kế hoạch
                 </Button>
@@ -569,6 +585,7 @@ export default function PlanDetailPage() {
 
               <div className='flex justify-end'>
                 <Button
+                  disabled={!isFarmer || !isLoggedIn()}
                   type='submit'
                   className='bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 font-semibold transition'
                 >

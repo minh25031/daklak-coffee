@@ -29,7 +29,7 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Clock
+  Pencil
 } from "lucide-react";
 import {
   Dialog,
@@ -42,10 +42,12 @@ import { ProcessingBatchProgress } from "@/lib/api/processingBatchProgress";
 import { ProcessingWaste } from "@/lib/api/processingBatchWastes";
 import CreateProcessingProgressForm from "@/components/processing-batches/CreateProcessingProgressForm";
 import AdvanceProcessingProgressForm from "@/components/processing-batches/AdvanceProcessingProgressForm";
+import UpdateAfterEvaluationForm from "@/components/processing-batches/UpdateAfterEvaluationForm";
 import FailureInfoCard from "@/components/processing-batches/FailureInfoCard";
 import ProgressGuidanceCard from "@/components/processing-batches/ProgressGuidanceCard";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
 import { StageFailureParser, StageFailureInfo } from "@/lib/helpers/stageFailureParser";
+import { getProcessingStagesByMethodId } from "@/lib/api/processingStages";
 
 export default function ViewProcessingBatch() {
   const { id } = useParams();
@@ -55,6 +57,8 @@ export default function ViewProcessingBatch() {
   const [error, setError] = useState<string | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openAdvanceModal, setOpenAdvanceModal] = useState(false);
+  const [openUpdateAfterEvaluationModal, setOpenUpdateAfterEvaluationModal] = useState(false);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<ProcessingBatchEvaluation | null>(null);
   const [latestProgress, setLatestProgress] = useState<ProcessingBatchProgress | null>(null);
   const [evaluations, setEvaluations] = useState<ProcessingBatchEvaluation[]>([]);
   
@@ -198,6 +202,8 @@ export default function ViewProcessingBatch() {
           
           // Tối ưu: Chỉ cần fetch 1 API call thay vì 3
           const data = await getProcessingBatchById(id);
+          console.log("DEBUG FRONTEND: Fetched batch data:", data);
+          console.log("DEBUG FRONTEND: Batch status:", data.status);
           setBatch(data);
           
         } catch (err: unknown) {
@@ -245,6 +251,130 @@ export default function ViewProcessingBatch() {
     };
     fetchEvaluations();
   }, [id]);
+
+  // Kiểm tra xem có đánh giá fail không
+  const hasFailedEvaluation = useMemo(() => {
+    if (!evaluations || evaluations.length === 0) return false;
+    
+    const latestEvaluation = evaluations[0]; // Đã sort theo createdAt desc
+    return latestEvaluation.evaluationResult === 'Fail';
+  }, [evaluations]);
+
+  // Lấy thông tin stage bị fail
+  const failedStageInfo = useMemo(() => {
+    if (!hasFailedEvaluation || !evaluations || evaluations.length === 0) return null;
+    
+    const latestEvaluation = evaluations[0];
+    const comments = latestEvaluation.comments || '';
+    
+    console.log("DEBUG: Parsing failed stage info from comments:", comments);
+    console.log("DEBUG: Comments length:", comments.length);
+    console.log("DEBUG: Comments includes 'FAILED_STAGE_ID':", comments.includes('FAILED_STAGE_ID'));
+    
+    // Sử dụng StageFailureParser để parse thông tin
+    const failureInfo = StageFailureParser.parseFailureFromComments(comments);
+    console.log("DEBUG: StageFailureParser result:", failureInfo);
+    
+    if (failureInfo) {
+      return {
+        stageId: parseInt(failureInfo.failedStageId || '0'),
+        stageName: failureInfo.failedStageName || 'Unknown',
+        failureDetails: failureInfo.details || 'Không đạt tiêu chuẩn',
+        evaluationId: latestEvaluation.evaluationId
+      };
+    }
+    
+    // Fallback: Parse stage info từ comments nếu không có format chuẩn
+    console.log("DEBUG: Trying fallback parsing...");
+    
+    // Pattern 1: "Tiến trình có vấn đề: Bước 1: Thu hoach"
+    const stepMatch = comments.match(/Bước\s*(\d+):\s*([^,\n]+)/);
+    if (stepMatch) {
+      console.log("DEBUG: Found step pattern:", stepMatch);
+      return {
+        stageId: parseInt(stepMatch[1]),
+        stageName: stepMatch[2].trim(),
+        failureDetails: comments,
+        evaluationId: latestEvaluation.evaluationId
+      };
+    }
+    
+    // Pattern 2: "StageId: X, StageName: Y"
+    const stageIdMatch = comments.match(/StageId:\s*(\d+)/);
+    const stageNameMatch = comments.match(/StageName:\s*([^,\n]+)/);
+    const detailsMatch = comments.match(/FailureDetails:\s*([^,\n]+)/);
+    
+    if (stageIdMatch) {
+      console.log("DEBUG: Found stage pattern:", stageIdMatch);
+      return {
+        stageId: parseInt(stageIdMatch[1]),
+        stageName: stageNameMatch ? stageNameMatch[1].trim() : 'Unknown',
+        failureDetails: detailsMatch ? detailsMatch[1].trim() : 'Không đạt tiêu chuẩn',
+        evaluationId: latestEvaluation.evaluationId
+      };
+    }
+    
+    return null;
+  }, [hasFailedEvaluation, evaluations]);
+
+  // State để lưu max OrderIndex của method
+  const [maxOrderIndex, setMaxOrderIndex] = useState<number>(0);
+
+  // Lấy OrderIndex lớn nhất trong method
+  useEffect(() => {
+    const fetchMaxOrderIndex = async () => {
+      if (batch?.methodId) {
+        try {
+          console.log("DEBUG: Fetching stages for methodId:", batch.methodId);
+          const stages = await getProcessingStagesByMethodId(batch.methodId);
+          
+          if (stages && stages.length > 0) {
+            // Tìm OrderIndex lớn nhất
+            const maxIndex = Math.max(...stages.map((stage: any) => stage.orderIndex));
+            console.log("DEBUG: Total stages:", stages.length);
+            console.log("DEBUG: All OrderIndexes:", stages.map((stage: any) => stage.orderIndex));
+            console.log("DEBUG: Max OrderIndex found:", maxIndex);
+            setMaxOrderIndex(maxIndex);
+          } else {
+            console.log("DEBUG: No stages found, using batch.stageCount");
+            setMaxOrderIndex(batch.stageCount || 0);
+          }
+        } catch (error) {
+          console.error("DEBUG: Error fetching stages:", error);
+          // Fallback: sử dụng stageCount từ batch
+          setMaxOrderIndex(batch.stageCount || 0);
+        }
+      }
+    };
+
+    fetchMaxOrderIndex();
+  }, [batch?.methodId, batch?.stageCount]);
+
+  // Kiểm tra xem có phải stage cuối không
+  const isAtLastStage = useMemo(() => {
+    if (!batch?.progresses || batch.progresses.length === 0) return false;
+    
+    const latestProgress = batch.progresses[batch.progresses.length - 1];
+    if (!latestProgress) return false;
+    
+    console.log("DEBUG LAST STAGE: latestProgress.stepIndex:", latestProgress.stepIndex);
+    console.log("DEBUG LAST STAGE: maxOrderIndex:", maxOrderIndex);
+    console.log("DEBUG LAST STAGE: Total progresses:", batch.progresses.length);
+    console.log("DEBUG LAST STAGE: All stepIndexes:", batch.progresses.map(p => p.stepIndex));
+    
+    // Nếu maxOrderIndex = 0 (API lỗi), sử dụng logic fallback
+    if (maxOrderIndex === 0) {
+      // Sử dụng stageCount từ batch
+      const expectedMaxStage = batch.stageCount || 0;
+      const isLast = expectedMaxStage > 0 && latestProgress.stepIndex >= expectedMaxStage;
+      console.log("DEBUG LAST STAGE: Using fallback logic - expectedMaxStage:", expectedMaxStage, "isLast:", isLast);
+      return isLast;
+    }
+    
+    const isLast = latestProgress.stepIndex >= maxOrderIndex;
+    console.log("DEBUG LAST STAGE: Using maxOrderIndex logic - isLast:", isLast);
+    return isLast;
+  }, [batch?.progresses, maxOrderIndex, batch?.stageCount]);
 
   if (loading) {
     return (
@@ -358,24 +488,28 @@ export default function ViewProcessingBatch() {
              {batch.status === ProcessingStatus.AwaitingEvaluation && (
                <div className="flex items-center gap-2 text-orange-600 bg-orange-50 px-3 py-1 rounded-full text-sm">
                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                 <span>⏳ Đang chờ đánh giá</span>
+                 <span> Đang chờ đánh giá</span>
                </div>
              )}
              
              {batch.status !== ProcessingStatus.Completed && 
               batch.status !== ProcessingStatus.AwaitingEvaluation && 
-              batch.progresses && batch.progresses.length > 0 && (
+              batch.progresses && batch.progresses.length > 0 && 
+              !isAtLastStage && (
                <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-sm">
                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                 <span>🔄 Có thể cập nhật bước tiếp theo</span>
+                 <span> Có thể cập nhật bước tiếp theo</span>
                </div>
              )}
+             
+
            </div>
                      <div className="flex items-center gap-3">
-             {/* Nút cập nhật tiến trình - chỉ hiển thị khi có thể cập nhật */}
+             {/* Nút cập nhật tiến trình - hiển thị khi có thể cập nhật VÀ chưa ở stage cuối HOẶC có failed evaluation */}
              {batch.progresses && batch.progresses.length > 0 && 
               batch.status !== ProcessingStatus.Completed && 
-              batch.status !== ProcessingStatus.AwaitingEvaluation && (
+              batch.status !== ProcessingStatus.AwaitingEvaluation && 
+              (!isAtLastStage || hasFailedEvaluation) && (
                <Button 
                  onClick={() => setOpenAdvanceModal(true)}
                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white transition-all duration-200"
@@ -398,6 +532,8 @@ export default function ViewProcessingBatch() {
 
 
 
+
+
              <Button 
                variant="outline"
                onClick={() => router.push(`/dashboard/farmer/processing/batches/${id}/edit`)}
@@ -416,6 +552,53 @@ export default function ViewProcessingBatch() {
              </Button>
            </div>
         </div>
+
+        {/* 🔧 ALERT: Chỉ hiện khi có đánh giá fail và batch status là InProgress */}
+        {hasFailedEvaluation && failedStageInfo && batch.status === ProcessingStatus.InProgress && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                    <XCircle className="w-4 h-4 text-red-600" />
+                  </div>
+                </div>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-lg font-semibold text-red-800 mb-2">
+                  Lô sơ chế cần cải thiện
+                </h3>
+                <p className="text-red-700 mb-4">
+                  Lô sơ chế của bạn đã được đánh giá không đạt ở công đoạn <strong>{failedStageInfo.stageName}</strong>. 
+                  Vui lòng xem chi tiết đánh giá và cải thiện theo hướng dẫn.
+                </p>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      // Hiện chi tiết đánh giá
+                      setSelectedEvaluation(evaluations.find(e => e.evaluationId === failedStageInfo.evaluationId) || null);
+                    }}
+                    className="px-4 py-2 border border-red-300 text-red-700 bg-white rounded-md hover:bg-red-50 transition-colors"
+                  >
+                    Xem chi tiết đánh giá
+                  </button>
+                  <Button
+                    onClick={() => {
+                      // Mở form cập nhật progress cho stage bị fail
+                      setOpenUpdateAfterEvaluationModal(true);
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                  >
+                    Cập nhật tiến trình
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -474,45 +657,7 @@ export default function ViewProcessingBatch() {
               </div>
             </div>
             
-            {/* Thông báo khi batch bị đánh giá Fail */}
-            {batch.status === ProcessingStatus.InProgress && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-red-800 mb-1">
-                      <span className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Lô sơ chế cần cải thiện
-                </span>
-                    </h4>
-                    <p className="text-sm text-red-700 mb-3">
-                      Lô sơ chế của bạn đã được đánh giá không đạt. Vui lòng xem chi tiết đánh giá và cải thiện theo hướng dẫn.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-red-700 border-red-300 hover:bg-red-100"
-                        onClick={() => {
-                          // TODO: Mở modal xem chi tiết đánh giá
-                          alert("Tính năng xem chi tiết đánh giá sẽ được phát triển");
-                        }}
-                      >
-                        Xem chi tiết đánh giá
-                      </Button>
-                      <Button 
-                        size="sm"
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                        onClick={() => setOpenAdvanceModal(true)}
-                      >
-                        Cập nhật tiến trình
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
 
@@ -660,16 +805,28 @@ export default function ViewProcessingBatch() {
                 </Button>
               )}
 
-              {/* Hiển thị nút cập nhật bước tiếp theo nếu đã có progress và chưa hoàn thành */}
-              {batch.progresses && batch.progresses.length > 0 && 
-               batch.status !== ProcessingStatus.Completed && 
-               batch.status !== ProcessingStatus.AwaitingEvaluation && (
+              {/* Hiển thị nút cập nhật bước tiếp theo nếu đã có progress và chưa hoàn thành VÀ chưa có đánh giá fail VÀ chưa ở stage cuối */}
+              {(() => {
+                console.log("DEBUG BUTTON: Checking conditions for update button");
+                console.log("DEBUG BUTTON: batch.progresses?.length:", batch.progresses?.length);
+                console.log("DEBUG BUTTON: batch.status:", batch.status);
+                console.log("DEBUG BUTTON: ProcessingStatus.Completed:", ProcessingStatus.Completed);
+                console.log("DEBUG BUTTON: ProcessingStatus.AwaitingEvaluation:", ProcessingStatus.AwaitingEvaluation);
+                console.log("DEBUG BUTTON: hasFailedEvaluation:", hasFailedEvaluation);
+                console.log("DEBUG BUTTON: isAtLastStage:", isAtLastStage);
+                
+                return batch.progresses && batch.progresses.length > 0 && 
+                       batch.status !== ProcessingStatus.Completed && 
+                       batch.status !== ProcessingStatus.AwaitingEvaluation && 
+                       !hasFailedEvaluation &&
+                       !isAtLastStage;
+              })() && (
                 <Button
                   onClick={() => setOpenAdvanceModal(true)}
                   className="bg-white/20 hover:bg-white/30 text-white border-white/30"
                 >
                   <PlusCircle className="w-4 h-4 mr-2" />
-                  Cập nhật bước tiếp theo
+                  {isAtLastStage ? "Hoàn thành bước cuối" : "Cập nhật bước cuối"}
                 </Button>
               )}
 
@@ -722,6 +879,8 @@ export default function ViewProcessingBatch() {
                           {progress.stageDescription}
                         </p>
                       </div>
+                      
+
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -962,14 +1121,23 @@ export default function ViewProcessingBatch() {
                  {/* Thông báo đánh giá mới */}
                  {evaluations.some(e => e.evaluationResult === 'Fail') && (
                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                     <div className="flex items-center gap-2">
-                       <AlertTriangle className="w-5 h-5 text-red-600" />
-                       <div>
-                         <h4 className="text-sm font-medium text-red-900">Có đánh giá cần xử lý</h4>
-                         <p className="text-sm text-red-700">
-                           Lô sơ chế này có đánh giá không đạt. Vui lòng xem chi tiết và cập nhật tiến trình theo hướng dẫn.
-                         </p>
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                         <AlertTriangle className="w-5 h-5 text-red-600" />
+                         <div>
+                           <h4 className="text-sm font-medium text-red-900">Có đánh giá cần xử lý</h4>
+                           <p className="text-sm text-red-700">
+                             Lô sơ chế này có đánh giá không đạt. Vui lòng xem chi tiết và cập nhật tiến trình theo hướng dẫn.
+                           </p>
+                         </div>
                        </div>
+                       <Button
+                         onClick={() => setOpenUpdateAfterEvaluationModal(true)}
+                         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                       >
+                         <Edit className="w-4 h-4" />
+                         Cập nhật tiến trình
+                       </Button>
                      </div>
                    </div>
                  )}
@@ -1008,7 +1176,7 @@ export default function ViewProcessingBatch() {
                        <div className="flex items-center gap-2 text-sm text-gray-600">
                          <User className="w-4 h-4 text-gray-500" />
                          <span className="font-medium">Đánh giá bởi:</span>
-                         <span>{evaluation.evaluatedBy ? `Chuyên gia ${evaluation.evaluatedBy}` : 'Hệ thống'}</span>
+                         <span>{evaluation.expertName || (evaluation.evaluatedBy ? `Chuyên gia ${evaluation.evaluatedBy}` : 'Hệ thống')}</span>
                        </div>
                      </div>
                      
@@ -1065,16 +1233,40 @@ export default function ViewProcessingBatch() {
 
                            {/* Action guidance */}
                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
-                             <div className="flex items-start gap-2">
-                               <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                               <div>
-                                 <h5 className="text-sm font-medium text-blue-900 mb-1">
-                                   Hướng dẫn tiếp theo:
-                                 </h5>
-                                 <p className="text-sm text-blue-800">
-                                   Hãy cập nhật tiến trình cho công đoạn {failureInfo.failedStageName} với những cải thiện theo khuyến nghị trên.
-                                 </p>
+                             <div className="flex items-start justify-between">
+                               <div className="flex items-start gap-2 flex-1">
+                                 <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                 <div>
+                                   <h5 className="text-sm font-medium text-blue-900 mb-1">
+                                     Hướng dẫn tiếp theo:
+                                   </h5>
+                                   <p className="text-sm text-blue-800">
+                                     Hãy cập nhật tiến trình cho công đoạn {failureInfo.failedStageName} với những cải thiện theo khuyến nghị trên.
+                                   </p>
+                                 </div>
                                </div>
+                               <Button
+                                 onClick={() => {
+                                   console.log("DEBUG: Update button clicked");
+                                   console.log("DEBUG: Setting openUpdateAfterEvaluationModal to true");
+                                   setOpenUpdateAfterEvaluationModal(true);
+                                   console.log("DEBUG: Modal should be open now");
+                                 }}
+                                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ml-4 cursor-pointer z-10 relative"
+                                 style={{ pointerEvents: 'auto' }}
+                               >
+                                 <Edit className="w-4 h-4" />
+                                 Cập nhật
+                               </Button>
+                               <button
+                                 onClick={() => {
+                                   console.log("DEBUG: Test button clicked");
+                                   alert("Test button works!");
+                                 }}
+                                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg ml-2"
+                               >
+                                 Test
+                               </button>
                              </div>
                            </div>
                          </div>
@@ -1163,14 +1355,31 @@ export default function ViewProcessingBatch() {
                 batchId={batch.batchId}
                 latestProgress={latestProgress}
                 batchStatus={batch.status}
-                onSuccess={() => {
-                  setOpenAdvanceModal(false);
-                  window.location.reload();
-                }}
+                failedStageInfo={failedStageInfo || undefined}
+                              onSuccess={() => {
+                setOpenAdvanceModal(false);
+                // Force refresh data immediately
+                console.log("DEBUG: Advance progress successful, refreshing data...");
+                window.location.reload();
+              }}
               />
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Update After Evaluation Modal */}
+        {(() => { console.log("DEBUG: failedStageInfo:", failedStageInfo); return null; })()}
+        {failedStageInfo && (
+          <UpdateAfterEvaluationForm
+            batchId={id as string}
+            failedStageInfo={failedStageInfo}
+            isOpen={openUpdateAfterEvaluationModal}
+            onClose={() => setOpenUpdateAfterEvaluationModal(false)}
+            onSuccess={() => {
+              window.location.reload();
+            }}
+          />
+        )}
 
         {/* Media Viewer Dialog */}
         <Dialog open={mediaViewerOpen} onOpenChange={setMediaViewerOpen}>

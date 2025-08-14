@@ -70,11 +70,12 @@ export default function ProcurementPlanCard({
                   style={{
                     cursor: plan.status !== "Draft" ? "not-allowed" : "pointer",
                   }}
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/manager/procurement-plans/${plan.planId}/edit`
-                    )
-                  }
+                  onClick={() => {
+                    if (plan.status === "Draft")
+                      router.push(
+                        `/dashboard/manager/procurement-plans/${plan.planId}/edit`
+                      );
+                  }}
                 >
                   <FiEdit className='mr-1' /> Chỉnh sửa
                 </DropdownMenu.Item>

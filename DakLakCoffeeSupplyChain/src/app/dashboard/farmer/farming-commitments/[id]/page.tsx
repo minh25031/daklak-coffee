@@ -164,10 +164,10 @@ export default function FarmingCommitmentDetailPageForFarmer() {
               <strong>Tổng chi phí:</strong>{" "}
               {commitment.totalPrice.toLocaleString()} VNĐ
             </div>
-            <div>
+            {/* <div>
               <strong>Tổng tiền thuế:</strong>{" "}
               {commitment.totalTaxPrice.toLocaleString()} VNĐ
-            </div>
+            </div> */}
             <div>
               <strong>Tổng tiền trả trước:</strong>{" "}
               {commitment.totalAdvancePayment.toLocaleString()} VNĐ
