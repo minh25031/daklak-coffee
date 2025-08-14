@@ -97,7 +97,7 @@ export default function ContractDeliveryBatchForm({
         deliveryRound: 1,
         expectedDeliveryDate: undefined, // để trống DatePicker
         totalPlannedQuantity: 0,
-        status: ContractDeliveryBatchStatus.Planned,
+        status: ContractDeliveryBatchStatus.InProgress,
         contractDeliveryItems: [],
       });
     }
@@ -288,14 +288,14 @@ export default function ContractDeliveryBatchForm({
           status: data.status,
           contractDeliveryItems: data.contractDeliveryItems as any,
         };
-        await toast.promise(
-          updateContractDeliveryBatch(payload.deliveryBatchId, payload),
-          {
-            loading: "Đang cập nhật...",
-            success: "Cập nhật đợt giao thành công!",
-            error: "Đã xảy ra lỗi khi lưu đợt giao.",
-          }
+
+        const result = await updateContractDeliveryBatch(
+          payload.deliveryBatchId,
+          payload
         );
+        toast.success("Cập nhật đợt giao thành công!");
+        // Chỉ gọi onSuccess khi update thành công
+        onSuccess();
       } else {
         const payload: ContractDeliveryBatchCreateDto = {
           contractId: data.contractId,
@@ -305,16 +305,16 @@ export default function ContractDeliveryBatchForm({
           status: data.status,
           contractDeliveryItems: data.contractDeliveryItems as any,
         };
-        await toast.promise(createContractDeliveryBatch(payload), {
-          loading: "Đang tạo...",
-          success: "Tạo đợt giao thành công!",
-          error: "Đã xảy ra lỗi khi lưu đợt giao.",
-        });
+
+        const result = await createContractDeliveryBatch(payload);
+        toast.success("Tạo đợt giao thành công!");
+        // Chỉ gọi onSuccess khi create thành công
+        onSuccess();
       }
-      onSuccess();
     } catch (err) {
       console.error(err);
       toast.error("Đã xảy ra lỗi khi lưu đợt giao.");
+      // Không gọi onSuccess khi có lỗi - form sẽ ở lại trang hiện tại
     }
   }
 
@@ -403,25 +403,43 @@ export default function ContractDeliveryBatchForm({
       </div>
 
       {/* Trạng thái */}
-      <div>
-        <label className="block mb-1 text-sm font-medium">Trạng thái</label>
-        <select
-          className="w-full p-2 border rounded"
-          value={formData.status}
-          onChange={(e) =>
-            handleChange(
-              "status",
-              e.target.value as ContractDeliveryBatchStatus
-            )
-          }
-        >
-          {Object.values(ContractDeliveryBatchStatus).map((s) => (
-            <option key={s} value={s}>
-              {ContractDeliveryBatchStatusLabel[s]}
-            </option>
-          ))}
-        </select>
-      </div>
+      {isEdit ? (
+        <div>
+          <label className="block mb-1 text-sm font-medium">Trạng thái</label>
+          <select
+            className="w-full p-2 border rounded"
+            value={formData.status}
+            onChange={(e) =>
+              handleChange(
+                "status",
+                e.target.value as ContractDeliveryBatchStatus
+              )
+            }
+          >
+            {Object.values(ContractDeliveryBatchStatus).map((s) => (
+              <option key={s} value={s}>
+                {ContractDeliveryBatchStatusLabel[s]}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div>
+          <label className="block mb-1 text-sm font-medium">Trạng thái</label>
+          <div className="p-2 border rounded bg-gray-50">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+              {
+                ContractDeliveryBatchStatusLabel[
+                  ContractDeliveryBatchStatus.InProgress
+                ]
+              }
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            💡 Đợt giao mới sẽ có trạng thái "Đang thực hiện" mặc định
+          </p>
+        </div>
+      )}
 
       {/* Ghi chú */}
       <div>
