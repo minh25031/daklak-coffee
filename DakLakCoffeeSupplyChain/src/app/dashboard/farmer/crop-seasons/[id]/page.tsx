@@ -151,111 +151,105 @@ export default function CropSeasonDetail() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* Thông tin mùa vụ */}
-                    <div className="lg:col-span-1">
-                        <Card className="border-orange-200 shadow-sm">
-                            <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-200">
-                                <CardTitle className="text-gray-800 flex items-center gap-2 text-sm">
-                                    <FileText className="w-4 h-4 text-orange-600" />
-                                    Thông tin mùa vụ
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-4 space-y-3">
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                                        <MapPin className="w-4 h-4 text-orange-600" />
-                                        <div>
-                                            <p className="text-xs text-gray-600">Diện tích</p>
-                                            <p className="font-medium text-gray-800">{season.area} ha</p>
-                                        </div>
-                                    </div>
+                {/* Thông tin mùa vụ - 1 hàng ngang */}
+                <Card className="border-orange-200 shadow-sm">
+                    <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-200">
+                        <CardTitle className="text-gray-800 flex items-center gap-2 text-sm">
+                            <FileText className="w-4 h-4 text-orange-600" />
+                            Thông tin mùa vụ
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
 
-                                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                                        <Calendar className="w-4 h-4 text-blue-600" />
-                                        <div>
-                                            <p className="text-xs text-gray-600">Thời gian</p>
-                                            <p className="font-medium text-gray-800">
-                                                {formatDate(season.startDate)} – {formatDate(season.endDate)}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                                        <User className="w-4 h-4 text-green-600" />
-                                        <div>
-                                            <p className="text-xs text-gray-600">Nông dân</p>
-                                            <p className="font-medium text-gray-800">{season.farmerName || 'Không rõ'}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                                        <FileText className="w-4 h-4 text-purple-600" />
-                                        <div>
-                                            <p className="text-xs text-gray-600">Mã cam kết</p>
-                                            <p className="font-medium text-gray-800">
-                                                {season.commitmentName || <span className="italic text-gray-500">Chưa có</span>}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                                        <FileText className="w-4 h-4 text-indigo-600" />
-                                        <div>
-                                            <p className="text-xs text-gray-600">Mã đăng ký</p>
-                                            <p className="font-medium text-gray-800">
-                                                {season.registrationCode || <span className="italic text-gray-500">Chưa có</span>}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {season.note && (
-                                        <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-md">
-                                            <FileText className="w-4 h-4 text-amber-600 mt-1" />
-                                            <div>
-                                                <p className="text-xs text-gray-600">Ghi chú</p>
-                                                <p className="font-medium text-gray-800 text-sm">{season.note}</p>
-                                            </div>
-                                        </div>
-                                    )}
+                            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md">
+                                <FileText className="w-4 h-4 text-purple-600" />
+                                <div>
+                                    <p className="text-xs text-gray-600">Mùa vụ</p>
+                                    <p className="font-medium text-gray-800">
+                                        {season.seasonName || <span className="italic text-gray-500">Chưa có</span>}
+                                    </p>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Chi tiết vùng trồng */}
-                    <div className="lg:col-span-2">
-                        <Card className="border-orange-200 shadow-sm">
-                            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
-                                <div className="flex justify-between items-center">
-                                    <CardTitle className="text-gray-800 flex items-center gap-2 text-sm">
-                                        <MapPin className="w-4 h-4 text-green-600" />
-                                        Chi tiết vùng trồng
-                                    </CardTitle>
-                                    {user?.role === 'farmer' && (
-                                        <Button
-                                            size="sm"
-                                            onClick={() =>
-                                                router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/create?commitmentId=${season.commitmentId}`)
-                                            }
-                                            className="bg-green-600 hover:bg-green-700 text-white"
-                                        >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            Thêm vùng trồng
-                                        </Button>
-                                    )}
+                            </div>
+                            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md">
+                                <User className="w-4 h-4 text-green-600" />
+                                <div>
+                                    <p className="text-xs text-gray-600">Nông dân</p>
+                                    <p className="font-medium text-gray-800">{season.farmerName || 'Không rõ'}</p>
                                 </div>
-                            </CardHeader>
-                            <CardContent className="p-4">
-                                <CropSeasonDetailTable
-                                    details={season.details}
-                                    cropSeasonId={season.cropSeasonId}
-                                    onReload={loadSeason}
-                                />
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md">
+                                <Calendar className="w-4 h-4 text-blue-600" />
+                                <div>
+                                    <p className="text-xs text-gray-600">Thời gian</p>
+                                    <p className="font-medium text-gray-800">
+                                        {formatDate(season.startDate)} – {formatDate(season.endDate)}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md">
+                                <MapPin className="w-4 h-4 text-orange-600" />
+                                <div>
+                                    <p className="text-xs text-gray-600">Diện tích</p>
+                                    <p className="font-medium text-gray-800">{season.area} ha</p>
+                                </div>
+                            </div>
+
+
+                            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md">
+                                <FileText className="w-4 h-4 text-indigo-600" />
+                                <div>
+                                    <p className="text-xs text-gray-600">Mã đăng ký</p>
+                                    <p className="font-medium text-gray-800">
+                                        {season.registrationCode || <span className="italic text-gray-500">Chưa có</span>}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {season.note && (
+                                <div className="col-span-2 md:col-span-3 lg:col-span-5 flex items-start gap-2 p-3 bg-gray-50 rounded-md">
+                                    <FileText className="w-4 h-4 text-amber-600 mt-1" />
+                                    <div>
+                                        <p className="text-xs text-gray-600">Ghi chú</p>
+                                        <p className="font-medium text-gray-800 text-sm">{season.note}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Chi tiết vùng trồng - Full width */}
+                <Card className="border-orange-200 shadow-sm">
+                    <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
+                        <div className="flex justify-between items-center">
+                            <CardTitle className="text-gray-800 flex items-center gap-2 text-sm">
+                                <MapPin className="w-4 h-4 text-green-600" />
+                                Chi tiết vùng trồng
+                            </CardTitle>
+                            {user?.role === 'farmer' && (
+                                <Button
+                                    size="sm"
+                                    onClick={() =>
+                                        router.push(`/dashboard/farmer/crop-seasons/${season.cropSeasonId}/details/create?commitmentId=${season.commitmentId}`)
+                                    }
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Thêm vùng trồng
+                                </Button>
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                        <CropSeasonDetailTable
+                            details={season.details}
+                            cropSeasonId={season.cropSeasonId}
+                            onReload={loadSeason}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

@@ -16,7 +16,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { getFarmerCommitments } from "@/lib/api/farmingCommitments";
+import { getAvailableCommitments } from "@/lib/api/farmingCommitments";
+import { FarmingCommitmentDetail } from "@/lib/api/farmingCommitments";
 
 export default function CreateCropSeasonDetailPage() {
   const params = useParams();
@@ -41,8 +42,27 @@ export default function CreateCropSeasonDetailPage() {
       commitmentDetailCode: string;
       note: string;
       committedQuantity: number;
+      estimatedDeliveryStart: string;
+      estimatedDeliveryEnd: string;
+      expectedHarvestStart: string;
+      expectedHarvestEnd: string;
+      coffeeTypeName: string;
+      confirmedPrice: number;
     }[]
   >([]);
+
+  const [selectedCommitmentDetail, setSelectedCommitmentDetail] = useState<{
+    commitmentDetailId: string;
+    commitmentDetailCode: string;
+    note: string;
+    committedQuantity: number;
+    estimatedDeliveryStart: string;
+    estimatedDeliveryEnd: string;
+    expectedHarvestStart: string;
+    expectedHarvestEnd: string;
+    coffeeTypeName: string;
+    confirmedPrice: number;
+  } | null>(null);
 
   const QUALITY_OPTIONS = [
     { label: "Cà phê đặc sản (SCA 80+)", value: "SCA 80+" },
@@ -60,7 +80,7 @@ export default function CreateCropSeasonDetailPage() {
       }
 
       try {
-        const allCommitments = await getFarmerCommitments();
+        const allCommitments = await getAvailableCommitments();
         const matched = allCommitments.find(c => c.commitmentId === commitmentId);
 
         if (!matched || !matched.farmingCommitmentDetails) {
@@ -68,21 +88,46 @@ export default function CreateCropSeasonDetailPage() {
           return;
         }
 
-        const details = matched.farmingCommitmentDetails.map((detail: any) => ({
-          commitmentDetailId: detail.commitmentDetailId,
+        const details = matched.farmingCommitmentDetails.map((detail: Partial<FarmingCommitmentDetail>) => ({
+          commitmentDetailId: detail.commitmentDetailId || "",
           commitmentDetailCode: detail.commitmentDetailCode,
           note: detail.note,
-          committedQuantity: detail.committedQuantity,
+          committedQuantity: detail.committedQuantity || 0,
+          estimatedDeliveryStart: detail.estimatedDeliveryStart || "",
+          estimatedDeliveryEnd: detail.estimatedDeliveryEnd || "",
+          expectedHarvestStart: detail.expectedHarvestStart || "",
+          expectedHarvestEnd: detail.expectedHarvestEnd || "",
+          coffeeTypeName: detail.coffeeTypeName || "",
+          confirmedPrice: detail.confirmedPrice || 0,
         }));
 
         setCommitmentDetailOptions(details);
-      } catch (err) {
+
+        // Log thông tin commitment details để kiểm tra
+        console.log("Commitment Details loaded:", details);
+        console.log("Selected Commitment ID:", commitmentId);
+        console.log("Matched Commitment:", matched);
+      } catch (error) {
+        console.error("Error fetching commitment details:", error);
         AppToast.error("Không thể tải dòng cam kết.");
       }
     };
 
     fetchCommitmentDetails();
   }, [commitmentId]);
+
+  const handleCommitmentDetailChange = (value: string) => {
+    const selected = commitmentDetailOptions.find(option => option.commitmentDetailId === value);
+    setSelectedCommitmentDetail(selected || null);
+    setForm(prev => ({ ...prev, commitmentDetailId: value }));
+
+    // Log thông tin commitment detail được chọn
+    if (selected) {
+      console.log("Selected Commitment Detail:", selected);
+      console.log("Estimated Delivery Start:", selected.estimatedDeliveryStart);
+      console.log("Estimated Delivery End:", selected.estimatedDeliveryEnd);
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -91,7 +136,7 @@ export default function CreateCropSeasonDetailPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async () => {
+  const validateForm = (): string | null => {
     const requiredFields = [
       "commitmentDetailId",
       "areaAllocated",
@@ -99,14 +144,55 @@ export default function CreateCropSeasonDetailPage() {
       "expectedHarvestStart",
       "expectedHarvestEnd",
     ];
+
     const missing = requiredFields.filter((f) => !form[f as keyof typeof form]);
     if (missing.length > 0) {
-      AppToast.error("Vui lòng điền đầy đủ các trường bắt buộc.");
+      return "Vui lòng điền đầy đủ các trường bắt buộc.";
+    }
+
+    // Validation cho ngày thu hoạch
+    if (selectedCommitmentDetail) {
+      const harvestStart = new Date(form.expectedHarvestStart);
+      const harvestEnd = new Date(form.expectedHarvestEnd);
+      const harvestStartExpected = selectedCommitmentDetail.expectedHarvestStart ? new Date(selectedCommitmentDetail.expectedHarvestStart) : null;
+      const harvestEndExpected = selectedCommitmentDetail.expectedHarvestEnd ? new Date(selectedCommitmentDetail.expectedHarvestEnd) : null;
+
+      if (harvestStart >= harvestEnd) {
+        return "Ngày bắt đầu thu hoạch phải trước ngày kết thúc thu hoạch.";
+      }
+
+      if (harvestStartExpected && harvestStart < harvestStartExpected) {
+        return "Ngày bắt đầu thu hoạch không được trước ngày thu hoạch dự kiến bắt đầu.";
+      }
+
+      if (harvestEndExpected && harvestEnd > harvestEndExpected) {
+        return "Ngày kết thúc thu hoạch không được sau ngày thu hoạch dự kiến kết thúc.";
+      }
+    }
+
+    return null;
+  };
+
+  const handleSubmit = async () => {
+    const validationError = validateForm();
+    if (validationError) {
+      AppToast.error(validationError);
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Log thông tin trước khi gửi
+      console.log("Submitting crop season detail:", {
+        cropSeasonId,
+        commitmentDetailId: form.commitmentDetailId,
+        areaAllocated: parseFloat(form.areaAllocated),
+        plannedQuality: form.plannedQuality,
+        expectedHarvestStart: form.expectedHarvestStart,
+        expectedHarvestEnd: form.expectedHarvestEnd,
+        selectedCommitmentDetail
+      });
+
       await createCropSeasonDetail({
         cropSeasonId,
         commitmentDetailId: form.commitmentDetailId,
@@ -115,9 +201,11 @@ export default function CreateCropSeasonDetailPage() {
         expectedHarvestStart: form.expectedHarvestStart,
         expectedHarvestEnd: form.expectedHarvestEnd,
       });
+
       AppToast.success("Tạo vùng trồng thành công!");
       router.push(`/dashboard/farmer/crop-seasons/${cropSeasonId}`);
     } catch (err) {
+      console.error("Error creating crop season detail:", err);
       AppToast.error(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
@@ -136,9 +224,7 @@ export default function CreateCropSeasonDetailPage() {
             <Select
               disabled={commitmentDetailOptions.length === 0}
               value={form.commitmentDetailId}
-              onValueChange={(value) =>
-                setForm((prev) => ({ ...prev, commitmentDetailId: value }))
-              }
+              onValueChange={handleCommitmentDetailChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Chọn dòng cam kết" />
@@ -146,12 +232,46 @@ export default function CreateCropSeasonDetailPage() {
               <SelectContent>
                 {commitmentDetailOptions.map((item) => (
                   <SelectItem key={item.commitmentDetailId} value={item.commitmentDetailId}>
-                    {`${item.commitmentDetailCode} – ${item.note} (${item.committedQuantity} kg)`}
+                    {`${item.commitmentDetailCode} – ${item.coffeeTypeName} (${item.committedQuantity} kg)`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
+          {/* Hiển thị thông tin commitment detail được chọn */}
+          {selectedCommitmentDetail && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-4">
+                <h4 className="font-semibold text-blue-800 mb-2">Thông tin dòng cam kết</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="font-medium">Mã:</span> {selectedCommitmentDetail.commitmentDetailCode}
+                  </div>
+                  <div>
+                    <span className="font-medium">Loại cà phê:</span> {selectedCommitmentDetail.coffeeTypeName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Khối lượng cam kết:</span> {selectedCommitmentDetail.committedQuantity} kg
+                  </div>
+                  <div>
+                    <span className="font-medium">Giá xác nhận:</span> {selectedCommitmentDetail.confirmedPrice?.toLocaleString()} VNĐ/kg
+                  </div>
+                  <div>
+                    <span className="font-medium">Thu hoạch dự kiến từ:</span> {selectedCommitmentDetail.expectedHarvestStart ? new Date(selectedCommitmentDetail.expectedHarvestStart).toLocaleDateString('vi-VN') : 'Chưa xác định'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Thu hoạch dự kiến đến:</span> {selectedCommitmentDetail.expectedHarvestEnd ? new Date(selectedCommitmentDetail.expectedHarvestEnd).toLocaleDateString('vi-VN') : 'Chưa xác định'}
+                  </div>
+                </div>
+                {selectedCommitmentDetail.note && (
+                  <div className="mt-2">
+                    <span className="font-medium">Ghi chú:</span> {selectedCommitmentDetail.note}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <div>
             <Label>Diện tích (ha)</Label>
@@ -161,6 +281,8 @@ export default function CreateCropSeasonDetailPage() {
               value={form.areaAllocated}
               onChange={handleChange}
               required
+              min="0.1"
+              step="0.1"
             />
           </div>
 
@@ -194,6 +316,8 @@ export default function CreateCropSeasonDetailPage() {
                 value={form.expectedHarvestStart}
                 onChange={handleChange}
                 required
+                min={selectedCommitmentDetail?.expectedHarvestStart ? selectedCommitmentDetail.expectedHarvestStart.split('T')[0] : undefined}
+                max={selectedCommitmentDetail?.expectedHarvestEnd ? selectedCommitmentDetail.expectedHarvestEnd.split('T')[0] : undefined}
               />
             </div>
             <div>
@@ -204,6 +328,8 @@ export default function CreateCropSeasonDetailPage() {
                 value={form.expectedHarvestEnd}
                 onChange={handleChange}
                 required
+                min={form.expectedHarvestStart || undefined}
+                max={selectedCommitmentDetail?.expectedHarvestEnd ? selectedCommitmentDetail.expectedHarvestEnd.split('T')[0] : undefined}
               />
             </div>
           </div>
