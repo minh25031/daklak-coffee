@@ -44,6 +44,17 @@ export async function getAllExpertAdvices(): Promise<ExpertAdvice[]> {
   }
 }
 
+// ✅ Lấy danh sách tất cả expert advice cho BusinessManager
+export async function getAllExpertAdvicesForManager(): Promise<ExpertAdviceViewForManagerDto[]> {
+  try {
+    const res = await api.get<ExpertAdviceViewForManagerDto[]>("/ExpertAdvices/manager/all");
+    return res.data;
+  } catch (error) {
+    console.error("[getAllExpertAdvicesForManager] Error:", error);
+    throw error;
+  }
+}
+
 // =====================
 // GET BY ID
 // =====================
@@ -110,4 +121,22 @@ export async function hardDeleteExpertAdvice(adviceId: string): Promise<void> {
     console.error("[hardDeleteExpertAdvice] Error:", error);
     throw error;
   }
+}
+
+// Interface mới cho BusinessManager
+export interface ExpertAdviceViewForManagerDto {
+  adviceId: string;
+  reportId: string;
+  reportTitle: string;
+  reportCode: string;
+  expertId: string;
+  expertName: string;
+  expertEmail: string;
+  responseType: string;
+  adviceSource: string;
+  adviceText?: string;
+  attachedFileUrl?: string;
+  createdAt: string;
+  reportedByName: string;
+  reportedByEmail: string;
 }

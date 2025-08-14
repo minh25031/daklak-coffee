@@ -58,6 +58,37 @@ export async function getAllFarmerReports(): Promise<GeneralFarmerReportViewAllD
   }
 }
 
+// ✅ Lấy danh sách báo cáo cho BusinessManager (tất cả báo cáo)
+export async function getAllFarmerReportsForManager(): Promise<GeneralFarmerReportViewForManagerDto[]> {
+  try {
+    const res = await api.get<GeneralFarmerReportViewForManagerDto[]>("/GeneralFarmerReports/manager/all");
+    return res.data;
+  } catch (err) {
+    console.error("Lỗi getAllFarmerReportsForManager:", err);
+    return [];
+  }
+}
+
+// Interface mới cho BusinessManager
+export interface GeneralFarmerReportViewForManagerDto {
+  reportId: string;
+  reportCode: string;
+  title: string;
+  description: string;
+  reportType: string;
+  severityLevel: number | null;
+  reportedAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+  reportedByName: string;
+  reportedByEmail: string;
+  reportedByPhone: string;
+  imageUrl: string | null;
+  videoUrl: string | null;
+  isResolved: boolean | null;
+  expertAdviceCount: number;
+}
+
 // ✅ Lấy chi tiết 1 báo cáo
 export async function getFarmerReportById(reportId: string): Promise<GeneralFarmerReportViewDetailsDto | null> {
   try {
