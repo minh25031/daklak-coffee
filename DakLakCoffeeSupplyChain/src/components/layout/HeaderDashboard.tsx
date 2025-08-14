@@ -38,6 +38,7 @@ const pathTitleMap: Record<string, string> = {
   orders: "Đơn hàng",
   shipments: "Lô giao hàng",
   "contract-delivery-batches": "Lịch giao hàng",
+  products: "Sản phẩm",
   reports: "Báo cáo",
   users: "Quản lý người dùng",
   settings: "Cài đặt",
@@ -77,8 +78,8 @@ export default function HeaderDashboard() {
       return pathTitleMap[last] || "Chỉnh sửa";
     }
 
-    // Nếu segment cuối là ID (số) và segment trước đó tồn tại
-    if (/^\d+$/.test(last) && secondLast) {
+    // Nếu segment cuối là một ID (không nằm trong map) và có segment trước đó
+    if (secondLast && !pathTitleMap[last]) {
       return pathTitleMap[secondLast]
         ? `${pathTitleMap[secondLast]} - Chi tiết`
         : "Chi tiết";
