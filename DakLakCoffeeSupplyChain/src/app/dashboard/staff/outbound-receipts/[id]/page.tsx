@@ -182,7 +182,7 @@ function DetailItem({ icon, label, value }: { icon: React.ReactNode; label: stri
       <div className="p-2 bg-gray-100 rounded-md">{icon}</div>
       <div>
         <p className="text-xs text-gray-500 font-medium">{label}</p>
-        <p className="font-semibold text-gray-800">{value}</p>
+        <div className="font-semibold text-gray-800">{value}</div>
       </div>
     </div>
   );
