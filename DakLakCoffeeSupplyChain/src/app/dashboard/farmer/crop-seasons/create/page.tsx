@@ -28,6 +28,8 @@ export default function CreateCropSeasonPage() {
     const [availableCommitments, setAvailableCommitments] = useState<FarmingCommitment[]>([]);
     const [isLoadingCommitments, setIsLoadingCommitments] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedCommitment, setSelectedCommitment] = useState<FarmingCommitment | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         const fetchCommitments = async () => {
@@ -43,10 +45,48 @@ export default function CreateCropSeasonPage() {
         fetchCommitments();
     }, []);
 
+    // Tự động điều chỉnh thời gian mùa vụ khi chọn commitment
+    useEffect(() => {
+        if (selectedCommitment) {
+            // Tìm thời gian thu hoạch muộn nhất từ commitment details
+            if (selectedCommitment.farmingCommitmentDetails && selectedCommitment.farmingCommitmentDetails.length > 0) {
+                const latestHarvestEnd = selectedCommitment.farmingCommitmentDetails
+                    .filter((detail: any) => detail.estimatedDeliveryEnd)
+                    .reduce((latest: Date, detail: any) => {
+                        const harvestEnd = new Date(detail.estimatedDeliveryEnd);
+                        return latest > harvestEnd ? latest : harvestEnd;
+                    }, new Date(0));
+
+                if (latestHarvestEnd > new Date(0)) {
+                    // Tự động tính thời gian mùa vụ bao gồm thời gian thu hoạch
+                    const seasonStart = new Date(latestHarvestEnd);
+                    seasonStart.setFullYear(seasonStart.getFullYear() - 1); // 1 năm trước thu hoạch
+                    seasonStart.setMonth(0); // Tháng 1
+                    seasonStart.setDate(1); // Ngày 1
+
+                    const seasonEnd = new Date(latestHarvestEnd);
+                    seasonEnd.setDate(seasonEnd.getDate() + 30); // 30 ngày sau thu hoạch
+
+                    setForm(prev => ({
+                        ...prev,
+                        startDate: seasonStart.toISOString().split('T')[0],
+                        endDate: seasonEnd.toISOString().split('T')[0]
+                    }));
+                }
+            }
+        }
+    }, [selectedCommitment]);
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
         const { name, value } = e.target;
+
+        if (name === 'commitmentId') {
+            const commitment = availableCommitments.find(c => c.commitmentId === value);
+            setSelectedCommitment(commitment || null);
+        }
+
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
@@ -128,6 +168,23 @@ export default function CreateCropSeasonPage() {
                         <Label htmlFor="note">Ghi chú</Label>
                         <Textarea name="note" value={form.note} onChange={handleChange} />
                     </div>
+
+                    {/* Thông tin thời gian thu hoạch */}
+                    {selectedCommitment && (
+                        <div className="p-4 bg-blue-50 rounded-lg">
+                            <h4 className="font-medium text-blue-900 mb-2">Thông tin thời gian thu hoạch:</h4>
+                            <p className="text-sm text-blue-700">
+                                Dự kiến thu hoạch: {selectedCommitment.farmingCommitmentDetails && selectedCommitment.farmingCommitmentDetails.length > 0 ?
+                                    selectedCommitment.farmingCommitmentDetails
+                                        .filter((detail: any) => detail.estimatedDeliveryStart)
+                                        .map((detail: any) => new Date(detail.estimatedDeliveryStart).toLocaleDateString('vi-VN'))
+                                        .join(' - ') : 'Chưa xác định'}
+                            </p>
+                            <p className="text-xs text-blue-600 mt-1">
+                                * Thời gian mùa vụ sẽ tự động bao gồm thời gian thu hoạch
+                            </p>
+                        </div>
+                    )}
 
                     <div>
                         <Label htmlFor="commitmentId">Cam kết</Label>
