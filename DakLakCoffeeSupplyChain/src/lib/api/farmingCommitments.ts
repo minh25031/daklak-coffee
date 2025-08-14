@@ -10,7 +10,7 @@ export type FarmingCommitment = {
   planTitle?: string;
   totalPrice: number;
   totalAdvancePayment: number;
-  totalTax: number;
+  totalTaxPrice: number;
   registrationId: string;
   note: string;
   commitmentDate: string; // ISO date string
@@ -21,11 +21,12 @@ export type FarmingCommitment = {
   totalRatingByFarmer: number;
   farmingCommitmentDetails: Partial<FarmingCommitmentDetail>[];
   FarmingCommitmentsDetailsCreateDtos: Partial<FarmingCommitmentDetail>[];
+  farmingCommitmentsDetailsUpdateDtos: Partial<FarmingCommitmentDetail>[];
   status: string | number; // e.g. "Pending", "Approved", "Rejected"
 }
 
 export type FarmingCommitmentDetail = {
-  commitmentDetailId: string;
+  commitmentDetailId?: string;
   commitmentDetailCode: string;
   commitmentId: string;
   registrationDetailId: string;
@@ -102,6 +103,13 @@ export async function createFarmingCommitment(
   data: Partial<FarmingCommitment>
 ): Promise<FarmingCommitment | null> {
   const res = await api.post<FarmingCommitment>("/FarmingCommitment", data);
+  return res.data;
+}
+export async function updateFarmingCommitment(
+  commitmentId: string,
+  data: Partial<FarmingCommitment>
+): Promise<FarmingCommitment | null> {
+  const res = await api.patch<FarmingCommitment>(`/FarmingCommitment/Update/${commitmentId}`, data);
   return res.data;
 }
 

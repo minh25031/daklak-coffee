@@ -199,6 +199,7 @@ export default function CreateFarmingCommitmentPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting form:", form);
 
     if (!validateForm()) return;
 

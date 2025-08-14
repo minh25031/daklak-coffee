@@ -26,17 +26,20 @@ export default function BusinessFarmingCommitmentPage() {
     useState<FarmingCommitmentStatusValue | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setIsLoading(true);
     const data = await getBusinessCommitments().catch((error) => {
       toast.error(getErrorMessage(error));
       return [];
     });
     setFarmingCommitments(data);
+    setIsLoading(false);
   };
 
   const filteredCommitments = farmingCommitments.filter(
@@ -124,48 +127,52 @@ export default function BusinessFarmingCommitmentPage() {
         </div>
 
         {/* Pagination */}
-        <div className='flex justify-between items-center'>
-          <span className='text-sm text-muted-foreground'>
-            Hiển thị {(currentPage - 1) * pageSize + 1}–
-            {Math.min(currentPage * pageSize, filteredCommitments.length)} trong{" "}
-            {filteredCommitments.length} kết quả
-          </span>
-          <div className='flex items-center gap-2'>
-            <Button
-              variant='outline'
-              size='icon'
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            >
-              <ChevronLeft className='w-4 h-4' />
-            </Button>
-            {[...Array(totalPages).keys()].map((_, i) => {
-              const page = i + 1;
-              return (
-                <Button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={cn(
-                    "rounded-md px-3 py-1 text-sm",
-                    page === currentPage
-                      ? "bg-black text-white"
-                      : "bg-white text-black border"
-                  )}
-                >
-                  {page}
-                </Button>
-              );
-            })}
-            <Button
-              variant='outline'
-              size='icon'
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            >
-              <ChevronRight className='w-4 h-4' />
-            </Button>
+        {!isLoading && totalPages > 1 && (
+          <div className='flex justify-between items-center'>
+            <span className='text-sm text-muted-foreground'>
+              Hiển thị {(currentPage - 1) * pageSize + 1}–
+              {Math.min(currentPage * pageSize, filteredCommitments.length)} trong{" "}
+              {filteredCommitments.length} cam kết
+            </span>
+            <div className='flex items-center gap-2'>
+              <Button
+                variant='outline'
+                size='icon'
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft className='w-4 h-4' />
+              </Button>
+              {[...Array(totalPages).keys()].map((_, i) => {
+                const page = i + 1;
+                return (
+                  <Button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={cn(
+                      "rounded-md px-3 py-1 text-sm",
+                      page === currentPage
+                        ? "bg-black text-white"
+                        : "bg-white text-black border"
+                    )}
+                  >
+                    {page}
+                  </Button>
+                );
+              })}
+              <Button
+                variant='outline'
+                size='icon'
+                disabled={currentPage === totalPages}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+              >
+                <ChevronRight className='w-4 h-4' />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

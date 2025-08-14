@@ -1,10 +1,10 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FiCheck, FiEdit } from "react-icons/fi";
+import { FiCheck } from "react-icons/fi";
 import { Separator } from "@/components/ui/separator";
 import { Package } from "lucide-react";
 
@@ -28,9 +28,6 @@ import { ConfirmDialog } from "@/components/ui/confirmDialog";
 
 export default function FarmingCommitmentDetailPageForFarmer() {
   const { id } = useParams();
-  const router = useRouter();
-  //const [plan, setPlan] = useState<ProcurementPlan | null>(null);
-  //const [registrations, setRegistrations] = useState<CultivationRegistration[]>([]);
   const [commitment, setCommitment] = useState<FarmingCommitment | null>(null);
   const [loading, setLoading] = useState(true);
   const [openRejectionDialog, setOpenRejectionDialog] = useState(false);
@@ -44,23 +41,9 @@ export default function FarmingCommitmentDetailPageForFarmer() {
 
   useEffect(() => {
     fetchCommitment(id as string);
-    //fetchRegistration(id);
   }, [id]);
 
   //#region API calls
-  // const fetchRegistration = async (planId: ParamValue) => {
-  //   setLoading(true);
-  //   const data = await getCultivationRegistrationsByPlanId(planId).catch(
-  //     (error) => {
-  //       AppToast.error(getErrorMessage(error));
-  //       return [];
-  //     }
-  //   );
-  //   //console.log("Fetched Procurement Plans:", data);
-  //   setRegistrations(data);
-  //   console.log("Fetched Registrations:", data);
-  //   setLoading(false);
-  // };
 
   const fetchCommitment = async (commitmentId: string) => {
     setLoading(true);
@@ -75,12 +58,12 @@ export default function FarmingCommitmentDetailPageForFarmer() {
 
   const updateFarmingCommitmentStatus = async (
     status: number,
-    rejectReason: string | undefined
+    rejectionReason: string | undefined
   ) => {
     if (!commitment) return;
 
     const updatedCommitment = await updateFarmingCommitmentStatusByFarmer(
-      { status, rejectReason },
+      { status, rejectionReason },
       commitment.commitmentId
     ).catch((error) => {
       AppToast.error(getErrorMessage(error));
@@ -181,7 +164,14 @@ export default function FarmingCommitmentDetailPageForFarmer() {
               <strong>Tổng chi phí:</strong>{" "}
               {commitment.totalPrice.toLocaleString()} VNĐ
             </div>
-            
+            <div>
+              <strong>Tổng tiền thuế:</strong>{" "}
+              {commitment.totalTaxPrice.toLocaleString()} VNĐ
+            </div>
+            <div>
+              <strong>Tổng tiền trả trước:</strong>{" "}
+              {commitment.totalAdvancePayment.toLocaleString()} VNĐ
+            </div>
             <div>
               <strong>Ngày cam kết được tạo:</strong>{" "}
               {formatDate(commitment.commitmentDate)}

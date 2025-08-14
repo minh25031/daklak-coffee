@@ -15,6 +15,7 @@ export interface CultivationRegistration {
   totalWantedPrice: number; // total price for the registered area
   note: string;
   status: string | number;
+  commitmentId?: string;
   commitmentStatus: string | number;
   cultivationRegistrationDetails: Partial<CultivationRegistrationDetail>[];
 };
