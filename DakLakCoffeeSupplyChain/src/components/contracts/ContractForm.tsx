@@ -159,10 +159,41 @@ export default function ContractForm({
   const data = formData;
 
   function handleChange(field: string, value: any) {
-    setFormData((prev) => ({
-      ...prev!,
-      [field]: value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev!,
+        [field]: value,
+      };
+
+      // Tự động cập nhật trạng thái dựa trên ngày bắt đầu
+      if (field === "startDate" && value) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset giờ về 00:00:00 để so sánh ngày
+
+        const startDate = new Date(value);
+        startDate.setHours(0, 0, 0, 0);
+
+        // Chỉ tự động cập nhật nếu trạng thái hiện tại không phải là "Hoàn thành" hoặc "Đã hủy"
+        if (
+          newData.status !== ContractStatus.Completed &&
+          newData.status !== ContractStatus.Cancelled
+        ) {
+          if (startDate <= today) {
+            // Nếu ngày bắt đầu là hôm nay hoặc quá khứ, chuyển thành "Đang thực hiện"
+            newData.status = ContractStatus.InProgress;
+            // Hiển thị thông báo khi trạng thái thay đổi
+            toast.info("Trạng thái đã tự động cập nhật thành 'Đang thực hiện'");
+          } else {
+            // Nếu ngày bắt đầu trong tương lai, chuyển thành "Chưa bắt đầu"
+            newData.status = ContractStatus.NotStarted;
+            // Hiển thị thông báo khi trạng thái thay đổi
+            toast.info("Trạng thái đã tự động cập nhật thành 'Chưa bắt đầu'");
+          }
+        }
+      }
+
+      return newData;
+    });
 
     // Clear field error when user starts typing
     if (fieldErrors[field]) {
@@ -316,6 +347,15 @@ export default function ContractForm({
 
     if (data.startDate && data.endDate && data.startDate > data.endDate) {
       clientErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
+    }
+
+    // Validate lý do hủy khi trạng thái = "Đã hủy"
+    if (
+      data.status === ContractStatus.Cancelled &&
+      !data.cancelReason?.trim()
+    ) {
+      clientErrors.cancelReason =
+        "Lý do hủy là bắt buộc khi trạng thái là 'Đã hủy'";
     }
 
     // Validate contract items
@@ -980,42 +1020,107 @@ export default function ContractForm({
         />
       </div>
 
-      <div>
-        <label className="block mb-1 text-sm font-medium">Trạng thái</label>
-        <select
-          className={`w-full p-2 border rounded ${
-            hasFieldError("status") ? "border-red-500" : ""
-          }`}
-          value={data.status}
-          onChange={(e) => handleChange("status", e.target.value)}
-        >
-          {Object.entries(ContractStatus).map(([key, val]) => (
-            <option key={val} value={val}>
-              {getStatusDisplay(val).label}
-            </option>
-          ))}
-        </select>
-        {hasFieldError("status") && (
-          <p className="text-red-500 text-xs mt-1">{getFieldError("status")}</p>
-        )}
-      </div>
+      {/* Chỉ hiển thị trạng thái khi edit */}
+      {isEdit && (
+        <div>
+          <label className="block mb-1 text-sm font-medium">Trạng thái</label>
+          <select
+            className={`w-full p-2 border rounded ${
+              hasFieldError("status") ? "border-red-500" : ""
+            }`}
+            value={data.status}
+            onChange={(e) => handleChange("status", e.target.value)}
+          >
+            {/* Chỉ cho phép chọn các trạng thái hợp lý dựa trên ngày bắt đầu */}
+            {data.startDate && (
+              <>
+                {(() => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const startDate = new Date(data.startDate);
+                  startDate.setHours(0, 0, 0, 0);
 
-      <div>
-        <label className="block mb-1 text-sm font-medium">
-          Lý do huỷ (nếu có)
-        </label>
-        <Textarea
-          placeholder="Nếu huỷ, ghi lý do..."
-          value={data.cancelReason}
-          onChange={(e) => handleChange("cancelReason", e.target.value)}
-          className={hasFieldError("cancelReason") ? "border-red-500" : ""}
-        />
-        {hasFieldError("cancelReason") && (
-          <p className="text-red-500 text-xs mt-1">
-            {getFieldError("cancelReason")}
+                  if (startDate > today) {
+                    // Ngày bắt đầu trong tương lai - chỉ có thể chọn "Chưa bắt đầu" hoặc "Đã hủy"
+                    return (
+                      <>
+                        <option value={ContractStatus.NotStarted}>
+                          {getStatusDisplay(ContractStatus.NotStarted).label}
+                        </option>
+                        <option value={ContractStatus.Cancelled}>
+                          {getStatusDisplay(ContractStatus.Cancelled).label}
+                        </option>
+                      </>
+                    );
+                  } else {
+                    // Ngày bắt đầu là hôm nay hoặc quá khứ - có thể chọn "Đang thực hiện", "Hoàn thành" hoặc "Đã hủy"
+                    return (
+                      <>
+                        <option value={ContractStatus.InProgress}>
+                          {getStatusDisplay(ContractStatus.InProgress).label}
+                        </option>
+                        <option value={ContractStatus.Completed}>
+                          {getStatusDisplay(ContractStatus.Completed).label}
+                        </option>
+                        <option value={ContractStatus.Cancelled}>
+                          {getStatusDisplay(ContractStatus.Cancelled).label}
+                        </option>
+                      </>
+                    );
+                  }
+                })()}
+              </>
+            )}
+          </select>
+          {hasFieldError("status") && (
+            <p className="text-red-500 text-xs mt-1">
+              {getFieldError("status")}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Hiển thị trạng thái hiện tại khi create */}
+      {!isEdit && (
+        <div>
+          <label className="block mb-1 text-sm font-medium">Trạng thái</label>
+          <div className="p-2 border rounded bg-gray-50">
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                getStatusDisplay(data.status).className
+              }`}
+            >
+              {getStatusDisplay(data.status).label}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            💡 Trạng thái sẽ tự động cập nhật: "Chưa bắt đầu" nếu ngày bắt đầu
+            trong tương lai, "Đang thực hiện" nếu ngày bắt đầu là hôm nay hoặc
+            quá khứ
           </p>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Chỉ hiển thị lý do hủy khi edit và trạng thái = "Đã hủy" */}
+      {isEdit && data.status === ContractStatus.Cancelled && (
+        <div>
+          <label className="block mb-1 text-sm font-medium">
+            Lý do huỷ <span className="text-red-500">*</span>
+          </label>
+          <Textarea
+            placeholder="Vui lòng ghi lý do hủy hợp đồng..."
+            value={data.cancelReason}
+            onChange={(e) => handleChange("cancelReason", e.target.value)}
+            className={hasFieldError("cancelReason") ? "border-red-500" : ""}
+            required
+          />
+          {hasFieldError("cancelReason") && (
+            <p className="text-red-500 text-xs mt-1">
+              {getFieldError("cancelReason")}
+            </p>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="block mb-1 text-sm font-medium">
