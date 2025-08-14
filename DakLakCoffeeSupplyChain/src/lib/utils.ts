@@ -49,6 +49,16 @@ export function getErrorMessage(errorResponse: unknown): string {
     return errorResponse;
   }
 
+  // Trường hợp ServiceResult từ ASP.NET Core backend
+  if (
+    errorResponse &&
+    typeof errorResponse === 'object' &&
+    'message' in errorResponse &&
+    typeof (errorResponse as any).message === 'string'
+  ) {
+    return (errorResponse as any).message;
+  }
+
   // Trường hợp dạng object với errors (validation errors từ backend)
   if (
     errorResponse &&
