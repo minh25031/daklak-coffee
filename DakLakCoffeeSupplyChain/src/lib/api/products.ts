@@ -1,10 +1,40 @@
 import api from "./axios";
 import { ProductStatusValue } from "@/lib/constants/productStatus";
 
+// Enum: ProductUnit
+export enum ProductUnit {
+  Kg = "Kg",
+  Ta = "Ta", 
+  Tan = "Tan"
+}
+
+// Mapping để hiển thị đơn vị tiếng Việt
+export const ProductUnitLabel: Record<ProductUnit, string> = {
+  [ProductUnit.Kg]: "Kg",
+  [ProductUnit.Ta]: "Tạ", 
+  [ProductUnit.Tan]: "Tấn"
+};
+
 // DTO: Option hiển thị sản phẩm trong dropdown (id + tên)
 export interface ProductOption {
   productId: string;
   name: string;
+}
+
+// DTO: Option cho processing batch dropdown
+export interface ProcessingBatchOption {
+  batchId: string;
+  batchCode: string;
+}
+
+// DTO: Option cho inventory dropdown
+export interface InventoryOption {
+  inventoryId: string;
+  location: string;
+  inventoryCode: string;
+  warehouseCode: string;
+  warehouseName: string;
+  warehouseCapacity?: number;
 }
 
 // DTO: ProductViewAllDto tương ứng backend
@@ -49,6 +79,60 @@ export interface ProductViewDetailsDto {
   coffeeTypeName: string;
   inventoryLocation: string;
   batchCode: string;
+  // Các trường bổ sung từ API response
+  batchId?: string;
+  inventoryId?: string;
+  coffeeTypeId?: string;
+  // Các trường mới từ API
+  inventoryCode?: string;
+  warehouseName?: string;
+}
+
+// DTO: ProductCreateDto tương ứng backend
+export interface ProductCreateDto {
+  productName: string;
+  description: string;
+  unitPrice: number;
+  quantityAvailable: number;
+  unit: ProductUnit;
+  batchId: string;
+  inventoryId: string;
+  coffeeTypeId: string;
+  originRegion: string;
+  originFarmLocation: string;
+  geographicalIndicationCode: string;
+  certificationUrl?: string;
+  evaluatedQuality: string;
+  evaluationScore?: number;
+  status: ProductStatusValue;
+  approvalNote: string;
+}
+
+// DTO: ProductUpdateDto tương ứng backend
+export interface ProductUpdateDto {
+  productId: string;
+  productName: string;
+  description: string;
+  unitPrice: number;
+  quantityAvailable: number;
+  unit: ProductUnit;
+  batchId: string;
+  inventoryId: string;
+  coffeeTypeId: string;
+  originRegion: string;
+  originFarmLocation: string;
+  geographicalIndicationCode: string;
+  certificationUrl?: string;
+  evaluatedQuality: string;
+  evaluationScore?: number;
+  status: ProductStatusValue;
+  approvalNote: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  // Các trường bổ sung từ API response
+  batchCode?: string;
+  inventoryLocation?: string;
+  coffeeTypeName?: string;
 }
 
 // API: Lấy danh sách sản phẩm
@@ -62,6 +146,20 @@ export async function getProductById(
 ): Promise<ProductViewDetailsDto> {
   const { data } = await api.get<ProductViewDetailsDto>(`/Products/${id}`);
   return data;
+}
+
+// API: Tạo mới sản phẩm
+export async function createProduct(payload: ProductCreateDto): Promise<string> {
+  const { data } = await api.post<{ productId: string }>("/Products", payload);
+  return data.productId;
+}
+
+// API: Cập nhật sản phẩm
+export async function updateProduct(
+  id: string,
+  payload: ProductUpdateDto
+): Promise<void> {
+  await api.put(`/Products/${id}`, payload);
 }
 
 // API: Xoá mềm sản phẩm
@@ -78,4 +176,133 @@ export async function getProductOptions(): Promise<ProductOption[]> {
     productId: p.productId,
     name: p.productName,
   }));
+}
+
+// API: Lấy danh sách processing batches cho dropdown
+export async function getProcessingBatchOptions(): Promise<ProcessingBatchOption[]> {
+  try {
+    // Thử endpoint chính trước
+    const { data } = await api.get<{ batchId: string; batchCode: string }[]>("/ProcessingBatch");
+    return data.map((b) => ({
+      batchId: b.batchId,
+      batchCode: b.batchCode,
+    }));
+  } catch (error) {
+    console.error("Error fetching processing batches from /ProcessingBatch:", error);
+    
+    // Thử endpoint fallback
+    try {
+      const { data } = await api.get<{ batchId: string; batchCode: string }[]>("/processing-batch");
+      return data.map((b) => ({
+        batchId: b.batchId,
+        batchCode: b.batchCode,
+      }));
+    } catch (fallbackError) {
+      console.error("Error fetching processing batches from /processing-batch:", fallbackError);
+      
+      // Thử endpoint khác có thể có
+      try {
+        const { data } = await api.get<{ batchId: string; batchCode: string }[]>("/ProcessingBatches");
+        return data.map((b) => ({
+          batchId: b.batchId,
+          batchCode: b.batchCode,
+        }));
+      } catch (finalError) {
+        console.error("Error fetching processing batches from /ProcessingBatches:", finalError);
+        return [];
+      }
+    }
+  }
+}
+
+// API: Lấy danh sách inventories cho dropdown
+export async function getInventoryOptions(): Promise<InventoryOption[]> {
+  try {
+    // Thử endpoint chính trước - lấy inventory với warehouse info
+    console.log("Fetching inventories from /Inventories...");
+    const { data } = await api.get<{
+      inventoryId: string;
+      inventoryCode: string;
+      warehouseId: string;
+      warehouseName: string;
+      batchId: string;
+      batchCode: string;
+      productName: string;
+      coffeeTypeName: string;
+      quantity: number;
+      unit: string;
+    }[]>("/Inventories");
+    
+    console.log("Raw API response:", data);
+    console.log("Response length:", data?.length);
+    
+    const mappedData = data.map((i) => ({
+      inventoryId: i.inventoryId,
+      location: i.warehouseName, // Sử dụng warehouseName trực tiếp
+      inventoryCode: i.inventoryCode,
+      warehouseCode: i.inventoryCode, // Fallback vì không có warehouseCode
+      warehouseName: i.warehouseName,
+      warehouseCapacity: undefined // Không có capacity trong response
+    }));
+    
+    console.log("Mapped inventory options:", mappedData);
+    return mappedData;
+  } catch (error) {
+    console.error("Error fetching inventories from /Inventories:", error);
+    
+    // Thử endpoint fallback
+    try {
+      const { data } = await api.get<{
+        inventoryId: string;
+        inventoryCode: string;
+        warehouseId: string;
+        warehouseName: string;
+        batchId: string;
+        batchCode: string;
+        productName: string;
+        coffeeTypeName: string;
+        quantity: number;
+        unit: string;
+      }[]>("/inventories");
+      
+      return data.map((i) => ({
+        inventoryId: i.inventoryId,
+        location: i.warehouseName,
+        inventoryCode: i.inventoryCode,
+        warehouseCode: i.inventoryCode,
+        warehouseName: i.warehouseName,
+        warehouseCapacity: undefined
+      }));
+    } catch (fallbackError) {
+      console.error("Error fetching inventories from /inventories:", fallbackError);
+      
+      // Thử endpoint khác có thể có
+      try {
+        const { data } = await api.get<{
+          inventoryId: string;
+          inventoryCode: string;
+          warehouseId: string;
+          warehouseName: string;
+          batchId: string;
+          batchCode: string;
+          productName: string;
+          coffeeTypeName: string;
+          quantity: number;
+          unit: string;
+        }[]>("/Inventory");
+        
+        return data.map((i) => ({
+          inventoryId: i.inventoryId,
+          location: i.warehouseName,
+          inventoryCode: i.inventoryCode,
+          warehouseCode: i.inventoryCode,
+          warehouseName: i.warehouseName,
+          warehouseCapacity: undefined
+        }));
+      } catch (finalError) {
+        console.error("Error fetching inventories from /Inventory:", finalError);
+        return [];
+      }
+    }
+  }
 }
