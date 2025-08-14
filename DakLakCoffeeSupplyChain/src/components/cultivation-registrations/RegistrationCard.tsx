@@ -225,7 +225,7 @@ export default function RegistrationCard({
                         variant='secondaryGradient'
                         onClick={() => {
                           router.push(
-                            `/dashboard/manager/farming-commitments/[id]/edit?registrationId=${registrationId}&registrationDetailId=${detail.cultivationRegistrationDetailId}&wantedPrice=${detail.wantedPrice}&estimatedYield=${detail.estimatedYield}`
+                            `/dashboard/manager/farming-commitments/${commitmentId}/edit?registrationId=${registrationId}&registrationDetailId=${detail.cultivationRegistrationDetailId}&wantedPrice=${detail.wantedPrice}&estimatedYield=${detail.estimatedYield}`
                           );
                         }}
                       >
