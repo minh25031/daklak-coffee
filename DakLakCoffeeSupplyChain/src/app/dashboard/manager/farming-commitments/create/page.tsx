@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +30,7 @@ export default function CreateFarmingCommitmentPage() {
     searchParams.get("registrationDetailId") || "";
   const paramWantedPrice = searchParams.get("wantedPrice") || "0";
   const paramEstimatedYield = searchParams.get("estimatedYield") || "0";
+  const router = useRouter();
 
   const [form, setForm] = useState({
     commitmentName: "",
@@ -201,12 +202,16 @@ export default function CreateFarmingCommitmentPage() {
     e.preventDefault();
     console.log("Submitting form:", form);
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      AppToast.error(getErrorMessage(errors));
+      return;
+    }
 
     try {
       await createFarmingCommitment(form);
       AppToast.success("Tạo cam kết thành công!");
-
+      router.push("/dashboard/manager/farming-commitments");
+      
       setErrors({});
       setForm({
         commitmentName: "",
