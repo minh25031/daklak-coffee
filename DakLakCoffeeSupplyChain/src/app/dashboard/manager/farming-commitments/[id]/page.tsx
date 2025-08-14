@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiEdit } from "react-icons/fi";
 import { Separator } from "@/components/ui/separator";
 import { Package } from "lucide-react";
 
@@ -142,8 +142,7 @@ export default function FarmingCommitmentDetailPageForBusiness() {
             </div>
 
             <div>
-              <strong>Tiến độ cam kết:</strong>{" "}
-              {commitment.progressPercentage}%
+              <strong>Tiến độ cam kết:</strong> {commitment.progressPercentage}%
             </div>
 
             {commitment.note && (
@@ -163,7 +162,7 @@ export default function FarmingCommitmentDetailPageForBusiness() {
         {/* Card chi tiết */}
         <Card>
           <CardHeader className='flex justify-between items-center'>
-            <CardTitle>Chi tiết cam kết</CardTitle>            
+            <CardTitle>Chi tiết cam kết</CardTitle>
           </CardHeader>
           <CardContent>
             {Array.isArray(commitment.farmingCommitmentDetails) &&
@@ -181,11 +180,11 @@ export default function FarmingCommitmentDetailPageForBusiness() {
                     <AccordionContent>
                       <div className='grid grid-cols-2 gap-4 text-sm text-gray-700 py-2'>
                         <div>
-                          <strong>Mã chi tiết:</strong> {detail.commitmentDetailCode}
+                          <strong>Mã chi tiết:</strong>{" "}
+                          {detail.commitmentDetailCode}
                         </div>
                         <div>
-                          <strong>Loại cà phê:</strong>{" "}
-                          {detail.coffeeTypeName}
+                          <strong>Loại cà phê:</strong> {detail.coffeeTypeName}
                         </div>
                         <div>
                           <strong>Giá cả thống nhất:</strong>{" "}
@@ -217,9 +216,8 @@ export default function FarmingCommitmentDetailPageForBusiness() {
                           {detail.progressPercentage}%
                         </div>
                         <div className='col-span-2'>
-                          <strong>Các điều khoản cụ thể:</strong>{" "}
-                          {detail.note}
-                        </div>                        
+                          <strong>Các điều khoản cụ thể:</strong> {detail.note}
+                        </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>

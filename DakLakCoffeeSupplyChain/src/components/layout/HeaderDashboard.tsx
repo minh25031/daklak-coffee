@@ -20,7 +20,8 @@ const pathTitleMap: Record<string, string> = {
   "inbound-requests": "Yêu cầu nhập kho",
   "outbound-receipts": "Biên bản xuất kho",
   "inbound-receipts": "Biên bản nhập kho",
-
+  "procurement-plans": "Kế hoạch thu mua",
+  "farming-commitments": "Cam kết kế hoạch thu mua",
   "crop-seasons": "Mùa vụ",
   batches: "Danh sách lô sơ chế",
   evaluations: "Phân tích bất thường",

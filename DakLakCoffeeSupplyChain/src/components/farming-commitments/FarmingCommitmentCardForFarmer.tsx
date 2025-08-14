@@ -7,7 +7,7 @@ import {
 import Link from "next/link";
 import BasicDropdown from "../ui/dropdownMenu";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { FiEdit, FiInfo } from "react-icons/fi";
+import {FiInfo } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import StatusBadge from "../crop-seasons/StatusBadge";
 
