@@ -276,6 +276,16 @@ export function SidebarGroup() {
         icon: <FiClipboard />,
       },
       {
+        title: "Báo cáo",
+        href: "/dashboard/manager/reports",
+        icon: <FiFileText />,
+      },
+      {
+        title: "Tư vấn chuyên gia",
+        href: "/dashboard/manager/expert-advice",
+        icon: <FiMessageCircle />,
+      },
+      {
         title: "Thông báo",
         href: "/dashboard/notifications",
         icon: <FiBell />,
