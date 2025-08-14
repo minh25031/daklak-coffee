@@ -50,6 +50,12 @@ export default function FilterBadge({
         text: active ? 'text-blue-800' : 'text-gray-700',
         border: active ? 'border-blue-300' : 'border-blue-200',
         hover: 'hover:bg-blue-50'
+      },
+      purple: {
+        bg: active ? 'bg-purple-100' : 'bg-white',
+        text: active ? 'text-purple-800' : 'text-gray-700',
+        border: active ? 'border-purple-300' : 'border-purple-200',
+        hover: 'hover:bg-purple-50'
       }
     };
 
