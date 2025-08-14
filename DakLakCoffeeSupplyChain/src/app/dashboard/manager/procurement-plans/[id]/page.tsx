@@ -293,6 +293,7 @@ export default function ProcurementPlanDetailPage() {
               registeredAt={reg.registeredAt}
               note={reg.note}
               status={reg.status}
+              commitmentId={reg.commitmentId}
               commitmentStatus={reg.commitmentStatus}
               cultivationRegistrationDetails={
                 reg.cultivationRegistrationDetails

@@ -29,14 +29,7 @@ import FilterDeliveryBatchStatusPanel from "@/components/contract-delivery-batch
 import { Tooltip } from "@/components/ui/tooltip";
 import { formatQuantity } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 
 export function getDeliveryBatchStatusDisplay(
   status: ContractDeliveryBatchStatus | "ALL"
@@ -410,29 +403,21 @@ export default function ContractDeliveryBatchesPage() {
           </div>
         )}
       </main>
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xoá đợt giao hàng?</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xoá đợt giao hàng{" "}
-              <strong>{batchToDelete?.deliveryBatchCode}</strong> không? Hành
-              động này sẽ ẩn đợt giao khỏi danh sách và không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Huỷ
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteBatch}>
-              Xoá
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Xoá đợt giao hàng?"
+        description={
+          <span>
+            Bạn có chắc chắn muốn xoá đợt giao hàng{" "}
+            <strong>{batchToDelete?.deliveryBatchCode}</strong> không? Hành động
+            này sẽ ẩn đợt giao khỏi danh sách và không thể hoàn tác.
+          </span>
+        }
+        confirmText="Xoá"
+        cancelText="Huỷ"
+        onConfirm={handleDeleteBatch}
+      />
     </div>
   );
 }

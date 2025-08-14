@@ -75,8 +75,8 @@ export default function EditProcurementPlanPage() {
               })
             ),
           };
-          console.log("Formatted Data:", formattedData);
-          console.log("planData:", planData);
+          //console.log("Formatted Data:", formattedData);
+          //console.log("planData:", planData);
           setInitialData(formattedData);
         }
       } catch (error) {
@@ -208,7 +208,6 @@ export default function EditProcurementPlanPage() {
       expectedYieldPerHectare: item.expectedYieldPerHectare,
       note: item.note,
       //contractItemId: item.contractItemId ?? null,
-      // Thêm các trường cần thiết tương ứng với DTO update nếu có
     }));
 
   const detailsCreateDto = formData.procurementPlansDetails
@@ -224,7 +223,6 @@ export default function EditProcurementPlanPage() {
       expectedYieldPerHectare: item.expectedYieldPerHectare,
       note: item.note,
       //contractItemId: item.contractItemId ?? null,
-      // Các trường cần thiết cho DTO create
     }));
 
     try {

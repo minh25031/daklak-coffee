@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import ContractDeliveryBatchForm, { ContractOption } from "@/components/contract-delivery-batches/ContractDeliveryBatchForm";
+import ContractDeliveryBatchForm, {
+  ContractOption,
+} from "@/components/contract-delivery-batches/ContractDeliveryBatchForm";
 import { getContractDeliveryBatchById } from "@/lib/api/contractDeliveryBatches";
 import { getAllContracts } from "@/lib/api/contracts";
 import { toast } from "sonner";
@@ -43,7 +45,8 @@ export default function EditDeliveryBatchPage() {
   }, [params.id]);
 
   if (loading) return <div className="p-6 text-gray-500">Đang tải...</div>;
-  if (!initialData) return <div className="p-6 text-red-600">Không tìm thấy đợt giao.</div>;
+  if (!initialData)
+    return <div className="p-6 text-red-600">Không tìm thấy đợt giao.</div>;
 
   return (
     <div className="p-6">

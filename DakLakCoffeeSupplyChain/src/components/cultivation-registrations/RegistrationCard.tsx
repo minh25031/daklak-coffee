@@ -30,6 +30,7 @@ type RegistrationCardProps = {
   registeredAt: string;
   note: string;
   status: string | number;
+  commitmentId?: string | null;
   commitmentStatus: string | number;
   cultivationRegistrationDetails: Partial<CultivationRegistrationDetail>[];
   onUpdate?: () => void;
@@ -46,6 +47,7 @@ export default function RegistrationCard({
   cultivationRegistrationDetails,
   note,
   status,
+  commitmentId,
   commitmentStatus,
   onUpdate,
 }: RegistrationCardProps) {
@@ -175,7 +177,7 @@ export default function RegistrationCard({
         >
           {cultivationRegistrationDetails.map((detail) => {
             const isApproved = detail.status === "Approved";
-            const isCommitmentCreated = status === "Approved";
+            const isCommitmentCreated = commitmentId && commitmentId !== "00000000-0000-0000-0000-000000000000";
             const isCommitmentActive = commitmentStatus === "Active";
             return (
               <div

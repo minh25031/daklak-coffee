@@ -24,62 +24,62 @@ export default function EditContractPage() {
   const [buyers, setBuyers] = useState<BusinessBuyerDto[]>([]);
 
   useEffect(() => {
-  if (!rawId || typeof rawId !== "string") {
-    console.warn("Không có contractId hợp lệ");
-    setLoading(false);
-    return;
-  }
-
-  const id: string = rawId;
-
-  async function fetchData() {
-    try {
-      const [contract, buyerList] = await Promise.all([
-        getContractDetails(id),
-        getAllBusinessBuyers(),
-      ]);
-
-      if (!contract || !contract.contractItems) {
-        throw new Error("Hợp đồng không tồn tại hoặc thiếu contractItems");
-      }
-
-      setBuyers(buyerList);
-
-      const updateDto: ContractUpdateDto = {
-        contractId: contract.contractId,
-        contractNumber: contract.contractNumber,
-        contractTitle: contract.contractTitle,
-        contractFileUrl: contract.contractFileUrl,
-        buyerId: contract.buyerId,
-        deliveryRounds: contract.deliveryRounds ?? 1,
-        totalQuantity: contract.totalQuantity ?? 0,
-        totalValue: contract.totalValue ?? 0,
-        startDate: contract.startDate,
-        endDate: contract.endDate,
-        signedAt: contract.signedAt,
-        status: contract.status as ContractStatus,
-        cancelReason: contract.cancelReason,
-        contractItems: contract.contractItems.map((item) => ({
-          contractItemId: item.contractItemId,
-          contractId: contract.contractId,
-          coffeeTypeId: item.coffeeTypeId,
-          quantity: item.quantity ?? 0,
-          unitPrice: item.unitPrice ?? 0,
-          discountAmount: item.discountAmount ?? 0,
-          note: item.note ?? "",
-        })),
-      };
-
-      setInitialData(updateDto);
-    } catch (err) {
-      console.error("Lỗi khi load dữ liệu hợp đồng:", err);
-    } finally {
+    if (!rawId || typeof rawId !== "string") {
+      console.warn("Không có contractId hợp lệ");
       setLoading(false);
+      return;
     }
-  }
 
-  fetchData();
-}, [rawId]);
+    const id: string = rawId;
+
+    async function fetchData() {
+      try {
+        const [contract, buyerList] = await Promise.all([
+          getContractDetails(id),
+          getAllBusinessBuyers(),
+        ]);
+
+        if (!contract || !contract.contractItems) {
+          throw new Error("Hợp đồng không tồn tại hoặc thiếu contractItems");
+        }
+
+        setBuyers(buyerList);
+
+        const updateDto: ContractUpdateDto = {
+          contractId: contract.contractId,
+          contractNumber: contract.contractNumber,
+          contractTitle: contract.contractTitle,
+          contractFileUrl: contract.contractFileUrl,
+          buyerId: contract.buyerId,
+          deliveryRounds: contract.deliveryRounds ?? 1,
+          totalQuantity: contract.totalQuantity ?? 0,
+          totalValue: contract.totalValue ?? 0,
+          startDate: contract.startDate,
+          endDate: contract.endDate,
+          signedAt: contract.signedAt,
+          status: contract.status as ContractStatus,
+          cancelReason: contract.cancelReason,
+          contractItems: contract.contractItems.map((item) => ({
+            contractItemId: item.contractItemId,
+            contractId: contract.contractId,
+            coffeeTypeId: item.coffeeTypeId,
+            quantity: item.quantity ?? 0,
+            unitPrice: item.unitPrice ?? 0,
+            discountAmount: item.discountAmount ?? 0,
+            note: item.note ?? "",
+          })),
+        };
+
+        setInitialData(updateDto);
+      } catch (err) {
+        console.error("Lỗi khi load dữ liệu hợp đồng:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [rawId]);
 
   if (loading) {
     return (

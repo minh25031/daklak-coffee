@@ -5,14 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 import { Search, Eye, Pencil, Trash2, Info } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import {
@@ -426,29 +419,22 @@ export default function OrdersPage() {
       </main>
 
       {/* Delete dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xoá đơn hàng?</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xoá đơn hàng{" "}
-              <strong>{orderToDelete?.orderCode}</strong> không? Hành động này
-              sẽ ẩn đơn hàng khỏi danh sách và không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Huỷ
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Xoá
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Xoá đơn hàng?"
+        description={
+          <span>
+            Bạn có chắc chắn muốn xoá đơn hàng{" "}
+            <strong>{orderToDelete?.orderCode}</strong> không? Hành động này sẽ
+            ẩn đơn hàng khỏi danh sách và không thể hoàn tác.
+          </span>
+        }
+        confirmText={"Xoá"}
+        cancelText={"Huỷ"}
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </div>
   );
 }

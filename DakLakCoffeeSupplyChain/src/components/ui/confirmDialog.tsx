@@ -27,11 +27,35 @@ export function ConfirmDialog({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
       <Dialog.Content className="fixed p-6 bg-white rounded-lg border border-orange-100 shadow-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-60">
-        <Dialog.Title className="text-lg font-semibold text-gray-800 mb-3">{title}</Dialog.Title>
-        <Dialog.Description className="mb-6 text-gray-600 text-sm">{description}</Dialog.Description>
+        {typeof title === "string" ? (
+          <Dialog.Title className="text-lg font-semibold text-gray-800 mb-3 text-center">
+            {title}
+          </Dialog.Title>
+        ) : (
+          <Dialog.Title asChild>
+            <div className="text-lg font-semibold text-gray-800 mb-3 text-center">
+              {title}
+            </div>
+          </Dialog.Title>
+        )}
+        {typeof description === "string" ? (
+          <Dialog.Description className="mb-6 text-gray-600 text-sm text-center">
+            {description}
+          </Dialog.Description>
+        ) : (
+          <Dialog.Description asChild>
+            <div className="mb-6 text-gray-600 text-sm text-center">
+              {description}
+            </div>
+          </Dialog.Description>
+        )}
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
             {cancelText}
           </Button>
           <Button
