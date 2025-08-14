@@ -18,8 +18,7 @@ import {
   FiFeather,
   FiTruck,
   FiChevronDown,
-  FiPackage,
-  FiCalendar,
+
   FiShoppingCart,
   FiBell,
 } from "react-icons/fi";
@@ -272,6 +271,11 @@ export function SidebarGroup() {
         icon: iconMap.dashboard,
       },
       {
+        title: "Mùa vụ",
+        href: "/dashboard/manager/crop-seasons",
+        icon: <FiClipboard />,
+      },
+      {
         title: "Thông báo",
         href: "/dashboard/notifications",
         icon: <FiBell />,
@@ -372,9 +376,9 @@ export function SidebarGroup() {
             className={cn(
               "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
               pathname.startsWith("/dashboard/manager/contracts") ||
-              pathname.startsWith("/dashboard/manager/contract-delivery-batches") ||
-              pathname.startsWith("/dashboard/manager/procurement-plans") ||
-              pathname.startsWith("/dashboard/manager/farming-commitments")
+                pathname.startsWith("/dashboard/manager/contract-delivery-batches") ||
+                pathname.startsWith("/dashboard/manager/procurement-plans") ||
+                pathname.startsWith("/dashboard/manager/farming-commitments")
                 ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
@@ -448,7 +452,7 @@ export function SidebarGroup() {
             className={cn(
               "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
               pathname.startsWith("/dashboard/manager/orders") ||
-              pathname.startsWith("/dashboard/manager/shipments")
+                pathname.startsWith("/dashboard/manager/shipments")
                 ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
@@ -500,8 +504,8 @@ export function SidebarGroup() {
             className={cn(
               "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
               pathname.startsWith("/dashboard/manager/business-buyers") ||
-              pathname.startsWith("/dashboard/manager/products") ||
-              pathname.startsWith("/dashboard/manager/farmers")
+                pathname.startsWith("/dashboard/manager/products") ||
+                pathname.startsWith("/dashboard/manager/farmers")
                 ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
@@ -564,7 +568,7 @@ export function SidebarGroup() {
             className={cn(
               "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
               pathname.startsWith("/dashboard/manager/reports") ||
-              pathname.startsWith("/dashboard/manager/processing")
+                pathname.startsWith("/dashboard/manager/processing")
                 ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
@@ -676,86 +680,86 @@ export function SidebarGroup() {
         </div>
       )}
 
-             {/* Dropdown: QUẢN LÝ KHO cho MANAGER */}
-       {role === "manager" && (
-         <>
-           {(() => {
-             const warehouseLinks = [
-               {
-                 label: "Kho hàng",
-                 href: "/dashboard/manager/warehouses",
-                 activeMatch: (path: string) =>
-                   path === "/dashboard/manager/warehouses",
-               },
-               {
-                 label: "Tồn kho",
-                 href: "/dashboard/manager/inventories",
-                 activeMatch: (path: string) =>
-                   path.startsWith("/dashboard/manager/inventories"),
-               },
-               {
-                 label: "Lịch sử tồn kho",
-                 href: "/dashboard/manager/inventory-logs",
-                 activeMatch: (path: string) =>
-                   path.startsWith("/dashboard/manager/inventory-logs"),
-               },
-               {
-                 label: "Yêu cầu xuất kho",
-                 href: "/dashboard/manager/warehouse-request",
-                 activeMatch: (path: string) =>
-                   path === "/dashboard/manager/warehouse-request",
-               },
-             ];
+      {/* Dropdown: QUẢN LÝ KHO cho MANAGER */}
+      {role === "manager" && (
+        <>
+          {(() => {
+            const warehouseLinks = [
+              {
+                label: "Kho hàng",
+                href: "/dashboard/manager/warehouses",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/manager/warehouses",
+              },
+              {
+                label: "Tồn kho",
+                href: "/dashboard/manager/inventories",
+                activeMatch: (path: string) =>
+                  path.startsWith("/dashboard/manager/inventories"),
+              },
+              {
+                label: "Lịch sử tồn kho",
+                href: "/dashboard/manager/inventory-logs",
+                activeMatch: (path: string) =>
+                  path.startsWith("/dashboard/manager/inventory-logs"),
+              },
+              {
+                label: "Yêu cầu xuất kho",
+                href: "/dashboard/manager/warehouse-request",
+                activeMatch: (path: string) =>
+                  path === "/dashboard/manager/warehouse-request",
+              },
+            ];
 
-             const isDropdownActive = warehouseLinks.some((item) =>
-               item.activeMatch(pathname)
-             );
+            const isDropdownActive = warehouseLinks.some((item) =>
+              item.activeMatch(pathname)
+            );
 
-             return (
-               <div>
-                 <button
-                   className={cn(
-                     "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
-                     isDropdownActive
-                       ? "bg-orange-100 text-orange-700 shadow-sm"
-                       : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                   )}
-                   onClick={() => setWarehouseOpen((v) => !v)}
-                 >
-                   <div className="flex items-center gap-2 overflow-hidden">
-                     <span className="shrink-0 w-5 text-center">
-                       <FiSettings />
-                     </span>
-                     <span className="truncate">Quản lý kho</span>
-                   </div>
-                   <FiChevronDown
-                     className={cn("transition-transform duration-200", warehouseOpen && "rotate-180")}
-                   />
-                 </button>
+            return (
+              <div>
+                <button
+                  className={cn(
+                    "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
+                    isDropdownActive
+                      ? "bg-orange-100 text-orange-700 shadow-sm"
+                      : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                  )}
+                  onClick={() => setWarehouseOpen((v) => !v)}
+                >
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <span className="shrink-0 w-5 text-center">
+                      <FiSettings />
+                    </span>
+                    <span className="truncate">Quản lý kho</span>
+                  </div>
+                  <FiChevronDown
+                    className={cn("transition-transform duration-200", warehouseOpen && "rotate-180")}
+                  />
+                </button>
 
-                 {warehouseOpen && (
-                   <div className="pl-8 space-y-1">
-                     {warehouseLinks.map(({ label, href, activeMatch }) => (
-                       <Link
-                         key={href}
-                         href={href}
-                         className={cn(
-                           "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                           activeMatch(pathname)
-                             ? "bg-orange-100 text-orange-700 shadow-sm"
-                             : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                         )}
-                       >
-                         {label}
-                       </Link>
-                     ))}
-                   </div>
-                 )}
-               </div>
-             );
-           })()}
-         </>
-       )}
+                {warehouseOpen && (
+                  <div className="pl-8 space-y-1">
+                    {warehouseLinks.map(({ label, href, activeMatch }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                          activeMatch(pathname)
+                            ? "bg-orange-100 text-orange-700 shadow-sm"
+                            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                        )}
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </>
+      )}
 
       {role === "staff" && (
         <>
