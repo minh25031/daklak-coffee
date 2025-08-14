@@ -6,7 +6,7 @@ import { getInventoryLogById } from "@/lib/api/inventoryLogs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Package, Warehouse, Coffee, Calendar, User, FileText, Activity, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowLeft, Package, Warehouse, Coffee, Calendar, User, FileText, Activity, TrendingUp, TrendingDown, Clock, Hash, MapPin, BarChart3 } from "lucide-react";
 
 export default function InventoryLogDetailPage() {
   const params = useParams();
@@ -35,9 +35,9 @@ export default function InventoryLogDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">Đang tải dữ liệu...</p>
         </div>
       </div>
@@ -46,7 +46,7 @@ export default function InventoryLogDetailPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Activity className="w-8 h-8 text-red-600" />
@@ -55,7 +55,7 @@ export default function InventoryLogDetailPage() {
           <p className="text-gray-600">{error}</p>
           <Button 
             onClick={() => router.back()} 
-            className="mt-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            className="mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại
@@ -67,7 +67,7 @@ export default function InventoryLogDetailPage() {
 
   if (!log) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Package className="w-8 h-8 text-gray-600" />
@@ -75,7 +75,7 @@ export default function InventoryLogDetailPage() {
           <p className="text-gray-600 text-lg">Không tìm thấy dữ liệu log</p>
           <Button 
             onClick={() => router.back()} 
-            className="mt-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            className="mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại
@@ -85,172 +85,212 @@ export default function InventoryLogDetailPage() {
     );
   }
 
+  const isIncrease = log?.actionType === "increase";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-6">
-      {/* Header với gradient mới - Màu xanh lá */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      {/* Header với gradient xanh dương */}
       <div className="mb-6">
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg">
-          <h1 className="text-2xl font-bold mb-1">📋 Chi tiết lịch sử tồn kho</h1>
-          <p className="text-green-100 text-sm">Xem chi tiết thay đổi trong hệ thống kho hàng</p>
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">📋 Chi tiết lịch sử tồn kho</h1>
+              <p className="text-blue-100 text-lg">Xem chi tiết thay đổi trong hệ thống kho hàng</p>
+            </div>
+            <div className="text-right">
+              <Badge
+                className={`capitalize px-4 py-2 text-lg font-semibold rounded-full ${
+                  isIncrease
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                    : "bg-rose-100 text-rose-800 border-rose-200"
+                }`}
+              >
+                {isIncrease ? "📥 Nhập kho" : "📤 Xuất kho"}
+              </Badge>
+            </div>
+          </div>
+          
+          {/* Thông tin nhanh */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="w-4 h-4 text-blue-200" />
+                <span className="text-blue-200 text-sm">Thời gian</span>
+              </div>
+              <p className="text-white font-semibold">
+                {log?.loggedAt && new Date(log.loggedAt).toLocaleString("vi-VN")}
+              </p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Hash className="w-4 h-4 text-blue-200" />
+                <span className="text-blue-200 text-sm">ID Log</span>
+              </div>
+              <p className="text-white font-semibold font-mono">{log?.logId || "N/A"}</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <User className="w-4 h-4 text-blue-200" />
+                <span className="text-blue-200 text-sm">Người cập nhật</span>
+              </div>
+              <p className="text-white font-semibold">{log?.updatedByName || "Hệ thống"}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Nút quay lại - Màu xanh lá */}
-      <div className="mb-4">
+      {/* Nút quay lại */}
+      <div className="mb-6">
         <Button
           variant="outline"
           onClick={() => router.back()}
-          className="h-9 px-3 text-sm border-green-200 hover:border-green-300 hover:bg-green-50"
+          className="h-10 px-4 text-sm border-blue-200 hover:border-blue-300 hover:bg-blue-50"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Quay lại
+          Quay lại danh sách
         </Button>
       </div>
 
-      {/* Badge hành động và timestamp */}
-      <div className="mb-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <Badge
-          className={`capitalize px-3 py-2 text-sm font-semibold rounded-lg ${
-            log?.actionType === "increase"
-              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-              : "bg-rose-100 text-rose-800 border-rose-200"
-          }`}
-        >
-          {log?.actionType === "increase" ? "📥 Nhập kho" : "📤 Xuất kho"}
-        </Badge>
-        <span className="text-sm text-gray-600">
-          {log?.loggedAt && new Date(log.loggedAt).toLocaleString("vi-VN")}
-        </span>
-      </div>
-
       {/* Layout chính */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Cột chính - 2 cột */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Thông tin lô hàng - Màu xanh lá */}
-          <Card className="bg-white shadow-sm border-0">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
-              <CardTitle className="text-base font-bold text-green-800 flex items-center gap-2">
-                <Package className="w-4 h-4 text-green-600" />
+        <div className="xl:col-span-2 space-y-6">
+          {/* Thông tin lô hàng */}
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+              <CardTitle className="text-xl font-bold text-blue-800 flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Package className="w-5 h-5 text-blue-600" />
+                </div>
                 Thông tin lô hàng
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                    <Package className="w-3 h-3 text-green-600" />
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Package className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Mã lô hàng</p>
+                      <p className="text-lg font-semibold text-gray-900">{log?.batchCode || "N/A"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Mã lô hàng</p>
-                    <p className="text-sm font-semibold text-gray-900">{log?.batchCode || "N/A"}</p>
+
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                      <Coffee className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Sản phẩm</p>
+                      <p className="text-lg font-semibold text-gray-900">{log?.coffeeTypeName || "N/A"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                      <Activity className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Loại cà phê</p>
+                      <p className="text-lg font-semibold text-gray-900">{log?.coffeeTypeName || "N/A"}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <Coffee className="w-3 h-3 text-emerald-600" />
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <Calendar className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Vụ mùa</p>
+                      <p className="text-lg font-semibold text-gray-900">{log?.seasonCode || "N/A"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Sản phẩm</p>
-                    <p className="text-sm font-semibold text-gray-900">{log?.coffeeTypeName || "N/A"}</p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center">
-                    <Activity className="w-3 h-3 text-amber-600" />
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Nông dân</p>
+                      <p className="text-lg font-semibold text-gray-900">{log?.farmerName || "N/A"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Loại cà phê</p>
-                    <p className="text-sm font-semibold text-gray-900">{log?.coffeeTypeName || "N/A"}</p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Calendar className="w-3 h-3 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Vụ mùa</p>
-                    <p className="text-sm font-semibold text-gray-900">{log?.seasonCode || "N/A"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <User className="w-3 h-3 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Nông dân</p>
-                    <p className="text-sm font-semibold text-gray-900">{log?.farmerName || "N/A"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                    <Warehouse className="w-3 h-3 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Kho hàng</p>
-                    <p className="text-sm font-semibold text-gray-900">{log?.warehouseName || "N/A"}</p>
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <Warehouse className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Kho hàng</p>
+                      <p className="text-lg font-semibold text-gray-900">{log?.warehouseName || "N/A"}</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Chi tiết thay đổi - Màu xanh lá */}
-          <Card className="bg-white shadow-sm border-0">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
-              <CardTitle className="text-base font-bold text-green-800 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-green-600" />
+          {/* Chi tiết thay đổi */}
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+              <CardTitle className="text-xl font-bold text-blue-800 flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-blue-600" />
+                </div>
                 Chi tiết thay đổi
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                    <Package className="w-3 h-3 text-green-600" />
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Package className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Mã tồn kho</p>
+                      <p className="text-lg font-semibold text-gray-900 font-mono">{log?.inventoryCode || "N/A"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Mã tồn kho</p>
-                    <p className="text-sm font-semibold text-gray-900">{log?.inventoryCode || "N/A"}</p>
+
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                      <BarChart3 className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Số lượng thay đổi</p>
+                      <p className={`text-2xl font-bold ${
+                        isIncrease ? "text-emerald-600" : "text-rose-600"
+                      }`}>
+                        {isIncrease ? "+" : "-"}{log?.quantityChanged || 0} kg
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center">
-                    <TrendingUp className="w-3 h-3 text-amber-600" />
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Ghi chú</p>
+                      <p className="text-lg text-gray-900">{log?.note || "Không có ghi chú"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Số lượng thay đổi</p>
-                    <p className={`text-sm font-bold ${
-                      log?.actionType === "increase" ? "text-emerald-600" : "text-rose-600"
-                    }`}>
-                      {log?.actionType === "increase" ? "+" : "-"}{log?.quantityChanged || 0} kg
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <FileText className="w-3 h-3 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Ghi chú</p>
-                    <p className="text-sm text-gray-900">{log?.note || "Không có ghi chú"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
-                    <User className="w-3 h-3 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Người cập nhật</p>
-                    <p className="text-sm font-semibold text-gray-900">{log?.updatedByName || "Hệ thống"}</p>
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Người cập nhật</p>
+                      <p className="text-lg font-semibold text-gray-900">{log?.updatedByName || "Hệ thống"}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -259,40 +299,42 @@ export default function InventoryLogDetailPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Thống kê nhanh - Màu xanh lá */}
-          <Card className="bg-white shadow-sm border-0">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
-              <CardTitle className="text-base font-bold text-green-800 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-green-600" />
+        <div className="space-y-6">
+          {/* Thống kê nhanh */}
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+              <CardTitle className="text-lg font-bold text-blue-800 flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                </div>
                 Thống kê nhanh
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-500 font-medium mb-1">Loại hành động</p>
+              <div className="space-y-4">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-500 font-medium mb-2">Loại hành động</p>
                   <Badge
-                    className={`capitalize px-2 py-1 text-xs font-semibold rounded-full ${
-                      log?.actionType === "increase"
+                    className={`capitalize px-3 py-2 text-sm font-semibold rounded-full ${
+                      isIncrease
                         ? "bg-emerald-100 text-emerald-800 border-emerald-200"
                         : "bg-rose-100 text-rose-800 border-rose-200"
                     }`}
                   >
-                    {log?.actionType === "increase" ? "📥 Nhập kho" : "📤 Xuất kho"}
+                    {isIncrease ? "📥 Nhập kho" : "📤 Xuất kho"}
                   </Badge>
                 </div>
 
-                <div>
-                  <p className="text-xs text-gray-500 font-medium mb-1">Trạng thái</p>
-                  <Badge className="bg-green-100 text-green-800 border-green-200 px-2 py-1 text-xs font-semibold rounded-full">
-                    Hoàn thành
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-500 font-medium mb-2">Trạng thái</p>
+                  <Badge className="bg-green-100 text-green-800 border-green-200 px-3 py-2 text-sm font-semibold rounded-full">
+                    ✅ Hoàn thành
                   </Badge>
                 </div>
 
-                <div>
-                  <p className="text-xs text-gray-500 font-medium mb-1">ID Log</p>
-                  <p className="text-xs font-mono text-gray-600 bg-gray-50 p-2 rounded border">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-500 font-medium mb-2">ID Log</p>
+                  <p className="text-xs font-mono text-gray-600 bg-gray-100 p-2 rounded border">
                     {log?.logId || "N/A"}
                   </p>
                 </div>
@@ -300,23 +342,33 @@ export default function InventoryLogDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Hành động - Màu xanh lá */}
-          <Card className="bg-white shadow-sm border-0">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
-              <CardTitle className="text-base font-bold text-green-800 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-green-600" />
+          {/* Hành động */}
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+              <CardTitle className="text-lg font-bold text-blue-800 flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Activity className="w-4 h-4 text-blue-600" />
+                </div>
                 Hành động
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full h-8 text-xs border-green-200 hover:border-green-300 hover:bg-green-50"
+                  className="w-full h-10 text-sm border-blue-200 hover:border-blue-300 hover:bg-blue-50"
                 >
-                  <FileText className="w-3 h-3 mr-2" />
+                  <FileText className="w-4 h-4 mr-2" />
                   In chi tiết
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-10 text-sm border-blue-200 hover:border-blue-300 hover:bg-blue-50"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Xem vị trí kho
                 </Button>
               </div>
             </CardContent>
