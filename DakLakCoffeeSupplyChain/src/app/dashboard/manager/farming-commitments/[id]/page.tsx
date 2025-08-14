@@ -84,23 +84,15 @@ export default function FarmingCommitmentDetailPageForBusiness() {
                 <div className='flex gap-2'>
                   <Button
                     size='sm'
-                    variant='outline'
-                    className='bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer'
+                    variant='secondaryGradient'
+                    //className='bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer'
                     onClick={() =>
                       router.push(
-                        `/dashboard/business/farming-commitments/${commitment.commitmentId}/edit`
+                        `/dashboard/manager/farming-commitments/${commitment.commitmentId}/edit?registrationId=${commitment.registrationId}`
                       )
                     }
                   >
                     <FiEdit className='mr-1' /> Chỉnh sửa
-                  </Button>
-                  <Button
-                    size='sm'
-                    variant='destructive'
-                    className='bg-red-100 text-red-800 hover:bg-red-200 cursor-pointer'
-                    onClick={() => alert("Xoá chưa được hỗ trợ")}
-                  >
-                    <FiTrash2 className='mr-1' /> Xoá
                   </Button>
                 </div>
               )}
@@ -122,6 +114,14 @@ export default function FarmingCommitmentDetailPageForBusiness() {
             <div>
               <strong>Tổng chi phí:</strong>{" "}
               {commitment.totalPrice.toLocaleString()} VNĐ
+            </div>
+            <div>
+              <strong>Tổng tiền thuế:</strong>{" "}
+              {commitment.totalTaxPrice.toLocaleString()} VNĐ
+            </div>
+            <div>
+              <strong>Tổng tiền trả trước:</strong>{" "}
+              {commitment.totalAdvancePayment.toLocaleString()} VNĐ
             </div>
             <div>
               <strong>Ngày cam kết được tạo:</strong>{" "}
@@ -163,21 +163,7 @@ export default function FarmingCommitmentDetailPageForBusiness() {
         {/* Card chi tiết */}
         <Card>
           <CardHeader className='flex justify-between items-center'>
-            <CardTitle>Chi tiết cam kết</CardTitle>
-            {commitment.status !== "Active" && (
-              <Button
-                size='sm'
-                variant='outline'
-                className='bg-orange-100 text-orange-800 hover:bg-orange-200 cursor-pointer'
-                onClick={() =>
-                  router.push(
-                    `/dashboard/manager/farming-commitments/${commitment.commitmentId}/details/create`
-                  )
-                }
-              >
-                + Thêm chi tiết cam kết
-              </Button>
-            )}
+            <CardTitle>Chi tiết cam kết</CardTitle>            
           </CardHeader>
           <CardContent>
             {Array.isArray(commitment.farmingCommitmentDetails) &&
@@ -206,6 +192,14 @@ export default function FarmingCommitmentDetailPageForBusiness() {
                           {detail.confirmedPrice?.toLocaleString()} VNĐ/kg
                         </div>
                         <div>
+                          <strong>Tiền thuế:</strong>{" "}
+                          {detail.taxPrice?.toLocaleString()} VNĐ/kg
+                        </div>
+                        <div>
+                          <strong>Tiền trả trước:</strong>{" "}
+                          {detail.advancePayment?.toLocaleString()} VNĐ
+                        </div>
+                        <div>
                           <strong>Sản lượng thu mua:</strong>{" "}
                           {formatQuantity(detail.committedQuantity ?? 0)}
                         </div>
@@ -225,37 +219,7 @@ export default function FarmingCommitmentDetailPageForBusiness() {
                         <div className='col-span-2'>
                           <strong>Các điều khoản cụ thể:</strong>{" "}
                           {detail.note}
-                        </div>
-                        {commitment.status !== "Active" && (
-                          <div className='col-span-2 flex justify-end gap-2 pt-2'>
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              className='bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer'
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/manager/farming-commitments/${commitment.commitmentId}/details/${detail.commitmentDetailId}/edit`
-                                )
-                              }
-                            >
-                              Chỉnh sửa
-                            </Button>
-                            <Button
-                              size='sm'
-                              variant='destructive'
-                              className='bg-red-100 text-red-800 hover:bg-red-200 cursor-pointer'
-                              onClick={() => {
-                                const confirmDelete = window.confirm(
-                                  "Bạn có chắc muốn xoá chi tiết này không?"
-                                );
-                                if (confirmDelete)
-                                  alert(`Đã xoá ${detail.coffeeTypeName}`);
-                              }}
-                            >
-                              Xoá
-                            </Button>
-                          </div>
-                        )}
+                        </div>                        
                       </div>
                     </AccordionContent>
                   </AccordionItem>

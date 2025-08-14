@@ -1,12 +1,8 @@
 "use client";
 
 import { ProcurementPlan } from "@/lib/api/procurementPlans";
-import { Badge } from "@/components/ui/badge";
-import { cn, formatDate } from "@/lib/utils";
-import {
-  ProcurementPlanStatusMap,
-  ProcurementPlanStatusValue,
-} from "@/lib/constants/procurementPlanStatus";
+import { formatDate } from "@/lib/utils";
+import { ProcurementPlanStatusMap } from "@/lib/constants/procurementPlanStatus";
 import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown } from "lucide-react";
