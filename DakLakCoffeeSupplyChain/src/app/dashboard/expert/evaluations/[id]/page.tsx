@@ -6,7 +6,7 @@ import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 import { getProcessingBatchById, ProcessingBatch } from "@/lib/api/processingBatches";
 import { getEvaluationsByBatch, createProcessingBatchEvaluation, ProcessingBatchEvaluation, CreateEvaluationDto, EVALUATION_RESULTS, getEvaluationResultDisplayName, getEvaluationResultColor } from "@/lib/api/processingBatchEvaluations";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
-import { FiArrowLeft, FiSave, FiAlertCircle, FiCheckCircle, FiClock, FiUser, FiCalendar, FiPackage, FiBarChart2 } from "react-icons/fi";
+import { FiArrowLeft, FiSave, FiAlertCircle, FiCheckCircle, FiClock, FiUser, FiCalendar, FiPackage, FiBarChart2, FiX, FiPlus } from "react-icons/fi";
 import * as Dialog from "@radix-ui/react-dialog";
 
 export default function ExpertEvaluationDetailPage() {
@@ -31,6 +31,9 @@ export default function ExpertEvaluationDetailPage() {
     problematicSteps: [],
     recommendations: "",
   });
+
+  // Local state for problematic steps
+  const [newProblematicStep, setNewProblematicStep] = useState("");
 
   const fetchData = async () => {
     try {
@@ -80,6 +83,13 @@ export default function ExpertEvaluationDetailPage() {
     try {
       setSubmitting(true);
       
+      // Validation
+      if (formData.evaluationResult === EVALUATION_RESULTS.FAIL && 
+          (!formData.problematicSteps || formData.problematicSteps.length === 0)) {
+        alert("Vui lòng chọn ít nhất một tiến trình có vấn đề khi đánh giá không đạt.");
+        return;
+      }
+      
       // Chuẩn bị data để gửi lên BE
       const submitData = {
         ...formData,
@@ -110,10 +120,30 @@ export default function ExpertEvaluationDetailPage() {
         status: err.response?.status,
         data: err.response?.data
       });
-      alert("Có lỗi xảy ra khi tạo đánh giá");
+      
+      // Hiển thị lỗi chi tiết hơn
+      const errorMessage = err.message || "Có lỗi xảy ra khi tạo đánh giá";
+      alert(`Lỗi: ${errorMessage}`);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const addProblematicStep = () => {
+    if (newProblematicStep.trim() && !formData.problematicSteps?.includes(newProblematicStep.trim())) {
+      setFormData({
+        ...formData,
+        problematicSteps: [...(formData.problematicSteps || []), newProblematicStep.trim()]
+      });
+      setNewProblematicStep("");
+    }
+  };
+
+  const removeProblematicStep = (step: string) => {
+    setFormData({
+      ...formData,
+      problematicSteps: formData.problematicSteps?.filter(s => s !== step) || []
+    });
   };
 
   const getStatusInfo = (status: ProcessingStatus) => {
@@ -183,15 +213,26 @@ export default function ExpertEvaluationDetailPage() {
               <p className="text-gray-600">Mã lô: {batch.batchCode}</p>
             </div>
             
-            {batch.status === ProcessingStatus.AwaitingEvaluation && (
-              <button
-                onClick={() => setShowEvaluationForm(true)}
-                className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
-              >
-                <FiSave />
-                Tạo đánh giá
-              </button>
-            )}
+                         {(batch.status === ProcessingStatus.AwaitingEvaluation || 
+               batch.status === ProcessingStatus.Completed || 
+               batch.status === ProcessingStatus.InProgress) && (
+               <div className="flex flex-col gap-2">
+                 {batch.status === ProcessingStatus.InProgress && (
+                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                     <p className="text-sm text-blue-700">
+                       <strong>Lưu ý:</strong> Lô này đang trong quá trình xử lý. Bạn có thể tạo đánh giá tạm thời.
+                     </p>
+                   </div>
+                 )}
+                 <button
+                   onClick={() => setShowEvaluationForm(true)}
+                   className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+                 >
+                   <FiSave />
+                   Tạo đánh giá
+                 </button>
+               </div>
+             )}
           </div>
         </div>
 
@@ -409,81 +450,190 @@ export default function ExpertEvaluationDetailPage() {
         <Dialog.Root open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50 z-50" />
-            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto z-50">
-              <Dialog.Title className="text-xl font-semibold text-gray-800 mb-4">
-                Tạo đánh giá cho lô {batch.batchCode}
-              </Dialog.Title>
+            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto z-50">
+              <div className="flex items-center justify-between mb-6">
+                <Dialog.Title className="text-2xl font-bold text-gray-800">
+                  Tạo đánh giá cho lô {batch.batchCode}
+                </Dialog.Title>
+                <button
+                  onClick={() => setShowEvaluationForm(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <FiX className="w-6 h-6" />
+                </button>
+              </div>
               
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                             <form onSubmit={handleSubmit} className="space-y-6">
+                 {/* Batch Status Info */}
+                 {batch.status === ProcessingStatus.InProgress && (
+                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                     <div className="flex items-center gap-2">
+                       <FiClock className="w-5 h-5 text-blue-600" />
+                       <div>
+                         <h4 className="text-sm font-medium text-blue-900">Lô đang trong quá trình xử lý</h4>
+                         <p className="text-sm text-blue-700">
+                           Bạn có thể tạo đánh giá tạm thời để hướng dẫn nông dân cải thiện quá trình.
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 )}
+                 
+                 {/* Evaluation Result */}
+                 <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg border border-orange-200">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
                     Kết quả đánh giá *
                   </label>
                   <select
                     value={formData.evaluationResult}
                     onChange={(e) => setFormData({ ...formData, evaluationResult: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white font-medium"
                     required
                   >
-                    <option value={EVALUATION_RESULTS.PASS}>Đạt</option>
-                    <option value={EVALUATION_RESULTS.FAIL}>Không đạt</option>
-                    <option value={EVALUATION_RESULTS.NEEDS_IMPROVEMENT}>Cần cải thiện</option>
-                    <option value={EVALUATION_RESULTS.TEMPORARY}>Tạm thời</option>
+                    <option value={EVALUATION_RESULTS.PASS}>✅ Đạt - Chất lượng tốt</option>
+                    <option value={EVALUATION_RESULTS.FAIL}>❌ Không đạt - Cần xử lý lại</option>
+                    <option value={EVALUATION_RESULTS.NEEDS_IMPROVEMENT}>⚠️ Cần cải thiện - Chất lượng chưa đạt chuẩn</option>
+                    <option value={EVALUATION_RESULTS.TEMPORARY}>⏳ Tạm thời - Chờ đánh giá thêm</option>
                   </select>
                 </div>
+
+                                 {/* Problematic Steps - Chỉ hiển thị khi Fail */}
+                 {formData.evaluationResult === EVALUATION_RESULTS.FAIL && (
+                   <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-lg border border-red-200">
+                     <label className="block text-sm font-semibold text-red-700 mb-3">
+                       🔍 Tiến trình có vấn đề *
+                     </label>
+                     <p className="text-sm text-red-600 mb-4">
+                       Chọn các tiến trình cần được xử lý lại để xác định chính xác vấn đề
+                     </p>
+                     {(!formData.problematicSteps || formData.problematicSteps.length === 0) && (
+                       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                         <p className="text-sm text-yellow-700">
+                           ⚠️ <strong>Bắt buộc:</strong> Vui lòng chọn ít nhất một tiến trình có vấn đề khi đánh giá không đạt.
+                         </p>
+                       </div>
+                     )}
+                    <div className="space-y-4">
+                      {/* Add new step */}
+                      <div className="flex gap-2">
+                        <select
+                          value={newProblematicStep}
+                          onChange={(e) => setNewProblematicStep(e.target.value)}
+                          className="flex-1 px-4 py-3 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
+                        >
+                          <option value="">Chọn tiến trình có vấn đề...</option>
+                          {batch.progresses && batch.progresses.map((progress, index) => (
+                            <option key={progress.progressId} value={`Bước ${index + 1}: ${progress.stageName}`}>
+                              Bước {index + 1}: {progress.stageName}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={addProblematicStep}
+                          disabled={!newProblematicStep}
+                          className="px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <FiPlus className="w-4 h-4" />
+                          Thêm
+                        </button>
+                      </div>
+                      
+                                             {/* Display added steps */}
+                       {formData.problematicSteps && formData.problematicSteps.length > 0 && (
+                         <div className="space-y-3">
+                           <p className="text-sm font-medium text-red-700">Các tiến trình đã chọn:</p>
+                           <div className="space-y-2">
+                             {formData.problematicSteps.map((step, index) => (
+                               <div key={index} className="flex items-center justify-between bg-white px-4 py-3 rounded-lg border border-red-200 shadow-sm">
+                                 <div className="flex items-center gap-3">
+                                   <span className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-sm font-bold">
+                                     {index + 1}
+                                   </span>
+                                   <div>
+                                     <span className="text-sm font-semibold text-gray-800 block">{step}</span>
+                                     <span className="text-xs text-gray-500">Tiến trình cần xử lý lại</span>
+                                   </div>
+                                 </div>
+                                 <button
+                                   type="button"
+                                   onClick={() => removeProblematicStep(step)}
+                                   className="text-red-500 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-lg"
+                                   title="Xóa tiến trình này"
+                                 >
+                                   <FiX className="w-5 h-5" />
+                                 </button>
+                               </div>
+                             ))}
+                           </div>
+                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                             <p className="text-sm text-blue-700">
+                               <strong>Lưu ý:</strong> Các tiến trình này sẽ được gửi đến nông dân để họ biết cần xử lý lại những bước nào.
+                             </p>
+                           </div>
+                         </div>
+                       )}
+                    </div>
+                  </div>
+                )}
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nhận xét
-                  </label>
-                  <textarea
-                    value={formData.comments || ""}
-                    onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Nhập nhận xét về chất lượng sơ chế..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phản hồi chi tiết
-                  </label>
-                  <textarea
-                    value={formData.detailedFeedback || ""}
-                    onChange={(e) => setFormData({ ...formData, detailedFeedback: e.target.value })}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Mô tả chi tiết các vấn đề hoặc điểm tốt trong quá trình sơ chế..."
-                  />
-                </div>
-                
-                                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                     Khuyến nghị cải thiện
+                                 {/* Comments */}
+                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                   <label className="block text-sm font-semibold text-gray-700 mb-3">
+                     💬 Nhận xét tổng quan
+                   </label>
+                   <textarea
+                     value={formData.comments || ""}
+                     onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                     rows={3}
+                     className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                     placeholder="Nhập nhận xét tổng quan về chất lượng sơ chế..."
+                   />
+                 </div>
+                 
+                 {/* Detailed Feedback */}
+                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
+                   <label className="block text-sm font-semibold text-gray-700 mb-3">
+                     🔍 Phản hồi chi tiết
+                   </label>
+                   <textarea
+                     value={formData.detailedFeedback || ""}
+                     onChange={(e) => setFormData({ ...formData, detailedFeedback: e.target.value })}
+                     rows={4}
+                     className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                     placeholder="Mô tả chi tiết các vấn đề hoặc điểm tốt trong quá trình sơ chế..."
+                   />
+                 </div>
+                 
+                 {/* Recommendations */}
+                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                   <label className="block text-sm font-semibold text-gray-700 mb-3">
+                     💡 Khuyến nghị cải thiện
                    </label>
                    <textarea
                      value={formData.recommendations || ""}
                      onChange={(e) => setFormData({ ...formData, recommendations: e.target.value })}
                      rows={3}
-                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                     className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white"
                      placeholder="Đưa ra các khuyến nghị để cải thiện chất lượng..."
                    />
                  </div>
                  
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                     Ghi chú bổ sung
+                 {/* Additional Notes */}
+                 <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-lg border border-gray-200">
+                   <label className="block text-sm font-semibold text-gray-700 mb-3">
+                     📝 Ghi chú bổ sung
                    </label>
                    <textarea
                      value={formData.additionalNotes || ""}
                      onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
                      rows={2}
-                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white"
                      placeholder="Ghi chú bổ sung cho đánh giá..."
                    />
                  </div>
                 
+                {/* Action Buttons */}
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"

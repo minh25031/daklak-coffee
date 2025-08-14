@@ -21,7 +21,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Package, Coffee, Calendar, Info, Loader2, CheckCircle, Save } from "lucide-react";
+import { ArrowLeft, Package, Coffee, Calendar, Info, Loader2, CheckCircle, Save, AlertTriangle } from "lucide-react";
 
 // Import các component chung
 import ProcessingHeader from "@/components/processing/ProcessingHeader";
@@ -45,7 +45,7 @@ export default function EditProcessingBatchPage() {
   const [coffeeTypes, setCoffeeTypes] = useState<any[]>([]);
   const [cropSeasons, setCropSeasons] = useState<CropSeasonListItem[]>([]);
 
-  // ✅ Load dữ liệu lô sơ chế
+      // Load dữ liệu lô sơ chế
   useEffect(() => {
     async function fetchBatch() {
       try {
@@ -63,7 +63,7 @@ export default function EditProcessingBatchPage() {
           router.push("/dashboard/farmer/processing/batches");
         }
       } catch (err) {
-        console.error("❌ Lỗi tải dữ liệu lô:", err);
+        console.error("Lỗi tải dữ liệu lô:", err);
         AppToast.error("Không thể tải dữ liệu lô sơ chế");
         router.push("/dashboard/farmer/processing/batches");
       } finally {
@@ -76,14 +76,14 @@ export default function EditProcessingBatchPage() {
     }
   }, [batchId, router]);
 
-  // ✅ Load danh sách mùa vụ
+      // Load danh sách mùa vụ
   useEffect(() => {
     async function fetchCropSeasons() {
       try {
         const cropSeasonsData = await getCropSeasonsForCurrentUser({ page: 1, pageSize: 100 });
         setCropSeasons(cropSeasonsData);
       } catch (err) {
-        console.error("❌ Lỗi tải mùa vụ:", err);
+        console.error("Lỗi tải mùa vụ:", err);
       }
     }
 
@@ -121,7 +121,7 @@ export default function EditProcessingBatchPage() {
       AppToast.success("Cập nhật lô sơ chế thành công!");
       router.push(`/dashboard/farmer/processing/batches/${batchId}`);
     } catch (err: any) {
-      console.error("❌ Lỗi cập nhật batch:", err);
+              console.error("Lỗi cập nhật batch:", err);
       
       let errorMessage = "Cập nhật lô sơ chế thất bại!";
       
@@ -189,7 +189,7 @@ export default function EditProcessingBatchPage() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
         <div className="p-6 max-w-4xl mx-auto">
           <div className="text-center space-y-4">
-            <div className="text-red-600 text-6xl">⚠️</div>
+            <AlertTriangle className="w-16 h-16 text-red-600" />
             <h1 className="text-2xl font-bold text-gray-900">Không tìm thấy lô sơ chế</h1>
             <p className="text-gray-600">Lô sơ chế bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
             <Button onClick={() => router.push("/dashboard/farmer/processing/batches")}>

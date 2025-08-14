@@ -179,6 +179,7 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
       }
 
       await createProcessingBatchProgressWithMedia(form.batchId, {
+        stageId: undefined, // Để Backend tự động xác định stage đầu tiên
         progressDate: form.progressDate,
         outputQuantity: form.outputQuantity,
         outputUnit: form.outputUnit,

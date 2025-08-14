@@ -42,7 +42,10 @@ import { ProcessingBatchProgress } from "@/lib/api/processingBatchProgress";
 import { ProcessingWaste } from "@/lib/api/processingBatchWastes";
 import CreateProcessingProgressForm from "@/components/processing-batches/CreateProcessingProgressForm";
 import AdvanceProcessingProgressForm from "@/components/processing-batches/AdvanceProcessingProgressForm";
+import FailureInfoCard from "@/components/processing-batches/FailureInfoCard";
+import ProgressGuidanceCard from "@/components/processing-batches/ProgressGuidanceCard";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
+import { StageFailureParser, StageFailureInfo } from "@/lib/helpers/stageFailureParser";
 
 export default function ViewProcessingBatch() {
   const { id } = useParams();
@@ -54,6 +57,9 @@ export default function ViewProcessingBatch() {
   const [openAdvanceModal, setOpenAdvanceModal] = useState(false);
   const [latestProgress, setLatestProgress] = useState<ProcessingBatchProgress | null>(null);
   const [evaluations, setEvaluations] = useState<ProcessingBatchEvaluation[]>([]);
+  
+  // Failure info state
+  const [failureInfo, setFailureInfo] = useState<StageFailureInfo | null>(null);
   
   // Media viewer dialog states
   const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
@@ -221,6 +227,15 @@ export default function ViewProcessingBatch() {
         try {
           const data = await getEvaluationsByBatch(id);
           setEvaluations(data);
+          
+          // Parse failure info từ evaluation cuối cùng
+          if (data && data.length > 0) {
+            const latestEvaluation = data[0]; // Sắp xếp theo createdAt desc
+            if (latestEvaluation.evaluationResult === 'Fail') {
+              const failureInfo = StageFailureParser.parseFailureFromComments(latestEvaluation.comments);
+              setFailureInfo(failureInfo);
+            }
+          }
         } catch (err: unknown) {
           console.error('Error fetching evaluations:', err);
           const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tải đánh giá';
@@ -333,7 +348,10 @@ export default function ViewProcessingBatch() {
              {batch.status === ProcessingStatus.Completed && (
                <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm">
                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                 <span>✅ Đã hoàn thành tất cả các bước</span>
+                 <span className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Đã hoàn thành tất cả các bước
+                </span>
                </div>
              )}
              
@@ -463,7 +481,10 @@ export default function ViewProcessingBatch() {
                   <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <h4 className="font-medium text-red-800 mb-1">
-                      ⚠️ Lô sơ chế cần cải thiện
+                      <span className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Lô sơ chế cần cải thiện
+                </span>
                     </h4>
                     <p className="text-sm text-red-700 mb-3">
                       Lô sơ chế của bạn đã được đánh giá không đạt. Vui lòng xem chi tiết đánh giá và cải thiện theo hướng dẫn.
@@ -599,6 +620,26 @@ export default function ViewProcessingBatch() {
           </div>
         </div>
 
+        {/* Failure Info Card - Hiển thị khi có failure */}
+        {failureInfo && (
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 p-6 text-white">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Thông tin đánh giá
+              </h2>
+            </div>
+            <div className="p-6">
+              <FailureInfoCard
+                failureInfo={failureInfo}
+                currentStageId={latestProgress?.stageId}
+                currentStageName={latestProgress?.stageName}
+                isRetryMode={batch.status === ProcessingStatus.InProgress}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Progress Section */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white">
@@ -651,6 +692,15 @@ export default function ViewProcessingBatch() {
           </div>
 
           <div className="p-6">
+            {/* Progress Guidance Card - Hiển thị khi có failure */}
+            {failureInfo && (
+              <ProgressGuidanceCard
+                failureInfo={failureInfo}
+                latestProgress={latestProgress}
+                batchStatus={batch.status}
+              />
+            )}
+            
             {batch.progresses && batch.progresses.length > 0 ? (
               <div className="space-y-4">
                 {batch.progresses.map((progress, idx) => (
@@ -886,16 +936,44 @@ export default function ViewProcessingBatch() {
                           {/* Evaluations Section */}
          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
            <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-6 text-white">
-             <h2 className="text-xl font-semibold flex items-center gap-2">
-               <ClipboardCheck className="w-5 h-5" />
-               Đánh giá lô sơ chế
-             </h2>
-             <p className="text-blue-100 mt-1">Kết quả đánh giá từ chuyên gia nông nghiệp</p>
+             <div className="flex items-center justify-between">
+               <div>
+                 <h2 className="text-xl font-semibold flex items-center gap-2">
+                   <ClipboardCheck className="w-5 h-5" />
+                   Đánh giá lô sơ chế
+                 </h2>
+                 <p className="text-blue-100 mt-1">Kết quả đánh giá từ chuyên gia nông nghiệp</p>
+               </div>
+               {evaluations.length > 0 && (
+                 <button
+                   onClick={() => router.push(`/dashboard/farmer/evaluations/${batch.batchId}`)}
+                   className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                 >
+                   <ClipboardCheck className="w-4 h-4" />
+                   Xem chi tiết
+                 </button>
+               )}
+             </div>
            </div>
            
            <div className="p-6">
              {evaluations.length > 0 ? (
                <div className="space-y-4">
+                 {/* Thông báo đánh giá mới */}
+                 {evaluations.some(e => e.evaluationResult === 'Fail') && (
+                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                     <div className="flex items-center gap-2">
+                       <AlertTriangle className="w-5 h-5 text-red-600" />
+                       <div>
+                         <h4 className="text-sm font-medium text-red-900">Có đánh giá cần xử lý</h4>
+                         <p className="text-sm text-red-700">
+                           Lô sơ chế này có đánh giá không đạt. Vui lòng xem chi tiết và cập nhật tiến trình theo hướng dẫn.
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 )}
+                 
                  {evaluations.map((evaluation, idx) => (
                    <div
                      key={`${evaluation.evaluationId}-${idx}`}
@@ -934,12 +1012,81 @@ export default function ViewProcessingBatch() {
                        </div>
                      </div>
                      
-                     {/* Nhận xét chính */}
-                     {evaluation.comments && (
+                     {/* Failure Info Card - Hiển thị khi có failure */}
+                     {evaluation.evaluationResult === 'Fail' && failureInfo && (
+                       <div className="mb-4">
+                         <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-4">
+                           <div className="flex items-center gap-3 mb-3">
+                             <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                               <AlertTriangle className="w-5 h-5 text-red-600" />
+                             </div>
+                             <div>
+                               <h4 className="font-semibold text-red-900">Thông tin cần cải thiện</h4>
+                               <p className="text-sm text-red-700">
+                                 Công đoạn: {failureInfo.failedStageName}
+                               </p>
+                             </div>
+                           </div>
+
+                           {/* Details */}
+                           <div className="space-y-3">
+                             {failureInfo.details && (
+                               <div className="bg-white/50 rounded-lg p-3">
+                                 <div className="flex items-start gap-2">
+                                   <ClipboardCheck className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                                   <div>
+                                     <h5 className="text-sm font-medium text-red-900 mb-1">
+                                       Chi tiết vấn đề:
+                                     </h5>
+                                     <p className="text-sm text-red-800">
+                                       {failureInfo.details}
+                                     </p>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+
+                             {failureInfo.recommendations && (
+                               <div className="bg-white/50 rounded-lg p-3">
+                                 <div className="flex items-start gap-2">
+                                   <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                   <div>
+                                     <h5 className="text-sm font-medium text-green-900 mb-1">
+                                       Khuyến nghị cải thiện:
+                                     </h5>
+                                     <p className="text-sm text-green-800">
+                                       {failureInfo.recommendations}
+                                     </p>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+
+                           {/* Action guidance */}
+                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                             <div className="flex items-start gap-2">
+                               <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                               <div>
+                                 <h5 className="text-sm font-medium text-blue-900 mb-1">
+                                   Hướng dẫn tiếp theo:
+                                 </h5>
+                                 <p className="text-sm text-blue-800">
+                                   Hãy cập nhật tiến trình cho công đoạn {failureInfo.failedStageName} với những cải thiện theo khuyến nghị trên.
+                                 </p>
+                               </div>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                     )}
+
+                     {/* Nhận xét chính - chỉ hiển thị khi không phải failure comment */}
+                     {evaluation.comments && !StageFailureParser.isFailureComment(evaluation.comments) && (
                        <div className="mb-4">
                          <h4 className="text-sm font-medium text-gray-700 mb-2">Nhận xét:</h4>
                          <div className="bg-gray-50 rounded-lg p-3">
-                           <p className="text-sm text-gray-800">{evaluation.comments}</p>
+                           <p className="text-sm text-gray-800 whitespace-pre-wrap">{evaluation.comments}</p>
                          </div>
                        </div>
                      )}
@@ -1015,6 +1162,7 @@ export default function ViewProcessingBatch() {
               <AdvanceProcessingProgressForm
                 batchId={batch.batchId}
                 latestProgress={latestProgress}
+                batchStatus={batch.status}
                 onSuccess={() => {
                   setOpenAdvanceModal(false);
                   window.location.reload();

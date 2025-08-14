@@ -43,7 +43,7 @@ export default function CreateProcessingWastePage() {
 
   const [batches, setBatches] = useState<ProcessingBatch[]>([]);
 
-  // ✅ Load danh sách lô sơ chế
+      // Load danh sách lô sơ chế
   useEffect(() => {
     async function fetchBatches() {
       try {
@@ -60,7 +60,7 @@ export default function CreateProcessingWastePage() {
           }
         }
       } catch (err) {
-        console.error("❌ Lỗi tải danh sách lô:", err);
+        console.error("Lỗi tải danh sách lô:", err);
         AppToast.error("Không thể tải danh sách lô sơ chế");
       } finally {
         setLoading(false);
@@ -107,7 +107,7 @@ export default function CreateProcessingWastePage() {
       AppToast.success("Thêm xử lý chất thải thành công!");
       router.push("/dashboard/farmer/processing/wastes");
     } catch (err: any) {
-      console.error("❌ Lỗi tạo waste:", err);
+              console.error("Lỗi tạo waste:", err);
       
       let errorMessage = "Thêm xử lý chất thải thất bại!";
       

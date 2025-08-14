@@ -95,9 +95,16 @@ export async function createProcessingBatchEvaluation(
     const res = await api.post("/Evaluations", data);
     console.log("🔍 DEBUG: Create evaluation response:", res);
     return res.data;
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Lỗi createProcessingBatchEvaluation:", err);
-    return null;
+    console.error("❌ Error details:", {
+      message: err.message,
+      status: err.response?.status,
+      data: err.response?.data
+    });
+    
+    // Throw error để component có thể handle
+    throw new Error(err.response?.data || err.message || "Tạo đánh giá thất bại.");
   }
 }
 
@@ -142,7 +149,8 @@ export const EVALUATION_RESULTS = {
   PASS: "Pass",
   FAIL: "Fail", 
   NEEDS_IMPROVEMENT: "NeedsImprovement",
-  TEMPORARY: "Temporary"
+  TEMPORARY: "Temporary",
+  PENDING: "Pending"
 } as const;
 
 export type EvaluationResult = typeof EVALUATION_RESULTS[keyof typeof EVALUATION_RESULTS];

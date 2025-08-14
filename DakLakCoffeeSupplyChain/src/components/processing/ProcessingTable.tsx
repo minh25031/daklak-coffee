@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Package } from "lucide-react";
-import Pagination from "./Pagination";
+import Pagination from "@/components/ui/pagination";
 
 interface Column {
   key: string;
@@ -138,7 +138,7 @@ export default function ProcessingTable({
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
             onPageChange={pagination.onPageChange}
-            itemsPerPage={pagination.itemsPerPage}
+            itemsPerPage={pagination.itemsPerPage || 10}
             totalItems={pagination.totalItems}
           />
         </div>
