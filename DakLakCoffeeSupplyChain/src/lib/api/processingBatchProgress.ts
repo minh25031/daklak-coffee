@@ -306,3 +306,58 @@ export async function advanceToNextProcessingProgress(
     throw err;
   }
 }
+
+export async function updateProgressAfterEvaluation(
+  batchId: string,
+  payload: CreateProgressWithMediaPayload
+): Promise<any> {
+  const formData = new FormData();
+  
+  formData.append("progressDate", payload.progressDate);
+  formData.append("outputQuantity", payload.outputQuantity.toString());
+  formData.append("outputUnit", payload.outputUnit);
+  
+  // Thêm parameters nếu có
+  if (payload.parameterName) {
+    formData.append("parameterName", payload.parameterName);
+  }
+  if (payload.parameterValue) {
+    formData.append("parameterValue", payload.parameterValue);
+  }
+  if (payload.unit) {
+    formData.append("unit", payload.unit);
+  }
+  if (payload.recordedAt) {
+    formData.append("recordedAt", payload.recordedAt);
+  }
+  
+  // Thêm photo files
+  if (payload.photoFiles) {
+    payload.photoFiles.forEach(file => formData.append("photoFiles", file));
+  }
+  
+  // Thêm video files
+  if (payload.videoFiles) {
+    payload.videoFiles.forEach(file => formData.append("videoFiles", file));
+  }
+
+  console.log("📤 API: updateProgressAfterEvaluation");
+  console.log("📤 BatchId:", batchId);
+  console.log("📤 FormData entries:");
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}:`, value);
+  }
+
+  try {
+    const response = await api.post(`/ProcessingBatchsProgress/${batchId}/update-after-evaluation`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    console.log("✅ Update after evaluation API call successful");
+    return response.data;
+  } catch (err: any) {
+    console.error("❌ updateProgressAfterEvaluation:", err);
+    console.error("❌ Error response data:", err?.response?.data);
+    console.error("❌ Error response status:", err?.response?.status);
+    throw err;
+  }
+}

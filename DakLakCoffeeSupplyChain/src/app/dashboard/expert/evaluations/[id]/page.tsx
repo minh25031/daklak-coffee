@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 import { getProcessingBatchById, ProcessingBatch } from "@/lib/api/processingBatches";
-import { getEvaluationsByBatch, createProcessingBatchEvaluation, ProcessingBatchEvaluation, CreateEvaluationDto, EVALUATION_RESULTS, getEvaluationResultDisplayName, getEvaluationResultColor } from "@/lib/api/processingBatchEvaluations";
+import { getEvaluationsByBatch, createProcessingBatchEvaluation, updateProcessingBatchEvaluation, ProcessingBatchEvaluation, CreateEvaluationDto, EVALUATION_RESULTS, getEvaluationResultDisplayName, getEvaluationResultColor } from "@/lib/api/processingBatchEvaluations";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
 import { FiArrowLeft, FiSave, FiAlertCircle, FiCheckCircle, FiClock, FiUser, FiCalendar, FiPackage, FiBarChart2, FiX, FiPlus } from "react-icons/fi";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -90,28 +90,61 @@ export default function ExpertEvaluationDetailPage() {
         return;
       }
       
-      // Chuẩn bị data để gửi lên BE
-      const submitData = {
-        ...formData,
-        // Đảm bảo problematicSteps là array hoặc undefined
+      // 🔧 FIX: Thay vì tạo evaluation mới, cập nhật evaluation đã có (được tạo tự động bởi backend)
+      const latestEvaluation = evaluations.find(e => !e.evaluatedBy); // Tìm evaluation chưa được đánh giá
+      
+      if (!latestEvaluation) {
+        alert("Không tìm thấy đánh giá cần cập nhật. Vui lòng thử lại sau.");
+        return;
+      }
+      
+      // Tạo comments theo format chuẩn nếu là Fail
+      let finalComments = formData.comments;
+      if (formData.evaluationResult === EVALUATION_RESULTS.FAIL && formData.problematicSteps && formData.problematicSteps.length > 0) {
+        // Lấy step đầu tiên để tạo format chuẩn
+        const firstStep = formData.problematicSteps[0];
+        const stepMatch = firstStep.match(/Bước\s*(\d+):\s*(.+)/);
+        
+        if (stepMatch) {
+          const stepId = parseInt(stepMatch[1]);
+          const stageName = stepMatch[2].trim();
+          
+          // Tạo format chuẩn theo helper
+          finalComments = `FAILED_STAGE_ID:${stepId}|FAILED_STAGE_NAME:${stageName}|DETAILS:${formData.comments || 'Tiến trình có vấn đề'}|RECOMMENDATIONS:${formData.recommendations || 'Cần cải thiện theo hướng dẫn'}`;
+        } else {
+          // Fallback nếu không parse được
+          finalComments = `FAILED_STAGE_ID:1|FAILED_STAGE_NAME:Thu hoạch|DETAILS:${formData.comments || 'Tiến trình có vấn đề'}|RECOMMENDATIONS:${formData.recommendations || 'Cần cải thiện theo hướng dẫn'}`;
+        }
+      }
+      
+      // Chuẩn bị data để cập nhật evaluation
+      const updateData = {
+        evaluationResult: formData.evaluationResult,
+        comments: finalComments,
+        detailedFeedback: formData.detailedFeedback,
         problematicSteps: formData.problematicSteps && formData.problematicSteps.length > 0 
           ? formData.problematicSteps 
-          : undefined
+          : undefined,
+        recommendations: formData.recommendations,
+        evaluatedAt: new Date().toISOString()
       };
       
-      console.log("🔍 DEBUG: Submitting evaluation form with data:", submitData);
+      console.log("🔍 DEBUG: Original comments:", formData.comments);
+      console.log("🔍 DEBUG: Final comments:", finalComments);
+      console.log("🔍 DEBUG: Updating evaluation with data:", updateData);
       
-      const result = await createProcessingBatchEvaluation(submitData);
+      // Gọi API cập nhật evaluation thay vì tạo mới
+      const result = await updateProcessingBatchEvaluation(latestEvaluation.evaluationId, updateData);
       
-      console.log("🔍 DEBUG: Create evaluation result:", result);
+      console.log("🔍 DEBUG: Update evaluation result:", result);
       
       if (result && result.data) {
         setShowEvaluationForm(false);
         await fetchData(); // Refresh data
-        alert("Đánh giá đã được tạo thành công!");
+        alert("Đánh giá đã được cập nhật thành công!");
       } else {
         console.error("❌ DEBUG: No result or no data in result");
-        alert("Có lỗi xảy ra khi tạo đánh giá");
+        alert("Có lỗi xảy ra khi cập nhật đánh giá");
       }
     } catch (err: any) {
       console.error("❌ Lỗi handleSubmit:", err);
@@ -122,7 +155,7 @@ export default function ExpertEvaluationDetailPage() {
       });
       
       // Hiển thị lỗi chi tiết hơn
-      const errorMessage = err.message || "Có lỗi xảy ra khi tạo đánh giá";
+      const errorMessage = err.message || "Có lỗi xảy ra khi cập nhật đánh giá";
       alert(`Lỗi: ${errorMessage}`);
     } finally {
       setSubmitting(false);
@@ -213,26 +246,19 @@ export default function ExpertEvaluationDetailPage() {
               <p className="text-gray-600">Mã lô: {batch.batchCode}</p>
             </div>
             
-                         {(batch.status === ProcessingStatus.AwaitingEvaluation || 
-               batch.status === ProcessingStatus.Completed || 
-               batch.status === ProcessingStatus.InProgress) && (
-               <div className="flex flex-col gap-2">
-                 {batch.status === ProcessingStatus.InProgress && (
-                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                     <p className="text-sm text-blue-700">
-                       <strong>Lưu ý:</strong> Lô này đang trong quá trình xử lý. Bạn có thể tạo đánh giá tạm thời.
-                     </p>
-                   </div>
-                 )}
-                 <button
-                   onClick={() => setShowEvaluationForm(true)}
-                   className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
-                 >
-                   <FiSave />
-                   Tạo đánh giá
-                 </button>
-               </div>
-             )}
+                                                   {(batch.status === ProcessingStatus.AwaitingEvaluation || 
+                batch.status === ProcessingStatus.Completed || 
+                batch.status === ProcessingStatus.InProgress) && (
+                <div className="flex flex-col gap-2">
+                  {batch.status === ProcessingStatus.InProgress && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-700">
+                        <strong>Lưu ý:</strong> Lô này đang trong quá trình xử lý. Bạn có thể tạo đánh giá tạm thời.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
         </div>
 
@@ -372,26 +398,13 @@ export default function ExpertEvaluationDetailPage() {
                      </div>
                    )}
                    
-                   <button
-                     onClick={() => setShowEvaluationForm(true)}
-                     className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
-                   >
-                     <FiSave />
-                     Tạo đánh giá mới
-                   </button>
+                   
                  </div>
                ) : (
-                 <div className="text-center py-4">
-                   <FiAlertCircle className="text-yellow-500 text-2xl mx-auto mb-2" />
-                   <p className="text-sm text-gray-600 mb-4">Chưa có đánh giá</p>
-                   <button
-                     onClick={() => setShowEvaluationForm(true)}
-                     className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
-                   >
-                     <FiSave />
-                     Tạo đánh giá
-                   </button>
-                 </div>
+                                   <div className="text-center py-4">
+                    <FiAlertCircle className="text-yellow-500 text-2xl mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 mb-4">Chưa có đánh giá</p>
+                  </div>
                )}
              </div>
 
@@ -405,7 +418,7 @@ export default function ExpertEvaluationDetailPage() {
                    className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
                  >
                    <FiSave />
-                   Tạo đánh giá
+                   Cập nhật đánh giá
                  </button>
                  
                  <button
@@ -453,7 +466,7 @@ export default function ExpertEvaluationDetailPage() {
             <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto z-50">
               <div className="flex items-center justify-between mb-6">
                 <Dialog.Title className="text-2xl font-bold text-gray-800">
-                  Tạo đánh giá cho lô {batch.batchCode}
+                  Cập nhật đánh giá cho lô {batch.batchCode}
                 </Dialog.Title>
                 <button
                   onClick={() => setShowEvaluationForm(false)}
@@ -647,7 +660,7 @@ export default function ExpertEvaluationDetailPage() {
                     disabled={submitting}
                     className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
                   >
-                    {submitting ? "Đang lưu..." : "Lưu đánh giá"}
+                    {submitting ? "Đang cập nhật..." : "Cập nhật đánh giá"}
                   </button>
                 </div>
               </form>

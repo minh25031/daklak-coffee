@@ -304,11 +304,7 @@ export default function ProgressDetailPage() {
                 {batch && progresses.length > 0 && (
                   <AdvanceProcessingProgressForm
                     batchId={batch.batchId}
-                    latestProgress={{
-                      stageName: progresses[progresses.length - 1].stageName,
-                      stepIndex: progresses[progresses.length - 1].stepIndex,
-                      progressDate: progresses[progresses.length - 1].progressDate,
-                    }}
+                    latestProgress={progresses[progresses.length - 1]}
                     onSuccess={() => {
                       setIsUpdateDialogOpen(false);
                       fetchBatchData(); // Refresh data

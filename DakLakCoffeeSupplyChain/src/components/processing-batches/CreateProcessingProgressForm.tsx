@@ -38,9 +38,25 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
 
   useEffect(() => {
     const fetchBatches = async () => {
-      const res = await getAllProcessingBatches();
-      const filtered = (res || []).filter((b) => b.status === ProcessingStatus.NotStarted || b.status === ProcessingStatus.InProgress || b.status === ProcessingStatus.AwaitingEvaluation);
-      setBatches(filtered);
+      try {
+        console.log("🔍 DEBUG: Fetching batches for create progress form...");
+        const res = await getAllProcessingBatches();
+        console.log("🔍 DEBUG: All batches:", res);
+        
+        const filtered = (res || []).filter((b) => 
+          b.status === ProcessingStatus.NotStarted || 
+          b.status === ProcessingStatus.InProgress || 
+          b.status === ProcessingStatus.AwaitingEvaluation
+        );
+        
+        console.log("🔍 DEBUG: Filtered batches:", filtered);
+        console.log("🔍 DEBUG: Available statuses:", filtered.map(b => ({ batchCode: b.batchCode, status: b.status })));
+        
+        setBatches(filtered);
+      } catch (error) {
+        console.error("❌ Error fetching batches:", error);
+        setError("Không thể tải danh sách lô chế biến");
+      }
     };
     fetchBatches();
   }, []);
@@ -92,6 +108,13 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
 
     if (form.outputQuantity <= 0) {
       setError("Khối lượng đầu ra phải lớn hơn 0");
+      setLoading(false);
+      return;
+    }
+
+    // Validate khối lượng không được quá lớn (ví dụ: 100,000 kg)
+    if (form.outputQuantity > 100000) {
+      setError("Khối lượng đầu ra không được vượt quá 100,000");
       setLoading(false);
       return;
     }
@@ -216,19 +239,31 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
       <div>
         <label className="block font-medium mb-1">Chọn lô chế biến</label>
         {batches.length === 0 ? (
-          <p className="text-sm italic text-gray-500">Không có lô chế biến khả dụng</p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center">
+                <span className="text-yellow-600 text-xs">!</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-yellow-800">Không có lô chế biến khả dụng</p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Chỉ hiển thị lô có trạng thái: Chưa bắt đầu, Đang xử lý, hoặc Chờ đánh giá
+                </p>
+              </div>
+            </div>
+          </div>
         ) : (
           <select
             name="batchId"
             value={form.batchId}
             onChange={handleChange}
             required
-            className="w-full border px-3 py-2 rounded"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
             <option value="">-- Chọn lô --</option>
             {batches.map((b) => (
               <option key={b.batchId} value={b.batchId}>
-                {b.batchCode}
+                {b.batchCode} - {b.status}
               </option>
             ))}
           </select>
@@ -243,30 +278,43 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
           value={form.progressDate}
           onChange={handleChange}
           required
+          className="border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
         />
       </div>
 
-      <div>
-        <label className="block font-medium mb-1">Khối lượng đầu ra</label>
-        <Input
-          type="number"
-          name="outputQuantity"
-          value={form.outputQuantity}
-          onChange={handleChange}
-          min={0}
-          required
-        />
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block font-medium mb-1">Khối lượng đầu ra</label>
+          <Input
+            type="number"
+            name="outputQuantity"
+            value={form.outputQuantity}
+            onChange={handleChange}
+            min={0}
+            step={0.01}
+            required
+            className="border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="0"
+          />
+        </div>
 
-      <div>
-        <label className="block font-medium mb-1">Đơn vị</label>
-        <Input name="outputUnit" value={form.outputUnit} onChange={handleChange} required />
+        <div>
+          <label className="block font-medium mb-1">Đơn vị</label>
+          <Input 
+            name="outputUnit" 
+            value={form.outputUnit} 
+            onChange={handleChange} 
+            required 
+            className="border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="kg"
+          />
+        </div>
       </div>
 
       {/* Parameters Section */}
-      <div>
-        <label className="block font-medium mb-1">Thông số kỹ thuật (tùy chọn)</label>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <label className="block font-medium mb-3 text-gray-700">Thông số kỹ thuật (tùy chọn)</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Tên thông số</label>
             <Input
@@ -275,7 +323,7 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
               value={form.parameterName}
               onChange={handleChange}
               placeholder="VD: Nhiệt độ, Độ ẩm..."
-              className="text-sm"
+              className="text-sm border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
           
@@ -287,7 +335,7 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
               value={form.parameterValue}
               onChange={handleChange}
               placeholder="VD: 25, 80%..."
-              className="text-sm"
+              className="text-sm border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
           
@@ -299,7 +347,7 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
               value={form.unit}
               onChange={handleChange}
               placeholder="VD: °C, %, kg..."
-              className="text-sm"
+              className="text-sm border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
         </div>
@@ -312,14 +360,42 @@ export default function CreateProcessingProgressForm({ defaultBatchId = "", onSu
         onVideoFilesChange={handleVideoFilesChange}
       />
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      {success && <p className="text-green-600 text-sm">{success}</p>}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center">
+              <span className="text-red-600 text-xs">!</span>
+            </div>
+            <p className="text-red-700 text-sm font-medium">{error}</p>
+          </div>
+        </div>
+      )}
+      
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+              <span className="text-green-600 text-xs">✓</span>
+            </div>
+            <p className="text-green-700 text-sm font-medium">{success}</p>
+          </div>
+        </div>
+      )}
 
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => router.back()}
+          className="px-6 py-2"
+        >
           Huỷ
         </Button>
-        <Button type="submit" disabled={loading}>
+        <Button 
+          type="submit" 
+          disabled={loading}
+          className="px-6 py-2 bg-orange-600 hover:bg-orange-700"
+        >
           {loading ? "Đang lưu..." : "Lưu"}
         </Button>
       </div>
