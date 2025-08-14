@@ -14,6 +14,7 @@ export interface ProcessingBatchEvaluation {
   evaluatedAt?: string;
   createdAt: string;
   updatedAt: string;
+  expertName?: string; // Tên của expert đánh giá
 }
 
 // Interface dựa trên EvaluationCreateDto từ BE
