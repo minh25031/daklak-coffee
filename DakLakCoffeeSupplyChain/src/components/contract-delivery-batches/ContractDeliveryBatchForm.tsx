@@ -355,7 +355,7 @@ export default function ContractDeliveryBatchForm({
       {/* Fields chính */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block mb-1 text-sm font-medium">Số đợt</label>
+          <label className="block mb-1 text-sm font-medium">Đợt giao</label>
           <Input
             type="number"
             min={1}

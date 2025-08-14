@@ -11,6 +11,8 @@ type Props = {
   placeholder?: string; // để TS không báo lỗi
   disabled?: boolean;
   className?: string;
+  error?: boolean;
+  errorMessage?: string;
 };
 
 export function DatePicker({
@@ -21,6 +23,8 @@ export function DatePicker({
   placeholder = "yyyy-MM-dd",
   disabled,
   className,
+  error,
+  errorMessage,
 }: Props) {
   return (
     <div className="space-y-1">
@@ -32,8 +36,13 @@ export function DatePicker({
         required={required}
         placeholder={placeholder} // có thể bị browser bỏ qua
         disabled={disabled}
-        className={className}
+        className={`${className || ""} ${error ? "border-red-500" : ""}`}
       />
+      {error && errorMessage && (
+        <p className="text-red-500 text-xs mt-1">
+          {errorMessage}
+        </p>
+      )}
     </div>
   );
 }
