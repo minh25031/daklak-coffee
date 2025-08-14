@@ -63,7 +63,8 @@ export default function CreateOutboundReceiptPage() {
       try {
         const res = await getAllOutboundRequests();
         if (res?.status === 1 && Array.isArray(res.data)) {
-          setRequests(res.data.filter((r: OutboundRequest) => r.status === 'Accepted'));
+          // Lấy tất cả yêu cầu để hiển thị thống kê
+          setRequests(res.data);
         } else {
           toast.error(res?.message || 'Không thể tải yêu cầu xuất kho.');
         }
@@ -82,6 +83,12 @@ export default function CreateOutboundReceiptPage() {
         setSummary(null);
         setRemainingQuantity(null);
         setExportedQuantity('');
+        return;
+      }
+
+      // Chỉ xử lý nếu request đã được duyệt
+      if (selectedRequest.status !== 'Accepted') {
+        toast.error('Chỉ có thể tạo phiếu xuất kho từ yêu cầu đã được duyệt.');
         return;
       }
 
@@ -195,19 +202,33 @@ export default function CreateOutboundReceiptPage() {
                     </label>
                     <Select value={selectedRequestId} onValueChange={setSelectedRequestId}>
                       <SelectTrigger className="h-12 border-2 border-orange-200 focus:border-orange-500 focus:ring-orange-500">
-                        <SelectValue placeholder="-- Chọn yêu cầu xuất kho --" />
+                        <SelectValue placeholder="-- Chọn yêu cầu xuất kho đã duyệt --" />
                       </SelectTrigger>
                       <SelectContent>
-                        {requests.map((request) => (
-                          <SelectItem key={request.outboundRequestId} value={request.outboundRequestId}>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{request.outboundRequestCode}</span>
-                              <span className="text-xs text-gray-500">({request.status})</span>
-                            </div>
-                          </SelectItem>
-                        ))}
+                        {requests
+                          .filter(request => request.status === 'Accepted')
+                          .map((request) => (
+                            <SelectItem key={request.outboundRequestId} value={request.outboundRequestId}>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{request.outboundRequestCode}</span>
+                                <span className="text-xs text-green-600 font-semibold">✓ Đã duyệt</span>
+                              </div>
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
+                    
+                    {/* Thông báo nếu không có yêu cầu nào được duyệt */}
+                    {requests.filter(r => r.status === 'Accepted').length === 0 && requests.length > 0 && (
+                      <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-yellow-800">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          <span className="text-sm">Chưa có yêu cầu nào được duyệt. Vui lòng chờ quản lý duyệt yêu cầu.</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Request Details */}
@@ -405,14 +426,40 @@ export default function CreateOutboundReceiptPage() {
                       <span className="font-medium text-blue-600">{requests.length}</span>
                     </div>
                     <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
-                      <span className="text-gray-600">Đã duyệt:</span>
-                      <span className="font-medium text-green-600">{requests.filter(r => r.status === 'Accepted').length}</span>
+                      <span className="font-medium text-green-600">Đã duyệt:</span>
+                      <span className="font-bold text-green-700">{requests.filter(r => r.status === 'Accepted').length}</span>
                     </div>
                     <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
                       <span className="text-gray-600">Đang chờ:</span>
                       <span className="font-medium text-orange-600">{requests.filter(r => r.status === 'Pending').length}</span>
                     </div>
+                    <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
+                      <span className="text-gray-600">Đã từ chối:</span>
+                      <span className="font-medium text-red-600">{requests.filter(r => r.status === 'Rejected').length}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
+                      <span className="text-gray-600">Hoàn thành:</span>
+                      <span className="font-medium text-purple-600">{requests.filter(r => r.status === 'Completed').length}</span>
+                    </div>
                   </div>
+                  
+                  {/* Tỷ lệ duyệt */}
+                  {requests.length > 0 && (
+                    <div className="mt-4 p-3 bg-white/50 rounded-lg">
+                      <div className="text-xs text-gray-600 mb-2">Tỷ lệ duyệt</div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${Math.round((requests.filter(r => r.status === 'Accepted').length / requests.length) * 100)}%` 
+                          }}
+                        ></div>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {Math.round((requests.filter(r => r.status === 'Accepted').length / requests.length) * 100)}%
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
