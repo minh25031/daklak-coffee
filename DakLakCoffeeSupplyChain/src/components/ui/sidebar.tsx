@@ -136,7 +136,7 @@ export function SidebarGroup() {
         icon: iconMap.dashboard,
       },
       {
-        title: "Cam kết với doanh nghiệp",
+        title: "Cam kết kế hoạch thu mua",
         href: "/dashboard/farmer/farming-commitments",
         icon: iconMap.contracts,
       },
@@ -438,7 +438,7 @@ export function SidebarGroup() {
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                 )}
               >
-                Cam kết với nông dân
+                Cam kết kế hoạch thu mua
               </Link>
             </div>
           )}
