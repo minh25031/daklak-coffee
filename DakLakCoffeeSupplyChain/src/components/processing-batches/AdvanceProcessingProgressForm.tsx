@@ -1,25 +1,29 @@
 // AdvanceProcessingProgressForm.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import imageCompression from "browser-image-compression";
 import { advanceToNextProcessingProgress } from "@/lib/api/processingBatchProgress";
+import { getProcessingBatchById } from "@/lib/api/processingBatches";
+import { getProcessingStagesByMethodId, ProcessingStage } from "@/lib/api/processingStages";
+
+import { ProcessingBatchProgress } from "@/lib/api/processingBatchProgress";
+import { ProcessingStatus } from "@/lib/constants/batchStatus";
 
 interface Props {
   batchId: string;
-  latestProgress: {
-    stageName: string;
-    stepIndex: number;
-    progressDate: string;
-  };
+  latestProgress: ProcessingBatchProgress;
+  batchStatus?: string; // Thêm batch status
   onSuccess?: () => void;
 }
 
 export default function AdvanceProcessingProgressForm({
   batchId,
   latestProgress,
+  batchStatus,
   onSuccess,
 }: Props) {
   const [progressDate, setProgressDate] = useState(
@@ -27,6 +31,7 @@ export default function AdvanceProcessingProgressForm({
   );
   const [outputQuantity, setOutputQuantity] = useState<number>(0);
   const [outputUnit, setOutputUnit] = useState("kg");
+  const [stageDescription, setStageDescription] = useState(""); // Thêm state cho description
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [parameterName, setParameterName] = useState("");
@@ -34,12 +39,81 @@ export default function AdvanceProcessingProgressForm({
   const [unit, setUnit] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // State cho stage selection
+  const [availableStages, setAvailableStages] = useState<ProcessingStage[]>([]);
+  const [selectedStageId, setSelectedStageId] = useState<string>("");
+  const [loadingStages, setLoadingStages] = useState(false);
+
+  // Tính toán button text dựa trên batch status
+  const getButtonText = () => {
+    if (loading) return "Đang lưu...";
+    
+    if (batchStatus === ProcessingStatus.InProgress) {
+      return "Cập nhật lại bước không đạt";
+    }
+    
+    return "Xác nhận cập nhật";
+  };
+
+  // Load available stages khi component mount
+  useEffect(() => {
+    const loadStages = async () => {
+      try {
+        setLoadingStages(true);
+        const batch = await getProcessingBatchById(batchId);
+                 if (batch && batch.methodId) {
+           let availableStages: ProcessingStage[] = [];
+           
+           try {
+             // Thử lấy stages thực tế từ API
+             const stages = await getProcessingStagesByMethodId(batch.methodId);
+             availableStages = stages
+               .filter(stage => !stage.isDeleted)
+               .sort((a, b) => a.orderIndex - b.orderIndex);
+           } catch (err) {
+             console.log("API chưa có, sử dụng mock data");
+             // Fallback: Sử dụng mock data khi API chưa có
+             availableStages = [
+               { stageId: "stage_1", stageName: "Thu hoạch", orderIndex: 1, methodId: batch.methodId, isRequired: true, isDeleted: false },
+               { stageId: "stage_2", stageName: "Làm sạch", orderIndex: 2, methodId: batch.methodId, isRequired: true, isDeleted: false },
+               { stageId: "stage_3", stageName: "Phân loại", orderIndex: 3, methodId: batch.methodId, isRequired: true, isDeleted: false },
+               { stageId: "stage_4", stageName: "Phơi", orderIndex: 4, methodId: batch.methodId, isRequired: true, isDeleted: false },
+               { stageId: "stage_5", stageName: "Rang", orderIndex: 5, methodId: batch.methodId, isRequired: true, isDeleted: false },
+               { stageId: "stage_6", stageName: "Đóng gói", orderIndex: 6, methodId: batch.methodId, isRequired: true, isDeleted: false }
+             ];
+           }
+           
+           setAvailableStages(availableStages);
+           
+           // Tự động chọn stage tiếp theo
+           const currentStageIndex = availableStages.findIndex(s => s.stageId === latestProgress.stageId);
+           if (currentStageIndex >= 0 && currentStageIndex < availableStages.length - 1) {
+             setSelectedStageId(availableStages[currentStageIndex + 1].stageId);
+           } else {
+             setSelectedStageId(availableStages[currentStageIndex]?.stageId || "");
+           }
+        }
+      } catch (err) {
+        console.error("Error loading stages:", err);
+      } finally {
+        setLoadingStages(false);
+      }
+    };
+
+    loadStages();
+  }, [batchId, latestProgress.stageId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    if (!selectedStageId) {
+      setError("Vui lòng chọn công đoạn thực hiện");
+      setLoading(false);
+      return;
+    }
     if (!progressDate) {
       setError("Vui lòng chọn ngày thực hiện");
       setLoading(false);
@@ -75,9 +149,12 @@ export default function AdvanceProcessingProgressForm({
       }
 
       await advanceToNextProcessingProgress(batchId, {
+        stageId: selectedStageId, // Stage được chọn từ dropdown
+        currentStageId: latestProgress.stageId, // Stage hiện tại để backend validate
         progressDate,
         outputQuantity,
         outputUnit,
+        stageDescription: stageDescription || undefined, // Thêm description
         photoFiles: compressedPhotos.length ? compressedPhotos : undefined,
         videoFiles: videoFiles.length ? videoFiles : undefined,
         parameterName: parameterName || undefined,
@@ -87,14 +164,34 @@ export default function AdvanceProcessingProgressForm({
       });
 
       onSuccess?.();
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-          (err?.message === "Network Error"
-            ? "Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối."
-            : err?.message || "Không thể cập nhật tiến trình.")
-      );
-    } finally {
+         } catch (err: any) {
+       // Xử lý lỗi chi tiết hơn
+       let errorMessage = "Không thể cập nhật tiến trình.";
+       
+       if (err?.response?.data?.message) {
+         errorMessage = err.response.data.message;
+       } else if (err?.response?.data?.error) {
+         errorMessage = err.response.data.error;
+       } else if (err?.message === "Network Error") {
+         errorMessage = "Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối.";
+       } else if (err?.message) {
+         errorMessage = err.message;
+       }
+
+       // Thêm thông tin về stage hiện tại và stage được chọn
+       const selectedStage = availableStages.find(s => s.stageId === selectedStageId);
+       const currentStage = availableStages.find(s => s.stageId === latestProgress.stageId);
+       
+       if (selectedStage && currentStage) {
+         errorMessage += `\n\nThông tin chi tiết:`;
+         errorMessage += `\n• Stage hiện tại: ${currentStage.stageName} (ID: ${currentStage.stageId})`;
+         errorMessage += `\n• Stage được chọn: ${selectedStage.stageName} (ID: ${selectedStage.stageId})`;
+         errorMessage += `\n• Thứ tự hiện tại: Bước ${currentStage.orderIndex}`;
+         errorMessage += `\n• Thứ tự được chọn: Bước ${selectedStage.orderIndex}`;
+       }
+       
+       setError(errorMessage);
+     } finally {
       setLoading(false);
     }
   };
@@ -156,6 +253,32 @@ export default function AdvanceProcessingProgressForm({
             </h3>
 
             <div className="space-y-3">
+              {/* Stage Selection */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Công đoạn thực hiện
+                </label>
+                {loadingStages ? (
+                  <div className="w-full h-10 bg-gray-100 rounded-md flex items-center justify-center text-sm text-gray-500">
+                    Đang tải danh sách công đoạn...
+                  </div>
+                ) : (
+                  <select
+                    value={selectedStageId}
+                    onChange={(e) => setSelectedStageId(e.target.value)}
+                    className="w-full h-10 text-sm border border-gray-300 rounded-md px-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    required
+                  >
+                    <option value="">Chọn công đoạn...</option>
+                    {availableStages.map((stage) => (
+                      <option key={stage.stageId} value={stage.stageId}>
+                        Bước {stage.orderIndex}: {stage.stageName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Ngày thực hiện
@@ -195,6 +318,19 @@ export default function AdvanceProcessingProgressForm({
                   required
                   className="w-full h-10 text-sm"
                   placeholder="kg, g, tấn..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Mô tả công đoạn
+                </label>
+                <Textarea
+                  value={stageDescription}
+                  onChange={(e) => setStageDescription(e.target.value)}
+                  placeholder="Mô tả chi tiết về công đoạn thực hiện, phương pháp, điều kiện môi trường..."
+                  className="w-full min-h-[80px] text-sm resize-none"
+                  rows={3}
                 />
               </div>
             </div>
@@ -395,22 +531,26 @@ export default function AdvanceProcessingProgressForm({
                 Đang lưu...
               </div>
             ) : (
-              "Xác nhận cập nhật"
+              getButtonText()
             )}
           </Button>
         </div>
 
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="font-medium">Lỗi:</span>
-              {error}
-            </div>
-          </div>
-        )}
+                 {error && (
+           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+             <div className="flex items-start gap-2">
+               <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+               </svg>
+               <div className="flex-1">
+                 <div className="font-medium mb-2">Lỗi cập nhật tiến trình:</div>
+                 <div className="whitespace-pre-line text-xs leading-relaxed">
+                   {error}
+                 </div>
+               </div>
+             </div>
+           </div>
+         )}
       </div>
     </form>
   );

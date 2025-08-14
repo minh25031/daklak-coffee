@@ -23,7 +23,7 @@ export default function ProcessingWastesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  // ✅ Load danh sách chất thải
+      // Load danh sách chất thải
   useEffect(() => {
     async function fetchWastes() {
       try {
@@ -38,7 +38,7 @@ export default function ProcessingWastesPage() {
           setTotalPages(1);
         }
       } catch (err) {
-        console.error("❌ Lỗi tải danh sách chất thải:", err);
+        console.error("Lỗi tải danh sách chất thải:", err);
         AppToast.error("Không thể tải danh sách chất thải");
         setWastes([]);
         setTotalPages(1);

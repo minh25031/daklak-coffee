@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAllProcessingWastes, ProcessingWaste } from "@/lib/api/processingBatchWastes";
 import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
-import { Eye, Edit, Trash2, Recycle, Scale, Calendar, AlertTriangle } from "lucide-react";
+import { Eye, Edit, Trash2, Recycle, Scale, Calendar, AlertTriangle, Search } from "lucide-react";
 
 // Import các component chung
 import ProcessingHeader from "@/components/processing/ProcessingHeader";
@@ -278,7 +278,7 @@ export default function ManagerProcessingWastesPage() {
             <div className="text-sm text-gray-600">
               {search && (
                 <span className="flex items-center gap-1">
-                  <span>🔍</span>
+                  <Search className="w-4 h-4" />
                   <span>Tìm thấy {filtered.length} kết quả</span>
                 </span>
               )}

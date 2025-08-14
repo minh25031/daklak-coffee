@@ -588,7 +588,8 @@ export function SidebarGroup() {
             className={cn(
               "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
               pathname.startsWith("/dashboard/manager/reports") ||
-                pathname.startsWith("/dashboard/manager/processing")
+              pathname.startsWith("/dashboard/manager/processing") ||
+              pathname === "/dashboard/manager/processing/farmer-batches"
                 ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
@@ -627,6 +628,17 @@ export function SidebarGroup() {
                 )}
               >
                 Danh sách lô chế biến
+              </Link>
+              <Link
+                href="/dashboard/manager/processing/farmer-batches"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  pathname === "/dashboard/manager/processing/farmer-batches"
+                    ? "bg-orange-100 text-orange-700 shadow-sm"
+                    : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+                )}
+              >
+                Lô chế biến theo nông dân
               </Link>
 
               <Link

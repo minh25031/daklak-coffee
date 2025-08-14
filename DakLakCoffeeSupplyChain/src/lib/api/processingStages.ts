@@ -1,28 +1,40 @@
 import api from "./axios";
 
-export interface ProcessingStages {
+export interface ProcessingStage {
   stageId: string;
-  stageCode: string;
   stageName: string;
-  description: string;
-  estimatedDuration?: number;
-  sequenceOrder?: number;
-  isActive: boolean;
-  createdAt: string;
+  orderIndex: number;
+  methodId: number;
+  isRequired: boolean;
+  isDeleted: boolean;
 }
 
-export async function getAllProcessingStagess(): Promise<ProcessingStages[]> {
+export async function getProcessingStagesByMethodId(methodId: number): Promise<ProcessingStage[]> {
   try {
-    const res = await api.get("/ProcessingStages");
-    return res.data;
+    console.log("🔍 DEBUG: Calling GET /ProcessingStages/method/{methodId} API...");
+    const res = await api.get(`/ProcessingStages/method/${methodId}`);
+    console.log("🔍 DEBUG: GET /ProcessingStages response:", res);
+    return res.data || [];
   } catch (err) {
-    console.error("Lỗi getAllProcessingStagess:", err);
+    console.error("❌ Lỗi getProcessingStagesByMethodId:", err);
+    return [];
+  }
+}
+
+export async function getAllProcessingStages(): Promise<ProcessingStage[]> {
+  try {
+    console.log("🔍 DEBUG: Calling GET /ProcessingStages API...");
+    const res = await api.get("/ProcessingStages");
+    console.log("🔍 DEBUG: GET /ProcessingStages response:", res);
+    return res.data || [];
+  } catch (err) {
+    console.error("❌ Lỗi getAllProcessingStages:", err);
     return [];
   }
 }
 
 export async function createProcessingStages(
-  data: Omit<ProcessingStages, "stageId">
+  data: Omit<ProcessingStage, "stageId">
 ) {
   try {
     const res = await api.post("/ProcessingStages", data);
@@ -35,7 +47,7 @@ export async function createProcessingStages(
 
 export async function updateProcessingStages(
   id: string,
-  data: Omit<ProcessingStages, "stageId">
+  data: Omit<ProcessingStage, "stageId">
 ) {
   try {
     const res = await api.put(`/ProcessingStagess/${id}`, data);
