@@ -115,10 +115,10 @@ export default function FarmingCommitmentDetailPageForBusiness() {
               <strong>Tổng chi phí:</strong>{" "}
               {commitment.totalPrice.toLocaleString()} VNĐ
             </div>
-            <div>
+            {/* <div>
               <strong>Tổng tiền thuế:</strong>{" "}
               {commitment.totalTaxPrice.toLocaleString()} VNĐ
-            </div>
+            </div> */}
             <div>
               <strong>Tổng tiền trả trước:</strong>{" "}
               {commitment.totalAdvancePayment.toLocaleString()} VNĐ
@@ -190,10 +190,10 @@ export default function FarmingCommitmentDetailPageForBusiness() {
                           <strong>Giá cả thống nhất:</strong>{" "}
                           {detail.confirmedPrice?.toLocaleString()} VNĐ/kg
                         </div>
-                        <div>
+                        {/* <div>
                           <strong>Tiền thuế:</strong>{" "}
                           {detail.taxPrice?.toLocaleString()} VNĐ/kg
-                        </div>
+                        </div> */}
                         <div>
                           <strong>Tiền trả trước:</strong>{" "}
                           {detail.advancePayment?.toLocaleString()} VNĐ

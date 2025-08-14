@@ -42,8 +42,19 @@ api.interceptors.response.use(
     // LỖI TỪ BACKEND CÓ RESPONSE
     if (error.response) {
       const status = error.response.status;
+      
+      // Giữ nguyên cấu trúc lỗi validation (400 Bad Request)
+      if (status === 400 && error.response.data?.errors) {
+        return Promise.reject(error.response.data);
+      }
+      
+      // Giữ nguyên cấu trúc lỗi business logic (409 Conflict, etc.)
+      if (status === 409 && error.response.data?.message) {
+        return Promise.reject(error.response.data);
+      }
+      
+      // Các trường hợp khác: chuyển thành string như cũ
       let message = "";
-
       if (typeof error.response.data === "string" && error.response.data.trim() !== "") {
         message = error.response.data;
       } else {
@@ -53,7 +64,7 @@ api.interceptors.response.use(
           HTTP_ERROR_MESSAGES[status] ||
           `Lỗi HTTP status ${status}`;
       }
-
+      
       return Promise.reject(message);
     }
 
