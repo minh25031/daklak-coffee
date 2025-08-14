@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
     Search,
     Plus,
@@ -15,17 +15,17 @@ import {
     Eye,
     ChevronLeft,
     ChevronRight
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAuthGuard } from "@/lib/auth/useAuthGuard";
-import { getAllCropSeasons } from "@/lib/api/cropSeasons";
-import { CropSeasonListItem } from "@/lib/api/cropSeasons";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { toast } from "sonner";
-import { CropSeasonStatusMap, CropSeasonStatusValue } from "@/lib/constants/cropSeasonStatus";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAuthGuard } from '@/lib/auth/useAuthGuard';
+import { getAllCropSeasons } from '@/lib/api/cropSeasons';
+import { CropSeasonListItem } from '@/lib/api/cropSeasons';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { toast } from 'sonner';
+import { CropSeasonStatusMap, CropSeasonStatusValue } from '@/lib/constants/cropSeasonStatus';
 
 export default function ManagerCropSeasonsPage() {
-    useAuthGuard(["manager"]);
+    useAuthGuard(['manager']);
     const router = useRouter();
 
     const [cropSeasons, setCropSeasons] = useState<CropSeasonListItem[]>([]);
@@ -139,6 +139,16 @@ export default function ManagerCropSeasonsPage() {
                                 Theo dõi và quản lý các mùa vụ cà phê của nông dân
                             </p>
                         </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                onClick={() => router.push("/dashboard/manager/progress-deviation")}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                                size="sm"
+                            >
+                                <TrendingUp className="w-4 h-4 mr-2" />
+                                Phân tích sai lệch
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Statistics Cards */}
@@ -197,13 +207,12 @@ export default function ManagerCropSeasonsPage() {
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     className="pr-8 border-orange-200 focus:border-orange-500 focus:ring-orange-500"
-                                    size={1}
                                 />
                                 <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-orange-400" />
                             </div>
                         </div>
 
-                        {/* Status Filter */}
+                        {/* Filter Panel */}
                         <div className="bg-white rounded-lg shadow-sm border border-orange-100">
                             <div className="p-4 border-b border-orange-100">
                                 <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
@@ -239,192 +248,124 @@ export default function ManagerCropSeasonsPage() {
                                 ))}
                             </div>
                         </div>
-
-                        {/* Farmer Filter */}
-                        <div className="bg-white rounded-lg shadow-sm border border-orange-100">
-                            <div className="p-4 border-b border-orange-100">
-                                <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-orange-600" />
-                                    Lọc theo nông dân
-                                </h2>
-                            </div>
-                            <div className="p-4 space-y-2">
-                                <button
-                                    onClick={() => setSelectedFarmer(null)}
-                                    className={cn(
-                                        "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
-                                        !selectedFarmer
-                                            ? "bg-orange-100 text-orange-700"
-                                            : "text-gray-600 hover:bg-orange-50"
-                                    )}
-                                >
-                                    Tất cả nông dân
-                                </button>
-                                {uniqueFarmers.map((farmer) => (
-                                    <button
-                                        key={farmer.farmerId}
-                                        onClick={() => setSelectedFarmer(farmer.farmerId)}
-                                        className={cn(
-                                            "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors truncate",
-                                            selectedFarmer === farmer.farmerId
-                                                ? "bg-orange-100 text-orange-700"
-                                                : "text-gray-600 hover:bg-orange-50"
-                                        )}
-                                        title={farmer.farmerName}
-                                    >
-                                        {farmer.farmerName}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
                     </aside>
 
                     {/* Main Content */}
                     <main className="flex-1">
                         <div className="bg-white rounded-lg shadow-sm border border-orange-100 overflow-hidden">
-                            <div className="p-4 border-b border-orange-100">
-                                <h2 className="text-lg font-semibold text-gray-800">
+                            {/* Table Header */}
+                            <div className="px-6 py-4 border-b border-orange-100">
+                                <h3 className="text-lg font-semibold text-gray-800">
                                     Danh sách mùa vụ ({filteredSeasons.length})
-                                </h2>
+                                </h3>
                             </div>
 
-                            <div className="p-4">
-                                {pagedSeasons.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <Calendar className="w-6 h-6 text-orange-600" />
-                                        </div>
-                                        <p className="text-gray-500 text-sm font-medium mb-1">
-                                            Không tìm thấy mùa vụ nào
-                                        </p>
-                                        <p className="text-gray-400 text-xs">
-                                            {search || selectedStatus || selectedFarmer
-                                                ? "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm"
-                                                : "Chưa có mùa vụ nào được đăng ký"
-                                            }
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm">
-                                            <thead className="bg-gradient-to-r from-orange-50 to-amber-50 text-gray-700 font-semibold">
-                                                <tr>
-                                                    <th className="px-4 py-3 text-left">Tên mùa vụ</th>
-                                                    <th className="px-4 py-3 text-left">Nông dân</th>
-                                                    <th className="px-4 py-3 text-center">Diện tích (ha)</th>
-                                                    <th className="px-4 py-3 text-center">Trạng thái</th>
-                                                    <th className="px-4 py-3 text-center">Thời gian</th>
-                                                    <th className="px-4 py-3 text-center">Hành động</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-orange-100">
-                                                {pagedSeasons.map((season) => (
-                                                    <tr key={season.cropSeasonId} className="hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all duration-200">
-                                                        <td className="px-4 py-3 text-left">
-                                                            <div className="font-medium text-gray-900">
-                                                                {season.seasonName}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-left">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                                                                    <Users className="w-3 h-3 text-blue-600" />
-                                                                </div>
-                                                                <span className="text-gray-700">{season.farmerName}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <div className="flex items-center justify-center gap-1">
-                                                                <MapPin className="w-3 h-3 text-orange-500" />
-                                                                <span className="font-medium text-gray-700">{season.area} ha</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <span className={cn(
-                                                                "px-2 py-1 rounded-full text-xs font-medium",
-                                                                getStatusColor(season.status as CropSeasonStatusValue)
-                                                            )}>
-                                                                {CropSeasonStatusMap[season.status as CropSeasonStatusValue]?.label || season.status}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <div className="text-xs text-gray-600">
-                                                                <div>{new Date(season.startDate).toLocaleDateString('vi-VN')}</div>
-                                                                <div>đến {new Date(season.endDate).toLocaleDateString('vi-VN')}</div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                onClick={() => handleSeasonClick(season.cropSeasonId)}
-                                                                className="text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-md"
-                                                                title="Xem chi tiết"
-                                                            >
-                                                                <Eye className="w-4 h-4" />
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
+                            {/* Table */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-orange-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-orange-600 uppercase tracking-wider">
+                                                Mùa vụ
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-orange-600 uppercase tracking-wider">
+                                                Nông dân
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-orange-600 uppercase tracking-wider">
+                                                Diện tích
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-orange-600 uppercase tracking-wider">
+                                                Trạng thái
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-orange-600 uppercase tracking-wider">
+                                                Hành động
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-orange-100">
+                                        {pagedSeasons.map((season) => (
+                                            <tr
+                                                key={season.cropSeasonId}
+                                                className="hover:bg-orange-50 transition-colors cursor-pointer"
+                                                onClick={() => handleSeasonClick(season.cropSeasonId)}
+                                            >
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div>
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {season.seasonName}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500">
+                                                            {season.startDate && new Date(season.startDate).toLocaleDateString('vi-VN')}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-900">
+                                                        {season.farmerName}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-900">
+                                                        {season.area?.toFixed(1) || 0} ha
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={cn(
+                                                        "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                                                        getStatusColor(season.status)
+                                                    )}>
+                                                        {CropSeasonStatusMap[season.status]?.label || season.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleSeasonClick(season.cropSeasonId);
+                                                        }}
+                                                    >
+                                                        <Eye className="w-4 h-4 mr-2" />
+                                                        Xem chi tiết
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                        </div>
 
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="bg-white rounded-lg shadow-sm p-4 border border-orange-100 mt-4">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs text-gray-600">
-                                        Hiển thị {(currentPage - 1) * pageSize + 1}–
-                                        {Math.min(currentPage * pageSize, filteredSeasons.length)} trong{" "}
-                                        {filteredSeasons.length} mùa vụ
-                                    </span>
-                                    <div className="flex items-center gap-1">
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="px-6 py-4 border-t border-orange-100 flex items-center justify-between">
+                                    <div className="text-sm text-gray-700">
+                                        Hiển thị {((currentPage - 1) * pageSize) + 1} đến {Math.min(currentPage * pageSize, filteredSeasons.length)} trong tổng số {filteredSeasons.length} mùa vụ
+                                    </div>
+                                    <div className="flex items-center gap-2">
                                         <Button
                                             variant="outline"
                                             size="sm"
+                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                             disabled={currentPage === 1}
-                                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                            className="border-orange-200 hover:bg-orange-50"
                                         >
                                             <ChevronLeft className="w-4 h-4" />
                                         </Button>
-                                        {[...Array(totalPages).keys()].map((_, i) => {
-                                            const page = i + 1;
-                                            return (
-                                                <Button
-                                                    key={page}
-                                                    onClick={() => setCurrentPage(page)}
-                                                    size="sm"
-                                                    className={cn(
-                                                        "rounded-md px-2 py-1 text-xs",
-                                                        page === currentPage
-                                                            ? "bg-orange-600 text-white"
-                                                            : "bg-white text-gray-700 border border-orange-200 hover:bg-orange-50"
-                                                    )}
-                                                >
-                                                    {page}
-                                                </Button>
-                                            );
-                                        })}
+                                        <span className="text-sm text-gray-700">
+                                            Trang {currentPage} / {totalPages}
+                                        </span>
                                         <Button
                                             variant="outline"
                                             size="sm"
+                                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                             disabled={currentPage === totalPages}
-                                            onClick={() =>
-                                                setCurrentPage((p) => Math.min(totalPages, p + 1))
-                                            }
-                                            className="border-orange-200 hover:bg-orange-50"
                                         >
                                             <ChevronRight className="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </main>
                 </div>
             </div>

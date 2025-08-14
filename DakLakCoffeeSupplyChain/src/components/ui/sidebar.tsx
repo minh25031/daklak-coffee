@@ -146,6 +146,11 @@ export function SidebarGroup() {
         icon: iconMap.crops,
       },
       {
+        title: "Phân tích sai lệch tiến độ",
+        href: "/dashboard/farmer/progress-deviation",
+        icon: <FiBarChart2 />,
+      },
+      {
         title: "Tư vấn",
         href: "/dashboard/farmer/request-feedback",
         icon: iconMap.feedback,
@@ -274,6 +279,11 @@ export function SidebarGroup() {
         title: "Mùa vụ",
         href: "/dashboard/manager/crop-seasons",
         icon: <FiClipboard />,
+      },
+      {
+        title: "Phân tích sai lệch tiến độ",
+        href: "/dashboard/manager/progress-deviation",
+        icon: <FiBarChart2 />,
       },
       {
         title: "Báo cáo",
