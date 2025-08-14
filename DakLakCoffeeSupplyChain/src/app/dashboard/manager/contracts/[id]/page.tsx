@@ -34,7 +34,7 @@ const contractStatusMap: Record<string, { label: string; className: string }> =
   {
     NotStarted: {
       label: "Chưa bắt đầu",
-      className: "bg-gray-200 text-gray-700",
+      className: "bg-gray-100 text-gray-600",
     },
     PreparingDelivery: {
       label: "Chuẩn bị giao",
@@ -42,13 +42,24 @@ const contractStatusMap: Record<string, { label: string; className: string }> =
     },
     InProgress: {
       label: "Đang thực hiện",
-      className: "bg-yellow-100 text-yellow-800",
+      className: "bg-green-100 text-green-700",
+    },
+    PartialCompleted: {
+      label: "Hoàn thành một phần",
+      className: "bg-yellow-100 text-yellow-700",
     },
     Completed: {
       label: "Hoàn thành",
-      className: "bg-green-100 text-green-700",
+      className: "bg-blue-100 text-blue-700",
     },
-    Cancelled: { label: "Đã huỷ", className: "bg-red-100 text-red-700" },
+    Cancelled: {
+      label: "Đã huỷ",
+      className: "bg-red-100 text-red-700",
+    },
+    Expired: {
+      label: "Quá hạn",
+      className: "bg-orange-100 text-orange-700",
+    },
   };
 
 export default function ContractDetailPage() {
