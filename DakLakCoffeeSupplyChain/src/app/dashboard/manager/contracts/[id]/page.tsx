@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   getContractDetails,
   ContractViewDetailsDto,
@@ -133,11 +134,12 @@ export default function ContractDetailPage() {
     if (!itemToDelete?.contractItemId) return;
     try {
       await softDeleteContractItem(itemToDelete.contractItemId);
+      toast.success("Xóa mặt hàng thành công!");
       setShowDeleteDialog(false);
       reloadContract();
     } catch (error) {
       console.error("Xoá thất bại:", error);
-      alert("Không thể xoá mặt hàng. Vui lòng thử lại.");
+      toast.error("Không thể xoá mặt hàng. Vui lòng thử lại.");
     }
   };
 
