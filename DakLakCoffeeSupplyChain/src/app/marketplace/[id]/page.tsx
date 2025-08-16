@@ -295,9 +295,11 @@ export default function PlanDetailPage() {
                       <td className='py-2 px-3 border-r border-orange-200'>
                         {detail.coffeeType?.typeName}
                       </td>
-                      <td className='py-2 px-3 border-r border-orange-200'>
-                        {detail.processingMethodName}
-                      </td>
+                      {detail.processingMethodName && (
+                        <td className='py-2 px-3 border-r border-orange-200'>
+                          {detail.processingMethodName}
+                        </td>
+                      )}
                       <td className='py-2 px-3 border-r border-orange-200'>
                         {detail.targetQuantity?.toLocaleString()}
                       </td>

@@ -190,9 +190,11 @@ export default function MarketplacePage() {
                             <td className='px-3 py-2'>
                               {detail.coffeeType?.typeName}
                             </td>
-                            <td className='px-3 py-2'>
+                            {detail.processingMethodName && (
+                              <td className='px-3 py-2'>
                               {detail.processingMethodName}
                             </td>
+                            )}
                             <td className='px-3 py-2'>
                               {detail.targetQuantity}
                             </td>

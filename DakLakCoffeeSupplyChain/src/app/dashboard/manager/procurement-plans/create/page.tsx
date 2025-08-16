@@ -11,7 +11,9 @@ import {
   ProcessingMethod,
 } from "@/lib/api/processingMethods";
 import { createProcurementPlan } from "@/lib/api/procurementPlans";
-import ProcurementPlanForm, { ProcurementPlanFormData } from "@/components/procurement-plan/ProcurementPlanForm";
+import ProcurementPlanForm, {
+  ProcurementPlanFormData,
+} from "@/components/procurement-plan/ProcurementPlanForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CreateProcurementPlanPage() {
@@ -42,7 +44,7 @@ export default function CreateProcurementPlanPage() {
     ],
   });
 
-  const validateForm = () => {
+  const validateForm = (): { isValid: boolean; errorMessages: string[] } => {
     const newErrors: Record<string, string> = {};
     if (!form.title) newErrors.title = "Vui lòng nhập tên kế hoạch.";
     if (!form.startDate) newErrors.startDate = "Vui lòng chọn ngày bắt đầu.";
@@ -58,10 +60,10 @@ export default function CreateProcurementPlanPage() {
         if (!detail.coffeeTypeId) {
           newErrors[`coffeeTypeId-${index}`] = "Vui lòng chọn loại cà phê.";
         }
-        if (detail.processMethodId === 0) {
-          newErrors[`processMethodId-${index}`] =
-            "Vui lòng chọn phương pháp sơ chế.";
-        }
+        // if (detail.processMethodId === 0) {
+        //   newErrors[`processMethodId-${index}`] =
+        //     "Vui lòng chọn phương pháp sơ chế.";
+        // }
         if (detail.targetQuantity <= 100) {
           newErrors[`targetQuantity-${index}`] =
             "Sản lượng mục tiêu phải lớn hơn 100 kg.";
@@ -85,7 +87,12 @@ export default function CreateProcurementPlanPage() {
       });
     }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    //return Object.keys(newErrors).length === 0;
+    const errorMessages = Object.values(newErrors);
+    return {
+      isValid: errorMessages.length === 0,
+      errorMessages,
+    };
   };
 
   const [availableCoffeeTypes, setAvailableCoffeeTypes] = useState<
@@ -153,34 +160,44 @@ export default function CreateProcurementPlanPage() {
 
   // Xóa card detail (ngoại trừ card mặc định thứ 0)
   const handleRemoveDetail = (index: number) => {
-  if (!form) return;
+    if (!form) return;
 
-  // Chỉ cho phép xóa khi số lượng chi tiết >= 2
-  if (form.procurementPlansDetails.length <= 1) return;
+    // Chỉ cho phép xóa khi số lượng chi tiết >= 2
+    if (form.procurementPlansDetails.length <= 1) return;
 
-  setForm({
-    ...form,
-    procurementPlansDetails: form.procurementPlansDetails.filter(
-      (_, i) => i !== index
-    ),
-  });
-};
+    setForm({
+      ...form,
+      procurementPlansDetails: form.procurementPlansDetails.filter(
+        (_, i) => i !== index
+      ),
+    });
+  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    if (!validateForm()) {
-      setIsSubmitting(false);
-      AppToast.error(getErrorMessage(errors));
-      return;
-    }
+    const { isValid, errorMessages } = validateForm();
+    if (!isValid) {
+    setIsSubmitting(false);
+    AppToast.error(errorMessages.join('\n')); // show errors from validateForm directly
+    return;
+  }
 
     try {
-      await createProcurementPlan({
+      const formDataToSend = {
         ...form,
         startDate: formatDate(form.startDate),
         endDate: formatDate(form.endDate),
-      });
+        procurementPlansDetails: form.procurementPlansDetails.map((detail) => {
+          const copy = { ...detail } as Partial<typeof detail>;
+          // Nếu processMethodId = 0 (hoặc giá trị đại diện cho không chọn), xóa thuộc tính này
+          if (!copy.processMethodId || copy.processMethodId === 0) {
+            delete copy.processMethodId;
+          }
+          return copy;
+        }),
+      };
+      await createProcurementPlan(formDataToSend);
 
       AppToast.success("Tạo kết hoạch thành công!");
       router.push("/dashboard/manager/procurement-plans");
