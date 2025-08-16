@@ -1,21 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAllWarehouseReceipts } from '@/lib/api/warehouseReceipt';
+import { getAllWarehouseReceipts, getDebugInfo } from '@/lib/api/warehouseReceipt';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Eye, Search, ChevronLeft, ChevronRight, Package, TrendingUp, CheckCircle, Clock, Plus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Eye, Search, ChevronLeft, ChevronRight, Package, TrendingUp, CheckCircle, Clock, Plus, Leaf, Coffee } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function ReceiptListPage() {
   const [receipts, setReceipts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [coffeeTypeFilter, setCoffeeTypeFilter] = useState<string>('all'); // 'all', 'processed', 'fresh'
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const pageSize = 15; // Tăng từ 10 lên 15 để hiển thị nhiều hơn
+  const pageSize = 15;
 
   useEffect(() => {
     (async () => {
@@ -23,7 +25,22 @@ export default function ReceiptListPage() {
       try {
         const res = await getAllWarehouseReceipts();
         if (res.status === 1) {
-          setReceipts(Array.isArray(res.data) ? res.data : []);
+          const data = Array.isArray(res.data) ? res.data : [];
+          console.log('🔍 DEBUG: Receipts data:', data);
+          // Debug logging cho từng receipt
+          data.forEach((receipt, index) => {
+            console.log(`🔍 DEBUG: Receipt ${index + 1}:`, {
+              receiptCode: receipt.receiptCode,
+              batchId: receipt.batchId,
+              detailId: receipt.detailId,
+              batchCode: receipt.batchCode,
+              detailCode: receipt.detailCode,
+              cropSeasonName: receipt.cropSeasonName,
+              coffeeType: receipt.coffeeType,
+              type: getCoffeeType(receipt)
+            });
+          });
+          setReceipts(data);
         } else {
           toast.error(res.message || 'Không thể tải danh sách phiếu nhập kho');
         }
@@ -33,13 +50,90 @@ export default function ReceiptListPage() {
         setLoading(false);
       }
     })();
+
+    // Debug call
+    (async () => {
+      try {
+        const debugRes = await getDebugInfo();
+        if (debugRes.status === 1) {
+          console.log('🔍 DEBUG API Response:', debugRes.data);
+        }
+      } catch (err) {
+        console.error('❌ Debug API error:', err);
+      }
+    })();
   }, []);
 
-  const filtered = receipts.filter((r) =>
-    r.receiptCode?.toLowerCase().includes(search.toLowerCase()) ||
-    r.warehouseName?.toLowerCase().includes(search.toLowerCase()) ||
-    r.batchCode?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Helper function to determine coffee type
+  const getCoffeeType = (receipt: any) => {
+    // Cà phê đã sơ chế: có batchId, không có detailId
+    if (receipt.batchId && !receipt.detailId) return 'processed';
+    // Cà phê tươi: không có batchId, có detailId
+    if (!receipt.batchId && receipt.detailId) return 'fresh';
+    return 'unknown';
+  };
+
+  const getCoffeeTypeLabel = (receipt: any) => {
+    const type = getCoffeeType(receipt);
+    switch (type) {
+      case 'fresh': return 'Cà phê tươi';
+      case 'processed': return 'Cà phê đã sơ chế';
+      default: return 'Không xác định';
+    }
+  };
+
+  const getCoffeeTypeIcon = (receipt: any) => {
+    const type = getCoffeeType(receipt);
+    switch (type) {
+      case 'fresh': return <Leaf className="w-4 h-4 text-orange-600" />;
+      case 'processed': return <Coffee className="w-4 h-4 text-purple-600" />;
+      default: return <Package className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  // Helper function to get coffee information
+  const getCoffeeInfo = (receipt: any) => {
+    if (receipt.batchId && !receipt.detailId) {
+      // Cà phê sơ chế
+      return {
+        type: 'processed',
+        label: 'Cà phê đã sơ chế',
+        info: receipt.batchCode || 'N/A',
+        icon: <Coffee className="w-4 h-4 text-purple-600" />
+      };
+    } else if (!receipt.batchId && receipt.detailId) {
+      // Cà phê tươi
+      return {
+        type: 'fresh',
+        label: 'Cà phê tươi',
+        info: receipt.cropSeasonName || receipt.detailCode || 'N/A',
+        icon: <Leaf className="w-4 h-4 text-orange-600" />
+      };
+    } else {
+      return {
+        type: 'unknown',
+        label: 'Không xác định',
+        info: 'N/A',
+        icon: <Package className="w-4 h-4 text-gray-600" />
+      };
+    }
+  };
+
+  const filtered = receipts.filter((r) => {
+    const matchesSearch = 
+      r.receiptCode?.toLowerCase().includes(search.toLowerCase()) ||
+      r.warehouseName?.toLowerCase().includes(search.toLowerCase()) ||
+      r.batchCode?.toLowerCase().includes(search.toLowerCase()) ||
+      r.cropSeasonName?.toLowerCase().includes(search.toLowerCase()) ||
+      r.detailCode?.toLowerCase().includes(search.toLowerCase()) ||
+      r.coffeeType?.toLowerCase().includes(search.toLowerCase());
+
+    const matchesType = 
+      coffeeTypeFilter === 'all' || 
+      getCoffeeType(r) === coffeeTypeFilter;
+
+    return matchesSearch && matchesType;
+  });
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -47,6 +141,12 @@ export default function ReceiptListPage() {
   const confirmedReceipts = filtered.filter(r => r?.note?.toLowerCase().includes('confirmed at'));
   const pendingReceipts = filtered.filter(r => !r?.note?.toLowerCase().includes('confirmed at'));
   const totalQuantity = filtered.reduce((sum, r) => sum + (r.receivedQuantity || 0), 0);
+
+  // Thống kê theo loại cà phê
+  const freshCoffeeReceipts = filtered.filter(r => getCoffeeType(r) === 'fresh');
+  const processedCoffeeReceipts = filtered.filter(r => getCoffeeType(r) === 'processed');
+  const freshCoffeeQuantity = freshCoffeeReceipts.reduce((sum, r) => sum + (r.receivedQuantity || 0), 0);
+  const processedCoffeeQuantity = processedCoffeeReceipts.reduce((sum, r) => sum + (r.receivedQuantity || 0), 0);
 
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
@@ -96,6 +196,36 @@ export default function ReceiptListPage() {
             </div>
           </div>
 
+          {/* Filter Panel */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-gray-700">Lọc theo loại cà phê:</span>
+              <Select value={coffeeTypeFilter} onValueChange={(value) => {
+                setCoffeeTypeFilter(value);
+                setPage(1);
+              }}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Chọn loại cà phê" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả ({filtered.length})</SelectItem>
+                  <SelectItem value="fresh">
+                    <div className="flex items-center gap-2">
+                      <Leaf className="w-4 h-4 text-orange-600" />
+                      Cà phê tươi ({freshCoffeeReceipts.length})
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="processed">
+                    <div className="flex items-center gap-2">
+                      <Coffee className="w-4 h-4 text-purple-600" />
+                      Cà phê đã sơ chế ({processedCoffeeReceipts.length})
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
@@ -135,6 +265,34 @@ export default function ReceiptListPage() {
               </div>
             </div>
           </div>
+
+          {/* Coffee Type Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Leaf className="w-4 h-4" />
+                    <p className="text-orange-100 text-sm font-medium">Cà phê tươi</p>
+                  </div>
+                  <p className="text-xl font-bold">{freshCoffeeReceipts.length} phiếu</p>
+                  <p className="text-orange-200 text-sm">{freshCoffeeQuantity.toLocaleString()} kg</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Coffee className="w-4 h-4" />
+                    <p className="text-purple-100 text-sm font-medium">Cà phê đã sơ chế</p>
+                  </div>
+                  <p className="text-xl font-bold">{processedCoffeeReceipts.length} phiếu</p>
+                  <p className="text-purple-200 text-sm">{processedCoffeeQuantity.toLocaleString()} kg</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Table */}
@@ -151,7 +309,7 @@ export default function ReceiptListPage() {
                   <Package className="w-8 h-8 text-gray-400" />
                 </div>
                 <p className="text-gray-500 font-medium">Không có phiếu nhập kho nào</p>
-                <p className="text-gray-400 text-sm">Thử thay đổi từ khóa tìm kiếm</p>
+                <p className="text-gray-400 text-sm">Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -160,7 +318,8 @@ export default function ReceiptListPage() {
                     <tr>
                       <th className="px-4 py-3 text-left border-b border-green-200">Mã phiếu</th>
                       <th className="px-4 py-3 text-left border-b border-green-200">Kho</th>
-                      <th className="px-4 py-3 text-left border-b border-green-200">Lô hàng</th>
+                      <th className="px-4 py-3 text-left border-b border-green-200">Loại cà phê</th>
+                      <th className="px-4 py-3 text-left border-b border-green-200">Thông tin</th>
                       <th className="px-4 py-3 text-right border-b border-green-200">Số lượng</th>
                       <th className="px-4 py-3 text-center border-b border-green-200">Trạng thái</th>
                       <th className="px-4 py-3 text-center border-b border-green-200">Xem</th>
@@ -169,13 +328,35 @@ export default function ReceiptListPage() {
                   <tbody>
                     {paged.map((r) => {
                       const isConfirmed = r?.note?.toLowerCase().includes('confirmed at');
-                      // Kiểm tra nhiều trường có thể chứa số lượng
                       const quantity = r.receivedQuantity || r.quantity || r.requestedQuantity || 0;
+                      const coffeeInfo = getCoffeeInfo(r);
+                      
+                      // Thông tin hiển thị
+                      let displayInfo = '';
+                      if (coffeeInfo.type === 'fresh') {
+                        displayInfo = r.cropSeasonName || r.detailCode || 'N/A';
+                      } else if (coffeeInfo.type === 'processed') {
+                        displayInfo = r.batchCode || 'N/A';
+                      } else {
+                        displayInfo = 'N/A';
+                      }
+
                       return (
                         <tr key={r.receiptId} className="border-b border-gray-100 hover:bg-green-50 transition-colors">
                           <td className="px-4 py-3 font-mono font-semibold text-gray-900">{r.receiptCode}</td>
                           <td className="px-4 py-3 text-gray-700">{r.warehouseName}</td>
-                          <td className="px-4 py-3 text-gray-700 font-mono text-sm">{r.batchCode}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              {coffeeInfo.icon}
+                              <span className={`font-medium ${
+                                coffeeInfo.type === 'fresh' ? 'text-orange-700' : 
+                                coffeeInfo.type === 'processed' ? 'text-purple-700' : 'text-gray-700'
+                              }`}>
+                                {coffeeInfo.label}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700 font-mono text-sm">{displayInfo}</td>
                           <td className="px-4 py-3 text-right font-semibold">
                             {quantity > 0 ? `${quantity.toLocaleString()} kg` : 'N/A'}
                           </td>

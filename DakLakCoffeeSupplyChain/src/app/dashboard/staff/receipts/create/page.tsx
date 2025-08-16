@@ -22,16 +22,23 @@ type InboundRequest = {
   inboundRequestId: string;
   requestCode: string;
   status: string;
-  batchId: string;
+  batchId?: string; // Cà phê sơ chế
+  detailId?: string; // Cà phê tươi
   requestedQuantity?: number; // Thêm số lượng yêu cầu
   preferredDeliveryDate?: string; // Thêm ngày giao dự kiến
   note?: string; // Thêm ghi chú
+  // Thông tin hiển thị
+  batchCode?: string;
+  detailCode?: string;
+  coffeeType?: string;
+  cropSeasonName?: string;
 };
 
 type InventoryRaw = any;
 type Inventory = {
   inventoryId: string;
   batchId?: string;
+  detailId?: string;  // Cho cà phê tươi
   productName?: string;
   quantity?: number;
   unit?: string;
@@ -48,6 +55,14 @@ function normalizeInventory(x: InventoryRaw): Inventory {
       x?.batch?.id ??
       x?.processingBatchId ??
       x?.ProcessingBatchId,
+    detailId:
+      x.detailId ??
+      x.DetailId ??
+      x.detailID ??
+      x.DetailID ??
+      x?.detail?.id ??
+      x?.cropSeasonDetailId ??
+      x?.CropSeasonDetailId,
     productName: x.productName ?? x.ProductName ?? x?.product?.name ?? x.Name,
     quantity: x.quantity ?? x.Quantity ?? x.quantityKg ?? x.Qty,
     unit: x.unit ?? x.Unit ?? (x.quantityKg ? "kg" : undefined),
@@ -133,11 +148,13 @@ export default function CreateReceiptPage() {
 
   const filteredInv = useMemo(() => {
     const b = selectedRequest?.batchId?.toLowerCase()?.trim();
-    if (!b) return [];
+    const d = selectedRequest?.detailId?.toLowerCase()?.trim();
+    if (!b && !d) return [];
     return (allInvOfWarehouse || []).filter(iv =>
-      iv.batchId?.toLowerCase()?.trim() === b
+      (b && iv.batchId?.toLowerCase()?.trim() === b) ||
+      (d && iv.detailId?.toLowerCase()?.trim() === d)
     );
-  }, [allInvOfWarehouse, selectedRequest?.batchId]);
+  }, [allInvOfWarehouse, selectedRequest?.batchId, selectedRequest?.detailId]);
 
   // ✅ Tính tổng tồn kho hiện có của batch tại kho
   const totalExisting = useMemo(
@@ -146,13 +163,14 @@ export default function CreateReceiptPage() {
   );
 
   async function handleCreateEmptyInventory() {
-    if (!warehouseId || !selectedRequest?.batchId) return;
+    if (!warehouseId || (!selectedRequest?.batchId && !selectedRequest?.detailId)) return;
     setCreatingInv(true);
     setError('');
     try {
       const payload = {
         warehouseId,
         batchId: selectedRequest.batchId,
+        detailId: selectedRequest.detailId,
         quantity: 0,
         unit: "kg",
         note: "Khởi tạo tồn kho trống từ màn tạo phiếu",
@@ -181,17 +199,27 @@ export default function CreateReceiptPage() {
       setError('Vui lòng chọn đầy đủ Phiếu yêu cầu và Kho.');
       return;
     }
-    if (!selectedRequest?.batchId) {
-      setError("Không tìm thấy batchId tương ứng với phiếu yêu cầu.");
+    if (!selectedRequest?.batchId && !selectedRequest?.detailId) {
+      setError("Không tìm thấy thông tin sản phẩm (batchId hoặc detailId) tương ứng với phiếu yêu cầu.");
       return;
     }
 
     const receiptData = {
       warehouseId,
       batchId: selectedRequest.batchId,
+      detailId: selectedRequest.detailId,
       receivedQuantity: 0,
       note,
     };
+
+    // Debug logging
+    console.log('🔍 DEBUG: Creating receipt with data:', {
+      warehouseId,
+      batchId: selectedRequest.batchId,
+      detailId: selectedRequest.detailId,
+      requestCode: selectedRequest.requestCode,
+      coffeeType: selectedRequest.batchId ? 'Processed' : selectedRequest.detailId ? 'Fresh' : 'Unknown'
+    });
 
     try {
       const res = await createWarehouseReceipt(inboundRequestId, receiptData);
@@ -320,6 +348,32 @@ export default function CreateReceiptPage() {
                                 <span className="ml-2 text-gray-700">{selectedRequest.preferredDeliveryDate}</span>
                               </div>
                             )}
+                            {/* Thông tin loại cà phê */}
+                            <div>
+                              <span className="font-medium text-gray-700">Loại cà phê:</span>
+                              <span className="ml-2 px-2 py-1 text-xs rounded-full font-medium">
+                                {selectedRequest.batchId ? (
+                                  <span className="bg-purple-100 text-purple-800">☕ Cà phê sơ chế</span>
+                                ) : selectedRequest.detailId ? (
+                                  <span className="bg-orange-100 text-orange-800">🌱 Cà phê tươi</span>
+                                ) : (
+                                  <span className="bg-gray-100 text-gray-800">❓ Không xác định</span>
+                                )}
+                              </span>
+                            </div>
+                            {/* Thông tin chi tiết sản phẩm */}
+                            <div>
+                              <span className="font-medium text-gray-700">Thông tin:</span>
+                              <span className="ml-2 text-gray-700 font-semibold">
+                                {selectedRequest.batchId ? (
+                                  selectedRequest.batchCode || 'Lô sơ chế'
+                                ) : selectedRequest.detailId ? (
+                                  selectedRequest.cropSeasonName || selectedRequest.detailCode || 'Mùa vụ'
+                                ) : (
+                                  'N/A'
+                                )}
+                              </span>
+                            </div>
                           </div>
                           {selectedRequest.note && (
                             <div className="mt-3 pt-3 border-t border-green-200">

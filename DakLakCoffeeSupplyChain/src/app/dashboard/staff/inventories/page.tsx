@@ -6,13 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, Search, Eye, Package, TrendingUp, AlertTriangle, Warehouse, Coffee } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronLeft, ChevronRight, Search, Eye, Package, TrendingUp, AlertTriangle, Warehouse, Coffee, Leaf } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function StaffInventoryListPage() {
   const [inventories, setInventories] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [coffeeTypeFilter, setCoffeeTypeFilter] = useState<string>('all'); // 'all', 'processed', 'fresh'
+  const [warehouseFilter, setWarehouseFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const pageSize = 10;
@@ -38,11 +41,78 @@ export default function StaffInventoryListPage() {
     fetchData();
   }, []);
 
-  const filtered = inventories.filter((inv) =>
-    inv.inventoryCode?.toLowerCase().includes(search.toLowerCase()) ||
-    inv.warehouseName?.toLowerCase().includes(search.toLowerCase()) ||
-    inv.productName?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Helper function to determine coffee type
+  const getCoffeeType = (inventory: any) => {
+    // Cà phê đã sơ chế: có batchId, không có detailId
+    if (inventory.batchId && !inventory.detailId) return 'processed';
+    // Cà phê tươi: không có batchId, có detailId
+    if (!inventory.batchId && inventory.detailId) return 'fresh';
+    return 'unknown';
+  };
+
+  const getCoffeeTypeLabel = (inventory: any) => {
+    const type = getCoffeeType(inventory);
+    switch (type) {
+      case 'fresh': return 'Cà phê tươi';
+      case 'processed': return 'Cà phê đã sơ chế';
+      default: return 'Không xác định';
+    }
+  };
+
+  const getCoffeeTypeIcon = (inventory: any) => {
+    const type = getCoffeeType(inventory);
+    switch (type) {
+      case 'fresh': return <Leaf className="w-4 h-4 text-orange-600" />;
+      case 'processed': return <Coffee className="w-4 h-4 text-purple-600" />;
+      default: return <Package className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getCoffeeInfo = (inventory: any) => {
+    const type = getCoffeeType(inventory);
+    switch (type) {
+      case 'fresh':
+        return {
+          label: 'Mùa vụ',
+          value: inventory?.cropSeasonName || inventory?.detailCode || 'N/A',
+          color: 'text-orange-700'
+        };
+      case 'processed':
+        return {
+          label: 'Lô sơ chế',
+          value: inventory?.batchCode ? `${inventory.batchCode} - ${inventory.coffeeTypeName || 'Đã sơ chế'}` : 'N/A',
+          color: 'text-purple-700'
+        };
+      default:
+        return {
+          label: 'Thông tin',
+          value: 'N/A',
+          color: 'text-gray-700'
+        };
+    }
+  };
+
+  const filtered = inventories.filter((inv) => {
+    const matchesSearch = 
+      inv.inventoryCode?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.warehouseName?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.productName?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.batchCode?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.cropSeasonName?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.detailCode?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.coffeeTypeNameDetail?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.typeName?.toLowerCase().includes(search.toLowerCase());
+
+    const matchesType = 
+      coffeeTypeFilter === 'all' || 
+      getCoffeeType(inv) === coffeeTypeFilter;
+
+    const matchesWarehouse = 
+      warehouseFilter === 'all' || 
+      inv.warehouseName === warehouseFilter;
+
+    return matchesSearch && matchesType && matchesWarehouse;
+  });
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paged = filtered.slice(
@@ -57,6 +127,15 @@ export default function StaffInventoryListPage() {
   const outOfStockCount = totalInventories - inStockCount;
   const uniqueWarehouses = [...new Set(inventories.map(inv => inv.warehouseName))].length;
   const uniqueProducts = [...new Set(inventories.map(inv => inv.productName))].length;
+
+  // Thống kê theo loại cà phê
+  const freshCoffeeInventories = inventories.filter(inv => getCoffeeType(inv) === 'fresh');
+  const processedCoffeeInventories = inventories.filter(inv => getCoffeeType(inv) === 'processed');
+  const freshCoffeeQuantity = freshCoffeeInventories.reduce((sum, inv) => sum + (inv.quantity || 0), 0);
+  const processedCoffeeQuantity = processedCoffeeInventories.reduce((sum, inv) => sum + (inv.quantity || 0), 0);
+
+  // Danh sách kho để filter
+  const warehouseList = [...new Set(inventories.map(inv => inv.warehouseName))].filter(Boolean);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-6 space-y-6">
@@ -128,9 +207,42 @@ export default function StaffInventoryListPage() {
         </Card>
       </div>
 
-      {/* Thanh tìm kiếm */}
+      {/* Thống kê theo loại cà phê */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg border-0">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Leaf className="w-5 h-5" />
+                  <p className="text-orange-100 text-sm font-medium">Cà phê tươi</p>
+                </div>
+                <p className="text-2xl font-bold">{freshCoffeeInventories.length} lô</p>
+                <p className="text-orange-200 text-sm">{freshCoffeeQuantity.toLocaleString()} kg</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg border-0">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Coffee className="w-5 h-5" />
+                  <p className="text-purple-100 text-sm font-medium">Cà phê đã sơ chế</p>
+                </div>
+                <p className="text-2xl font-bold">{processedCoffeeInventories.length} lô</p>
+                <p className="text-purple-200 text-sm">{processedCoffeeQuantity.toLocaleString()} kg</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Thanh tìm kiếm và lọc */}
       <Card className="bg-white shadow-md border-0">
-        <CardContent className="p-3">
+        <CardContent className="p-4">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -151,9 +263,56 @@ export default function StaffInventoryListPage() {
                 </Badge>
               )}
             </div>
-            <div className="text-sm text-gray-500">
-              📋 Tồn kho được tạo tự động từ phiếu nhập kho và lô sơ chế
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Loại cà phê:</span>
+                <Select value={coffeeTypeFilter} onValueChange={(value) => {
+                  setCoffeeTypeFilter(value);
+                  setCurrentPage(1);
+                }}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Chọn loại" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả ({inventories.length})</SelectItem>
+                    <SelectItem value="fresh">
+                      <div className="flex items-center gap-2">
+                        <Leaf className="w-4 h-4 text-orange-600" />
+                        Cà phê tươi ({freshCoffeeInventories.length})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="processed">
+                      <div className="flex items-center gap-2">
+                        <Coffee className="w-4 h-4 text-purple-600" />
+                        Cà phê đã sơ chế ({processedCoffeeInventories.length})
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Kho:</span>
+                <Select value={warehouseFilter} onValueChange={(value) => {
+                  setWarehouseFilter(value);
+                  setCurrentPage(1);
+                }}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Chọn kho" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả kho</SelectItem>
+                    {warehouseList.map((warehouse) => (
+                      <SelectItem key={warehouse} value={warehouse}>
+                        {warehouse}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+          </div>
+          <div className="mt-3 text-sm text-gray-500">
+            📋 Tồn kho được tạo tự động từ phiếu nhập kho và lô sơ chế
           </div>
         </CardContent>
       </Card>
@@ -181,7 +340,7 @@ export default function StaffInventoryListPage() {
                 <Package className="w-8 h-8 text-gray-400" />
               </div>
               <p className="text-gray-500 text-lg mb-2">Không có tồn kho nào</p>
-              <p className="text-gray-400 text-sm">Thử thay đổi từ khóa tìm kiếm</p>
+              <p className="text-gray-400 text-sm">Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc</p>
             </div>
           ) : (
             <>
@@ -190,49 +349,73 @@ export default function StaffInventoryListPage() {
                   <thead className="bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 font-semibold">
                     <tr>
                       <th className="px-4 py-3 text-left border-b border-green-200">Tên kho</th>
-                      <th className="px-4 py-3 text-left border-b border-green-200">Sản phẩm</th>
-                      <th className="px-4 py-3 text-left border-b border-green-200">Lô sản xuất</th>
                       <th className="px-4 py-3 text-left border-b border-green-200">Loại cà phê</th>
+                      <th className="px-4 py-3 text-left border-b border-green-200">Thông tin</th>
+                      <th className="px-4 py-3 text-left border-b border-green-200">Sản phẩm</th>
                       <th className="px-4 py-3 text-right border-b border-green-200">Số lượng (kg)</th>
                       <th className="px-4 py-3 text-center border-b border-green-200">Trạng thái</th>
                       <th className="px-4 py-3 text-center border-b border-green-200">Hành động</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {paged.map((inv) => (
-                      <tr
-                        key={inv.inventoryId}
-                        className="border-b border-gray-100 hover:bg-green-50 transition-colors"
-                      >
-                        <td className="px-4 py-3 font-semibold text-gray-900">{inv.warehouseName}</td>
-                        <td className="px-4 py-3 text-gray-700">{inv.productName || 'N/A'}</td>
-                        <td className="px-4 py-3 text-gray-700 font-mono text-sm">{inv.batchCode}</td>
-                        <td className="px-4 py-3 text-green-700 font-medium">{inv.coffeeTypeName || 'N/A'}</td>
-                        <td className="px-4 py-3 text-right font-semibold">{inv.quantity?.toLocaleString() ?? 0}</td>
-                        <td className="px-4 py-3 text-center">
-                          <Badge
-                            className={`capitalize px-3 py-1 rounded-full font-medium text-sm shadow-sm ${
-                              inv.quantity > 0
-                                ? 'bg-green-100 text-green-800 border-green-200'
-                                : 'bg-red-100 text-red-800 border-red-200'
-                            }`}
-                          >
-                            {inv.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <Link href={`/dashboard/staff/inventories/${inv.inventoryId}`}>
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className="text-green-600 hover:text-green-800 border-green-200 hover:bg-green-50"
+                    {paged.map((inv) => {
+                      const coffeeType = getCoffeeType(inv);
+                      const coffeeTypeLabel = getCoffeeTypeLabel(inv);
+                      const coffeeTypeIcon = getCoffeeTypeIcon(inv);
+                      const coffeeInfo = getCoffeeInfo(inv);
+
+                      return (
+                        <tr
+                          key={inv.inventoryId}
+                          className="border-b border-gray-100 hover:bg-green-50 transition-colors"
+                        >
+                          <td className="px-4 py-3 font-semibold text-gray-900">{inv.warehouseName}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              {coffeeTypeIcon}
+                              <span className={`font-medium ${
+                                coffeeType === 'fresh' ? 'text-orange-700' : 
+                                coffeeType === 'processed' ? 'text-purple-700' : 'text-gray-700'
+                              }`}>
+                                {coffeeTypeLabel}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700 font-mono text-sm">
+                            <span className={coffeeInfo.color}>{coffeeInfo.value}</span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">
+                            {coffeeType === 'fresh' 
+                              ? (inv.coffeeTypeNameDetail || inv.coffeeTypeName || 'Cà phê tươi')
+                              : (inv.productName || 'N/A')
+                            }
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold">{inv.quantity?.toLocaleString() ?? 0}</td>
+                          <td className="px-4 py-3 text-center">
+                            <Badge
+                              className={`capitalize px-3 py-1 rounded-full font-medium text-sm shadow-sm ${
+                                inv.quantity > 0
+                                  ? 'bg-green-100 text-green-800 border-green-200'
+                                  : 'bg-red-100 text-red-800 border-red-200'
+                              }`}
                             >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
+                              {inv.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Link href={`/dashboard/staff/inventories/${inv.inventoryId}`}>
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                className="text-green-600 hover:text-green-800 border-green-200 hover:bg-green-50"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

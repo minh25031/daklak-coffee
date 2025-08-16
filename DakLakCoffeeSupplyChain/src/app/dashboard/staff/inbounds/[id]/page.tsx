@@ -120,14 +120,26 @@ export default function InboundRequestDetailPage() {
             {request.businessStaffName && (
               <DetailItem icon={<User className="text-green-500" />} label="Nhân viên phụ trách" value={request.businessStaffName} />
             )}
-            {request.batchCode && (
-              <DetailItem icon={<Layers className="text-orange-500" />} label="Mã lô hàng" value={request.batchCode} />
+            {(request.batchCode || request.detailCode) && (
+              <DetailItem 
+                icon={<Layers className="text-orange-500" />} 
+                label={request.batchCode ? "Mã lô hàng" : "Mã chi tiết"} 
+                value={request.batchCode || request.detailCode || "N/A"} 
+              />
             )}
-            {request.coffeeType && (
-              <DetailItem icon={<Coffee className="text-brown-600" />} label="Loại cà phê" value={request.coffeeType} />
+            {(request.coffeeType || request.coffeeTypeDetail) && (
+              <DetailItem 
+                icon={<Coffee className="text-brown-600" />} 
+                label="Loại cà phê" 
+                value={request.coffeeType || request.coffeeTypeDetail || "N/A"} 
+              />
             )}
-            {request.seasonCode && (
-              <DetailItem icon={<Leaf className="text-lime-500" />} label="Mùa vụ" value={request.seasonCode} />
+            {(request.seasonCode || request.cropSeasonName) && (
+              <DetailItem 
+                icon={<Leaf className="text-lime-500" />} 
+                label="Mùa vụ" 
+                value={request.cropSeasonName || request.seasonCode || "N/A"} 
+              />
             )}
           </div>
 
