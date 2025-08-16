@@ -310,8 +310,10 @@ export default function ContractItemFormDialog({
     try {
       if (mode === "create") {
         await createContractItem(formData as ContractItemCreateDto);
+        toast.success("Thêm mặt hàng thành công!");
       } else {
         await updateContractItem(formData as ContractItemUpdateDto);
+        toast.success("Cập nhật mặt hàng thành công!");
       }
       onSuccess?.();
       onOpenChange(false);
@@ -342,7 +344,14 @@ export default function ContractItemFormDialog({
               message.includes("đã có trong hợp đồng") ||
               message.includes("không tìm thấy") ||
               message.includes("không được vượt quá") ||
+              message.includes("vượt quá") ||
               message.includes("tổng thành tiền") ||
+              message.includes("tổng số lượng") ||
+              message.includes("tổng giá trị") ||
+              message.includes("giới hạn hợp đồng") ||
+              message.includes("VND >") ||
+              message.includes("hiện có") ||
+              message.includes("thêm") ||
               message.includes("BusinessManager") ||
               message.includes("tương ứng với tài khoản") ||
               message.includes("hợp đồng tương ứng") ||
@@ -437,7 +446,14 @@ export default function ContractItemFormDialog({
             errorMessage.includes("đã có trong hợp đồng") ||
             errorMessage.includes("không tìm thấy") ||
             errorMessage.includes("không được vượt quá") ||
+            errorMessage.includes("vượt quá") ||
             errorMessage.includes("tổng thành tiền") ||
+            errorMessage.includes("tổng số lượng") ||
+            errorMessage.includes("tổng giá trị") ||
+            errorMessage.includes("giới hạn hợp đồng") ||
+            errorMessage.includes("VND >") ||
+            errorMessage.includes("hiện có") ||
+            errorMessage.includes("thêm") ||
             errorMessage.includes("BusinessManager") ||
             errorMessage.includes("tương ứng với tài khoản") ||
             errorMessage.includes("hợp đồng tương ứng") ||
