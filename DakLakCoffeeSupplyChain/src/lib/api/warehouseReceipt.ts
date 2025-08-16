@@ -42,6 +42,13 @@ export async function getAllWarehouseReceipts() {
 }
 
 // ================================
+// 🔍 DEBUG INFO
+// ================================
+export async function getDebugInfo() {
+  return await safeFetch(`${BASE_URL}/debug`);
+}
+
+// ================================
 // 📄 GET RECEIPT BY ID
 // ================================
 export async function getWarehouseReceiptById(id: string) {
@@ -55,7 +62,8 @@ export async function createWarehouseReceipt(
   inboundRequestId: string,
   receiptData: {
     warehouseId: string;
-    batchId: string;
+    batchId?: string;
+    detailId?: string;
     receivedQuantity: number;
     note: string;
   }

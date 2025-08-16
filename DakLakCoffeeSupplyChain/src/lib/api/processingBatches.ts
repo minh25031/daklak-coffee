@@ -150,6 +150,26 @@ export async function searchProcessingBatches(query: string): Promise<Processing
   }
 }
 
+export async function getAvailableBatchesForWarehouseRequest(): Promise<any[]> {
+  try {
+    console.log("🔍 DEBUG: Calling GET /ProcessingBatch/warehouse-request/available API...");
+    const res = await api.get("/ProcessingBatch/warehouse-request/available");
+    console.log("🔍 DEBUG: GET /ProcessingBatch/warehouse-request/available response:", res);
+    
+    // Backend trả về ServiceResult {status, message, data}
+    if (res.data && res.data.status === 1 && res.data.data) {
+      console.log("✅ Available batches data:", res.data.data);
+      return res.data.data;
+    } else {
+      console.log("⚠️ No available batches or error response:", res.data);
+      return [];
+    }
+  } catch (err) {
+    console.error("❌ Lỗi getAvailableBatchesForWarehouseRequest:", err);
+    return [];
+  }
+}
+
 export async function getAvailableCoffeeTypes(cropSeasonId: string): Promise<AvailableCoffeeTypesResponse> {
   try {
     console.log("🔍 DEBUG: Calling GET /ProcessingBatch/available-coffee-types/{cropSeasonId} API...");
