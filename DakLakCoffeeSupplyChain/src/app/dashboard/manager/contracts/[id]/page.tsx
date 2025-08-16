@@ -260,15 +260,101 @@ export default function ContractDetailPage() {
             </div>
             {contract.contractFileUrl && (
               <div className="col-span-2">
-                <strong>File hợp đồng:</strong>{" "}
-                <a
-                  href={contract.contractFileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 underline hover:text-blue-800"
-                >
-                  Tải xuống hợp đồng
-                </a>
+                <strong>File hợp đồng:</strong>
+                <div className="mt-2 space-y-2">
+                  {/* Preview ảnh nếu là file ảnh */}
+                  {contract.contractFileUrl.match(
+                    /\.(jpg|jpeg|png|gif|webp)$/i
+                  ) && (
+                    <div className="border rounded-lg p-3 bg-gray-50">
+                      <img
+                        src={contract.contractFileUrl}
+                        alt="Preview hợp đồng"
+                        className="max-w-full h-32 object-contain rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => {
+                          // Mở modal xem ảnh lớn
+                          const modal = window.open(
+                            "",
+                            "_blank",
+                            "width=800,height=600"
+                          );
+                          if (modal) {
+                            modal.document.write(`
+                              <html>
+                                <head>
+                                  <title>Xem hợp đồng: ${
+                                    contract.contractNumber
+                                  }</title>
+                                  <style>
+                                    body { margin: 0; padding: 20px; background: #f5f5f5; font-family: Arial, sans-serif; }
+                                    .container { max-width: 100%; text-align: center; }
+                                    img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+                                    .close-btn { position: fixed; top: 20px; right: 20px; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+                                    .file-info { margin-top: 15px; color: #666; }
+                                  </style>
+                                </head>
+                                <body>
+                                  <button class="close-btn" onclick="window.close()">✕</button>
+                                  <div class="container">
+                                    <img src="${
+                                      contract.contractFileUrl
+                                    }" alt="Hợp đồng" />
+                                    <div class="file-info">
+                                      <strong>File:</strong> ${
+                                        contract.contractFileUrl
+                                          .split("/")
+                                          .pop() || contract.contractFileUrl
+                                      }
+                                    </div>
+                                  </div>
+                                </body>
+                              </html>
+                            `);
+                          }
+                        }}
+                        title="Click để xem ảnh lớn"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        💡 Click vào ảnh để xem lớn hơn
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Link tải xuống và xem trực tiếp */}
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={contract.contractFileUrl}
+                      download
+                      className="text-blue-600 underline hover:text-blue-800 text-sm cursor-pointer"
+                      onClick={(e) => {
+                        // Nếu là URL từ internet, có thể cần xử lý đặc biệt
+                        if (contract.contractFileUrl?.startsWith("http")) {
+                          // Tạo link tải xuống
+                          const link = document.createElement("a");
+                          link.href = contract.contractFileUrl;
+                          link.download =
+                            contract.contractFileUrl.split("/").pop() ||
+                            "contract";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          e.preventDefault();
+                        }
+                      }}
+                    >
+                      📥 Tải xuống hợp đồng
+                    </a>
+                    <span className="text-gray-400">|</span>
+                    <a
+                      href={contract.contractFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-600 underline hover:text-green-800 text-sm"
+                    >
+                      👁️ Xem trực tiếp
+                    </a>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
