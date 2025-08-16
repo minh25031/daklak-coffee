@@ -63,6 +63,10 @@ export default function ContractForm({
   >(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [businessErrors, setBusinessErrors] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
   const router = useRouter();
 
   const getStatusDisplay = (status: string) => {
@@ -139,6 +143,15 @@ export default function ContractForm({
     setFieldErrors({});
     setBusinessErrors([]);
   }, [formData]);
+
+  // Cleanup file preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (filePreviewUrl) {
+        URL.revokeObjectURL(filePreviewUrl);
+      }
+    };
+  }, [filePreviewUrl]);
 
   // Debug logging for errors state
   useEffect(() => {
@@ -720,592 +733,733 @@ export default function ContractForm({
   };
 
   return (
-    <form className="max-w-4xl mx-auto bg-white border rounded-2xl shadow p-8 space-y-6">
-      <h2 className="text-2xl font-semibold text-center mb-6">
-        {isEdit ? "Chỉnh sửa hợp đồng" : "Tạo hợp đồng mới"}
-      </h2>
+    <>
+      {/* Modal xem ảnh zoom */}
+      {showImageModal && modalImageUrl && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 z-50 overflow-auto"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div className="min-h-full flex items-center justify-center p-4">
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              {/* Nút đóng */}
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 z-10"
+              >
+                ✕
+              </button>
 
-      {/* Hiển thị lỗi nghiệp vụ */}
-      {businessErrors.length > 0 && (
-        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-orange-800 font-medium">
-              Cần tuân thủ quy tắc nghiệp vụ:
-            </h3>
-            <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full">
-              {businessErrors.length} quy tắc
-            </span>
+              {/* Ảnh zoom */}
+              <img
+                src={modalImageUrl}
+                alt="Preview zoom"
+                className="max-w-none rounded-lg shadow-2xl"
+                style={{ maxHeight: "90vh" }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <form className="max-w-4xl mx-auto bg-white border rounded-2xl shadow p-8 space-y-6">
+        <h2 className="text-2xl font-semibold text-center mb-6">
+          {isEdit ? "Chỉnh sửa hợp đồng" : "Tạo hợp đồng mới"}
+        </h2>
+
+        {/* Hiển thị lỗi nghiệp vụ */}
+        {businessErrors.length > 0 && (
+          <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-orange-800 font-medium">
+                Cần tuân thủ quy tắc nghiệp vụ:
+              </h3>
+              <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full">
+                {businessErrors.length} quy tắc
+              </span>
+            </div>
+
+            {/* Debug info */}
+            <div className="mb-2 p-2 bg-yellow-100 rounded text-yellow-800 text-xs">
+              Debug: businessErrors = {JSON.stringify(businessErrors)}
+            </div>
+
+            {/* Tóm tắt nhanh */}
+            <div className="mb-3 p-2 bg-orange-100 rounded text-orange-800 text-sm">
+              <strong>📋 Tóm tắt:</strong>
+              {businessErrors.some((err) => err.includes("vượt quá")) &&
+                " Cần điều chỉnh tổng khối lượng/giá trị hợp đồng"}
+              {businessErrors.some((err) => err.includes("cùng loại")) &&
+                " Cần loại bỏ mặt hàng trùng loại"}
+              {businessErrors.some((err) => err.includes("đã tồn tại")) &&
+                " Cần đổi số hợp đồng"}
+              {businessErrors.some((err) => err.includes("không có quyền")) &&
+                " Cần liên hệ admin"}
+            </div>
+
+            {/* Hướng dẫn giải quyết */}
+            <div className="mt-3 pt-3 border-t border-orange-200">
+              <p className="text-orange-600 text-sm font-medium mb-2">
+                💡 Hướng dẫn:
+              </p>
+              <ul className="text-orange-600 text-xs space-y-1">
+                {businessErrors.some((err) => err.includes("vượt quá")) && (
+                  <>
+                    <li>
+                      • Kiểm tra lại tổng khối lượng và giá trị của các mặt hàng
+                    </li>
+                    <li>
+                      • Đảm bảo tổng từ các mặt hàng không vượt quá tổng đã khai
+                      báo
+                    </li>
+                    <li>• Hoặc tăng tổng khối lượng/giá trị hợp đồng lên</li>
+                    {(() => {
+                      const { totalQuantity, totalValue } = calculateTotals();
+                      return (
+                        <>
+                          <li>
+                            • Tổng từ mặt hàng: {totalQuantity.toFixed(1)} kg,{" "}
+                            {totalValue.toLocaleString()} VND
+                          </li>
+                          <li>
+                            • Tổng hợp đồng hiện tại: {data.totalQuantity || 0}{" "}
+                            kg, {data.totalValue || 0} VND
+                          </li>
+                          <li className="mt-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const { totalQuantity, totalValue } =
+                                  calculateTotals();
+                                handleChange("totalQuantity", totalQuantity);
+                                handleChange("totalValue", totalValue);
+                                toast.success("Đã cập nhật tổng từ mặt hàng");
+                              }}
+                              className="text-xs h-6 px-2"
+                            >
+                              Tự động cập nhật tổng
+                            </Button>
+                          </li>
+                        </>
+                      );
+                    })()}
+                  </>
+                )}
+                {businessErrors.some((err) => err.includes("cùng loại")) && (
+                  <li>• Không được có 2 dòng hợp đồng cùng loại cà phê</li>
+                )}
+                {businessErrors.some((err) => err.includes("đã tồn tại")) && (
+                  <li>• Số hợp đồng đã tồn tại, hãy đổi số khác</li>
+                )}
+                {businessErrors.some((err) =>
+                  err.includes("không có quyền")
+                ) && <li>• Liên hệ admin để được cấp quyền phù hợp</li>}
+                {businessErrors.some((err) =>
+                  err.includes("không được âm")
+                ) && <li>• Kiểm tra các giá trị số không được âm</li>}
+                {businessErrors.some(
+                  (err) =>
+                    err.includes("phải lớn hơn") || err.includes("phải nhỏ hơn")
+                ) && <li>• Kiểm tra các điều kiện về giá trị min/max</li>}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block mb-1 text-sm font-medium">
+              Số hợp đồng
+            </label>
+            <Input
+              placeholder="VD: CT001"
+              value={data.contractNumber}
+              onChange={(e) => handleChange("contractNumber", e.target.value)}
+              required
+              className={
+                hasFieldError("contractNumber") ? "border-red-500" : ""
+              }
+            />
+            {hasFieldError("contractNumber") && (
+              <p className="text-red-500 text-xs mt-1">
+                {getFieldError("contractNumber")}
+              </p>
+            )}
           </div>
 
-          {/* Debug info */}
-          <div className="mb-2 p-2 bg-yellow-100 rounded text-yellow-800 text-xs">
-            Debug: businessErrors = {JSON.stringify(businessErrors)}
+          <div>
+            <label className="block mb-1 text-sm font-medium">Tiêu đề</label>
+            <Input
+              placeholder="Tiêu đề hợp đồng"
+              value={data.contractTitle}
+              onChange={(e) => handleChange("contractTitle", e.target.value)}
+              required
+              className={hasFieldError("contractTitle") ? "border-red-500" : ""}
+            />
+            {hasFieldError("contractTitle") && (
+              <p className="text-red-500 text-xs mt-1">
+                {getFieldError("contractTitle")}
+              </p>
+            )}
           </div>
+        </div>
 
-          {/* Tóm tắt nhanh */}
-          <div className="mb-3 p-2 bg-orange-100 rounded text-orange-800 text-sm">
-            <strong>📋 Tóm tắt:</strong>
-            {businessErrors.some((err) => err.includes("vượt quá")) &&
-              " Cần điều chỉnh tổng khối lượng/giá trị hợp đồng"}
-            {businessErrors.some((err) => err.includes("cùng loại")) &&
-              " Cần loại bỏ mặt hàng trùng loại"}
-            {businessErrors.some((err) => err.includes("đã tồn tại")) &&
-              " Cần đổi số hợp đồng"}
-            {businessErrors.some((err) => err.includes("không có quyền")) &&
-              " Cần liên hệ admin"}
-          </div>
+        <div>
+          <label className="block mb-1 text-sm font-medium">
+            File hợp đồng
+          </label>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="URL file hoặc chọn file từ máy"
+              value={data.contractFileUrl || ""}
+              onChange={(e) => handleChange("contractFileUrl", e.target.value)}
+              className={
+                hasFieldError("contractFileUrl") ? "border-red-500" : ""
+              }
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                // Tạo input file ẩn
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*,.pdf,.doc,.docx";
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) {
+                    // Lưu file object để tạo preview
+                    setSelectedFile(file);
 
-          {/* Hướng dẫn giải quyết */}
-          <div className="mt-3 pt-3 border-t border-orange-200">
-            <p className="text-orange-600 text-sm font-medium mb-2">
-              💡 Hướng dẫn:
-            </p>
-            <ul className="text-orange-600 text-xs space-y-1">
-              {businessErrors.some((err) => err.includes("vượt quá")) && (
-                <>
-                  <li>
-                    • Kiểm tra lại tổng khối lượng và giá trị của các mặt hàng
-                  </li>
-                  <li>
-                    • Đảm bảo tổng từ các mặt hàng không vượt quá tổng đã khai
-                    báo
-                  </li>
-                  <li>• Hoặc tăng tổng khối lượng/giá trị hợp đồng lên</li>
-                  {(() => {
-                    const { totalQuantity, totalValue } = calculateTotals();
-                    return (
-                      <>
-                        <li>
-                          • Tổng từ mặt hàng: {totalQuantity.toFixed(1)} kg,{" "}
-                          {totalValue.toLocaleString()} VND
-                        </li>
-                        <li>
-                          • Tổng hợp đồng hiện tại: {data.totalQuantity || 0}{" "}
-                          kg, {data.totalValue || 0} VND
-                        </li>
-                        <li className="mt-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const { totalQuantity, totalValue } =
-                                calculateTotals();
-                              handleChange("totalQuantity", totalQuantity);
-                              handleChange("totalValue", totalValue);
-                              toast.success("Đã cập nhật tổng từ mặt hàng");
-                            }}
-                            className="text-xs h-6 px-2"
-                          >
-                            Tự động cập nhật tổng
-                          </Button>
-                        </li>
-                      </>
+                    // Tạo URL để preview ảnh
+                    if (file.type.startsWith("image/")) {
+                      const url = URL.createObjectURL(file);
+                      setFilePreviewUrl(url);
+                    } else {
+                      setFilePreviewUrl(null);
+                    }
+
+                    // Hiển thị tên file đã chọn trong input
+                    handleChange("contractFileUrl", file.name);
+                    toast.success(`Đã chọn file: ${file.name}`);
+                  }
+                };
+                input.click();
+              }}
+              className="whitespace-nowrap"
+            >
+              📁 Chọn file
+            </Button>
+            {data.contractFileUrl && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  // Nếu là URL, mở trong tab mới
+                  if (data.contractFileUrl?.startsWith("http")) {
+                    window.open(data.contractFileUrl, "_blank");
+                  } else {
+                    // Nếu là tên file local, hiển thị thông tin
+                    toast.info(
+                      `File: ${data.contractFileUrl}\nĐể xem nội dung, hãy upload file lên server hoặc cung cấp URL.`
                     );
+                  }
+                }}
+                className="whitespace-nowrap"
+              >
+                👁️ Xem file
+              </Button>
+            )}
+          </div>
+          {hasFieldError("contractFileUrl") && (
+            <p className="text-red-500 text-xs mt-1">
+              {getFieldError("contractFileUrl")}
+            </p>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Hỗ trợ: Ảnh (JPG, PNG), PDF, Word (DOC, DOCX)
+          </p>
+
+          {/* Preview file đã chọn */}
+          {data.contractFileUrl && (
+            <div className="mt-3 p-3 bg-gray-50 border rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">
+                  File đã chọn:
+                </span>
+                <span className="text-xs text-gray-500">
+                  {data.contractFileUrl}
+                </span>
+              </div>
+
+              {/* Preview cho ảnh */}
+              {data.contractFileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
+                <div className="mt-2">
+                  {data.contractFileUrl.startsWith("http") || filePreviewUrl ? (
+                    <img
+                      src={filePreviewUrl || data.contractFileUrl}
+                      alt="Preview"
+                      className="max-w-full h-32 object-contain border rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onError={() => toast.error("Không thể tải ảnh preview")}
+                      onClick={() => {
+                        const imageUrl = filePreviewUrl || data.contractFileUrl;
+                        if (imageUrl) {
+                          setModalImageUrl(imageUrl);
+                          setShowImageModal(true);
+                        }
+                      }}
+                      title="Click để xem ảnh rõ hơn"
+                    />
+                  ) : (
+                    <div className="h-32 bg-gray-100 border rounded flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">
+                        📷 {data.contractFileUrl}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Preview cho PDF */}
+              {data.contractFileUrl.match(/\.pdf$/i) && (
+                <div className="mt-2">
+                  {data.contractFileUrl.startsWith("http") ? (
+                    <div className="h-32 bg-red-50 border border-red-200 rounded flex items-center justify-center">
+                      <a
+                        href={data.contractFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        📄 Xem PDF: {data.contractFileUrl.split("/").pop()}
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="h-32 bg-gray-100 border rounded flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">
+                        📄 {data.contractFileUrl}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Preview cho Word */}
+              {data.contractFileUrl.match(/\.(doc|docx)$/i) && (
+                <div className="mt-2">
+                  <div className="h-32 bg-blue-50 border border-blue-200 rounded flex items-center justify-center">
+                    <span className="text-blue-600 text-sm font-medium">
+                      📝 {data.contractFileUrl}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block mb-1 text-sm font-medium">Đối tác</label>
+          <select
+            value={data.buyerId}
+            onChange={(e) => handleChange("buyerId", e.target.value)}
+            className={`w-full p-2 border rounded ${
+              hasFieldError("buyerId") ? "border-red-500" : ""
+            }`}
+            required
+          >
+            <option value="">-- Chọn đối tác --</option>
+            {buyers.map((buyer) => (
+              <option key={buyer.buyerId} value={buyer.buyerId}>
+                {buyer.companyName}
+              </option>
+            ))}
+          </select>
+          {hasFieldError("buyerId") && (
+            <p className="text-red-500 text-xs mt-1">
+              {getFieldError("buyerId")}
+            </p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block mb-1 text-sm font-medium">Số đợt</label>
+            <Input
+              type="number"
+              min={1}
+              value={data.deliveryRounds || ""}
+              onChange={(e) =>
+                handleNumericChange("deliveryRounds", Number(e.target.value))
+              }
+              className={
+                hasFieldError("deliveryRounds") ? "border-red-500" : ""
+              }
+            />
+            {hasFieldError("deliveryRounds") && (
+              <p className="text-red-500 text-xs mt-1">
+                {getFieldError("deliveryRounds")}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium">
+              Tổng KL (kg)
+            </label>
+            <Input
+              type="number"
+              step={0.1}
+              min={0}
+              value={data.totalQuantity || ""}
+              onChange={(e) =>
+                handleNumericChange("totalQuantity", Number(e.target.value))
+              }
+              className={hasFieldError("totalQuantity") ? "border-red-500" : ""}
+            />
+            {hasFieldError("totalQuantity") && (
+              <p className="text-red-500 text-xs mt-1">
+                {getFieldError("totalQuantity")}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium">
+              Tổng GT (VND)
+            </label>
+            <Input
+              type="number"
+              min={0}
+              value={data.totalValue || ""}
+              onChange={(e) =>
+                handleNumericChange("totalValue", Number(e.target.value))
+              }
+              className={hasFieldError("totalValue") ? "border-red-500" : ""}
+            />
+            {hasFieldError("totalValue") && (
+              <p className="text-red-500 text-xs mt-1">
+                {getFieldError("totalValue")}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <DatePicker
+            label="Ngày bắt đầu"
+            value={data.startDate as any}
+            onChange={(date) => handleChange("startDate", date)}
+            required
+            error={hasFieldError("startDate")}
+            errorMessage={getFieldError("startDate")}
+          />
+          <DatePicker
+            label="Ngày kết thúc"
+            value={data.endDate as any}
+            onChange={(date) => handleChange("endDate", date)}
+            required
+            error={hasFieldError("endDate")}
+            errorMessage={getFieldError("endDate")}
+          />
+          <DatePicker
+            label="Ngày ký"
+            value={data.signedAt as any}
+            onChange={(date) => handleChange("signedAt", date)}
+            error={hasFieldError("signedAt")}
+            errorMessage={getFieldError("signedAt")}
+          />
+        </div>
+
+        {/* Chỉ hiển thị trạng thái khi edit */}
+        {isEdit && (
+          <div>
+            <label className="block mb-1 text-sm font-medium">Trạng thái</label>
+            <select
+              className={`w-full p-2 border rounded ${
+                hasFieldError("status") ? "border-red-500" : ""
+              }`}
+              value={data.status}
+              onChange={(e) => handleChange("status", e.target.value)}
+            >
+              {/* Chỉ cho phép chọn các trạng thái hợp lý dựa trên ngày bắt đầu */}
+              {data.startDate && (
+                <>
+                  {(() => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const startDate = new Date(data.startDate);
+                    startDate.setHours(0, 0, 0, 0);
+
+                    if (startDate > today) {
+                      // Ngày bắt đầu trong tương lai - chỉ có thể chọn "Chưa bắt đầu" hoặc "Đã hủy"
+                      return (
+                        <>
+                          <option value={ContractStatus.NotStarted}>
+                            {getStatusDisplay(ContractStatus.NotStarted).label}
+                          </option>
+                          <option value={ContractStatus.Cancelled}>
+                            {getStatusDisplay(ContractStatus.Cancelled).label}
+                          </option>
+                        </>
+                      );
+                    } else {
+                      // Ngày bắt đầu là hôm nay hoặc quá khứ - có thể chọn "Đang thực hiện", "Hoàn thành" hoặc "Đã hủy"
+                      return (
+                        <>
+                          <option value={ContractStatus.InProgress}>
+                            {getStatusDisplay(ContractStatus.InProgress).label}
+                          </option>
+                          <option value={ContractStatus.Completed}>
+                            {getStatusDisplay(ContractStatus.Completed).label}
+                          </option>
+                          <option value={ContractStatus.Cancelled}>
+                            {getStatusDisplay(ContractStatus.Cancelled).label}
+                          </option>
+                        </>
+                      );
+                    }
                   })()}
                 </>
               )}
-              {businessErrors.some((err) => err.includes("cùng loại")) && (
-                <li>• Không được có 2 dòng hợp đồng cùng loại cà phê</li>
-              )}
-              {businessErrors.some((err) => err.includes("đã tồn tại")) && (
-                <li>• Số hợp đồng đã tồn tại, hãy đổi số khác</li>
-              )}
-              {businessErrors.some((err) => err.includes("không có quyền")) && (
-                <li>• Liên hệ admin để được cấp quyền phù hợp</li>
-              )}
-              {businessErrors.some((err) => err.includes("không được âm")) && (
-                <li>• Kiểm tra các giá trị số không được âm</li>
-              )}
-              {businessErrors.some(
-                (err) =>
-                  err.includes("phải lớn hơn") || err.includes("phải nhỏ hơn")
-              ) && <li>• Kiểm tra các điều kiện về giá trị min/max</li>}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* Hiển thị tất cả lỗi cần sửa (bao gồm cả lỗi nghiệp vụ và validation field) */}
-      {(Object.keys(fieldErrors).length > 0 || businessErrors.length > 0) && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-red-800 font-medium">Có lỗi cần sửa:</h3>
-            <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-              {Object.keys(fieldErrors).length + businessErrors.length} lỗi
-            </span>
-          </div>
-
-          <ul className="text-red-700 text-sm space-y-1">
-            {/* Hiển thị lỗi nghiệp vụ trước */}
-            {businessErrors.map((error, index) => (
-              <li key={`business-${index}`} className="flex items-start">
-                <span className="text-red-500 mr-2">⚠</span>
-                <span className="font-medium">Quy tắc nghiệp vụ:</span>
-                <span className="ml-2">{error}</span>
-              </li>
-            ))}
-
-            {/* Hiển thị lỗi validation field */}
-            {Object.entries(fieldErrors).map(([field, message]) => {
-              const fieldName = getFieldDisplayName(field);
-              return (
-                <li key={field} className="flex items-start">
-                  <span className="text-red-500 mr-2">•</span>
-                  <span>
-                    <strong>{fieldName}:</strong> {message}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block mb-1 text-sm font-medium">Số hợp đồng</label>
-          <Input
-            placeholder="VD: CT001"
-            value={data.contractNumber}
-            onChange={(e) => handleChange("contractNumber", e.target.value)}
-            required
-            className={hasFieldError("contractNumber") ? "border-red-500" : ""}
-          />
-          {hasFieldError("contractNumber") && (
-            <p className="text-red-500 text-xs mt-1">
-              {getFieldError("contractNumber")}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium">Tiêu đề</label>
-          <Input
-            placeholder="Tiêu đề hợp đồng"
-            value={data.contractTitle}
-            onChange={(e) => handleChange("contractTitle", e.target.value)}
-            required
-            className={hasFieldError("contractTitle") ? "border-red-500" : ""}
-          />
-          {hasFieldError("contractTitle") && (
-            <p className="text-red-500 text-xs mt-1">
-              {getFieldError("contractTitle")}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <label className="block mb-1 text-sm font-medium">File hợp đồng</label>
-        <Input
-          placeholder="URL file"
-          value={data.contractFileUrl || ""}
-          onChange={(e) => handleChange("contractFileUrl", e.target.value)}
-          className={hasFieldError("contractFileUrl") ? "border-red-500" : ""}
-        />
-        {hasFieldError("contractFileUrl") && (
-          <p className="text-red-500 text-xs mt-1">
-            {getFieldError("contractFileUrl")}
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label className="block mb-1 text-sm font-medium">Đối tác</label>
-        <select
-          value={data.buyerId}
-          onChange={(e) => handleChange("buyerId", e.target.value)}
-          className={`w-full p-2 border rounded ${
-            hasFieldError("buyerId") ? "border-red-500" : ""
-          }`}
-          required
-        >
-          <option value="">-- Chọn đối tác --</option>
-          {buyers.map((buyer) => (
-            <option key={buyer.buyerId} value={buyer.buyerId}>
-              {buyer.companyName}
-            </option>
-          ))}
-        </select>
-        {hasFieldError("buyerId") && (
-          <p className="text-red-500 text-xs mt-1">
-            {getFieldError("buyerId")}
-          </p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block mb-1 text-sm font-medium">Số đợt</label>
-          <Input
-            type="number"
-            min={1}
-            value={data.deliveryRounds || ""}
-            onChange={(e) =>
-              handleNumericChange("deliveryRounds", Number(e.target.value))
-            }
-            className={hasFieldError("deliveryRounds") ? "border-red-500" : ""}
-          />
-          {hasFieldError("deliveryRounds") && (
-            <p className="text-red-500 text-xs mt-1">
-              {getFieldError("deliveryRounds")}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium">Tổng KL (kg)</label>
-          <Input
-            type="number"
-            step={0.1}
-            min={0}
-            value={data.totalQuantity || ""}
-            onChange={(e) =>
-              handleNumericChange("totalQuantity", Number(e.target.value))
-            }
-            className={hasFieldError("totalQuantity") ? "border-red-500" : ""}
-          />
-          {hasFieldError("totalQuantity") && (
-            <p className="text-red-500 text-xs mt-1">
-              {getFieldError("totalQuantity")}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium">
-            Tổng GT (VND)
-          </label>
-          <Input
-            type="number"
-            min={0}
-            value={data.totalValue || ""}
-            onChange={(e) =>
-              handleNumericChange("totalValue", Number(e.target.value))
-            }
-            className={hasFieldError("totalValue") ? "border-red-500" : ""}
-          />
-          {hasFieldError("totalValue") && (
-            <p className="text-red-500 text-xs mt-1">
-              {getFieldError("totalValue")}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <DatePicker
-          label="Ngày bắt đầu"
-          value={data.startDate as any}
-          onChange={(date) => handleChange("startDate", date)}
-          required
-          error={hasFieldError("startDate")}
-          errorMessage={getFieldError("startDate")}
-        />
-        <DatePicker
-          label="Ngày kết thúc"
-          value={data.endDate as any}
-          onChange={(date) => handleChange("endDate", date)}
-          required
-          error={hasFieldError("endDate")}
-          errorMessage={getFieldError("endDate")}
-        />
-        <DatePicker
-          label="Ngày ký"
-          value={data.signedAt as any}
-          onChange={(date) => handleChange("signedAt", date)}
-          error={hasFieldError("signedAt")}
-          errorMessage={getFieldError("signedAt")}
-        />
-      </div>
-
-      {/* Chỉ hiển thị trạng thái khi edit */}
-      {isEdit && (
-        <div>
-          <label className="block mb-1 text-sm font-medium">Trạng thái</label>
-          <select
-            className={`w-full p-2 border rounded ${
-              hasFieldError("status") ? "border-red-500" : ""
-            }`}
-            value={data.status}
-            onChange={(e) => handleChange("status", e.target.value)}
-          >
-            {/* Chỉ cho phép chọn các trạng thái hợp lý dựa trên ngày bắt đầu */}
-            {data.startDate && (
-              <>
-                {(() => {
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  const startDate = new Date(data.startDate);
-                  startDate.setHours(0, 0, 0, 0);
-
-                  if (startDate > today) {
-                    // Ngày bắt đầu trong tương lai - chỉ có thể chọn "Chưa bắt đầu" hoặc "Đã hủy"
-                    return (
-                      <>
-                        <option value={ContractStatus.NotStarted}>
-                          {getStatusDisplay(ContractStatus.NotStarted).label}
-                        </option>
-                        <option value={ContractStatus.Cancelled}>
-                          {getStatusDisplay(ContractStatus.Cancelled).label}
-                        </option>
-                      </>
-                    );
-                  } else {
-                    // Ngày bắt đầu là hôm nay hoặc quá khứ - có thể chọn "Đang thực hiện", "Hoàn thành" hoặc "Đã hủy"
-                    return (
-                      <>
-                        <option value={ContractStatus.InProgress}>
-                          {getStatusDisplay(ContractStatus.InProgress).label}
-                        </option>
-                        <option value={ContractStatus.Completed}>
-                          {getStatusDisplay(ContractStatus.Completed).label}
-                        </option>
-                        <option value={ContractStatus.Cancelled}>
-                          {getStatusDisplay(ContractStatus.Cancelled).label}
-                        </option>
-                      </>
-                    );
-                  }
-                })()}
-              </>
+            </select>
+            {hasFieldError("status") && (
+              <p className="text-red-500 text-xs mt-1">
+                {getFieldError("status")}
+              </p>
             )}
-          </select>
-          {hasFieldError("status") && (
-            <p className="text-red-500 text-xs mt-1">
-              {getFieldError("status")}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Hiển thị trạng thái hiện tại khi create */}
-      {!isEdit && (
-        <div>
-          <label className="block mb-1 text-sm font-medium">Trạng thái</label>
-          <div className="p-2 border rounded bg-gray-50">
-            <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                getStatusDisplay(data.status).className
-              }`}
-            >
-              {getStatusDisplay(data.status).label}
-            </span>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            💡 Trạng thái sẽ tự động cập nhật: "Chưa bắt đầu" nếu ngày bắt đầu
-            trong tương lai, "Đang thực hiện" nếu ngày bắt đầu là hôm nay hoặc
-            quá khứ
-          </p>
-        </div>
-      )}
+        )}
 
-      {/* Chỉ hiển thị lý do hủy khi edit và trạng thái = "Đã hủy" */}
-      {isEdit && data.status === ContractStatus.Cancelled && (
+        {/* Hiển thị trạng thái hiện tại khi create */}
+        {!isEdit && (
+          <div>
+            <label className="block mb-1 text-sm font-medium">Trạng thái</label>
+            <div className="p-2 border rounded bg-gray-50">
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  getStatusDisplay(data.status).className
+                }`}
+              >
+                {getStatusDisplay(data.status).label}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              💡 Trạng thái sẽ tự động cập nhật: "Chưa bắt đầu" nếu ngày bắt đầu
+              trong tương lai, "Đang thực hiện" nếu ngày bắt đầu là hôm nay hoặc
+              quá khứ
+            </p>
+          </div>
+        )}
+
+        {/* Chỉ hiển thị lý do hủy khi edit và trạng thái = "Đã hủy" */}
+        {isEdit && data.status === ContractStatus.Cancelled && (
+          <div>
+            <label className="block mb-1 text-sm font-medium">
+              Lý do huỷ <span className="text-red-500">*</span>
+            </label>
+            <Textarea
+              placeholder="Vui lòng ghi lý do hủy hợp đồng..."
+              value={data.cancelReason}
+              onChange={(e) => handleChange("cancelReason", e.target.value)}
+              className={hasFieldError("cancelReason") ? "border-red-500" : ""}
+              required
+            />
+            {hasFieldError("cancelReason") && (
+              <p className="text-red-500 text-xs mt-1">
+                {getFieldError("cancelReason")}
+              </p>
+            )}
+          </div>
+        )}
+
         <div>
           <label className="block mb-1 text-sm font-medium">
-            Lý do huỷ <span className="text-red-500">*</span>
+            Danh sách mặt hàng
           </label>
-          <Textarea
-            placeholder="Vui lòng ghi lý do hủy hợp đồng..."
-            value={data.cancelReason}
-            onChange={(e) => handleChange("cancelReason", e.target.value)}
-            className={hasFieldError("cancelReason") ? "border-red-500" : ""}
-            required
-          />
-          {hasFieldError("cancelReason") && (
-            <p className="text-red-500 text-xs mt-1">
-              {getFieldError("cancelReason")}
-            </p>
-          )}
-        </div>
-      )}
 
-      <div>
-        <label className="block mb-1 text-sm font-medium">
-          Danh sách mặt hàng
-        </label>
-
-        {/* Hiển thị lỗi tổng quát cho contract items */}
-        {hasFieldError("contractItems") && (
-          <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-600 text-sm font-medium">
-              {getFieldError("contractItems")}
-            </p>
-          </div>
-        )}
-
-        {data.contractItems.length > 0 && (
-          <>
-            {/* Header */}
-            <div className="hidden md:grid md:grid-cols-6 gap-2 mb-1 text-xs font-medium text-muted-foreground">
-              <span>Loại cà phê</span>
-              <span>Số lượng (kg)</span>
-              <span>Đơn giá (VND/Kg)</span>
-              <span>Chiết khấu (%)</span>
-              <span>Ghi chú</span>
-              <span></span>
+          {/* Hiển thị lỗi tổng quát cho contract items */}
+          {hasFieldError("contractItems") && (
+            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm font-medium">
+                {getFieldError("contractItems")}
+              </p>
             </div>
+          )}
 
-            {/* Body */}
-            {data.contractItems.map((item, index) => (
-              <div
-                key={index}
-                className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2"
-              >
-                {/* Loại cà phê */}
-                <select
-                  value={item.coffeeTypeId}
-                  onChange={(e) =>
-                    updateContractItem(index, "coffeeTypeId", e.target.value)
-                  }
-                  className={`p-2 border rounded ${
-                    hasFieldError(`contractItems.${index}.coffeeTypeId`)
-                      ? "border-red-500"
-                      : ""
-                  }`}
-                >
-                  <option value="">-- Chọn loại cà phê --</option>
-                  {coffeeTypes.map((type) => (
-                    <option key={type.coffeeTypeId} value={type.coffeeTypeId}>
-                      {type.typeName}
-                    </option>
-                  ))}
-                </select>
-                {hasFieldError(`contractItems.${index}.coffeeTypeId`) && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {getFieldError(`contractItems.${index}.coffeeTypeId`)}
-                  </p>
-                )}
-
-                {/* Số lượng */}
-                <Input
-                  type="number"
-                  min={0}
-                  step={0.1}
-                  value={item.quantity}
-                  onChange={(e) =>
-                    updateContractItem(
-                      index,
-                      "quantity",
-                      Number(e.target.value)
-                    )
-                  }
-                  className={
-                    hasFieldError(`contractItems.${index}.quantity`)
-                      ? "border-red-500"
-                      : ""
-                  }
-                />
-                {hasFieldError(`contractItems.${index}.quantity`) && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {getFieldError(`contractItems.${index}.quantity`)}
-                  </p>
-                )}
-
-                {/* Đơn giá */}
-                <Input
-                  type="number"
-                  min={0}
-                  value={item.unitPrice}
-                  onChange={(e) =>
-                    updateContractItem(
-                      index,
-                      "unitPrice",
-                      Number(e.target.value)
-                    )
-                  }
-                  className={
-                    hasFieldError(`contractItems.${index}.unitPrice`)
-                      ? "border-red-500"
-                      : ""
-                  }
-                />
-                {hasFieldError(`contractItems.${index}.unitPrice`) && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {getFieldError(`contractItems.${index}.unitPrice`)}
-                  </p>
-                )}
-
-                {/* Chiết khấu */}
-                <Input
-                  type="number"
-                  step={0.1}
-                  min={0}
-                  value={item.discountAmount || ""}
-                  onChange={(e) =>
-                    updateContractItem(
-                      index,
-                      "discountAmount",
-                      Number(e.target.value)
-                    )
-                  }
-                  className={
-                    hasFieldError(`contractItems.${index}.discountAmount`)
-                      ? "border-red-500"
-                      : ""
-                  }
-                />
-                {hasFieldError(`contractItems.${index}.discountAmount`) && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {getFieldError(`contractItems.${index}.discountAmount`)}
-                  </p>
-                )}
-
-                {/* Ghi chú */}
-                <Input
-                  placeholder="Ghi chú"
-                  value={item.note || ""}
-                  onChange={(e) =>
-                    updateContractItem(index, "note", e.target.value)
-                  }
-                  className={
-                    hasFieldError(`contractItems.${index}.note`)
-                      ? "border-red-500"
-                      : ""
-                  }
-                />
-                {hasFieldError(`contractItems.${index}.note`) && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {getFieldError(`contractItems.${index}.note`)}
-                  </p>
-                )}
-
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => removeContractItem(index)}
-                >
-                  Xoá
-                </Button>
+          {data.contractItems.length > 0 && (
+            <>
+              {/* Header */}
+              <div className="hidden md:grid md:grid-cols-6 gap-2 mb-1 text-xs font-medium text-muted-foreground">
+                <span>Loại cà phê</span>
+                <span>Số lượng (kg)</span>
+                <span>Đơn giá (VND/Kg)</span>
+                <span>Chiết khấu (%)</span>
+                <span>Ghi chú</span>
+                <span></span>
               </div>
-            ))}
-          </>
-        )}
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addContractItem}
-          className="mt-2"
-        >
-          + Thêm mặt hàng
-        </Button>
-      </div>
+              {/* Body */}
+              {data.contractItems.map((item, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2"
+                >
+                  {/* Loại cà phê */}
+                  <select
+                    value={item.coffeeTypeId}
+                    onChange={(e) =>
+                      updateContractItem(index, "coffeeTypeId", e.target.value)
+                    }
+                    className={`p-2 border rounded ${
+                      hasFieldError(`contractItems.${index}.coffeeTypeId`)
+                        ? "border-red-500"
+                        : ""
+                    }`}
+                  >
+                    <option value="">-- Chọn loại cà phê --</option>
+                    {coffeeTypes.map((type) => (
+                      <option key={type.coffeeTypeId} value={type.coffeeTypeId}>
+                        {type.typeName}
+                      </option>
+                    ))}
+                  </select>
+                  {hasFieldError(`contractItems.${index}.coffeeTypeId`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getFieldError(`contractItems.${index}.coffeeTypeId`)}
+                    </p>
+                  )}
 
-      <DialogFooter className="flex justify-between pt-4">
-        <Button type="submit" onClick={handleSubmit}>
-          <h2>Lưu hợp đồng</h2>
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.push("/dashboard/manager/contracts")}
-        >
-          Quay lại
-        </Button>
-      </DialogFooter>
-    </form>
+                  {/* Số lượng */}
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.1}
+                    value={item.quantity}
+                    onChange={(e) =>
+                      updateContractItem(
+                        index,
+                        "quantity",
+                        Number(e.target.value)
+                      )
+                    }
+                    className={
+                      hasFieldError(`contractItems.${index}.quantity`)
+                        ? "border-red-500"
+                        : ""
+                    }
+                  />
+                  {hasFieldError(`contractItems.${index}.quantity`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getFieldError(`contractItems.${index}.quantity`)}
+                    </p>
+                  )}
+
+                  {/* Đơn giá */}
+                  <Input
+                    type="number"
+                    min={0}
+                    value={item.unitPrice}
+                    onChange={(e) =>
+                      updateContractItem(
+                        index,
+                        "unitPrice",
+                        Number(e.target.value)
+                      )
+                    }
+                    className={
+                      hasFieldError(`contractItems.${index}.unitPrice`)
+                        ? "border-red-500"
+                        : ""
+                    }
+                  />
+                  {hasFieldError(`contractItems.${index}.unitPrice`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getFieldError(`contractItems.${index}.unitPrice`)}
+                    </p>
+                  )}
+
+                  {/* Chiết khấu */}
+                  <Input
+                    type="number"
+                    step={0.1}
+                    min={0}
+                    value={item.discountAmount || ""}
+                    onChange={(e) =>
+                      updateContractItem(
+                        index,
+                        "discountAmount",
+                        Number(e.target.value)
+                      )
+                    }
+                    className={
+                      hasFieldError(`contractItems.${index}.discountAmount`)
+                        ? "border-red-500"
+                        : ""
+                    }
+                  />
+                  {hasFieldError(`contractItems.${index}.discountAmount`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getFieldError(`contractItems.${index}.discountAmount`)}
+                    </p>
+                  )}
+
+                  {/* Ghi chú */}
+                  <Input
+                    placeholder="Ghi chú"
+                    value={item.note || ""}
+                    onChange={(e) =>
+                      updateContractItem(index, "note", e.target.value)
+                    }
+                    className={
+                      hasFieldError(`contractItems.${index}.note`)
+                        ? "border-red-500"
+                        : ""
+                    }
+                  />
+                  {hasFieldError(`contractItems.${index}.note`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getFieldError(`contractItems.${index}.note`)}
+                    </p>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => removeContractItem(index)}
+                  >
+                    Xoá
+                  </Button>
+                </div>
+              ))}
+            </>
+          )}
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addContractItem}
+            className="mt-2"
+          >
+            + Thêm mặt hàng
+          </Button>
+        </div>
+
+        <DialogFooter className="flex justify-between pt-4">
+          <Button type="submit" onClick={handleSubmit}>
+            <h2>Lưu hợp đồng</h2>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/dashboard/manager/contracts")}
+          >
+            Quay lại
+          </Button>
+        </DialogFooter>
+      </form>
+    </>
   );
 }
