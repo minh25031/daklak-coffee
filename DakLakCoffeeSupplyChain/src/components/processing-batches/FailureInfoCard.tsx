@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, RefreshCw, Info, CheckCircle } from "lucide-react";
-import { StageFailureInfo } from "@/lib/helpers/stageFailureParser";
+import { StageFailureInfo } from "@/lib/helpers/evaluationHelpers";
 
 interface FailureInfoCardProps {
   failureInfo: StageFailureInfo;
@@ -63,7 +63,7 @@ export default function FailureInfoCard({
 
       {/* Details */}
       <div className="space-y-2 mb-3">
-        {failureInfo.details && (
+        {failureInfo.failureDetails && (
           <div className="bg-white/50 rounded-lg p-3">
             <div className="flex items-start gap-2">
               <Info className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
@@ -72,7 +72,7 @@ export default function FailureInfoCard({
                   Chi tiết vấn đề:
                 </h4>
                 <p className="text-sm text-red-800">
-                  {failureInfo.details}
+                  {failureInfo.failureDetails}
                 </p>
               </div>
             </div>
