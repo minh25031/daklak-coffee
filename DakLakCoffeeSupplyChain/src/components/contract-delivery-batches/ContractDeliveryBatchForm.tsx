@@ -20,7 +20,7 @@ import {
   ContractDeliveryBatchStatus,
   ContractDeliveryBatchStatusLabel,
 } from "@/lib/constants/contractDeliveryBatchStatus";
-import { toDateOnly, fromDateOnly } from "@/lib/utils";
+import { toDateOnly, fromDateOnly, getErrorMessage } from "@/lib/utils";
 
 export type ContractOption = { contractId: string; contractNumber: string };
 
@@ -57,6 +57,8 @@ export default function ContractDeliveryBatchForm({
 
   // formData
   const [formData, setFormData] = useState<DeliveryBatchFormState | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [businessErrors, setBusinessErrors] = useState<string[]>([]);
 
   type ContractItemOption = { contractItemId: string; coffeeTypeName: string };
   const [itemOptions, setItemOptions] = useState<ContractItemOption[]>([]);
@@ -176,11 +178,36 @@ export default function ContractDeliveryBatchForm({
   }
 
   // set field
-  const handleChange = (field: keyof DeliveryBatchFormState, value: any) =>
+  const handleChange = (field: keyof DeliveryBatchFormState, value: any) => {
     setFormData((prev) => ({
       ...(prev as DeliveryBatchFormState),
       [field]: value,
     }));
+
+    // Clear field error when user starts typing
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+
+    // Clear business errors when user makes any change
+    if (businessErrors.length > 0) {
+      setBusinessErrors([]);
+    }
+  };
+
+  // Helper function to get error for a specific field
+  const getFieldError = (fieldName: string): string | undefined => {
+    return fieldErrors[fieldName];
+  };
+
+  // Helper function to check if field has error
+  const hasFieldError = (fieldName: string): boolean => {
+    return !!fieldErrors[fieldName];
+  };
 
   // Items helpers
   const ensureItems = () =>
@@ -206,7 +233,7 @@ export default function ContractDeliveryBatchForm({
     index: number,
     field: "contractItemId" | "plannedQuantity" | "note",
     value: any
-  ) =>
+  ) => {
     setFormData((prev) => {
       const base = { ...(prev as DeliveryBatchFormState) };
       const arr = [...(base.contractDeliveryItems || [])];
@@ -217,6 +244,37 @@ export default function ContractDeliveryBatchForm({
       base.contractDeliveryItems = arr;
       return base;
     });
+
+    // Clear field error when user starts typing
+    const fieldKey = `contractDeliveryItems.${index}.${field}`;
+    if (fieldErrors[fieldKey]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldKey];
+        return newErrors;
+      });
+    }
+
+    // Clear business errors when user makes any change
+    if (businessErrors.length > 0) {
+      setBusinessErrors([]);
+    }
+
+    // Client-side validation for contract delivery item fields
+    if (field === "plannedQuantity" && value <= 0) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        [`contractDeliveryItems.${index}.plannedQuantity`]:
+          "Số lượng phải lớn hơn 0",
+      }));
+    } else if (field === "contractItemId" && !value) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        [`contractDeliveryItems.${index}.contractItemId`]:
+          "Vui lòng chọn loại cà phê",
+      }));
+    }
+  };
 
   const removeRow = (index: number) =>
     setFormData((prev) => {
@@ -237,6 +295,10 @@ export default function ContractDeliveryBatchForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    // Clear previous errors
+    setFieldErrors({});
+    setBusinessErrors([]);
+
     // Narrow: nếu chưa khởi tạo thì dừng
     const data = formData;
     if (!data) {
@@ -245,34 +307,60 @@ export default function ContractDeliveryBatchForm({
     }
 
     // Validate cơ bản
-    if (!data.contractId) return toast.error("Vui lòng chọn hợp đồng.");
-    if (!data.expectedDeliveryDate)
-      return toast.error("Vui lòng chọn ngày dự kiến.");
+    const clientErrors: Record<string, string> = {};
 
-    const picked = new Date(data.expectedDeliveryDate as any);
-    picked.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (picked < today)
-      return toast.error("Ngày giao dự kiến không được ở quá khứ.");
-    if (!data.expectedDeliveryDate)
-      return toast.error("Vui lòng chọn ngày dự kiến.");
+    if (!data.contractId) {
+      clientErrors.contractId = "Vui lòng chọn hợp đồng.";
+    }
 
-    if (data.deliveryRound < 1) return toast.error("Số đợt phải ≥ 1.");
+    if (!data.expectedDeliveryDate) {
+      clientErrors.expectedDeliveryDate = "Vui lòng chọn ngày dự kiến.";
+    } else {
+      const picked = new Date(data.expectedDeliveryDate as any);
+      picked.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (picked < today) {
+        clientErrors.expectedDeliveryDate =
+          "Ngày giao dự kiến không được ở quá khứ.";
+      }
+    }
+
+    if (data.deliveryRound < 1) {
+      clientErrors.deliveryRound = "Số đợt phải ≥ 1.";
+    }
 
     const items = data.contractDeliveryItems || [];
-    if (!items.length)
-      return toast.error("Phải có ít nhất 1 dòng sản phẩm giao hàng.");
-    if (items.some((it) => !it.contractItemId))
-      return toast.error("Vui lòng chọn loại cà phê cho tất cả dòng.");
-    if (items.some((it) => !(Number(it.plannedQuantity) > 0)))
-      return toast.error("Số lượng từng dòng phải > 0.");
+    if (!items.length) {
+      clientErrors.contractDeliveryItems =
+        "Phải có ít nhất 1 dòng sản phẩm giao hàng.";
+    } else {
+      items.forEach((item, index) => {
+        if (!item.contractItemId) {
+          clientErrors[`contractDeliveryItems.${index}.contractItemId`] =
+            "Vui lòng chọn loại cà phê";
+        }
+        if (!(Number(item.plannedQuantity) > 0)) {
+          clientErrors[`contractDeliveryItems.${index}.plannedQuantity`] =
+            "Số lượng phải lớn hơn 0";
+        }
+      });
+    }
 
     const total = items.reduce(
       (s, x) => s + (Number(x.plannedQuantity) || 0),
       0
     );
-    if (!(total > 0)) return toast.error("Tổng khối lượng dự kiến phải > 0.");
+    if (!(total > 0)) {
+      clientErrors.totalPlannedQuantity = "Tổng khối lượng dự kiến phải > 0.";
+    }
+
+    // If there are client-side errors, display them and stop
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      toast.error("Vui lòng kiểm tra và sửa các lỗi trong biểu mẫu");
+      return;
+    }
 
     // Build DTO đúng kiểu cho BE (DateOnly string)
     const expected = toDateOnlyString(data.expectedDeliveryDate);
@@ -312,8 +400,320 @@ export default function ContractDeliveryBatchForm({
         onSuccess();
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Đã xảy ra lỗi khi lưu đợt giao.");
+      // Xử lý lỗi validation từ backend
+      if (err && typeof err === "object" && "errors" in err && err.errors) {
+        const validationErrors = err.errors as Record<string, string[]>;
+        const newFieldErrors: Record<string, string> = {};
+        const newBusinessErrors: string[] = [];
+
+        // Phân loại lỗi: field validation vs business logic
+        Object.entries(validationErrors).forEach(([field, messages]) => {
+          if (Array.isArray(messages) && messages.length > 0) {
+            const message = messages[0];
+
+            // Lỗi nghiệp vụ thường có đặc điểm:
+            // 1. Message dài (>50 ký tự)
+            // 2. Chứa từ khóa nghiệp vụ
+            // 3. Lỗi về quy tắc nghiệp vụ tổng thể
+            const isBusinessError =
+              message.length > 50 ||
+              message.includes("vượt quá") ||
+              message.includes("đã tồn tại") ||
+              message.includes("không được") ||
+              message.includes("phải") ||
+              message.includes("cùng loại") ||
+              message.includes("tổng khối lượng") ||
+              message.includes("tổng giá trị") ||
+              message.includes("tổng trị giá") ||
+              message.includes("đã tồn tại trong hệ thống") ||
+              message.includes("không có quyền") ||
+              message.includes("không tìm thấy") ||
+              message.includes("vượt quá tổng") ||
+              message.includes("không được có 2 dòng") ||
+              message.includes("không được âm") ||
+              message.includes("phải lớn hơn") ||
+              message.includes("phải nhỏ hơn") ||
+              // Thêm các từ khóa cụ thể cho lỗi nghiệp vụ
+              message.includes("dòng hợp đồng") ||
+              message.includes("hợp đồng đã khai báo") ||
+              message.includes("kg) vượt quá") ||
+              message.includes("VND) vượt quá") ||
+              message.includes("từ các dòng") ||
+              message.includes("đã khai báo") ||
+              // Thêm các pattern cụ thể hơn
+              message.includes("kg) vượt quá") ||
+              message.includes("VND) vượt quá") ||
+              message.includes("vượt quá tổng khối lượng") ||
+              message.includes("vượt quá tổng giá trị") ||
+              message.includes("vượt quá tổng trị giá") ||
+              message.includes("các dòng hợp đồng") ||
+              message.includes("hợp đồng đã khai báo") ||
+              message.includes("đã khai báo (") ||
+              message.includes(") vượt quá") ||
+              // Thêm các từ khóa mới từ backend
+              message.includes("quản lý doanh nghiệp") ||
+              message.includes("thông tin bên mua") ||
+              message.includes("Số hợp đồng") ||
+              message.includes("đã tồn tại trong hệ thống") ||
+              message.includes("khối lượng từ các dòng") ||
+              message.includes("trị giá từ các dòng") ||
+              message.includes("vượt quá tổng khối lượng") ||
+              message.includes("vượt quá tổng giá trị") ||
+              message.includes("vượt quá tổng trị giá") ||
+              // Thêm các từ khóa cụ thể hơn cho lỗi tổng khối lượng
+              message.includes("kg) vượt quá") ||
+              message.includes("VND) vượt quá") ||
+              message.includes("hiện có") ||
+              message.includes("thêm") ||
+              message.includes("từ các dòng hợp đồng") ||
+              message.includes("hợp đồng đã khai báo") ||
+              // Thêm các pattern cụ thể hơn
+              message.includes("Tổng khối lượng từ các dòng") ||
+              message.includes("Tổng trị giá từ các dòng") ||
+              message.includes("vượt quá tổng khối lượng hợp đồng") ||
+              message.includes("vượt quá tổng giá trị hợp đồng") ||
+              message.includes("vượt quá tổng trị giá hợp đồng") ||
+              // Thêm các pattern cụ thể hơn nữa
+              message.includes("Tổng khối lượng từ các dòng hợp đồng") ||
+              message.includes("Tổng trị giá từ các dòng hợp đồng") ||
+              message.includes(
+                "vượt quá tổng khối lượng hợp đồng đã khai báo"
+              ) ||
+              message.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
+              message.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
+              // Thêm các từ khóa cụ thể hơn
+              message.includes("kg) vượt quá") ||
+              message.includes("VND) vượt quá") ||
+              message.includes("hiện có") ||
+              message.includes("thêm") ||
+              // Thêm các từ khóa cụ thể hơn nữa
+              message.includes("Tổng khối lượng từ các dòng hợp đồng (") ||
+              message.includes("Tổng trị giá từ các dòng hợp đồng (") ||
+              message.includes(
+                "vượt quá tổng khối lượng hợp đồng đã khai báo ("
+              ) ||
+              message.includes(
+                "vượt quá tổng giá trị hợp đồng đã khai báo ("
+              ) ||
+              message.includes(
+                "vượt quá tổng trị giá hợp đồng đã khai báo ("
+              ) ||
+              // Thêm các từ khóa cụ thể hơn nữa
+              message.includes("kg) vượt quá tổng khối lượng") ||
+              message.includes("VND) vượt quá tổng giá trị") ||
+              message.includes(
+                "vượt quá tổng khối lượng hợp đồng đã khai báo"
+              ) ||
+              message.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
+              message.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
+              // Thêm các từ khóa cụ thể hơn nữa
+              message.includes("Tổng khối lượng từ các dòng hợp đồng") ||
+              message.includes("Tổng trị giá từ các dòng hợp đồng") ||
+              message.includes(
+                "vượt quá tổng khối lượng hợp đồng đã khai báo"
+              ) ||
+              message.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
+              message.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
+              // Thêm các từ khóa cụ thể hơn nữa
+              message.includes("kg) vượt quá") ||
+              message.includes("VND) vượt quá") ||
+              message.includes("hiện có") ||
+              message.includes("thêm") ||
+              // Thêm các từ khóa cụ thể hơn nữa
+              message.includes("từ các dòng hợp đồng") ||
+              message.includes("hợp đồng đã khai báo") ||
+              message.includes("vượt quá tổng khối lượng") ||
+              message.includes("vượt quá tổng giá trị") ||
+              message.includes("vượt quá tổng trị giá");
+
+            if (isBusinessError) {
+              newBusinessErrors.push(message);
+            } else {
+              // Xử lý lỗi cho contract delivery items (dạng: ContractDeliveryItems[0].PlannedQuantity)
+              if (
+                field.startsWith("ContractDeliveryItems[") &&
+                field.includes("].")
+              ) {
+                const match = field.match(
+                  /ContractDeliveryItems\[(\d+)\]\.(\w+)/
+                );
+                if (match) {
+                  const index = match[1];
+                  const itemField = match[2];
+                  newFieldErrors[
+                    `contractDeliveryItems.${index}.${itemField.toLowerCase()}`
+                  ] = message;
+                }
+              } else {
+                // Xử lý lỗi cho các field chính
+                newFieldErrors[field] = message;
+              }
+            }
+          }
+        });
+
+        // Set errors theo loại
+        if (Object.keys(newFieldErrors).length > 0) {
+          setFieldErrors(newFieldErrors);
+        }
+
+        if (newBusinessErrors.length > 0) {
+          setBusinessErrors(newBusinessErrors);
+          // Không hiển thị toast cho lỗi nghiệp vụ, chỉ hiển thị trong form
+        }
+
+        // Nếu chỉ có lỗi field validation
+        if (
+          Object.keys(newFieldErrors).length > 0 &&
+          newBusinessErrors.length === 0
+        ) {
+          toast.error("Vui lòng kiểm tra và sửa các lỗi trong biểu mẫu");
+        }
+      } else {
+        // Xử lý lỗi khác (bao gồm lỗi nghiệp vụ chỉ trả về message)
+        let errorMessage = "";
+        let isBusinessError = false;
+
+        if (err && typeof err === "object" && "message" in err && err.message) {
+          errorMessage = err.message as string;
+
+          // Kiểm tra xem có phải lỗi nghiệp vụ không
+          isBusinessError =
+            errorMessage.length > 50 ||
+            errorMessage.includes("vượt quá") ||
+            errorMessage.includes("đã tồn tại") ||
+            errorMessage.includes("không được") ||
+            errorMessage.includes("phải") ||
+            errorMessage.includes("cùng loại") ||
+            errorMessage.includes("tổng khối lượng") ||
+            errorMessage.includes("tổng giá trị") ||
+            errorMessage.includes("tổng trị giá") ||
+            errorMessage.includes("đã tồn tại trong hệ thống") ||
+            errorMessage.includes("không có quyền") ||
+            errorMessage.includes("không tìm thấy") ||
+            errorMessage.includes("vượt quá tổng") ||
+            errorMessage.includes("không được có 2 dòng") ||
+            errorMessage.includes("không được âm") ||
+            errorMessage.includes("phải lớn hơn") ||
+            errorMessage.includes("phải nhỏ hơn") ||
+            // Thêm các từ khóa cụ thể cho lỗi nghiệp vụ
+            errorMessage.includes("dòng hợp đồng") ||
+            errorMessage.includes("hợp đồng đã khai báo") ||
+            errorMessage.includes("kg) vượt quá") ||
+            errorMessage.includes("VND) vượt quá") ||
+            errorMessage.includes("từ các dòng") ||
+            errorMessage.includes("đã khai báo") ||
+            // Thêm các pattern cụ thể hơn
+            errorMessage.includes("kg) vượt quá") ||
+            errorMessage.includes("VND) vượt quá") ||
+            errorMessage.includes("vượt quá tổng khối lượng") ||
+            errorMessage.includes("vượt quá tổng giá trị") ||
+            errorMessage.includes("vượt quá tổng trị giá") ||
+            errorMessage.includes("các dòng hợp đồng") ||
+            errorMessage.includes("hợp đồng đã khai báo") ||
+            errorMessage.includes("đã khai báo (") ||
+            errorMessage.includes(") vượt quá") ||
+            // Thêm các từ khóa mới từ backend
+            errorMessage.includes("quản lý doanh nghiệp") ||
+            errorMessage.includes("thông tin bên mua") ||
+            errorMessage.includes("Số hợp đồng") ||
+            errorMessage.includes("đã tồn tại trong hệ thống") ||
+            errorMessage.includes("khối lượng từ các dòng") ||
+            errorMessage.includes("trị giá từ các dòng") ||
+            errorMessage.includes("vượt quá tổng khối lượng") ||
+            errorMessage.includes("vượt quá tổng giá trị") ||
+            errorMessage.includes("vượt quá tổng trị giá") ||
+            // Thêm các từ khóa cụ thể hơn cho lỗi tổng khối lượng
+            errorMessage.includes("kg) vượt quá") ||
+            errorMessage.includes("VND) vượt quá") ||
+            errorMessage.includes("hiện có") ||
+            errorMessage.includes("thêm") ||
+            errorMessage.includes("từ các dòng hợp đồng") ||
+            errorMessage.includes("đã khai báo") ||
+            // Thêm các pattern cụ thể hơn
+            errorMessage.includes("Tổng khối lượng từ các dòng") ||
+            errorMessage.includes("Tổng trị giá từ các dòng") ||
+            errorMessage.includes("vượt quá tổng khối lượng hợp đồng") ||
+            errorMessage.includes("vượt quá tổng giá trị hợp đồng") ||
+            errorMessage.includes("vượt quá tổng trị giá hợp đồng") ||
+            // Thêm các pattern cụ thể hơn nữa
+            errorMessage.includes("Tổng khối lượng từ các dòng hợp đồng") ||
+            errorMessage.includes("Tổng trị giá từ các dòng hợp đồng") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo"
+            ) ||
+            // Thêm các từ khóa cụ thể hơn
+            errorMessage.includes("kg) vượt quá") ||
+            errorMessage.includes("VND) vượt quá") ||
+            errorMessage.includes("hiện có") ||
+            errorMessage.includes("thêm") ||
+            // Thêm các từ khóa cụ thể hơn nữa
+            errorMessage.includes("Tổng khối lượng từ các dòng hợp đồng (") ||
+            errorMessage.includes("Tổng trị giá từ các dòng hợp đồng (") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo ("
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo ("
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo ("
+            ) ||
+            // Thêm các từ khóa cụ thể hơn nữa
+            errorMessage.includes("kg) vượt quá tổng khối lượng") ||
+            errorMessage.includes("VND) vượt quá tổng giá trị") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo"
+            ) ||
+            // Thêm các từ khóa cụ thể hơn nữa
+            errorMessage.includes("Tổng khối lượng từ các dòng hợp đồng") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo"
+            ) ||
+            // Thêm các từ khóa cụ thể hơn nữa
+            errorMessage.includes("kg) vượt quá") ||
+            errorMessage.includes("VND) vượt quá") ||
+            errorMessage.includes("hiện có") ||
+            errorMessage.includes("thêm") ||
+            // Thêm các từ khóa cụ thể hơn nữa
+            errorMessage.includes("từ các dòng hợp đồng") ||
+            errorMessage.includes("hợp đồng đã khai báo") ||
+            errorMessage.includes("vượt quá tổng khối lượng") ||
+            errorMessage.includes("vượt quá tổng giá trị") ||
+            errorMessage.includes("vượt quá tổng trị giá");
+
+          if (isBusinessError) {
+            // Đây là lỗi nghiệp vụ, hiển thị trong business errors
+            setBusinessErrors([errorMessage]);
+            // Không hiển thị toast cho lỗi nghiệp vụ, chỉ hiển thị trong form
+          } else {
+            // Đây là lỗi khác, hiển thị toast
+            toast.error(errorMessage || "Đã xảy ra lỗi khi lưu đợt giao.");
+          }
+        } else {
+          // Sử dụng getErrorMessage để xử lý lỗi khác
+          const errorMessage = getErrorMessage(err);
+          toast.error(errorMessage || "Đã xảy ra lỗi khi lưu đợt giao.");
+        }
+      }
       // Không gọi onSuccess khi có lỗi - form sẽ ở lại trang hiện tại
     }
   }
@@ -327,6 +727,95 @@ export default function ContractDeliveryBatchForm({
         {isEdit ? "Chỉnh sửa đợt giao" : "Tạo đợt giao mới"}
       </h2>
 
+      {/* Hiển thị lỗi nghiệp vụ */}
+      {businessErrors.length > 0 && (
+        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-orange-800 font-medium">
+              Cần tuân thủ quy tắc nghiệp vụ:
+            </h3>
+            <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full">
+              {businessErrors.length} quy tắc
+            </span>
+          </div>
+
+          {/* Tóm tắt nhanh */}
+          <div className="mb-3 p-2 bg-orange-100 rounded text-orange-800 text-sm">
+            <strong>📋 Tóm tắt:</strong>
+            {businessErrors.some((err) => err.includes("vượt quá")) &&
+              " Cần điều chỉnh tổng khối lượng/giá trị đợt giao"}
+            {businessErrors.some((err) => err.includes("cùng loại")) &&
+              " Cần loại bỏ mặt hàng trùng loại"}
+            {businessErrors.some((err) => err.includes("đã tồn tại")) &&
+              " Cần đổi thông tin đợt giao"}
+            {businessErrors.some((err) => err.includes("không có quyền")) &&
+              " Cần liên hệ admin"}
+          </div>
+
+          {/* Hướng dẫn giải quyết */}
+          <div className="mt-3 pt-3 border-t border-orange-200">
+            <p className="text-orange-600 text-sm font-medium mb-2">
+              💡 Hướng dẫn:
+            </p>
+            <ul className="text-orange-600 text-xs space-y-1">
+              {businessErrors.some((err) => err.includes("vượt quá")) && (
+                <>
+                  <li>• Kiểm tra lại tổng khối lượng của các mặt hàng</li>
+                  <li>
+                    • Đảm bảo tổng từ các mặt hàng không vượt quá tổng đã khai
+                    báo
+                  </li>
+                  <li>• Hoặc tăng tổng khối lượng đợt giao lên</li>
+                  {(() => {
+                    const total = sumPlannedQuantity();
+                    return (
+                      <>
+                        <li>• Tổng từ mặt hàng: {total.toFixed(1)} kg</li>
+                        <li>
+                          • Tổng đợt giao hiện tại:{" "}
+                          {formData?.totalPlannedQuantity || 0} kg
+                        </li>
+                        <li className="mt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const total = sumPlannedQuantity();
+                              handleChange("totalPlannedQuantity", total);
+                              toast.success("Đã cập nhật tổng từ mặt hàng");
+                            }}
+                            className="text-xs h-6 px-2"
+                          >
+                            Tự động cập nhật tổng
+                          </Button>
+                        </li>
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+              {businessErrors.some((err) => err.includes("cùng loại")) && (
+                <li>• Không được có 2 dòng đợt giao cùng loại cà phê</li>
+              )}
+              {businessErrors.some((err) => err.includes("đã tồn tại")) && (
+                <li>• Thông tin đợt giao đã tồn tại, hãy đổi thông tin khác</li>
+              )}
+              {businessErrors.some((err) => err.includes("không có quyền")) && (
+                <li>• Liên hệ admin để được cấp quyền phù hợp</li>
+              )}
+              {businessErrors.some((err) => err.includes("không được âm")) && (
+                <li>• Kiểm tra các giá trị số không được âm</li>
+              )}
+              {businessErrors.some(
+                (err) =>
+                  err.includes("phải lớn hơn") || err.includes("phải nhỏ hơn")
+              ) && <li>• Kiểm tra các điều kiện về giá trị min/max</li>}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* Hợp đồng */}
       {contractId ? (
         <div>
@@ -339,7 +828,9 @@ export default function ContractDeliveryBatchForm({
           <select
             value={formData.contractId}
             onChange={(e) => handleChange("contractId", e.target.value)}
-            className="w-full p-2 border rounded"
+            className={`w-full p-2 border rounded ${
+              hasFieldError("contractId") ? "border-red-500" : ""
+            }`}
             required
           >
             <option value="">-- Chọn hợp đồng --</option>
@@ -349,6 +840,11 @@ export default function ContractDeliveryBatchForm({
               </option>
             ))}
           </select>
+          {hasFieldError("contractId") && (
+            <p className="text-red-500 text-xs mt-1">
+              {getFieldError("contractId")}
+            </p>
+          )}
         </div>
       )}
 
@@ -363,12 +859,19 @@ export default function ContractDeliveryBatchForm({
             onChange={(e) =>
               handleChange("deliveryRound", Number(e.target.value))
             }
-            className="no-spinner"
+            className={`no-spinner ${
+              hasFieldError("deliveryRound") ? "border-red-500" : ""
+            }`}
             onKeyDown={(e) => {
               if (e.key === "-" || e.key.toLowerCase() === "e")
                 e.preventDefault();
             }}
           />
+          {hasFieldError("deliveryRound") && (
+            <p className="text-red-500 text-xs mt-1">
+              {getFieldError("deliveryRound")}
+            </p>
+          )}
         </div>
 
         <div>
@@ -378,6 +881,8 @@ export default function ContractDeliveryBatchForm({
             onChange={(d) =>
               handleChange("expectedDeliveryDate", fromDateOnly(d))
             }
+            error={hasFieldError("expectedDeliveryDate")}
+            errorMessage={getFieldError("expectedDeliveryDate")}
           />
         </div>
 
@@ -393,12 +898,19 @@ export default function ContractDeliveryBatchForm({
             onChange={(e) =>
               handleChange("totalPlannedQuantity", Number(e.target.value))
             }
-            className="no-spinner"
+            className={`no-spinner ${
+              hasFieldError("totalPlannedQuantity") ? "border-red-500" : ""
+            }`}
             onKeyDown={(e) => {
               if (e.key === "-" || e.key.toLowerCase() === "e")
                 e.preventDefault();
             }}
           />
+          {hasFieldError("totalPlannedQuantity") && (
+            <p className="text-red-500 text-xs mt-1">
+              {getFieldError("totalPlannedQuantity")}
+            </p>
+          )}
         </div>
       </div>
 
@@ -459,6 +971,15 @@ export default function ContractDeliveryBatchForm({
           Danh sách mặt hàng đợt giao
         </label>
 
+        {/* Hiển thị lỗi tổng quát cho contract delivery items */}
+        {hasFieldError("contractDeliveryItems") && (
+          <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-600 text-sm font-medium">
+              {getFieldError("contractDeliveryItems")}
+            </p>
+          </div>
+        )}
+
         {(formData.contractDeliveryItems?.length ?? 0) > 0 && (
           <div className="hidden md:grid md:grid-cols-6 gap-2 mb-1 text-xs font-medium text-muted-foreground">
             <span>Loại cà phê</span>
@@ -473,7 +994,11 @@ export default function ContractDeliveryBatchForm({
             <select
               value={row.contractItemId}
               onChange={(e) => updateRow(idx, "contractItemId", e.target.value)}
-              className="p-2 border rounded"
+              className={`p-2 border rounded ${
+                hasFieldError(`contractDeliveryItems.${idx}.contractItemId`)
+                  ? "border-red-500"
+                  : ""
+              }`}
               disabled={loadingItems || !itemOptions.length}
             >
               <option value="">-- Chọn loại cà phê --</option>
@@ -483,6 +1008,11 @@ export default function ContractDeliveryBatchForm({
                 </option>
               ))}
             </select>
+            {hasFieldError(`contractDeliveryItems.${idx}.contractItemId`) && (
+              <p className="text-red-500 text-xs mt-1">
+                {getFieldError(`contractDeliveryItems.${idx}.contractItemId`)}
+              </p>
+            )}
 
             <Input
               type="number"
@@ -492,12 +1022,21 @@ export default function ContractDeliveryBatchForm({
               onChange={(e) =>
                 updateRow(idx, "plannedQuantity", e.target.value)
               }
-              className="no-spinner text-left"
+              className={`no-spinner text-left ${
+                hasFieldError(`contractDeliveryItems.${idx}.plannedQuantity`)
+                  ? "border-red-500"
+                  : ""
+              }`}
               onKeyDown={(e) => {
                 if (e.key === "-" || e.key.toLowerCase() === "e")
                   e.preventDefault();
               }}
             />
+            {hasFieldError(`contractDeliveryItems.${idx}.plannedQuantity`) && (
+              <p className="text-red-500 text-xs mt-1">
+                {getFieldError(`contractDeliveryItems.${idx}.plannedQuantity`)}
+              </p>
+            )}
 
             <Input
               placeholder="Ghi chú"
