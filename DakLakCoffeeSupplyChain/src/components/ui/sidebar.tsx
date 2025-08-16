@@ -163,7 +163,7 @@ export function SidebarGroup() {
         icon: iconMap.feedback,
       },
       {
-        title: "Gửi yêu cầu nhập kho",
+        title: "Gửi yêu cầu giao hàng",
         href: "/dashboard/farmer/warehouse-request",
         icon: <FiTruck />,
       },
