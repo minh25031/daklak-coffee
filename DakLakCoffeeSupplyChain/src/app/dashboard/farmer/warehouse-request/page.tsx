@@ -22,12 +22,13 @@ import {
   TrendingUp,
   Clock,
   AlertCircle,
+  Truck,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 5;
 
-export default function FarmerInboundRequestListPage() {
+export default function FarmerDeliveryRequestListPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
@@ -123,7 +124,7 @@ export default function FarmerInboundRequestListPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                Yêu cầu nhập kho
+                Yêu cầu giao hàng
               </h1>
               <p className="text-gray-600 text-sm">
                 Theo dõi và quản lý các yêu cầu đã gửi
@@ -133,7 +134,7 @@ export default function FarmerInboundRequestListPage() {
               onClick={() => router.push("/dashboard/farmer/warehouse-request/create")}
               className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg shadow-sm flex items-center gap-2"
             >
-              <PackagePlus className="w-5 h-5" />
+              <Truck className="w-5 h-5" />
               Gửi yêu cầu mới
             </Button>
           </div>
@@ -241,7 +242,7 @@ export default function FarmerInboundRequestListPage() {
               <div className="p-4 border-b border-orange-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Danh sách yêu cầu nhập kho</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Danh sách yêu cầu giao hàng</h2>
                     <p className="text-sm text-gray-600 mt-1">
                       Hiển thị {filtered.length} yêu cầu • {totalRequests} tổng cộng
                     </p>
@@ -266,7 +267,7 @@ export default function FarmerInboundRequestListPage() {
                   </div>
                   <p className="text-gray-500 text-lg font-medium mb-2">Không tìm thấy yêu cầu nào</p>
                   <p className="text-gray-400 text-sm">
-                    {search || selectedStatus ? 'Thử thay đổi bộ lọc tìm kiếm' : 'Bạn chưa có yêu cầu nhập kho nào'}
+                    {search || selectedStatus ? 'Thử thay đổi bộ lọc tìm kiếm' : 'Bạn chưa có yêu cầu giao hàng nào'}
                   </p>
                 </div>
               ) : (

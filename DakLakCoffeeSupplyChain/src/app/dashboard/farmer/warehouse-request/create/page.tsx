@@ -7,14 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PackagePlus, Calendar, ArrowLeft, Coffee, Scale, FileText, Package } from 'lucide-react';
+import { PackagePlus, Calendar, ArrowLeft, Coffee, Scale, FileText, Package, Truck } from 'lucide-react';
 import { createWarehouseInboundRequest, getAllInboundRequestsForFarmer } from '@/lib/api/warehouseInboundRequest';
 import { getAllProcessingBatches, ProcessingBatch } from '@/lib/api/processingBatches';
 import { getAllProcessingBatchProgresses } from '@/lib/api/processingBatchProgress';
 import { ProcessingStatus } from '@/lib/constants/batchStatus';
 import { toast } from 'sonner';
 
-export default function CreateWarehouseRequestPage() {
+export default function CreateDeliveryRequestPage() {
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -27,16 +27,20 @@ export default function CreateWarehouseRequestPage() {
   const [batches, setBatches] = useState<ProcessingBatch[]>([]);
   const [loading, setLoading] = useState(false);
   const [isLoadingBatches, setIsLoadingBatches] = useState(true);
+
   const [inboundRequests, setInboundRequests] = useState<{
     batchId: string;
     requestedQuantity: number;
     status: string | number;
   }[]>([]);
+
+  // 👇 Thêm stepIndex để xác định bước cuối
   const [batchProgresses, setBatchProgresses] = useState<{
     batchId: string;
     outputQuantity?: number;
     outputUnit?: string;
     stageName: string;
+    stepIndex: number; // NEW
   }[]>([]);
 
   const handleChange = (
@@ -58,134 +62,113 @@ export default function CreateWarehouseRequestPage() {
     const fetchData = async () => {
       try {
         setIsLoadingBatches(true);
-        
-        // Lấy danh sách batch
+
+        // Lấy danh sách batch (chỉ giữ Completed)
         const batchesData = await getAllProcessingBatches();
-        console.log('🔍 Raw batches data from API:', batchesData);
-        
-        const validBatches = (batchesData ?? []).filter(
-          (b) => {
-            const status = String(b.status);
-            return status === ProcessingStatus.Completed || status === "2" || status === "Completed";
-          }
-        );
-        console.log('🔍 Valid batches after filter:', validBatches);
-        console.log('🔍 Sample batch structure:', validBatches[0]);
-        
+        const validBatches = (batchesData ?? []).filter((b) => {
+          const status = String(b.status);
+          return status === ProcessingStatus.Completed || status === '2' || status === 'Completed';
+        });
         setBatches(validBatches);
-        console.log('✅ Batches loaded:', validBatches.length);
 
         // Lấy danh sách inbound requests
         const inboundData = await getAllInboundRequestsForFarmer();
         if (inboundData?.status === 1) {
           setInboundRequests(inboundData.data || []);
-          console.log('✅ Inbound requests loaded:', (inboundData.data || []).length);
         } else {
-          console.warn('⚠️ Inbound requests failed:', inboundData);
+          console.warn('Inbound requests failed:', inboundData);
         }
 
         // Lấy danh sách batch progresses
-        const batchProgressData = await getAllProcessingBatchProgresses();
-        setBatchProgresses(batchProgressData || []);
-        console.log('✅ Batch progresses loaded:', (batchProgressData || []).length);
+        const rawProgress = await getAllProcessingBatchProgresses();
 
-        // Không cần lấy warehouse receipts nữa - farmer không có quyền
-        console.log('ℹ️ Skipping warehouse receipts (farmer no permission)');
-        
+        // Chuẩn hoá để luôn có stepIndex (nếu API chưa trả)
+        const normalized = (rawProgress || []).map((p: any, idx: number) => ({
+          batchId: p.batchId,
+          outputQuantity: p.outputQuantity,
+          outputUnit: p.outputUnit,
+          stageName: p.stageName,
+          stepIndex:
+            typeof p.stepIndex === 'number'
+              ? p.stepIndex
+              : typeof p.orderIndex === 'number'
+              ? p.orderIndex
+              : idx + 1, // fallback an toàn
+        }));
+        setBatchProgresses(normalized);
       } catch (err: any) {
         toast.error('Không thể tải dữ liệu: ' + err.message);
-        console.error('❌ Fetch data error:', err);
+        console.error(err);
       } finally {
         setIsLoadingBatches(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
-  // Tính toán số lượng còn lại cho mỗi batch
+  // ✅ Tính số lượng còn lại theo OUTPUT của bước CUỐI (stepIndex cao nhất)
   const batchesWithRemaining = useMemo(() => {
-    console.log('🔄 Calculating remaining quantities...');
-    console.log('📊 Batches:', batches.length);
-    console.log('📋 Inbound requests:', inboundRequests.length);
-    console.log('📈 Batch progresses:', batchProgresses.length);
-    
-    // Debug: Log chi tiết từng batch
-    console.log('🔍 Raw batch data:', batches);
-    
-    return batches.map(batch => {
-      // Debug: Log chi tiết từng batch
-      console.log(`🔍 Batch ${batch.batchCode}:`, {
-        batchId: batch.batchId,
-        totalOutputQuantity: batch.totalOutputQuantity,
-        totalInputQuantity: batch.totalInputQuantity,
-        status: batch.status,
-        rawBatch: batch
-      });
-      
-      // Tổng số lượng đã sơ chế - tính từ batch progresses thay vì dựa vào API
-      let totalProcessed = 0;
-      
-      // Tính tổng từ tất cả progresses của batch này
-      const batchProgressesForThisBatch = batchProgresses.filter(p => p.batchId === batch.batchId);
-      console.log(`📊 Progresses for batch ${batch.batchCode}:`, batchProgressesForThisBatch.length);
-      
-      if (batchProgressesForThisBatch.length > 0) {
-        totalProcessed = batchProgressesForThisBatch.reduce((sum, progress) => {
-          const quantity = progress.outputQuantity || 0;
-          console.log(`  Progress ${progress.stageName}: ${quantity} ${progress.outputUnit || 'kg'}`);
-          return sum + quantity;
-        }, 0);
-        console.log(`✅ Calculated from progresses: ${totalProcessed}`);
-      } else if (batch.totalOutputQuantity && batch.totalOutputQuantity > 0) {
-        // Fallback: nếu không có progresses, dùng totalOutputQuantity
-        totalProcessed = batch.totalOutputQuantity;
-        console.log(`⚠️ Fallback to totalOutputQuantity: ${totalProcessed}`);
-      } else if (batch.totalInputQuantity && batch.totalInputQuantity > 0) {
-        // Fallback cuối: nếu không có gì, dùng input
-        totalProcessed = batch.totalInputQuantity;
-        console.log(`⚠️ Fallback to totalInputQuantity: ${totalProcessed}`);
-      } else {
-        console.warn(`❌ No quantity data for batch ${batch.batchCode}:`, batch);
-      }
-      
-      // Tổng số lượng đã được yêu cầu nhập kho (từ tất cả requests)
+    return batches.map((batch) => {
+      const progresses = batchProgresses.filter((p) => p.batchId === batch.batchId);
+
+      // Lấy progress cuối cùng
+      const lastProgress =
+        progresses.length > 0
+          ? progresses.reduce((acc, cur) => ((acc?.stepIndex ?? 0) < cur.stepIndex ? cur : acc), progresses[0])
+          : null;
+
+      // Sản lượng cuối cùng (final output)
+      const finalProcessed =
+        (lastProgress?.outputQuantity ?? 0) ||
+        (batch as any).finalOutputQuantity || // nếu BE đã cung cấp sẵn
+        batch.totalOutputQuantity ||
+        0;
+
+      // Tổng khối lượng đã được yêu cầu giao hàng (chỉ tính Approved + Completed, KHÔNG tính Pending)
       const totalRequested = inboundRequests
-        .filter(req => req.batchId === batch.batchId)
+        .filter((req) => 
+          req.batchId === batch.batchId && 
+          (String(req.status) === 'Approved' || String(req.status) === 'Completed' || String(req.status) === '2' || String(req.status) === '3')
+        )
         .reduce((sum, req) => sum + (req.requestedQuantity || 0), 0);
-      
-      // Tổng số lượng đã thực sự nhập kho = tổng từ các requests có status 'Completed'
-      // Vì 'Completed' có nghĩa là đã nhập kho hoàn toàn
-      const totalReceived = inboundRequests
-        .filter(req => req.batchId === batch.batchId && (req.status === 'Completed' || req.status === ProcessingStatus.Completed))
+
+      // Đã thực giao hàng (Completed) — chỉ để hiển thị
+      const totalDelivered = inboundRequests
+        .filter(
+          (req) =>
+            req.batchId === batch.batchId &&
+            (String(req.status) === 'Completed' || String(req.status) === String(ProcessingStatus.Completed))
+        )
         .reduce((sum, req) => sum + (req.requestedQuantity || 0), 0);
-      
-      // Số lượng còn lại = đã sơ chế - đã yêu cầu
-      // Lưu ý: totalRequested đã bao gồm cả pending và completed
-      const remainingQuantity = Math.max(0, totalProcessed - totalRequested);
-      
-      console.log(`📦 Batch ${batch.batchCode}:`, {
-        totalProcessed,
-        totalRequested,
-        totalReceived,
-        remainingQuantity,
-        logic: 'Remaining = Processed - Requested (includes pending + completed)'
-      });
-      
+
+      // Yêu cầu đang chờ duyệt (Pending) — để kiểm tra giới hạn
+      const pendingRequests = inboundRequests
+        .filter(req => 
+          req.batchId === batch.batchId && 
+          (String(req.status) === 'Pending' || String(req.status) === '1')
+        )
+        .reduce((sum, req) => sum + (req.requestedQuantity || 0), 0);
+
+      // Khớp BE: remaining = finalOutput(last) - (totalRequested chỉ gồm approved/completed, KHÔNG gồm pending)
+      const remainingQuantity = Math.max(0, finalProcessed - totalRequested);
+
+      // Số lượng có thể gửi yêu cầu mới (bao gồm cả pending để chặn gửi quá)
+      const availableForNewRequest = Math.max(0, finalProcessed - totalRequested - pendingRequests);
+
       return {
         ...batch,
         remainingQuantity,
         totalRequested,
-        totalReceived,
-        // Thêm thông tin debug
+        totalDelivered,
+        pendingRequests,
+        availableForNewRequest, // NEW: số lượng có thể gửi yêu cầu mới
         debug: {
-          totalProcessed,
-          totalRequested,
-          totalReceived,
-          remainingQuantity,
-          completedRequests: inboundRequests.filter(req => req.batchId === batch.batchId && (req.status === 'Completed' || req.status === ProcessingStatus.Completed)).length,
-          pendingRequests: inboundRequests.filter(req => req.batchId === batch.batchId && (req.status === 'Pending' || req.status === ProcessingStatus.InProgress)).length
-        }
+          finalProcessed,
+          lastStageName: lastProgress?.stageName ?? '(n/a)',
+          lastStepIndex: lastProgress?.stepIndex ?? null,
+          approvedCompletedRequests: totalRequested,
+        },
       };
     });
   }, [batches, inboundRequests, batchProgresses]);
@@ -202,17 +185,18 @@ export default function CreateWarehouseRequestPage() {
         return;
       }
 
-      // Kiểm tra số lượng
       const quantity = Number(requestedQuantity);
       if (isNaN(quantity) || quantity <= 0) {
         toast.error('Số lượng phải là số dương lớn hơn 0');
         return;
       }
 
-      // Kiểm tra số lượng không vượt quá số lượng còn lại
-      const selectedBatch = batchesWithRemaining.find(b => b.batchId === batchId);
-      if (selectedBatch && quantity > selectedBatch.remainingQuantity) {
-        toast.error(`Số lượng yêu cầu (${quantity}kg) vượt quá số lượng còn lại có thể nhập kho (${selectedBatch.remainingQuantity}kg)`);
+      // Check không vượt quá còn lại
+      const selectedBatch = batchesWithRemaining.find((b) => b.batchId === batchId);
+      if (selectedBatch && quantity > selectedBatch.availableForNewRequest) {
+        toast.error(
+          `Số lượng yêu cầu (${quantity}kg) vượt quá số lượng có thể gửi yêu cầu mới (${selectedBatch.availableForNewRequest}kg). Tổng số lượng (đã duyệt + đang chờ + yêu cầu mới) không được vượt quá sản lượng cuối (${selectedBatch.debug.finalProcessed}kg)`
+        );
         setLoading(false);
         return;
       }
@@ -251,21 +235,27 @@ export default function CreateWarehouseRequestPage() {
     const statusStr = String(status);
     switch (statusStr) {
       case ProcessingStatus.NotStarted:
-      case "0":
-      case "NotStarted": return 'Chưa bắt đầu';
+      case '0':
+      case 'NotStarted':
+        return 'Chưa bắt đầu';
       case ProcessingStatus.InProgress:
-      case "1":
-      case "InProgress": return 'Đang xử lý';
+      case '1':
+      case 'InProgress':
+        return 'Đang xử lý';
       case ProcessingStatus.Completed:
-      case "2":
-      case "Completed": return 'Hoàn tất';
+      case '2':
+      case 'Completed':
+        return 'Hoàn tất';
       case ProcessingStatus.AwaitingEvaluation:
-      case "3":
-      case "AwaitingEvaluation": return 'Chờ đánh giá';
+      case '3':
+      case 'AwaitingEvaluation':
+        return 'Chờ đánh giá';
       case ProcessingStatus.Cancelled:
-      case "4":
-      case "Cancelled": return 'Đã huỷ';
-      default: return 'Không xác định';
+      case '4':
+      case 'Cancelled':
+        return 'Đã huỷ';
+      default:
+        return 'Không xác định';
     }
   };
 
@@ -273,21 +263,27 @@ export default function CreateWarehouseRequestPage() {
     const statusStr = String(status);
     switch (statusStr) {
       case ProcessingStatus.NotStarted:
-      case "0":
-      case "NotStarted": return 'bg-gray-100 text-gray-700';
+      case '0':
+      case 'NotStarted':
+        return 'bg-gray-100 text-gray-700';
       case ProcessingStatus.InProgress:
-      case "1":
-      case "InProgress": return 'bg-blue-100 text-blue-700';
+      case '1':
+      case 'InProgress':
+        return 'bg-blue-100 text-blue-700';
       case ProcessingStatus.Completed:
-      case "2":
-      case "Completed": return 'bg-green-100 text-green-700';
+      case '2':
+      case 'Completed':
+        return 'bg-green-100 text-green-700';
       case ProcessingStatus.AwaitingEvaluation:
-      case "3":
-      case "AwaitingEvaluation": return 'bg-orange-100 text-orange-700';
+      case '3':
+      case 'AwaitingEvaluation':
+        return 'bg-orange-100 text-orange-700';
       case ProcessingStatus.Cancelled:
-      case "4":
-      case "Cancelled": return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case '4':
+      case 'Cancelled':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -306,11 +302,9 @@ export default function CreateWarehouseRequestPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Quay lại
             </Button>
-            <h1 className="text-lg font-semibold text-gray-800">Tạo yêu cầu nhập kho</h1>
+            <h1 className="text-lg font-semibold text-gray-800">Tạo yêu cầu giao hàng</h1>
           </div>
-          <p className="text-sm text-gray-600">
-            Tạo yêu cầu nhập kho cho lô cà phê đã sơ chế hoàn tất
-          </p>
+          <p className="text-sm text-gray-600">Tạo yêu cầu giao hàng cho lô cà phê đã sơ chế hoàn tất</p>
         </div>
 
         <div className="flex gap-6">
@@ -321,7 +315,7 @@ export default function CreateWarehouseRequestPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs font-semibold text-gray-800 flex items-center gap-2">
                   <Package className="w-3 h-3 text-orange-600" />
-                  Lô xử lý khả dụng
+                  Lô xử lý sẵn sàng giao hàng
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
@@ -332,21 +326,14 @@ export default function CreateWarehouseRequestPage() {
                 ) : (
                   <div className="space-y-1.5">
                     {batchesWithRemaining.slice(0, 3).map((batch) => (
-                      <div
-                        key={batch.batchId}
-                        className={`p-1.5 rounded text-xs ${getStatusColor(batch.status)}`}
-                      >
-                        <div className="font-medium">{batch.batchCode}</div>
-                        <div className="text-xs opacity-75">{getStatusLabel(batch.status)}</div>
-                        <div className="text-xs font-semibold text-green-700">
-                          Còn lại: {batch.remainingQuantity} kg
-                        </div>
+                      <div key={batch.batchId} className="p-1.5 rounded text-xs bg-green-50 border border-green-200">
+                        <div className="font-medium text-green-800">{batch.batchCode}</div>
+                        <div className="text-xs font-semibold text-green-700">Còn lại: {batch.remainingQuantity} kg</div>
+                        <div className="text-xs font-semibold text-orange-700">Có thể gửi mới: {batch.availableForNewRequest} kg</div>
                       </div>
                     ))}
                     {batchesWithRemaining.length > 3 && (
-                      <div className="text-center text-xs text-gray-500 pt-1">
-                        +{batchesWithRemaining.length - 3} lô khác
-                      </div>
+                      <div className="text-center text-xs text-gray-500 pt-1">+{batchesWithRemaining.length - 3} lô khác</div>
                     )}
                   </div>
                 )}
@@ -359,8 +346,8 @@ export default function CreateWarehouseRequestPage() {
             <Card className="border-orange-100">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                  <PackagePlus className="w-4 h-4 text-orange-600" />
-                  Thông tin yêu cầu nhập kho
+                  <Truck className="w-4 h-4 text-orange-600" />
+                  Thông tin yêu cầu giao hàng
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -378,7 +365,7 @@ export default function CreateWarehouseRequestPage() {
                         type="number"
                         min={1}
                         step={0.1}
-                        placeholder="Nhập số lượng cần nhập kho"
+                        placeholder="Nhập số lượng cần giao hàng"
                         value={form.requestedQuantity}
                         onChange={handleChange}
                         onKeyDown={(e) => {
@@ -428,7 +415,7 @@ export default function CreateWarehouseRequestPage() {
                       <Textarea
                         id="note"
                         name="note"
-                        placeholder="Thông tin thêm về yêu cầu nhập kho (không bắt buộc)"
+                        placeholder="Thông tin thêm về yêu cầu giao hàng (không bắt buộc)"
                         value={form.note}
                         onChange={handleChange}
                         className="border-orange-200 focus:border-orange-500 focus:ring-orange-500 min-h-[80px] resize-none text-sm"
@@ -453,44 +440,43 @@ export default function CreateWarehouseRequestPage() {
                         <option value="">-- Chọn lô xử lý --</option>
                         {batchesWithRemaining.map((b) => (
                           <option key={b.batchId} value={b.batchId}>
-                            {b.batchCode} • {getStatusLabel(b.status)} • Còn lại: {b.remainingQuantity} kg
+                            {b.batchCode} • Còn lại: {b.remainingQuantity} kg
                           </option>
                         ))}
                       </select>
-                      <p className="text-xs text-gray-500">
-                        Chỉ hiển thị các lô đã hoàn tất xử lý và còn số lượng để nhập kho
-                      </p>
-                      
-                      {/* Hiển thị thông tin chi tiết khi chọn batch */}
-                      {form.batchId && (() => {
-                        const selectedBatch = batchesWithRemaining.find(b => b.batchId === form.batchId);
-                        if (!selectedBatch) return null;
-                        
-                        return (
-                          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                            <div className="text-xs text-blue-800 space-y-1">
-                              <div><strong>Lô:</strong> {selectedBatch.batchCode}</div>
-                              <div><strong>Tổng đã sơ chế:</strong> {selectedBatch.debug.totalProcessed} kg</div>
-                              <div><strong>Đã yêu cầu nhập kho:</strong> {selectedBatch.totalRequested} kg</div>
-                              <div><strong>Đã thực nhập kho:</strong> {selectedBatch.totalReceived} kg</div>
-                              <div className="font-semibold text-green-700">
-                                <strong>Còn lại có thể nhập:</strong> {selectedBatch.remainingQuantity} kg
+                      <p className="text-xs text-gray-500">Chỉ hiển thị các lô đã hoàn tất xử lý và còn số lượng để giao hàng</p>
+
+                      {/* Thông tin chi tiết khi chọn batch */}
+                      {form.batchId &&
+                        (() => {
+                          const selectedBatch = batchesWithRemaining.find((b) => b.batchId === form.batchId);
+                          if (!selectedBatch) return null;
+
+                          return (
+                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                              <div className="text-xs text-blue-800 space-y-1">
+                                <div>
+                                  <strong>Lô:</strong> {selectedBatch.batchCode}
+                                </div>
+                                <div>
+                                  <strong>Sản lượng cuối:</strong> {selectedBatch.debug.finalProcessed} kg
+                                </div>
+                                <div>
+                                  <strong>Đã yêu cầu giao hàng:</strong> {selectedBatch.totalRequested} kg
+                                </div>
+                                <div>
+                                  <strong>Đang chờ duyệt:</strong> {selectedBatch.pendingRequests} kg
+                                </div>
+                                <div className="font-semibold text-green-700">
+                                  <strong>Còn lại có thể giao:</strong> {selectedBatch.remainingQuantity} kg
+                                </div>
+                                <div className="font-semibold text-orange-700">
+                                  <strong>Có thể gửi yêu cầu mới:</strong> {selectedBatch.availableForNewRequest} kg
+                                </div>
                               </div>
-                              
-                                                             {/* Debug info */}
-                               <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
-                                 <div className="text-xs text-blue-700 space-y-1">
-                                   <div><strong>Requests hoàn thành:</strong> {selectedBatch.debug.completedRequests}</div>
-                                   <div><strong>Requests đang chờ:</strong> {selectedBatch.debug.pendingRequests}</div>
-                                                                  <div className="text-xs opacity-75">
-                                 Logic: Số lượng còn lại = Đã sơ chế - Đã yêu cầu (bao gồm cả pending + completed)
-                               </div>
-                                 </div>
-                               </div>
                             </div>
-                          </div>
-                        );
-                      })()}
+                          );
+                        })()}
                     </div>
                   </div>
 
@@ -508,8 +494,8 @@ export default function CreateWarehouseRequestPage() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <PackagePlus className="w-4 h-4" />
-                          Gửi yêu cầu nhập kho
+                          <Truck className="w-4 h-4" />
+                          Gửi yêu cầu giao hàng
                         </div>
                       )}
                     </Button>
