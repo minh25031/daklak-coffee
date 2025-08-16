@@ -46,7 +46,7 @@ import UpdateAfterEvaluationForm from "@/components/processing-batches/UpdateAft
 import FailureInfoCard from "@/components/processing-batches/FailureInfoCard";
 import ProgressGuidanceCard from "@/components/processing-batches/ProgressGuidanceCard";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
-import { StageFailureParser, StageFailureInfo } from "@/lib/helpers/stageFailureParser";
+import { StageFailureParser, StageFailureInfo } from "@/lib/helpers/evaluationHelpers";
 import { getProcessingStagesByMethodId } from "@/lib/api/processingStages";
 
 export default function ViewProcessingBatch() {
@@ -238,7 +238,7 @@ export default function ViewProcessingBatch() {
           if (data && data.length > 0) {
             const latestEvaluation = data[0]; // Sắp xếp theo createdAt desc
             if (latestEvaluation.evaluationResult === 'Fail') {
-              const failureInfo = StageFailureParser.parseFailureFromComments(latestEvaluation.comments);
+              const failureInfo = StageFailureParser.parseFailureFromComments(latestEvaluation.comments || '');
               setFailureInfo(failureInfo);
             }
           }
@@ -277,9 +277,9 @@ export default function ViewProcessingBatch() {
     
     if (failureInfo) {
       return {
-        stageId: parseInt(failureInfo.failedStageId || '0'),
+        stageId: failureInfo.failedOrderIndex, // Sử dụng failedOrderIndex thay vì failedStageId
         stageName: failureInfo.failedStageName || 'Unknown',
-        failureDetails: failureInfo.details || 'Không đạt tiêu chuẩn',
+        failureDetails: failureInfo.failureDetails || 'Không đạt tiêu chuẩn', // Sử dụng failureDetails
         evaluationId: latestEvaluation.evaluationId
       };
     }
@@ -1118,8 +1118,8 @@ export default function ViewProcessingBatch() {
            <div className="p-6">
              {evaluations.length > 0 ? (
                <div className="space-y-4">
-                 {/* Thông báo đánh giá mới */}
-                 {evaluations.some(e => e.evaluationResult === 'Fail') && (
+                 {/* Thông báo đánh giá mới - chỉ hiển thị khi đánh giá mới nhất là Fail */}
+                 {evaluations.length > 0 && evaluations[0].evaluationResult === 'Fail' && (
                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                      <div className="flex items-center justify-between">
                        <div className="flex items-center gap-2">
@@ -1198,7 +1198,7 @@ export default function ViewProcessingBatch() {
 
                            {/* Details */}
                            <div className="space-y-3">
-                             {failureInfo.details && (
+                             {failureInfo.failureDetails && (
                                <div className="bg-white/50 rounded-lg p-3">
                                  <div className="flex items-start gap-2">
                                    <ClipboardCheck className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
@@ -1207,7 +1207,7 @@ export default function ViewProcessingBatch() {
                                        Chi tiết vấn đề:
                                      </h5>
                                      <p className="text-sm text-red-800">
-                                       {failureInfo.details}
+                                       {failureInfo.failureDetails}
                                      </p>
                                    </div>
                                  </div>

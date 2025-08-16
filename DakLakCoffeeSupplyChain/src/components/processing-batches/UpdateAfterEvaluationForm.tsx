@@ -13,6 +13,7 @@ interface UpdateAfterEvaluationFormProps {
     stageId: number;
     stageName: string;
     failureDetails: string;
+    recommendations?: string;
   };
   isOpen: boolean;
   onClose: () => void;
@@ -147,10 +148,28 @@ export default function UpdateAfterEvaluationForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Thông tin stage bị fail */}
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h3 className="font-semibold text-red-800 mb-2">Công đoạn cần cải thiện</h3>
-            <p className="text-red-700">
-              <strong>{failedStageInfo.stageName}</strong> - {failedStageInfo.failureDetails}
-            </p>
+            <h3 className="font-semibold text-red-800 mb-2">🔧 Công đoạn cần cải thiện</h3>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="text-red-600 font-medium">Công đoạn:</span>
+                <span className="text-red-800 font-semibold">{failedStageInfo.stageName}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-red-600 font-medium">Vấn đề:</span>
+                <span className="text-red-700">{failedStageInfo.failureDetails}</span>
+              </div>
+              {failedStageInfo.recommendations && (
+                <div className="flex items-start gap-2">
+                  <span className="text-red-600 font-medium">Khuyến nghị:</span>
+                  <span className="text-red-700">{failedStageInfo.recommendations}</span>
+                </div>
+              )}
+            </div>
+            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                💡 <strong>Hướng dẫn:</strong> Vui lòng cải thiện công đoạn này theo khuyến nghị của chuyên gia và cập nhật lại tiến trình.
+              </p>
+            </div>
           </div>
 
           {/* Ngày cập nhật */}

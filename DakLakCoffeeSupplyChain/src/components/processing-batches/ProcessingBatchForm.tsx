@@ -2,24 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { createProcessingBatch, getAvailableCoffeeTypes, ProcessingBatch } from "@/lib/api/processingBatches";
-import { getAllCropSeasons, CropSeasonListItem } from "@/lib/api/cropSeasons";
+import { Input } from "@/components/ui/input";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { createProcessingBatch, getAvailableProcessingData, ProcessingBatch, ProcessingDataResponse, ProcessingInfo, CoffeeType } from "@/lib/api/processingBatches";
 import { getAllProcessingMethods, ProcessingMethod } from "@/lib/api/processingMethods";
+import { getAllCropSeasons, CropSeasonListItem } from "@/lib/api/cropSeasons";
 
 interface Props {
   onSuccess?: () => void;
-}
-
-interface CoffeeType {
-  coffeeTypeId: string;
-  typeCode: string;
-  typeName: string;
-  botanicalName: string;
-  description: string;
-  typicalRegion: string;
-  specialtyLevel: string;
 }
 
 export default function ProcessingBatchForm({ onSuccess }: Props) {
@@ -27,9 +18,9 @@ export default function ProcessingBatchForm({ onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
   const [cropSeasons, setCropSeasons] = useState<CropSeasonListItem[]>([]);
   const [coffeeTypes, setCoffeeTypes] = useState<CoffeeType[]>([]);
+  const [processingInfo, setProcessingInfo] = useState<ProcessingInfo[]>([]);
   const [processingMethods, setProcessingMethods] = useState<ProcessingMethod[]>([]);
   
   const [form, setForm] = useState({
@@ -40,42 +31,68 @@ export default function ProcessingBatchForm({ onSuccess }: Props) {
   });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch crop seasons
-        const seasons = await getAllCropSeasons();
-        const availableSeasons = (seasons || []).filter(s => s.status === "Active" || s.status === "InProgress");
-        setCropSeasons(availableSeasons);
-
-        // Fetch processing methods
-        const methods = await getAllProcessingMethods();
-        setProcessingMethods(methods || []);
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Không thể tải dữ liệu cần thiết");
-      }
-    };
-    fetchData();
+    fetchCropSeasons();
+    fetchProcessingMethods();
   }, []);
 
   useEffect(() => {
-    const fetchCoffeeTypes = async () => {
-      if (form.cropSeasonId) {
-        try {
-          const types = await getAvailableCoffeeTypes(form.cropSeasonId);
-          setCoffeeTypes(types || []);
-        } catch (err) {
-          console.error("Error fetching coffee types:", err);
-          setCoffeeTypes([]);
-        }
-      } else {
-        setCoffeeTypes([]);
-      }
-    };
-    fetchCoffeeTypes();
+    if (form.cropSeasonId) {
+      fetchCoffeeTypes();
+    } else {
+      setCoffeeTypes([]);
+      setProcessingInfo([]);
+    }
   }, [form.cropSeasonId]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Tự động chọn phương pháp sơ chế từ plan khi chọn loại cà phê
+  useEffect(() => {
+    if (form.coffeeTypeId && processingInfo.length > 0) {
+      const info = processingInfo.find(p => p.coffeeTypeId === form.coffeeTypeId);
+      if (info && info.hasPlanProcessingMethod && info.planProcessingMethodId) {
+        setForm(prev => ({
+          ...prev,
+          methodId: info.planProcessingMethodId || 0
+        }));
+      }
+    }
+  }, [form.coffeeTypeId, processingInfo]);
+
+  const fetchCropSeasons = async () => {
+    try {
+      const response = await getAvailableProcessingData();
+      setCropSeasons(response.cropSeasons || []);
+    } catch (err) {
+      console.error("❌ Lỗi fetchCropSeasons:", err);
+    }
+  };
+
+  const fetchProcessingMethods = async () => {
+    try {
+      const methods = await getAllProcessingMethods();
+      setProcessingMethods(methods || []);
+    } catch (err) {
+      console.error("❌ Lỗi fetchProcessingMethods:", err);
+    }
+  };
+
+  const fetchCoffeeTypes = async () => {
+    try {
+      setLoading(true);
+      const response: ProcessingDataResponse = await getAvailableProcessingData(form.cropSeasonId);
+      setCoffeeTypes(response.coffeeTypes || []);
+      setProcessingInfo(response.processingInfo || []);
+    } catch (err) {
+      console.error("❌ Lỗi fetchCoffeeTypes:", err);
+      setCoffeeTypes([]);
+      setProcessingInfo([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setForm(prev => ({
       ...prev,
@@ -102,8 +119,10 @@ export default function ProcessingBatchForm({ onSuccess }: Props) {
       return;
     }
 
-    if (!form.methodId) {
-      setError("Vui lòng chọn phương pháp sơ chế");
+    // Kiểm tra xem plan có định nghĩa phương pháp sơ chế không
+    const info = processingInfo.find(p => p.coffeeTypeId === form.coffeeTypeId);
+    if (!info || !info.hasPlanProcessingMethod || !info.planProcessingMethodId) {
+      setError("Loại cà phê này không có yêu cầu sơ chế từ kế hoạch");
       setLoading(false);
       return;
     }
@@ -115,10 +134,11 @@ export default function ProcessingBatchForm({ onSuccess }: Props) {
     }
 
     try {
+      // Sử dụng phương pháp sơ chế từ plan
       await createProcessingBatch({
         cropSeasonId: form.cropSeasonId,
         coffeeTypeId: form.coffeeTypeId,
-        methodId: form.methodId,
+        methodId: info.planProcessingMethodId,
         batchCode: form.batchCode.trim(),
         inputQuantity: 0, // Sẽ được backend tính toán tự động
         inputUnit: "kg", // Đơn vị mặc định
@@ -135,11 +155,19 @@ export default function ProcessingBatchForm({ onSuccess }: Props) {
     setLoading(false);
   };
 
+  // Lấy thông tin phương pháp sơ chế từ plan cho loại cà phê đang chọn
+  const getSelectedCoffeeTypeInfo = () => {
+    if (!form.coffeeTypeId) return null;
+    return processingInfo.find(p => p.coffeeTypeId === form.coffeeTypeId);
+  };
+
+  const selectedCoffeeTypeInfo = getSelectedCoffeeTypeInfo();
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-800 mb-2">Thông tin lô sơ chế mới</h3>
-        <p className="text-blue-700">Tạo lô sơ chế từ cà phê đã thu hoạch</p>
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Tạo lô sơ chế mới</h2>
+        <p className="text-gray-600">Tạo lô sơ chế cho cà phê từ vụ mùa đã hoàn thành (chỉ những loại có yêu cầu sơ chế)</p>
       </div>
 
       <div>
@@ -167,7 +195,7 @@ export default function ProcessingBatchForm({ onSuccess }: Props) {
           value={form.coffeeTypeId}
           onChange={handleChange}
           required
-          disabled={!form.cropSeasonId}
+          disabled={!form.cropSeasonId || loading}
           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
         >
           <option value="">
@@ -182,24 +210,27 @@ export default function ProcessingBatchForm({ onSuccess }: Props) {
         {!form.cropSeasonId && (
           <p className="text-sm text-gray-500 mt-1">Chọn vụ mùa để xem các loại cà phê có sẵn</p>
         )}
+        {loading && (
+          <p className="text-sm text-blue-500 mt-1">Đang tải danh sách loại cà phê...</p>
+        )}
       </div>
 
-      <div>
-        <label className="block font-medium mb-2">Phương pháp sơ chế *</label>
-        <select
-          name="methodId"
-          value={form.methodId}
-          onChange={handleChange}
-          required
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value={0}>-- Chọn phương pháp --</option>
-          {processingMethods.map((method) => (
-            <option key={method.methodId} value={method.methodId}>
-              {method.methodName} ({method.methodCode}) - {method.steps} bước
-            </option>
-          ))}
-        </select>
+      {/* Hiển thị thông tin phương pháp sơ chế từ plan */}
+      {selectedCoffeeTypeInfo && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 mb-2">Thông tin từ kế hoạch:</h4>
+          <div className="text-sm text-blue-800">
+            <p>✅ <strong>Phương pháp sơ chế:</strong> {selectedCoffeeTypeInfo.planProcessingMethodName} ({selectedCoffeeTypeInfo.planProcessingMethodCode})</p>
+            <p className="text-xs text-blue-600 mt-1">Phương pháp này sẽ được áp dụng tự động khi tạo lô sơ chế</p>
+          </div>
+        </div>
+      )}
+
+      {/* Không hiển thị dropdown chọn phương pháp vì đã có từ plan */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <p className="text-sm text-gray-700">
+          <strong>Lưu ý:</strong> Chỉ những loại cà phê có yêu cầu sơ chế từ kế hoạch mới được hiển thị ở đây.
+        </p>
       </div>
 
       <div>

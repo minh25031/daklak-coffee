@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, CheckCircle, ArrowRight, Info } from "lucide-react";
-import { StageFailureInfo } from "@/lib/helpers/stageFailureParser";
+import { StageFailureInfo } from "@/lib/helpers/evaluationHelpers";
 import { ProcessingBatchProgress } from "@/lib/api/processingBatchProgress";
 
 interface ProgressGuidanceCardProps {
