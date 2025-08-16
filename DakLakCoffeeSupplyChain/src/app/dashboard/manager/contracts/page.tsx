@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getAllContracts, ContractViewAllDto } from "@/lib/api/contracts";
 import FilterStatusPanel from "@/components/contracts/FilterContractStatusPanel";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   Search,
   ChevronLeft,
@@ -120,8 +121,10 @@ export default function ContractsPage() {
       );
       setShowDeleteDialog(false);
       setContractToDelete(null);
+      toast.success("Xóa hợp đồng thành công!");
     } catch (error) {
       console.error("Lỗi khi xoá hợp đồng:", error);
+      toast.error("Xóa hợp đồng thất bại!");
     }
   }
 
