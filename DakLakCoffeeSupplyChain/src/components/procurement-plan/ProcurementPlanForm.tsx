@@ -13,7 +13,7 @@ import { ProcessingMethod } from "@/lib/api/processingMethods";
 export interface ProcurementPlanDetailFormData {
   planDetailsId?: string; // Optional for new details
   coffeeTypeId: string;
-  processMethodId: number;
+  processMethodId: number | undefined;
   targetQuantity: number;
   targetRegion: string;
   minimumRegistrationQuantity: number;
@@ -113,10 +113,19 @@ export default function ProcurementPlanForm({
     ];
 
     const newDetails = [...form.procurementPlansDetails];
-    newDetails[index] = {
-      ...newDetails[index],
-      [name]: numberFields.includes(name) ? Number(value) : value,
-    };
+
+    if (name === "processMethodId") {
+      // Nếu chọn giá trị 0 (không chọn), gán null
+      newDetails[index] = {
+        ...newDetails[index],
+        [name]: Number(value) === 0 ? null : Number(value),
+      };
+    } else {
+      newDetails[index] = {
+        ...newDetails[index],
+        [name]: numberFields.includes(name) ? Number(value) : value,
+      };
+    }
 
     const newForm = { ...form, procurementPlansDetails: newDetails };
     setForm(newForm);
@@ -264,7 +273,8 @@ export default function ProcurementPlanForm({
 
               <div>
                 <Label htmlFor={`processMethodId-${index}`}>
-                  Phương pháp sơ chế<span className='text-red-500'>*</span>
+                  Phương pháp sơ chế
+                  {/* <span className='text-red-500'>*</span> */}
                 </Label>
                 {loading ? (
                   <LoadingSpinner />
@@ -279,7 +289,7 @@ export default function ProcurementPlanForm({
                       name='processMethodId'
                       value={detail.processMethodId}
                       onChange={(e) => handleDetailChange(index, e)}
-                      required
+                      // required
                       className='block w-full rounded border border-gray-300 px-3 py-2'
                     >
                       <option value={0}>-- Chọn phương pháp sơ chế --</option>
@@ -289,11 +299,11 @@ export default function ProcurementPlanForm({
                         </option>
                       ))}
                     </select>
-                    {errors[`processMethodId-${index}`] && (
+                    {/* {errors[`processMethodId-${index}`] && (
                       <p className='text-red-500 text-xs'>
                         {errors[`processMethodId-${index}`]}
                       </p>
-                    )}
+                    )} */}
                   </>
                 )}
               </div>

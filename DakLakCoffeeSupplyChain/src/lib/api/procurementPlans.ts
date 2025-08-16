@@ -42,8 +42,8 @@ export type ProcurementPlansDetails = {
     typicalRegion: string;
     specialtyLevel: string;
   };
-  processMethodId: number;
-  processingMethodName: string;
+  processMethodId?: number | undefined;
+  processingMethodName: string | undefined;
   targetQuantity: number;
   targetRegion: string;
   minimumRegistrationQuantity: number;

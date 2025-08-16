@@ -30,7 +30,9 @@ export default function ProcurementPlanDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [plan, setPlan] = useState<ProcurementPlan | null>(null);
-  const [registrations, setRegistrations] = useState<CultivationRegistration[]>([]);
+  const [registrations, setRegistrations] = useState<CultivationRegistration[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -42,15 +44,13 @@ export default function ProcurementPlanDetailPage() {
 
     fetchRegistration(id);
   }, [id]);
- //#region APIs call
+  //#region APIs call
   const fetchRegistration = async (planId: ParamValue) => {
     setLoading(true);
-    const data = await getCultivationRegistrationsByPlanId(planId).catch(
-      () => {
-        //AppToast.error(getErrorMessage(error));
-        return [];
-      }
-    );
+    const data = await getCultivationRegistrationsByPlanId(planId).catch(() => {
+      //AppToast.error(getErrorMessage(error));
+      return [];
+    });
     //console.log("Fetched Procurement Plans:", data);
     setRegistrations(data);
     //console.log("Fetched Registrations:", data);
@@ -186,7 +186,7 @@ export default function ProcurementPlanDetailPage() {
                         </div>
                         <div>
                           <strong>Loại cà phê:</strong>{" "}
-                          {detail.coffeeType?.botanicalName}
+                          {detail.coffeeType?.typeName}
                         </div>
                         <div>
                           <strong>Phân loại:</strong>{" "}
@@ -196,10 +196,12 @@ export default function ProcurementPlanDetailPage() {
                           <strong>Vùng đặc trưng:</strong>{" "}
                           {detail.coffeeType?.typicalRegion}
                         </div>
-                        <div>
-                          <strong>Phương pháp chế biến:</strong>{" "}
-                          {detail.processingMethodName}
-                        </div>
+                        {detail.processingMethodName && (
+                          <div>
+                            <strong>Phương pháp sơ chế:</strong>{" "}
+                            {detail.processingMethodName}
+                          </div>
+                        )}
                         <div>
                           <strong>Sản lượng mục tiêu:</strong>{" "}
                           {detail.targetQuantity?.toLocaleString()} kg
