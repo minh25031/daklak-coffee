@@ -109,15 +109,6 @@ function buildStatusFilter(raw?: string): string | undefined {
 }
 
 
-// ✅ Tối ưu: Thêm response type với pagination
-export interface CropSeasonListResponse {
-  data: CropSeasonListItem[];
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
 export async function getCropSeasonsForCurrentUser(params: {
   search?: string;
   status?: string;   // có thể truyền 'Active' | 'Đang hoạt động' | '0'
