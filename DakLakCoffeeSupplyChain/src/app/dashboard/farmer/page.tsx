@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthGuard } from "@/lib/auth/useAuthGuard";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
     FiClipboard,
     FiFeather,
@@ -25,7 +25,7 @@ import {
 } from "chart.js";
 import { Line, Doughnut } from "react-chartjs-2";
 import { getCropSeasonsForCurrentUser } from "@/lib/api/cropSeasons";
-import { getAllCropProgresses, CropProgressViewAllDto } from "@/lib/api/cropProgress";
+import { getCropProgressSummary, CropProgressSummary } from "@/lib/api/cropProgress";
 
 ChartJS.register(
     CategoryScale,
@@ -83,9 +83,12 @@ export default function FarmerDashboard() {
     } | null>(null);
 
     const [alerts, setAlerts] = useState<string[]>([]);
-    const [chartData, setChartData] = useState<ChartData | null>(null);
     const [overallProgressData, setOverallProgressData] = useState<DoughnutData>(DEFAULT_PROGRESS_DATA);
     const [loading, setLoading] = useState(true);
+
+    // ✅ Tối ưu: Cache dashboard data để tránh gọi API lại
+    const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
 
     const chartOptions = {
         responsive: true,
@@ -95,113 +98,136 @@ export default function FarmerDashboard() {
         },
     };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
+    // ✅ Tối ưu: Tách fetchData thành function riêng để có thể cache
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
 
-                // Fetch crop seasons
-                const cropSeasons = await getCropSeasonsForCurrentUser({
+            // ✅ Tối ưu: Parallel API calls thay vì tuần tự
+            const [cropSeasons, progressSummary] = await Promise.all([
+                // Giảm pageSize từ 100 xuống 20 để tăng tốc
+                getCropSeasonsForCurrentUser({
                     status: "Đang hoạt động",
                     page: 1,
-                    pageSize: 100,
-                });
+                    pageSize: 20, // ← Giảm từ 100 xuống 20
+                }),
+                getCropProgressSummary() // ← Sử dụng API mới nhẹ hơn
+            ]);
 
-                setStats({
-                    activeSeasons: cropSeasons.length,
-                    upcomingHarvests: 5,
-                    pendingWarehouseRequests: 1,
-                    unreadAdvice: 3,
-                });
+            // ✅ Tối ưu: Set stats ngay lập tức
+            setStats({
+                activeSeasons: cropSeasons.length,
+                upcomingHarvests: 5,
+                pendingWarehouseRequests: 1,
+                unreadAdvice: 3,
+            });
 
-                setAlerts([
-                    "Chưa cập nhật tiến độ trong 7 ngày qua.",
-                    "Vùng Cư M'gar có sản lượng thấp hơn kế hoạch.",
-                ]);
+            setAlerts([
+                "Chưa cập nhật tiến độ trong 7 ngày qua.",
+                "Vùng Cư M'gar có sản lượng thấp hơn kế hoạch.",
+            ]);
 
-                // Set monthly production chart
-                setChartData({
-                    labels: ["T1", "T2", "T3", "T4", "T5"],
+            // ✅ Tối ưu: Chart data sẽ được set ở dưới với useMemo
+
+            // ✅ Tối ưu: Sử dụng progress summary từ API thay vì xử lý phức tạp
+            try {
+                const average = progressSummary.averageProgress || 0;
+
+                setOverallProgressData({
+                    labels: ["Hoàn thành", "Còn lại"],
                     datasets: [
                         {
-                            label: "Thực tế (kg)",
-                            data: [400, 450, 380, 520, 610],
-                            borderColor: "#FD7622",
-                            backgroundColor: "rgba(253, 118, 34, 0.2)",
-                            tension: 0.3,
-                            fill: false,
-                        },
-                        {
-                            label: "Kế hoạch (kg)",
-                            data: [500, 500, 500, 500, 500],
-                            borderColor: "#8884d8",
-                            borderDash: [5, 5],
-                            backgroundColor: "rgba(136, 132, 216, 0.2)",
-                            tension: 0.3,
-                            fill: false,
+                            data: [average, 100 - average],
+                            backgroundColor: ["#16a34a", "#f3f4f6"],
+                            borderWidth: 1,
                         },
                     ],
                 });
-
-                // Handle crop progress data with error catching
-                try {
-                    const progresses = await getAllCropProgresses();
-                    const grouped: Record<string, CropProgressViewAllDto[]> = {};
-
-                    for (const p of progresses) {
-                        if (!grouped[p.cropSeasonDetailId]) {
-                            grouped[p.cropSeasonDetailId] = [];
-                        }
-                        grouped[p.cropSeasonDetailId].push(p);
-                    }
-
-                    const TOTAL_STAGES = 5;
-                    const percentList: number[] = [];
-
-                    for (const regionId in grouped) {
-                        const steps = grouped[regionId];
-                        const current = Math.max(...steps.map(s => s.stepIndex ?? 0));
-                        const percent = Math.min(((current + 1) / TOTAL_STAGES) * 100, 100);
-                        percentList.push(percent);
-                    }
-
-                    const average = percentList.length > 0
-                        ? Math.round(percentList.reduce((a, b) => a + b, 0) / percentList.length)
-                        : 0;
-
-                    setOverallProgressData({
-                        labels: ["Hoàn thành", "Còn lại"],
-                        datasets: [
-                            {
-                                data: [average, 100 - average],
-                                backgroundColor: ["#16a34a", "#f3f4f6"],
-                                borderWidth: 1,
-                            },
-                        ],
-                    });
-                } catch (progressError) {
-                    console.log("Không có dữ liệu tiến trình, sử dụng giá trị mặc định:", progressError);
-                    setOverallProgressData(DEFAULT_PROGRESS_DATA);
-                }
-
-            } catch (error) {
-                console.error("Lỗi lấy dữ liệu dashboard:", error);
-            } finally {
-                setLoading(false);
+            } catch (progressError) {
+                console.log("Không có dữ liệu tiến trình, sử dụng giá trị mặc định:", progressError);
+                setOverallProgressData(DEFAULT_PROGRESS_DATA);
             }
-        };
+
+            // ✅ Tối ưu: Cập nhật thời gian cache
+            setLastFetchTime(Date.now());
+
+        } catch (error) {
+            console.error("Lỗi lấy dữ liệu dashboard:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        // ✅ Tối ưu: Kiểm tra cache trước khi gọi API
+        const now = Date.now();
+        if (now - lastFetchTime < CACHE_DURATION && stats) {
+            // Data vẫn còn trong cache, không cần gọi API
+            return;
+        }
 
         fetchData();
-    }, []);
+    }, [fetchData, lastFetchTime, stats, CACHE_DURATION]);
+
+    // ✅ Tối ưu: Sử dụng useMemo để tạo chart data một lần
+    const chartData = useMemo(() => ({
+        labels: ["T1", "T2", "T3", "T4", "T5"],
+        datasets: [
+            {
+                label: "Thực tế (kg)",
+                data: [400, 450, 380, 520, 610],
+                borderColor: "#FD7622",
+                backgroundColor: "rgba(253, 118, 34, 0.2)",
+                tension: 0.3,
+                fill: false,
+            },
+            {
+                label: "Kế hoạch (kg)",
+                data: [500, 500, 500, 500, 500],
+                borderColor: "#8884d8",
+                borderDash: [5, 5],
+                backgroundColor: "rgba(136, 132, 216, 0.2)",
+                tension: 0.3,
+                fill: false,
+            },
+        ],
+    }), []);
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-orange-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <FiCoffee className="w-6 h-6 text-orange-600 animate-pulse" />
+            <div className="min-h-screen bg-orange-50">
+                <div className="max-w-6xl mx-auto p-4 space-y-6">
+                    {/* ✅ Tối ưu: Skeleton loading thay vì spinner đơn giản */}
+                    <div className="bg-white rounded-lg shadow-sm p-4 border border-orange-100">
+                        <div className="animate-pulse">
+                            <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
+                            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                        </div>
                     </div>
-                    <p className="text-gray-600 font-medium text-sm">Đang tải dữ liệu...</p>
+
+                    {/* Stats skeleton */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="bg-white rounded-lg shadow-sm p-4 border border-orange-100">
+                                <div className="animate-pulse">
+                                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                    <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Charts skeleton */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {[1, 2].map((i) => (
+                            <div key={i} className="bg-white rounded-lg shadow-sm border border-orange-100 p-4">
+                                <div className="animate-pulse">
+                                    <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                                    <div className="h-[250px] bg-gray-200 rounded"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         );
@@ -262,18 +288,9 @@ export default function FarmerDashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-4">
                             <DashboardSectionTitle title="Sản lượng theo tháng" />
-                            {chartData ? (
-                                <div className="h-[250px]">
-                                    <Line data={chartData} options={chartOptions} />
-                                </div>
-                            ) : (
-                                <div className="h-[250px] flex items-center justify-center text-gray-500">
-                                    <div className="text-center">
-                                        <FiTrendingUp className="w-10 h-10 text-orange-300 mx-auto mb-2" />
-                                        <p className="text-sm">Đang tải dữ liệu biểu đồ...</p>
-                                    </div>
-                                </div>
-                            )}
+                            <div className="h-[250px]">
+                                <Line data={chartData} options={chartOptions} />
+                            </div>
                         </div>
                         <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-4">
                             <DashboardSectionTitle title="Tiến độ mùa vụ tổng thể" />

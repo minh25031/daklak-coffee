@@ -97,6 +97,30 @@ export async function getAllCropProgresses(): Promise<CropProgressViewAllDto[]> 
   return response.data;
 }
 
+// ✅ Tối ưu: API mới để lấy progress summary cho dashboard
+export interface CropProgressSummary {
+  totalRegions: number;
+  averageProgress: number;
+  completedRegions: number;
+  inProgressRegions: number;
+}
+
+export async function getCropProgressSummary(): Promise<CropProgressSummary> {
+  try {
+    const response = await api.get("/CropProgresses/summary");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi getCropProgressSummary:", error);
+    // Fallback về dữ liệu mặc định
+    return {
+      totalRegions: 0,
+      averageProgress: 0,
+      completedRegions: 0,
+      inProgressRegions: 0
+    };
+  }
+}
+
 // =====================
 // GET BY DETAIL
 // =====================
