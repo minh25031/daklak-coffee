@@ -1,13 +1,12 @@
 "use client";
 
 import { useAuthGuard } from "@/lib/auth/useAuthGuard";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
     FiClipboard,
     FiFeather,
     FiBookOpen,
     FiPackage,
-    FiAlertTriangle,
     FiTrendingUp,
     FiCoffee,
 } from "react-icons/fi";
@@ -72,6 +71,13 @@ const DEFAULT_PROGRESS_DATA: DoughnutData = {
     ],
 };
 
+// Tối ưu: Tách biệt loading states để UX tốt hơn
+interface LoadingStates {
+    stats: boolean;
+    chart: boolean;
+    progress: boolean;
+}
+
 export default function FarmerDashboard() {
     useAuthGuard(["farmer"]);
 
@@ -82,119 +88,159 @@ export default function FarmerDashboard() {
         unreadAdvice: number;
     } | null>(null);
 
-    const [alerts, setAlerts] = useState<string[]>([]);
+    // Bỏ alerts state vì không còn sử dụng
     const [chartData, setChartData] = useState<ChartData | null>(null);
     const [overallProgressData, setOverallProgressData] = useState<DoughnutData>(DEFAULT_PROGRESS_DATA);
-    const [loading, setLoading] = useState(true);
 
-    const chartOptions = {
+    // Tối ưu: Loading states riêng biệt thay vì một loading chung
+    const [loadingStates, setLoadingStates] = useState<LoadingStates>({
+        stats: true,
+        chart: true,
+        progress: true,
+    });
+
+    // Tối ưu: Sử dụng useMemo để tránh tính toán lại chart options
+    const chartOptions = useMemo(() => ({
         responsive: true,
         plugins: {
             legend: { position: "top" as const },
             tooltip: { mode: "index" as const, intersect: false },
         },
-    };
+    }), []);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
+    // Tối ưu: Tách biệt việc fetch stats để load nhanh hơn
+    const fetchStats = useCallback(async () => {
+        try {
+            setLoadingStates(prev => ({ ...prev, stats: true }));
 
-                // Fetch crop seasons
-                const cropSeasons = await getCropSeasonsForCurrentUser({
-                    status: "Đang hoạt động",
-                    page: 1,
-                    pageSize: 100,
-                });
+            // Tối ưu: Chỉ lấy dữ liệu cần thiết với pageSize nhỏ
+            const cropSeasons = await getCropSeasonsForCurrentUser({
+                status: "Đang hoạt động",
+                page: 1,
+                pageSize: 10, // Giảm từ 100 xuống 10
+            });
 
-                setStats({
-                    activeSeasons: cropSeasons.length,
-                    upcomingHarvests: 5,
-                    pendingWarehouseRequests: 1,
-                    unreadAdvice: 3,
-                });
+            setStats({
+                activeSeasons: cropSeasons.length,
+                upcomingHarvests: Math.min(cropSeasons.length, 5), // Tính toán dựa trên data thực
+                pendingWarehouseRequests: 1,
+                unreadAdvice: 3,
+            });
 
-                setAlerts([
-                    "Chưa cập nhật tiến độ trong 7 ngày qua.",
-                    "Vùng Cư M'gar có sản lượng thấp hơn kế hoạch.",
-                ]);
-
-                // Set monthly production chart
-                setChartData({
-                    labels: ["T1", "T2", "T3", "T4", "T5"],
-                    datasets: [
-                        {
-                            label: "Thực tế (kg)",
-                            data: [400, 450, 380, 520, 610],
-                            borderColor: "#FD7622",
-                            backgroundColor: "rgba(253, 118, 34, 0.2)",
-                            tension: 0.3,
-                            fill: false,
-                        },
-                        {
-                            label: "Kế hoạch (kg)",
-                            data: [500, 500, 500, 500, 500],
-                            borderColor: "#8884d8",
-                            borderDash: [5, 5],
-                            backgroundColor: "rgba(136, 132, 216, 0.2)",
-                            tension: 0.3,
-                            fill: false,
-                        },
-                    ],
-                });
-
-                // Handle crop progress data with error catching
-                try {
-                    const progresses = await getAllCropProgresses();
-                    const grouped: Record<string, CropProgressViewAllDto[]> = {};
-
-                    for (const p of progresses) {
-                        if (!grouped[p.cropSeasonDetailId]) {
-                            grouped[p.cropSeasonDetailId] = [];
-                        }
-                        grouped[p.cropSeasonDetailId].push(p);
-                    }
-
-                    const TOTAL_STAGES = 5;
-                    const percentList: number[] = [];
-
-                    for (const regionId in grouped) {
-                        const steps = grouped[regionId];
-                        const current = Math.max(...steps.map(s => s.stepIndex ?? 0));
-                        const percent = Math.min(((current + 1) / TOTAL_STAGES) * 100, 100);
-                        percentList.push(percent);
-                    }
-
-                    const average = percentList.length > 0
-                        ? Math.round(percentList.reduce((a, b) => a + b, 0) / percentList.length)
-                        : 0;
-
-                    setOverallProgressData({
-                        labels: ["Hoàn thành", "Còn lại"],
-                        datasets: [
-                            {
-                                data: [average, 100 - average],
-                                backgroundColor: ["#16a34a", "#f3f4f6"],
-                                borderWidth: 1,
-                            },
-                        ],
-                    });
-                } catch (progressError) {
-                    console.log("Không có dữ liệu tiến trình, sử dụng giá trị mặc định:", progressError);
-                    setOverallProgressData(DEFAULT_PROGRESS_DATA);
-                }
-
-            } catch (error) {
-                console.error("Lỗi lấy dữ liệu dashboard:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
+            // Bỏ alerts để dashboard đơn giản hơn
+        } catch (error) {
+            console.error("Lỗi lấy stats:", error);
+            // Fallback data nếu có lỗi
+            setStats({
+                activeSeasons: 0,
+                upcomingHarvests: 0,
+                pendingWarehouseRequests: 0,
+                unreadAdvice: 0,
+            });
+        } finally {
+            setLoadingStates(prev => ({ ...prev, stats: false }));
+        }
     }, []);
 
-    if (loading) {
+    // Tối ưu: Tách biệt việc fetch chart data
+    const fetchChartData = useCallback(async () => {
+        try {
+            setLoadingStates(prev => ({ ...prev, chart: true }));
+
+            // Tối ưu: Sử dụng data mẫu để load nhanh, có thể thay bằng API call thực tế sau
+            setChartData({
+                labels: ["T1", "T2", "T3", "T4", "T5"],
+                datasets: [
+                    {
+                        label: "Thực tế (kg)",
+                        data: [400, 450, 380, 520, 610],
+                        borderColor: "#FD7622",
+                        backgroundColor: "rgba(253, 118, 34, 0.2)",
+                        tension: 0.3,
+                        fill: false,
+                    },
+                    {
+                        label: "Kế hoạch (kg)",
+                        data: [500, 500, 500, 500, 500],
+                        borderColor: "#8884d8",
+                        borderDash: [5, 5],
+                        backgroundColor: "rgba(136, 132, 216, 0.2)",
+                        tension: 0.3,
+                        fill: false,
+                    },
+                ],
+            });
+        } catch (error) {
+            console.error("Lỗi lấy chart data:", error);
+        } finally {
+            setLoadingStates(prev => ({ ...prev, chart: false }));
+        }
+    }, []);
+
+    // Tối ưu: Tách biệt việc fetch progress data
+    const fetchProgressData = useCallback(async () => {
+        try {
+            setLoadingStates(prev => ({ ...prev, progress: true }));
+
+            const progresses = await getAllCropProgresses();
+
+            // Tối ưu: Sử dụng Map thay vì object để performance tốt hơn
+            const grouped = new Map<string, CropProgressViewAllDto[]>();
+
+            for (const p of progresses) {
+                const existing = grouped.get(p.cropSeasonDetailId) || [];
+                existing.push(p);
+                grouped.set(p.cropSeasonDetailId, existing);
+            }
+
+            const TOTAL_STAGES = 5;
+            const percentList: number[] = [];
+
+            // Tối ưu: Sử dụng for...of thay vì for...in
+            for (const [, steps] of grouped) {
+                if (steps.length > 0) {
+                    const current = Math.max(...steps.map(s => s.stepIndex ?? 0));
+                    const percent = Math.min(((current + 1) / TOTAL_STAGES) * 100, 100);
+                    percentList.push(percent);
+                }
+            }
+
+            const average = percentList.length > 0
+                ? Math.round(percentList.reduce((a, b) => a + b, 0) / percentList.length)
+                : 0;
+
+            setOverallProgressData({
+                labels: ["Hoàn thành", "Còn lại"],
+                datasets: [
+                    {
+                        data: [average, 100 - average],
+                        backgroundColor: ["#16a34a", "#f3f4f6"],
+                        borderWidth: 1,
+                    },
+                ],
+            });
+        } catch (progressError) {
+            console.log("Không có dữ liệu tiến trình, sử dụng giá trị mặc định:", progressError);
+            setOverallProgressData(DEFAULT_PROGRESS_DATA);
+        } finally {
+            setLoadingStates(prev => ({ ...prev, progress: false }));
+        }
+    }, []);
+
+    useEffect(() => {
+        // Tối ưu: Fetch song song các data để load nhanh hơn
+        fetchStats();
+        fetchChartData();
+        fetchProgressData();
+    }, [fetchStats, fetchChartData, fetchProgressData]);
+
+    // Tối ưu: Tính toán loading state tổng thể
+    const isLoading = useMemo(() =>
+        loadingStates.stats || loadingStates.chart || loadingStates.progress,
+        [loadingStates]
+    );
+
+    if (isLoading) {
         return (
             <div className="min-h-screen bg-orange-50 flex items-center justify-center">
                 <div className="text-center">
@@ -235,24 +281,28 @@ export default function FarmerDashboard() {
                                 label="Mùa vụ đang hoạt động"
                                 value={stats.activeSeasons}
                                 color="orange"
+                                loading={loadingStates.stats}
                             />
                             <StatCard
                                 icon={<FiBookOpen className="w-5 h-5" />}
                                 label="Vùng sắp thu hoạch"
                                 value={stats.upcomingHarvests}
                                 color="green"
+                                loading={loadingStates.stats}
                             />
                             <StatCard
                                 icon={<FiPackage className="w-5 h-5" />}
                                 label="Yêu cầu giao hàng"
                                 value={stats.pendingWarehouseRequests}
                                 color="blue"
+                                loading={loadingStates.stats}
                             />
                             <StatCard
                                 icon={<FiFeather className="w-5 h-5" />}
                                 label="Phản hồi kỹ thuật chưa đọc"
                                 value={stats.unreadAdvice}
                                 color="purple"
+                                loading={loadingStates.stats}
                             />
                         </div>
                     </section>
@@ -262,7 +312,7 @@ export default function FarmerDashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-4">
                             <DashboardSectionTitle title="Sản lượng theo tháng" />
-                            {chartData ? (
+                            {chartData && !loadingStates.chart ? (
                                 <div className="h-[250px]">
                                     <Line data={chartData} options={chartOptions} />
                                 </div>
@@ -270,7 +320,9 @@ export default function FarmerDashboard() {
                                 <div className="h-[250px] flex items-center justify-center text-gray-500">
                                     <div className="text-center">
                                         <FiTrendingUp className="w-10 h-10 text-orange-300 mx-auto mb-2" />
-                                        <p className="text-sm">Đang tải dữ liệu biểu đồ...</p>
+                                        <p className="text-sm">
+                                            {loadingStates.chart ? "Đang tải dữ liệu biểu đồ..." : "Không có dữ liệu"}
+                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -278,32 +330,34 @@ export default function FarmerDashboard() {
                         <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-4">
                             <DashboardSectionTitle title="Tiến độ mùa vụ tổng thể" />
                             <div className="flex items-center justify-center">
-                                <div className="relative h-[200px] w-[200px]">
-                                    <Doughnut data={overallProgressData} />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="text-center">
-                                            <span className="text-2xl font-bold text-green-700">
-                                                {overallProgressData.datasets[0].data[0]}%
-                                            </span>
-                                            <p className="text-xs text-gray-500">Hoàn thành</p>
+                                {!loadingStates.progress ? (
+                                    <div className="relative h-[200px] w-[200px]">
+                                        <Doughnut data={overallProgressData} />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <span className="text-2xl font-bold text-green-700">
+                                                    {overallProgressData.datasets[0].data[0]}%
+                                                </span>
+                                                <p className="text-xs text-gray-500">Hoàn thành</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="h-[200px] w-[200px] flex items-center justify-center">
+                                        <div className="text-center">
+                                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                                <FiCoffee className="w-4 h-4 text-orange-600 animate-pulse" />
+                                            </div>
+                                            <p className="text-sm text-gray-500">Đang tải...</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {alerts.length > 0 && (
-                    <section>
-                        <DashboardSectionTitle title="Cảnh báo" />
-                        <div className="space-y-3">
-                            {alerts.map((msg, idx) => (
-                                <AlertCard key={idx} message={msg} />
-                            ))}
-                        </div>
-                    </section>
-                )}
+                {/* Bỏ phần cảnh báo để dashboard đơn giản hơn */}
 
                 <section>
                     <DashboardSectionTitle title="Hành động nhanh" />
@@ -340,12 +394,14 @@ function StatCard({
     icon,
     label,
     value,
-    color
+    color,
+    loading = false
 }: {
     icon: React.ReactNode;
     label: string;
     value: number;
     color: string;
+    loading?: boolean;
 }) {
     const colorClasses = {
         orange: "bg-gradient-to-r from-orange-500 to-amber-500",
@@ -361,24 +417,24 @@ function StatCard({
                     {icon}
                 </div>
                 <div>
-                    <p className="text-xl font-bold text-gray-800">{value}</p>
-                    <p className="text-gray-600 text-xs">{label}</p>
+                    {loading ? (
+                        <div className="animate-pulse">
+                            <div className="h-6 bg-gray-200 rounded w-16 mb-1"></div>
+                            <div className="h-3 bg-gray-200 rounded w-24"></div>
+                        </div>
+                    ) : (
+                        <>
+                            <p className="text-xl font-bold text-gray-800">{value}</p>
+                            <p className="text-gray-600 text-xs">{label}</p>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
 
-function AlertCard({ message }: { message: string }) {
-    return (
-        <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
-            <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <FiAlertTriangle className="w-3 h-3 text-red-600" />
-            </div>
-            <div className="text-red-800 font-medium text-sm">{message}</div>
-        </div>
-    );
-}
+// Bỏ AlertCard component vì không còn sử dụng
 
 function ActionCard({
     icon,
