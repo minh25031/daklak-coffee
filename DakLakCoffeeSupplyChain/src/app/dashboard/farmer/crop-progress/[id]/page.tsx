@@ -117,6 +117,13 @@ export default function CropProgressPage() {
     }, [cropSeasonDetailId]);
 
     const handleEditSuccess = useCallback(() => {
+        // Cập nhật cả progress list và season detail
+        reloadData();
+        loadSeasonDetail();
+    }, [reloadData, loadSeasonDetail]);
+
+    const handleCreateSuccess = useCallback(() => {
+        // Cập nhật cả progress list và season detail
         reloadData();
         loadSeasonDetail();
     }, [reloadData, loadSeasonDetail]);
@@ -208,8 +215,9 @@ export default function CropProgressPage() {
                                     existingProgress={progressList.map((p) => ({
                                         stageCode: p.stageCode,
                                     }))}
-                                    onSuccess={reloadData}
+                                    onSuccess={handleCreateSuccess}
                                     onStagesLoaded={handleStagesLoaded}
+                                    onSeasonDetailUpdate={handleSeasonDetailUpdate}
                                 />
                             )}
                         </div>

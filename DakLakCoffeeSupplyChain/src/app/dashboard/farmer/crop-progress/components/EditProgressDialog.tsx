@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
     Dialog,
     DialogTrigger,
@@ -46,7 +46,11 @@ export function EditProgressDialog({
         undefined
     );
     const [loading, setLoading] = useState(false);
+    const [initialYield, setInitialYield] = useState<number | undefined>(
+        progress.actualYield
+    );
 
+    // Load season detail khi dialog mở
     useEffect(() => {
         if (open && progress.stageCode === HARVESTING_STAGE_CODE) {
             getCropSeasonDetailById(progress.cropSeasonDetailId)
@@ -54,6 +58,7 @@ export function EditProgressDialog({
                     if (detail?.actualYield != null) {
                         setActualYield(detail.actualYield);
                         setSeasonDetailYield(detail.actualYield);
+                        setInitialYield(detail.actualYield);
                     }
                 })
                 .catch(() => {
@@ -62,16 +67,20 @@ export function EditProgressDialog({
         }
     }, [open, progress]);
 
-    // Remove the problematic useEffect that was causing infinite loops
-    // useEffect(() => {
-    //     if (progress.stageCode === HARVESTING_STAGE_CODE && actualYield && onSeasonDetailUpdate) {
-    //         // Chỉ gọi callback khi sản lượng thực sự thay đổi
-    //         if (actualYield !== progress.actualYield) {
-    //             console.log('Harvest yield changed, calling callback with:', actualYield);
-    //             onSeasonDetailUpdate(actualYield);
-    //         }
-    //     }
-    // }, [actualYield, progress.actualYield, progress.stageCode, onSeasonDetailUpdate]);
+    // Reset form khi dialog đóng
+    useEffect(() => {
+        if (!open) {
+            setNote(progress.note || "");
+            setProgressDate(
+                progress.progressDate
+                    ? new Date(progress.progressDate).toISOString().split("T")[0]
+                    : ""
+            );
+            setActualYield(progress.actualYield);
+            setSeasonDetailYield(undefined);
+            setInitialYield(progress.actualYield);
+        }
+    }, [open, progress]);
 
     const handleSubmit = async () => {
         if (!progressDate) {
@@ -119,17 +128,26 @@ export function EditProgressDialog({
             AppToast.success("Cập nhật tiến độ thành công!");
             setOpen(false);
 
+            // Cập nhật sản lượng ngay lập tức nếu là giai đoạn thu hoạch và có thay đổi
+            if (progress.stageCode === HARVESTING_STAGE_CODE && actualYield && onSeasonDetailUpdate) {
+                const hasYieldChanged = actualYield !== initialYield;
+                console.log('Update successful, harvest yield:', actualYield);
+                console.log('Initial yield:', initialYield, 'New yield:', actualYield, 'Changed:', hasYieldChanged);
+
+                if (hasYieldChanged) {
+                    // Cập nhật local state
+                    setSeasonDetailYield(actualYield);
+                    setInitialYield(actualYield);
+
+                    // Gọi callback để cập nhật parent component ngay lập tức
+                    console.log('Calling onSeasonDetailUpdate with new yield:', actualYield);
+                    onSeasonDetailUpdate(actualYield);
+                }
+            }
+
             // Reload cả danh sách tiến độ và thông tin vùng trồng
             onSuccess();
 
-            // Cập nhật sản lượng ngay lập tức nếu là giai đoạn thu hoạch
-            if (progress.stageCode === HARVESTING_STAGE_CODE && actualYield) {
-                console.log('Update successful, harvest yield:', actualYield);
-                // Cập nhật local state
-                setSeasonDetailYield(actualYield);
-                // Gọi callback để cập nhật parent component
-                onSeasonDetailUpdate?.(actualYield);
-            }
         } catch (error: unknown) {
             let errorMessage = "Cập nhật thất bại.";
 
@@ -147,6 +165,21 @@ export function EditProgressDialog({
             setLoading(false);
         }
     };
+
+    // Kiểm tra xem có thay đổi gì không
+    const hasChanges = useCallback(() => {
+        const noteChanged = note !== (progress.note || "");
+        const dateChanged = progressDate !== (
+            progress.progressDate
+                ? new Date(progress.progressDate).toISOString().split("T")[0]
+                : ""
+        );
+        const yieldChanged = progress.stageCode === HARVESTING_STAGE_CODE
+            ? actualYield !== initialYield
+            : false;
+
+        return noteChanged || dateChanged || yieldChanged;
+    }, [note, progressDate, actualYield, initialYield, progress.note, progress.progressDate, progress.stageCode]);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -218,6 +251,11 @@ export function EditProgressDialog({
                                     Sản lượng đã ghi trước đó: <strong>{seasonDetailYield} kg</strong>
                                 </p>
                             )}
+                            {initialYield !== undefined && actualYield !== initialYield && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                    💡 Sản lượng sẽ được cập nhật từ {initialYield} kg → {actualYield} kg
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -229,7 +267,11 @@ export function EditProgressDialog({
 
                     {/* Nút lưu */}
                     <div className="flex justify-end pt-2">
-                        <Button onClick={handleSubmit} disabled={loading}>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={loading || !hasChanges()}
+                            className="min-w-[120px]"
+                        >
                             {loading ? "Đang lưu..." : "Lưu thay đổi"}
                         </Button>
                     </div>
