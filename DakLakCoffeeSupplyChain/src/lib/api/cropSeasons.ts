@@ -65,10 +65,45 @@ interface ServiceResult<T = unknown> {
 // Lấy tất cả mùa vụ (dành cho Admin hoặc Manager)
 export async function getAllCropSeasons(): Promise<CropSeasonListItem[]> {
   try {
-    const res = await api.get<CropSeasonListItem[]>("/CropSeasons");
-    return res.data;
+    // Tối ưu: Sử dụng cache để tránh gọi API nhiều lần
+    const res = await api.get<CropSeasonListItem[] | { data: CropSeasonListItem[]; totalCount: number; page: number; pageSize: number; totalPages: number }>("/CropSeasons", {
+      // Tối ưu: Thêm timeout để tránh chờ quá lâu
+      timeout: 10000,
+      // Tối ưu: Sử dụng cache headers
+      headers: {
+        'Cache-Control': 'max-age=300' // Cache 5 phút
+      }
+    });
+    
+    // Kiểm tra response data và xử lý cả 2 format
+    if (res.data) {
+      // Format mới từ backend với pagination
+      if (typeof res.data === 'object' && 'data' in res.data && Array.isArray((res.data as any).data)) {
+        return (res.data as any).data;
+      }
+      // Format cũ trực tiếp là array
+      else if (Array.isArray(res.data)) {
+        return res.data;
+      }
+    }
+    
+    console.warn("Response data không đúng format:", res.data);
+    return [];
   } catch (err) {
     console.error("Lỗi getAllCropSeasons:", err);
+    
+    // Log chi tiết lỗi để debug
+    if (typeof err === 'object' && err !== null) {
+      const errorObj = err as any;
+      if (errorObj.response) {
+        console.error("Response status:", errorObj.response.status);
+        console.error("Response data:", errorObj.response.data);
+      }
+      if (errorObj.message) {
+        console.error("Error message:", errorObj.message);
+      }
+    }
+    
     return [];
   }
 }
@@ -118,23 +153,61 @@ export async function getCropSeasonsForCurrentUser(params: {
   const { search, status, page = 1, pageSize = 6 } = params ?? {};
   const q: Record<string, string | number> = {};
 
+  // Tối ưu: Sử dụng query parameters đơn giản thay vì OData
   if (search && search.trim()) {
-    q["$search"] = `"${search.trim()}"`;
+    q["search"] = search.trim();
   }
 
-  const statusFilter = buildStatusFilter(status);
-  if (statusFilter) {
-    q["$filter"] = statusFilter; // ví dụ: "Status eq 0"
+  if (status) {
+    const statusFilter = buildStatusFilter(status);
+    if (statusFilter) {
+      q["status"] = statusFilter;
+    }
   }
 
-  q["$top"] = pageSize;
-  q["$skip"] = (page - 1) * pageSize;
+  q["page"] = page;
+  q["pageSize"] = pageSize;
 
   try {
-    const res = await api.get<CropSeasonListItem[]>("/CropSeasons", { params: q });
-    return res.data;
-  } catch (err) {
+    // Tối ưu: Sử dụng timeout và cache headers
+    const res = await api.get<CropSeasonListItem[] | { data: CropSeasonListItem[]; totalCount: number; page: number; pageSize: number; totalPages: number }>("/CropSeasons", { 
+      params: q,
+      timeout: 10000,
+      headers: {
+        'Cache-Control': 'max-age=300'
+      }
+    });
+    
+    // Kiểm tra response data và xử lý cả 2 format
+    if (res.data) {
+      // Format mới từ backend với pagination
+      if (typeof res.data === 'object' && 'data' in res.data && Array.isArray((res.data as any).data)) {
+        return (res.data as any).data;
+      }
+      // Format cũ trực tiếp là array
+      else if (Array.isArray(res.data)) {
+        return res.data;
+      }
+    }
+    
+    console.warn("Response data không đúng format:", res.data);
+    return [];
+  } catch (err: unknown) {
+    // Tối ưu: Cải thiện error handling
     console.error("Lỗi getCropSeasonsForCurrentUser:", err);
+    
+    // Log chi tiết lỗi để debug
+    if (typeof err === 'object' && err !== null) {
+      const errorObj = err as { response?: { status?: number; data?: unknown }; message?: string };
+      if (errorObj.response) {
+        console.error("Response status:", errorObj.response.status);
+        console.error("Response data:", errorObj.response.data);
+      }
+      if (errorObj.message) {
+        console.error("Error message:", errorObj.message);
+      }
+    }
+    
     return [];
   }
 }
@@ -156,46 +229,53 @@ export async function deleteCropSeasonById(id: string): Promise<{ code: number; 
       code: 200,
       message: res.data || 'Xoá thành công',
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Chi tiết lỗi deleteCropSeasonById:", err);
     
     let message = 'Xoá mùa vụ thất bại.';
     
-    // Xử lý lỗi từ backend - ưu tiên ServiceResult.message
-    if (err.response?.data?.message) {
-      message = err.response.data.message;
-    } 
-    // Xử lý lỗi từ backend - trường hợp response.data là string
-    else if (err.response?.data && typeof err.response.data === 'string') {
-      message = err.response.data;
-    }
-    // Xử lý lỗi từ backend - trường hợp response.data là object có message
-    else if (err.response?.data && typeof err.response.data === 'object' && err.response.data.message) {
-      message = err.response.data.message;
+    // Type guard để kiểm tra response
+    const isResponseError = (error: unknown): error is { response?: { data?: unknown; status?: number } } => {
+      return typeof error === 'object' && error !== null && 'response' in error;
+    };
+    
+    const isErrorWithMessage = (error: unknown): error is { message: string } => {
+      return typeof error === 'object' && error !== null && 'message' in error && typeof (error as any).message === 'string';
+    };
+    
+    if (isResponseError(err)) {
+      // Xử lý lỗi từ backend - ưu tiên ServiceResult.message
+      if (err.response?.data && typeof err.response.data === 'object' && 'message' in err.response.data) {
+        message = (err.response.data as any).message;
+      } 
+      // Xử lý lỗi từ backend - trường hợp response.data là string
+      else if (err.response?.data && typeof err.response.data === 'string') {
+        message = err.response.data;
+      }
+      // Xử lý lỗi HTTP status
+      else if (err.response?.status) {
+        switch (err.response.status) {
+          case 400:
+            message = "Dữ liệu không hợp lệ";
+            break;
+          case 401:
+            message = "Không có quyền truy cập";
+            break;
+          case 404:
+            message = "Không tìm thấy mùa vụ";
+            break;
+          case 500:
+            message = "Lỗi server";
+            break;
+          default:
+            message = `Lỗi HTTP ${err.response.status}`;
+            break;
+        }
+      }
     }
     // Xử lý lỗi từ Error object
-    else if (err.message) {
+    else if (isErrorWithMessage(err)) {
       message = err.message;
-    }
-    // Xử lý lỗi HTTP status
-    else if (err.response?.status) {
-      switch (err.response.status) {
-        case 400:
-          message = "Dữ liệu không hợp lệ";
-          break;
-        case 401:
-          message = "Không có quyền truy cập";
-          break;
-        case 404:
-          message = "Không tìm thấy mùa vụ";
-          break;
-        case 500:
-          message = "Lỗi server";
-          break;
-        default:
-          message = `Lỗi HTTP ${err.response.status}`;
-          break;
-      }
     }
     
     return {
