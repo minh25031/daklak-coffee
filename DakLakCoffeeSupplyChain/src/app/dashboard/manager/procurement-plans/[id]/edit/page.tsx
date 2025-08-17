@@ -98,55 +98,10 @@ export default function EditProcurementPlanPage() {
   }, [initialData]);
 
   // State để lưu form tạm thời (do form trong component con kiểm soát, cần sync lại ở trang cha)
-  const [formData, setFormData] = useState<ProcurementPlanFormData | null>(
-    null
-  );
+  const [formData, setFormData] = useState<ProcurementPlanFormData | null>(null);
 
-  // Cập nhật dữ liệu form khi component con báo về thay đổi
-  const handleFormChange = (data: ProcurementPlanFormData) => {
-    setFormData(data);
-  };
-
-  // Thêm chi tiết kế hoạch
-  const handleAddDetail = () => {
-    if (!formData) return;
-    setFormData({
-      ...formData,
-      procurementPlansDetails: [
-        ...formData.procurementPlansDetails,
-        {
-          coffeeTypeId: "",
-          processMethodId: 0,
-          targetQuantity: 0,
-          targetRegion: "",
-          minimumRegistrationQuantity: 0,
-          minPriceRange: 0,
-          maxPriceRange: 0,
-          expectedYieldPerHectare: 0,
-          note: "",
-        },
-      ],
-    });
-  };
-
-  // Xóa chi tiết
-  const handleRemoveDetail = (index: number) => {
-  if (!formData) return;
-
-  // Chỉ cho phép xóa khi số lượng chi tiết >= 2
-  if (formData.procurementPlansDetails.length <= 1) return;
-
-  setFormData({
-    ...formData,
-    procurementPlansDetails: formData.procurementPlansDetails.filter(
-      (_, i) => i !== index
-    ),
-  });
-};
-
-  // Validate form (có thể tái sử dụng validateForm từ page create nếu muốn)
-
-  const validateForm = (data: ProcurementPlanFormData) => {
+  // Validate form
+  const validateForm = (data: ProcurementPlanFormData): { isValid: boolean; errorMessages: string[] } => {
     const newErrors: Record<string, string> = {};
     if (!data.title) newErrors.title = "Vui lòng nhập tên kế hoạch.";
     if (!data.startDate) newErrors.startDate = "Vui lòng chọn ngày bắt đầu.";
@@ -161,9 +116,9 @@ export default function EditProcurementPlanPage() {
       data.procurementPlansDetails.forEach((detail, index) => {
         if (!detail.coffeeTypeId)
           newErrors[`coffeeTypeId-${index}`] = "Vui lòng chọn loại cà phê.";
-        if (detail.processMethodId === 0)
-          newErrors[`processMethodId-${index}`] =
-            "Vui lòng chọn phương pháp sơ chế.";
+        // if (detail.processMethodId === 0)
+        //   newErrors[`processMethodId-${index}`] =
+        //     "Vui lòng chọn phương pháp sơ chế.";
         if (detail.targetQuantity <= 100)
           newErrors[`targetQuantity-${index}`] =
             "Sản lượng mục tiêu phải lớn hơn 100 kg.";
@@ -176,23 +131,34 @@ export default function EditProcurementPlanPage() {
         if (detail.maxPriceRange < detail.minPriceRange)
           newErrors[`maxPriceRange-${index}`] =
             "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu.";
-        if (detail.expectedYieldPerHectare <= 0)
-          newErrors[`expectedYieldPerHectare-${index}`] =
-            "Sản lượng dự kiến trên 1 ha phải lớn hơn 0.";
+        // if (detail.expectedYieldPerHectare <= 0)
+        //   newErrors[`expectedYieldPerHectare-${index}`] =
+        //     "Sản lượng dự kiến trên 1 ha phải lớn hơn 0.";
       });
     }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    //return Object.keys(newErrors).length === 0;
+    const errorMessages = Object.values(newErrors);
+    return {
+      isValid: errorMessages.length === 0,
+      errorMessages,
+    };
   };
 
+  //#region Handle functions
   // Submit cập nhật kế hoạch
   const handleSubmit = async () => {
-    if (!formData) return;
-    setIsSubmitting(true);
-    if (!validateForm(formData)) {
-      setIsSubmitting(false);
+    if (!formData) {
+      AppToast.error(getErrorMessage(errors));
       return;
     }
+    setIsSubmitting(true);
+    const { isValid, errorMessages } = validateForm(formData);
+    if (!isValid) {
+    setIsSubmitting(false);
+    AppToast.error(errorMessages.join('\n')); // show errors from validateForm directly
+    return;
+  }
 
     const detailsUpdateDto = formData.procurementPlansDetails
     .filter((item) => item.planDetailsId && item.planDetailsId.trim() !== "")
@@ -243,6 +209,50 @@ export default function EditProcurementPlanPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Cập nhật dữ liệu form khi component con báo về thay đổi
+  const handleFormChange = (data: ProcurementPlanFormData) => {
+    setFormData(data);
+  };
+
+  // Thêm chi tiết kế hoạch
+  const handleAddDetail = () => {
+    if (!formData) return;
+    setFormData({
+      ...formData,
+      procurementPlansDetails: [
+        ...formData.procurementPlansDetails,
+        {
+          coffeeTypeId: "",
+          processMethodId: 0,
+          targetQuantity: 0,
+          targetRegion: "",
+          minimumRegistrationQuantity: 0,
+          minPriceRange: 0,
+          maxPriceRange: 0,
+          expectedYieldPerHectare: 0,
+          note: "",
+        },
+      ],
+    });
+  };
+
+  // Xóa chi tiết
+  const handleRemoveDetail = (index: number) => {
+  if (!formData) return;
+
+  // Chỉ cho phép xóa khi số lượng chi tiết >= 2
+  if (formData.procurementPlansDetails.length <= 1) return;
+
+  setFormData({
+    ...formData,
+    procurementPlansDetails: formData.procurementPlansDetails.filter(
+      (_, i) => i !== index
+    ),
+  });
+};
+
+  //endregion
 
   if (loading || !initialData) {
     return (

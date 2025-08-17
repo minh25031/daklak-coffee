@@ -2,6 +2,7 @@ import api from "./axios";
 import { useRouter } from "next/navigation";
 import { ProcessingBatchProgress } from "./processingBatchProgress";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
+import { CropSeasonListItem } from './cropSeasons';
 
 
 export interface ProcessingProgress {
@@ -33,6 +34,19 @@ export interface CoffeeType {
   typicalRegion: string;
   specialtyLevel: string;
   expectedYield: number;
+}
+
+export interface ProcessingInfo {
+  coffeeTypeId: string;
+  planProcessingMethodId?: number;
+  planProcessingMethodName?: string;
+  planProcessingMethodCode?: string;
+  hasPlanProcessingMethod: boolean;
+}
+
+export interface AvailableCoffeeTypesResponse {
+  coffeeTypes: CoffeeType[];
+  processingInfo: ProcessingInfo[];
 }
 
 
@@ -136,39 +150,48 @@ export async function searchProcessingBatches(query: string): Promise<Processing
   }
 }
 
-export async function getAvailableCoffeeTypes(cropSeasonId: string): Promise<CoffeeType[]> {
+export async function getAvailableBatchesForWarehouseRequest(): Promise<any[]> {
   try {
-    console.log("🌱 Fetching available coffee types for crop season:", cropSeasonId);
+    console.log("🔍 DEBUG: Calling GET /ProcessingBatch/warehouse-request/available API...");
+    const res = await api.get("/ProcessingBatch/warehouse-request/available");
+    console.log("🔍 DEBUG: GET /ProcessingBatch/warehouse-request/available response:", res);
     
-    // Nếu không có cropSeasonId, trả về tất cả coffee types
-    if (!cropSeasonId) {
-      console.log("🌱 No crop season ID provided, fetching all coffee types");
-      const response = await api.get("/CoffeeType");
-      return response.data || [];
-    }
-    
-    // Gọi API để lấy coffee types theo crop season
-    const response = await api.get(`/ProcessingBatch/available-coffee-types?cropSeasonId=${cropSeasonId}`);
-    console.log("🌱 Coffee types fetched successfully:", response.data?.length || 0, "types");
-    
-    return response.data || [];
-  } catch (error: any) {
-    console.error("❌ Error fetching available coffee types:", error);
-    
-    // Nếu lỗi 404 (không tìm thấy), trả về mảng rỗng
-    if (error?.response?.status === 404) {
-      console.log("🌱 No coffee types found for this crop season");
+    // Backend trả về ServiceResult {status, message, data}
+    if (res.data && res.data.status === 1 && res.data.data) {
+      console.log("✅ Available batches data:", res.data.data);
+      return res.data.data;
+    } else {
+      console.log("⚠️ No available batches or error response:", res.data);
       return [];
     }
+  } catch (err) {
+    console.error("❌ Lỗi getAvailableBatchesForWarehouseRequest:", err);
+    return [];
+  }
+}
+
+export async function getAvailableCoffeeTypes(cropSeasonId: string): Promise<AvailableCoffeeTypesResponse> {
+  try {
+    console.log("🔍 DEBUG: Calling GET /ProcessingBatch/available-coffee-types/{cropSeasonId} API...");
+    const res = await api.get(`/ProcessingBatch/available-coffee-types/${cropSeasonId}`);
+    console.log("🔍 DEBUG: GET /ProcessingBatch/available-coffee-types response:", res);
+    return res.data;
+  } catch (err) {
+    console.error("❌ Lỗi getAvailableCoffeeTypes:", err);
     
-    // Fallback: trả về tất cả coffee types nếu API fail
-    console.log("🌱 Falling back to all coffee types");
+    // Fallback response nếu API lỗi
+    const fallbackResponse = {
+      coffeeTypes: [],
+      processingInfo: []
+    };
+    
     try {
-      const fallbackResponse = await api.get("/CoffeeType");
-      return fallbackResponse.data || [];
+      console.log("🔄 Trying fallback API...");
+      const fallbackRes = await api.get(`/ProcessingBatch/available-coffee-types/${cropSeasonId}`);
+      return fallbackRes.data || fallbackResponse;
     } catch (fallbackError) {
       console.error("❌ Fallback also failed:", fallbackError);
-      return [];
+      return fallbackResponse;
     }
   }
 }
@@ -235,5 +258,29 @@ export async function getFarmersWithBatchesForBusinessManager(): Promise<{farmer
     return [];
   }
 }
+
+export interface ProcessingDataResponse {
+  cropSeasons: CropSeasonListItem[];
+  coffeeTypes: CoffeeType[];
+  processingInfo: ProcessingInfo[];
+}
+
+export const getAvailableProcessingData = async (cropSeasonId?: string): Promise<ProcessingDataResponse> => {
+  try {
+    const url = cropSeasonId 
+      ? `/processingbatch/available-processing-data?cropSeasonId=${cropSeasonId}`
+      : `/processingbatch/available-processing-data`;
+    
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching available processing data:', error);
+    return {
+      cropSeasons: [],
+      coffeeTypes: [],
+      processingInfo: []
+    };
+  }
+};
 
 

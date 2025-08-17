@@ -22,13 +22,23 @@ type InboundRequest = {
   inboundRequestId: string;
   requestCode: string;
   status: string;
-  batchId: string;
+  batchId?: string; // Cà phê sơ chế
+  detailId?: string; // Cà phê tươi
+  requestedQuantity?: number; // Thêm số lượng yêu cầu
+  preferredDeliveryDate?: string; // Thêm ngày giao dự kiến
+  note?: string; // Thêm ghi chú
+  // Thông tin hiển thị
+  batchCode?: string;
+  detailCode?: string;
+  coffeeType?: string;
+  cropSeasonName?: string;
 };
 
 type InventoryRaw = any;
 type Inventory = {
   inventoryId: string;
   batchId?: string;
+  detailId?: string;  // Cho cà phê tươi
   productName?: string;
   quantity?: number;
   unit?: string;
@@ -45,6 +55,14 @@ function normalizeInventory(x: InventoryRaw): Inventory {
       x?.batch?.id ??
       x?.processingBatchId ??
       x?.ProcessingBatchId,
+    detailId:
+      x.detailId ??
+      x.DetailId ??
+      x.detailID ??
+      x.DetailID ??
+      x?.detail?.id ??
+      x?.cropSeasonDetailId ??
+      x?.CropSeasonDetailId,
     productName: x.productName ?? x.ProductName ?? x?.product?.name ?? x.Name,
     quantity: x.quantity ?? x.Quantity ?? x.quantityKg ?? x.Qty,
     unit: x.unit ?? x.Unit ?? (x.quantityKg ? "kg" : undefined),
@@ -130,11 +148,13 @@ export default function CreateReceiptPage() {
 
   const filteredInv = useMemo(() => {
     const b = selectedRequest?.batchId?.toLowerCase()?.trim();
-    if (!b) return [];
+    const d = selectedRequest?.detailId?.toLowerCase()?.trim();
+    if (!b && !d) return [];
     return (allInvOfWarehouse || []).filter(iv =>
-      iv.batchId?.toLowerCase()?.trim() === b
+      (b && iv.batchId?.toLowerCase()?.trim() === b) ||
+      (d && iv.detailId?.toLowerCase()?.trim() === d)
     );
-  }, [allInvOfWarehouse, selectedRequest?.batchId]);
+  }, [allInvOfWarehouse, selectedRequest?.batchId, selectedRequest?.detailId]);
 
   // ✅ Tính tổng tồn kho hiện có của batch tại kho
   const totalExisting = useMemo(
@@ -143,13 +163,14 @@ export default function CreateReceiptPage() {
   );
 
   async function handleCreateEmptyInventory() {
-    if (!warehouseId || !selectedRequest?.batchId) return;
+    if (!warehouseId || (!selectedRequest?.batchId && !selectedRequest?.detailId)) return;
     setCreatingInv(true);
     setError('');
     try {
       const payload = {
         warehouseId,
         batchId: selectedRequest.batchId,
+        detailId: selectedRequest.detailId,
         quantity: 0,
         unit: "kg",
         note: "Khởi tạo tồn kho trống từ màn tạo phiếu",
@@ -178,17 +199,27 @@ export default function CreateReceiptPage() {
       setError('Vui lòng chọn đầy đủ Phiếu yêu cầu và Kho.');
       return;
     }
-    if (!selectedRequest?.batchId) {
-      setError("Không tìm thấy batchId tương ứng với phiếu yêu cầu.");
+    if (!selectedRequest?.batchId && !selectedRequest?.detailId) {
+      setError("Không tìm thấy thông tin sản phẩm (batchId hoặc detailId) tương ứng với phiếu yêu cầu.");
       return;
     }
 
     const receiptData = {
       warehouseId,
       batchId: selectedRequest.batchId,
+      detailId: selectedRequest.detailId,
       receivedQuantity: 0,
       note,
     };
+
+    // Debug logging
+    console.log('🔍 DEBUG: Creating receipt with data:', {
+      warehouseId,
+      batchId: selectedRequest.batchId,
+      detailId: selectedRequest.detailId,
+      requestCode: selectedRequest.requestCode,
+      coffeeType: selectedRequest.batchId ? 'Processed' : selectedRequest.detailId ? 'Fresh' : 'Unknown'
+    });
 
     try {
       const res = await createWarehouseReceipt(inboundRequestId, receiptData);
@@ -271,12 +302,101 @@ export default function CreateReceiptPage() {
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{i.requestCode}</span>
                               <span className="text-xs text-gray-500">({i.status})</span>
+                              {i.requestedQuantity && (
+                                <span className="text-xs text-green-600 font-medium">
+                                  {i.requestedQuantity} kg
+                                </span>
+                              )}
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Inbound Request Details */}
+                  {selectedRequest && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="p-2 bg-green-100 rounded-full">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-green-800 mb-2">📋 Chi tiết yêu cầu nhập kho</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <span className="font-medium text-gray-700">Mã yêu cầu:</span>
+                              <span className="ml-2 text-green-700 font-semibold">{selectedRequest.requestCode}</span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700">Trạng thái:</span>
+                              <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                                {selectedRequest.status}
+                              </span>
+                            </div>
+                            {selectedRequest.requestedQuantity && (
+                              <div>
+                                <span className="font-medium text-gray-700">Số lượng yêu cầu:</span>
+                                <span className="ml-2 text-blue-700 font-semibold">{selectedRequest.requestedQuantity} kg</span>
+                              </div>
+                            )}
+                            {selectedRequest.preferredDeliveryDate && (
+                              <div>
+                                <span className="font-medium text-gray-700">Ngày giao dự kiến:</span>
+                                <span className="ml-2 text-gray-700">{selectedRequest.preferredDeliveryDate}</span>
+                              </div>
+                            )}
+                            {/* Thông tin loại cà phê */}
+                            <div>
+                              <span className="font-medium text-gray-700">Loại cà phê:</span>
+                              <span className="ml-2 px-2 py-1 text-xs rounded-full font-medium">
+                                {selectedRequest.batchId ? (
+                                  <span className="bg-purple-100 text-purple-800">☕ Cà phê sơ chế</span>
+                                ) : selectedRequest.detailId ? (
+                                  <span className="bg-orange-100 text-orange-800">🌱 Cà phê tươi</span>
+                                ) : (
+                                  <span className="bg-gray-100 text-gray-800">❓ Không xác định</span>
+                                )}
+                              </span>
+                            </div>
+                            {/* Thông tin chi tiết sản phẩm */}
+                            <div>
+                              <span className="font-medium text-gray-700">Thông tin:</span>
+                              <span className="ml-2 text-gray-700 font-semibold">
+                                {selectedRequest.batchId ? (
+                                  selectedRequest.batchCode || 'Lô sơ chế'
+                                ) : selectedRequest.detailId ? (
+                                  selectedRequest.cropSeasonName || selectedRequest.detailCode || 'Mùa vụ'
+                                ) : (
+                                  'N/A'
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                          {selectedRequest.note && (
+                            <div className="mt-3 pt-3 border-t border-green-200">
+                              <span className="font-medium text-gray-700">Ghi chú:</span>
+                              <p className="mt-1 text-gray-600 text-sm italic">"{selectedRequest.note}"</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p className="text-blue-800 text-xs">
+                          💡 <strong>Kiểm tra:</strong> Số lượng yêu cầu là {selectedRequest.requestedQuantity || 'N/A'} kg. 
+                          Khi xác nhận phiếu, bạn sẽ nhập số lượng thực tế nhận được.
+                        </p>
+                        <div className="mt-2 pt-2 border-t border-blue-200">
+                          <p className="text-red-700 text-xs font-medium">
+                            ⚠️ <strong>Nhớ:</strong> Số lượng hiện tại = 0 kg (mặc định). 
+                            Bạn sẽ nhập số lượng thực tế ở bước xác nhận!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Warehouse Selection */}
                   <div className="space-y-2">
@@ -307,19 +427,58 @@ export default function CreateReceiptPage() {
                   </div>
 
                   {/* Information Box */}
-                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-4">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 bg-amber-100 rounded-full">
-                        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="p-2 bg-red-100 rounded-full">
+                        <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                      </div>
+                      <div className="text-red-800">
+                        <p className="font-bold mb-2">🚨 LƯU Ý QUAN TRỌNG - KHÔNG BỎ QUA!</p>
+                        <div className="space-y-2 text-sm">
+                          <p>
+                            <strong>⚠️ Số lượng mặc định:</strong> Khi tạo phiếu, hệ thống đặt <strong className="text-red-700">0 kg</strong>.
+                          </p>
+                          <p>
+                            <strong>📋 Số lượng yêu cầu từ farmer:</strong> <span className="text-blue-700 font-bold">{selectedRequest?.requestedQuantity || 'N/A'} kg</span>
+                          </p>
+                          <p>
+                            <strong>✅ Bước tiếp theo:</strong> Khi <strong>xác nhận phiếu</strong>, bạn <strong>PHẢI</strong> nhập số lượng thực tế nhận được.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Process Explanation */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-blue-100 rounded-full">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <div className="text-amber-800">
-                        <p className="font-medium mb-1">ℹ️ Lưu ý quan trọng</p>
-                        <p className="text-sm">
-                          Số lượng thực nhận sẽ được nhập khi <strong>xác nhận phiếu</strong>. 
-                          Ở bước tạo, hệ thống mặc định <strong>0 kg</strong>.
-                        </p>
+                      <div className="text-blue-800">
+                        <h3 className="font-semibold mb-2">📋 Quy trình 2 bước tạo phiếu nhập kho</h3>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-start gap-2">
+                            <div className="w-6 h-6 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
+                            <div>
+                              <p className="font-medium">Bước 1: Tạo phiếu (Bạn đang ở đây)</p>
+                              <p className="text-blue-700">• Hệ thống tự động đặt số lượng = <strong>0 kg</strong></p>
+                              <p className="text-blue-700">• Chỉ cần chọn yêu cầu và kho</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="w-6 h-6 bg-green-500 text-white text-xs rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
+                            <div>
+                              <p className="font-medium">Bước 2: Xác nhận phiếu (Quan trọng!)</p>
+                              <p className="text-green-700">• Nhập số lượng thực tế nhận được</p>
+                              <p className="text-green-700">• So sánh với yêu cầu: <strong>{selectedRequest?.requestedQuantity || 'N/A'} kg</strong></p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -483,6 +642,31 @@ export default function CreateReceiptPage() {
                       <span className="text-gray-600">Đã duyệt:</span>
                       <span className="font-medium text-green-600">{inboundRequests.filter(r => r.status === "Approved").length}</span>
                     </div>
+                    {selectedRequest && (
+                      <>
+                        <div className="border-t border-purple-200 pt-2 mt-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Yêu cầu hiện tại:</span>
+                            <span className="font-medium text-purple-700">{selectedRequest.requestCode}</span>
+                          </div>
+                          {selectedRequest.requestedQuantity && (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Số lượng yêu cầu:</span>
+                                <span className="font-medium text-blue-600">{selectedRequest.requestedQuantity} kg</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Số lượng phiếu:</span>
+                                <span className="font-medium text-red-600">0 kg (mặc định)</span>
+                              </div>
+                              <div className="mt-1 p-1 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                                💡 Chênh lệch: {selectedRequest.requestedQuantity} kg - 0 kg = <strong>{selectedRequest.requestedQuantity} kg</strong>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>

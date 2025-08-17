@@ -21,6 +21,7 @@ import {
 
   FiShoppingCart,
   FiBell,
+  FiActivity,
 } from "react-icons/fi";
 
 
@@ -34,6 +35,7 @@ const iconMap = {
   articles: <FiBookOpen />,
   consultation: <FiFeather />,
   crops: <FiClipboard />,
+  market: <FiActivity />
 };
 
 // ===== Sidebar Layout =====
@@ -136,6 +138,11 @@ export function SidebarGroup() {
         icon: iconMap.dashboard,
       },
       {
+        title: "Sàn thu mua cà phê",
+        href: "/marketplace",
+        icon: iconMap.market,
+      },
+      {
         title: "Cam kết kế hoạch thu mua",
         href: "/dashboard/farmer/farming-commitments",
         icon: iconMap.contracts,
@@ -156,7 +163,7 @@ export function SidebarGroup() {
         icon: iconMap.feedback,
       },
       {
-        title: "Gửi yêu cầu nhập kho",
+        title: "Gửi yêu cầu giao hàng",
         href: "/dashboard/farmer/warehouse-request",
         icon: <FiTruck />,
       },
@@ -315,6 +322,11 @@ export function SidebarGroup() {
           <Link
             key={item.href}
             href={item.href}
+            onClick={() => {
+              console.log("🔍 DEBUG: Clicking navigation item:", item.title);
+              console.log("🔍 DEBUG: Navigation href:", item.href);
+              console.log("🔍 DEBUG: Current pathname:", pathname);
+            }}
             className={cn(
               "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
               isActive

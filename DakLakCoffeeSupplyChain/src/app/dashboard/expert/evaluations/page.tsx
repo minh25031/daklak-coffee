@@ -3,12 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthGuard } from "@/lib/auth/useAuthGuard";
-import { getAllProcessingBatches, ProcessingBatch } from "@/lib/api/processingBatches";
 import { getAllProcessingBatchEvaluations, ProcessingBatchEvaluation, EVALUATION_RESULTS, getEvaluationResultDisplayName, getEvaluationResultColor } from "@/lib/api/processingBatchEvaluations";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
 import { FiEye, FiPlus, FiRefreshCw, FiAlertCircle, FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
 
-interface EvaluationBatch extends ProcessingBatch {
+interface EvaluationBatch {
+  batchId: string;
+  batchCode: string;
+  farmerName: string;
+  methodName: string;
+  totalInputQuantity: number;
+  inputUnit: string;
+  status: string;
   evaluationStatus: "pending" | "evaluated" | "none";
   evaluationResult?: string;
   evaluationDate?: string;
@@ -29,101 +35,49 @@ export default function ExpertEvaluationsPage() {
       setLoading(true);
       setError(null);
 
-      console.log("🔍 DEBUG: Starting API calls...");
-      const [allBatches, allEvaluations] = await Promise.all([
-        getAllProcessingBatches(),
-        getAllProcessingBatchEvaluations()
-      ]);
+      console.log("🔍 DEBUG: Starting API call to Evaluations...");
+      const evaluations = await getAllProcessingBatchEvaluations();
 
-      console.log("🔍 DEBUG: API responses received");
-      console.log("🔍 DEBUG: allBatches type:", typeof allBatches, "length:", allBatches?.length);
-      console.log("🔍 DEBUG: allEvaluations type:", typeof allEvaluations, "length:", allEvaluations?.length);
+      console.log("🔍 DEBUG: Evaluations API response received");
+      console.log("🔍 DEBUG: evaluations type:", typeof evaluations, "length:", evaluations?.length);
 
-      if (!allBatches) {
-        setError("Không thể tải danh sách lô sơ chế");
+      if (!evaluations || !Array.isArray(evaluations)) {
+        setError("Không thể tải danh sách đánh giá");
         return;
       }
 
-      // Đảm bảo allEvaluations là array và có dữ liệu
-      const evaluations = Array.isArray(allEvaluations) ? allEvaluations : [];
-      console.log("🔍 DEBUG: Processed evaluations array length:", evaluations.length);
+      console.log("🔍 DEBUG: Evaluations data:", evaluations);
 
-      // Debug: Kiểm tra cấu trúc dữ liệu của evaluations
-      if (evaluations.length > 0) {
-        console.log("🔍 DEBUG: First evaluation structure:", evaluations[0]);
-        console.log("🔍 DEBUG: Evaluation keys:", Object.keys(evaluations[0]));
-      }
-
-      console.log("🔍 DEBUG: All batches from API:", allBatches);
-      console.log("🔍 DEBUG: Number of batches:", allBatches.length);
-      console.log("🔍 DEBUG: All evaluations from API:", evaluations);
-      console.log("🔍 DEBUG: Number of evaluations:", evaluations.length);
-
-      // Chuyển đổi và thêm thông tin đánh giá
-      const evaluationBatches: EvaluationBatch[] = allBatches.map((batch: ProcessingBatch) => {
-        console.log("🔍 DEBUG: Processing batch:", batch.batchCode, "status:", batch.status, "type:", typeof batch.status);
-        
-        // Tìm evaluation cho batch này
-        console.log("🔍 DEBUG: Comparing batchId - Batch:", batch.batchId, "Type:", typeof batch.batchId);
-        console.log("🔍 DEBUG: All evaluations batchIds:", evaluations.map(e => ({ batchId: e.batchId, type: typeof e.batchId })));
-        
-        const batchEvaluations = evaluations.filter((evaluation: ProcessingBatchEvaluation) => {
-          console.log("🔍 DEBUG: Comparing", evaluation.batchId, "with", batch.batchId, "Result:", evaluation.batchId === batch.batchId);
-          return evaluation.batchId === batch.batchId;
-        });
-        console.log("🔍 DEBUG: Evaluations for batch", batch.batchCode, ":", batchEvaluations);
-        
-        // Kiểm tra trạng thái đánh giá dựa trên evaluations
+      // Chuyển đổi evaluations thành format hiển thị
+      const evaluationBatches: EvaluationBatch[] = evaluations.map((evaluation: any) => {
+        // Xác định trạng thái đánh giá
         let evaluationStatus: "pending" | "evaluated" | "none" = "none";
         let evaluationResult: string | undefined;
         let evaluationDate: string | undefined;
-        let latestEvaluation: ProcessingBatchEvaluation | undefined;
 
-        if (batchEvaluations.length > 0) {
-          // Có evaluation - kiểm tra trạng thái
-          latestEvaluation = batchEvaluations.sort((a, b) => 
-            new Date(b.evaluatedAt || b.createdAt).getTime() - new Date(a.evaluatedAt || a.createdAt).getTime()
-          )[0];
-          
-          if (latestEvaluation.evaluatedBy && latestEvaluation.evaluationResult) {
-            evaluationStatus = "evaluated";
-            evaluationResult = latestEvaluation.evaluationResult;
-            evaluationDate = latestEvaluation.evaluatedAt;
-          } else {
-            evaluationStatus = "pending";
-          }
-        } else {
-          // Không có evaluation - kiểm tra batch status
-          let statusString: string;
-          if (typeof batch.status === 'number') {
-            switch (batch.status) {
-              case 0: statusString = ProcessingStatus.NotStarted; break;
-              case 1: statusString = ProcessingStatus.InProgress; break;
-              case 2: statusString = ProcessingStatus.Completed; break;
-              case 3: statusString = ProcessingStatus.AwaitingEvaluation; break;
-              case 4: statusString = ProcessingStatus.Cancelled; break;
-              default: statusString = String(batch.status);
-            }
-          } else {
-            statusString = batch.status;
-          }
-
-          console.log("🔍 DEBUG: Converted statusString:", statusString);
-
-          if (statusString === ProcessingStatus.AwaitingEvaluation || statusString === "AwaitingEvaluation") {
-            console.log("🔍 DEBUG: Found batch with AwaitingEvaluation status:", batch.batchCode);
-            evaluationStatus = "pending";
-          } else if (statusString === ProcessingStatus.Completed || statusString === "Completed") {
-            evaluationStatus = "evaluated";
-          }
+        if (evaluation.evaluatedBy && evaluation.evaluationResult) {
+          evaluationStatus = "evaluated";
+          evaluationResult = evaluation.evaluationResult;
+          evaluationDate = evaluation.evaluatedAt;
+        } else if (evaluation.batchStatus === "AwaitingEvaluation") {
+          evaluationStatus = "pending";
+        } else if (evaluation.batchStatus === "Completed") {
+          evaluationStatus = "evaluated";
         }
 
         return {
-          ...batch,
+          // Thông tin batch từ evaluation
+          batchId: evaluation.batchId,
+          batchCode: evaluation.batchCode,
+          farmerName: evaluation.farmerName,
+          methodName: evaluation.methodName,
+          totalInputQuantity: evaluation.inputQuantity,
+          inputUnit: evaluation.inputUnit, // Thêm inputUnit
+          status: evaluation.batchStatus,
           evaluationStatus,
           evaluationResult,
           evaluationDate,
-          latestEvaluation,
+          latestEvaluation: evaluation
         };
       });
 
@@ -373,9 +327,9 @@ export default function ExpertEvaluationsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{batch.methodName}</div>
                       </td>
-                                             <td className="px-6 py-4 whitespace-nowrap">
-                         <div className="text-sm text-gray-900">{batch.totalInputQuantity} kg</div>
-                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{batch.totalInputQuantity} {batch.inputUnit}</div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {getStatusIcon(batch.evaluationStatus)}
@@ -401,7 +355,18 @@ export default function ExpertEvaluationsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => router.push(`/dashboard/expert/evaluations/${batch.batchId}`)}
+                            onClick={() => {
+                              console.log("🔍 DEBUG: Clicking evaluation button for batch:", batch.batchId);
+                              console.log("🔍 DEBUG: Navigation URL:", `/dashboard/expert/evaluations/${batch.batchId}`);
+                              
+                              if (!batch.batchId) {
+                                console.error("❌ ERROR: batchId is undefined or null");
+                                alert("Lỗi: Không tìm thấy ID của lô");
+                                return;
+                              }
+                              
+                              router.push(`/dashboard/expert/evaluations/${batch.batchId}`);
+                            }}
                             className="px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-xs"
                           >
                             {batch.evaluationStatus === "evaluated" ? "Xem chi tiết" : "Đánh giá"}

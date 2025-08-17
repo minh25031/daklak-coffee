@@ -179,10 +179,14 @@ export default function EditFarmmingCommitmentPage() {
 
   // Submit cập nhật kế hoạch
   const handleSubmit = async () => {
-    if (!formData) return;
+    if (!formData) {
+      AppToast.error(getErrorMessage(errors));
+      return;
+    }
     setIsSubmitting(true);
     if (!validateForm(formData)) {
       setIsSubmitting(false);
+      AppToast.error(getErrorMessage(errors));
       return;
     }
 

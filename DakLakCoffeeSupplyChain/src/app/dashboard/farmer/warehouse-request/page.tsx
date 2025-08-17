@@ -22,15 +22,18 @@ import {
   TrendingUp,
   Clock,
   AlertCircle,
+  Truck,
+  Leaf,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 5;
 
-export default function FarmerInboundRequestListPage() {
+export default function FarmerDeliveryRequestListPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null); // Thêm filter theo loại
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,10 +90,38 @@ export default function FarmerInboundRequestListPage() {
     }
   };
 
+  // Hàm xác định loại cà phê (tươi hay đã sơ chế)
+  const getCoffeeType = (request: any) => {
+    // Cà phê đã sơ chế: có batchId, không có detailId
+    if (request.batchId && !request.detailId) return "processed";
+    // Cà phê tươi: không có batchId, có detailId
+    if (!request.batchId && request.detailId) return "fresh";
+    return "unknown";
+  };
+
+  const getCoffeeTypeLabel = (type: string) => {
+    switch (type) {
+      case "processed": return "Đã sơ chế";
+      case "fresh": return "Tươi";
+      default: return "Không xác định";
+    }
+  };
+
+  const getCoffeeTypeIcon = (type: string) => {
+    switch (type) {
+      case "processed": return <Package className="w-4 h-4" />;
+      case "fresh": return <Leaf className="w-4 h-4" />;
+      default: return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
   const filtered = requests.filter(
-    (r) =>
-      (!selectedStatus || r.status === selectedStatus) &&
-      r.requestCode.toLowerCase().includes(search.toLowerCase())
+    (r) => {
+      const matchesStatus = !selectedStatus || r.status === selectedStatus;
+      const matchesType = !selectedType || getCoffeeType(r) === selectedType;
+      const matchesSearch = r.requestCode.toLowerCase().includes(search.toLowerCase());
+      return matchesStatus && matchesType && matchesSearch;
+    }
   );
 
   // Tính toán phân trang
@@ -102,10 +133,16 @@ export default function FarmerInboundRequestListPage() {
   // Reset về trang 1 khi thay đổi filter
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedStatus]);
+  }, [search, selectedStatus, selectedType]);
 
   const statusCounts = requests.reduce<Record<string, number>>((acc, r) => {
     acc[r.status] = (acc[r.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const typeCounts = requests.reduce<Record<string, number>>((acc, r) => {
+    const type = getCoffeeType(r);
+    acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {});
 
@@ -114,6 +151,8 @@ export default function FarmerInboundRequestListPage() {
   const pendingRequests = requests.filter(r => r.status === 'Pending').length;
   const approvedRequests = requests.filter(r => r.status === 'Approved').length;
   const totalQuantity = requests.reduce((sum, r) => sum + (r.requestedQuantity || 0), 0);
+  const processedRequests = requests.filter(r => getCoffeeType(r) === 'processed').length;
+  const freshRequests = requests.filter(r => getCoffeeType(r) === 'fresh').length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-200 via-amber-100 to-orange-300 py-6 px-4">
@@ -123,7 +162,7 @@ export default function FarmerInboundRequestListPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                Yêu cầu nhập kho
+                Yêu cầu giao hàng
               </h1>
               <p className="text-gray-600 text-sm">
                 Theo dõi và quản lý các yêu cầu đã gửi
@@ -133,13 +172,13 @@ export default function FarmerInboundRequestListPage() {
               onClick={() => router.push("/dashboard/farmer/warehouse-request/create")}
               className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg shadow-sm flex items-center gap-2"
             >
-              <PackagePlus className="w-5 h-5" />
+              <Truck className="w-5 h-5" />
               Gửi yêu cầu mới
             </Button>
           </div>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-6">
             <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg p-4 text-white">
               <div className="flex items-center justify-between">
                 <div>
@@ -176,6 +215,24 @@ export default function FarmerInboundRequestListPage() {
                 <Package className="w-6 h-6 text-blue-200" />
               </div>
             </div>
+            <div className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-xs">Đã sơ chế</p>
+                  <p className="text-xl font-bold">{processedRequests}</p>
+                </div>
+                <Package className="w-6 h-6 text-purple-200" />
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-emerald-100 text-xs">Tươi</p>
+                  <p className="text-xl font-bold">{freshRequests}</p>
+                </div>
+                <Leaf className="w-6 h-6 text-emerald-200" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -199,7 +256,7 @@ export default function FarmerInboundRequestListPage() {
               </div>
             </div>
 
-            {/* Filter Panel */}
+            {/* Filter Panel - Status */}
             <div className="bg-white rounded-lg shadow-sm border border-orange-100">
               <div className="p-4 border-b border-orange-100">
                 <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
@@ -233,6 +290,43 @@ export default function FarmerInboundRequestListPage() {
                 </div>
               </div>
             </div>
+
+            {/* Filter Panel - Type */}
+            <div className="bg-white rounded-lg shadow-sm border border-orange-100">
+              <div className="p-4 border-b border-orange-100">
+                <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-orange-600" />
+                  Lọc theo loại
+                </h2>
+              </div>
+              <div className="p-4">
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setSelectedType(null)}
+                    className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-2 ${
+                      selectedType === null ? "bg-orange-100 border border-orange-300 text-orange-700" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <Package className="w-4 h-4" />
+                    Tất cả ({requests.length})
+                  </button>
+                  {Object.entries(typeCounts).map(([type, count]) => (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedType(type)}
+                      className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-2 ${
+                        selectedType === type
+                          ? "bg-orange-100 border border-orange-300 text-orange-700"
+                          : "hover:bg-gray-100"
+                      }`}
+                    >
+                      {getCoffeeTypeIcon(type)}
+                      {getCoffeeTypeLabel(type)} ({count})
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </aside>
 
           {/* Main Content */}
@@ -241,7 +335,7 @@ export default function FarmerInboundRequestListPage() {
               <div className="p-4 border-b border-orange-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Danh sách yêu cầu nhập kho</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Danh sách yêu cầu giao hàng</h2>
                     <p className="text-sm text-gray-600 mt-1">
                       Hiển thị {filtered.length} yêu cầu • {totalRequests} tổng cộng
                     </p>
@@ -266,7 +360,7 @@ export default function FarmerInboundRequestListPage() {
                   </div>
                   <p className="text-gray-500 text-lg font-medium mb-2">Không tìm thấy yêu cầu nào</p>
                   <p className="text-gray-400 text-sm">
-                    {search || selectedStatus ? 'Thử thay đổi bộ lọc tìm kiếm' : 'Bạn chưa có yêu cầu nhập kho nào'}
+                    {search || selectedStatus || selectedType ? 'Thử thay đổi bộ lọc tìm kiếm' : 'Bạn chưa có yêu cầu giao hàng nào'}
                   </p>
                 </div>
               ) : (
@@ -278,10 +372,13 @@ export default function FarmerInboundRequestListPage() {
                           Mã yêu cầu
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Loại
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Số lượng
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Lô xử lý
+                          Nguồn
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Ngày tạo
@@ -295,66 +392,79 @@ export default function FarmerInboundRequestListPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {paginatedData.map((req) => (
-                        <tr key={req.inboundRequestId} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium text-gray-900">{req.requestCode}</span>
-                              <span className="text-xs text-gray-500">ID: {req.inboundRequestId.slice(-6)}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 font-medium">
-                              {req.requestedQuantity} kg
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex flex-col">
-                              <span className="text-sm text-gray-900">{req.batchCode || "N/A"}</span>
-                              <span className="text-xs text-gray-500">{req.coffeeType || "Không rõ"}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex flex-col">
-                              <span className="text-sm text-gray-900">
-                                {new Date(req.createdAt).toLocaleDateString("vi-VN")}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {new Date(req.createdAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <Badge className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(req.status)}`}>
-                              {getStatusLabel(req.status)}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => router.push(`/dashboard/farmer/warehouse-request/${req.inboundRequestId}`)}
-                                className="text-orange-600 border-orange-200 hover:bg-orange-50"
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                Xem
-                              </Button>
-                              {req.status === "Pending" && (
+                      {paginatedData.map((req) => {
+                        const coffeeType = getCoffeeType(req);
+                        return (
+                          <tr key={req.inboundRequestId} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium text-gray-900">{req.requestCode}</span>
+                                <span className="text-xs text-gray-500">ID: {req.inboundRequestId.slice(-6)}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                {getCoffeeTypeIcon(coffeeType)}
+                                <span className="text-sm text-gray-900">{getCoffeeTypeLabel(coffeeType)}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900 font-medium">
+                                {req.requestedQuantity} kg
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex flex-col">
+                                <span className="text-sm text-gray-900">
+                                  {coffeeType === 'processed' ? (req.batchCode || "N/A") : (req.typeName || "N/A")}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {coffeeType === 'processed' ? (req.coffeeType || "Không rõ") : (req.areaAllocated ? `${req.areaAllocated}ha` : "Không rõ")}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex flex-col">
+                                <span className="text-sm text-gray-900">
+                                  {new Date(req.createdAt).toLocaleDateString("vi-VN")}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(req.createdAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <Badge className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(req.status)}`}>
+                                {getStatusLabel(req.status)}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex items-center justify-center gap-2">
                                 <Button
-                                  variant="destructive"
+                                  variant="outline"
                                   size="sm"
-                                  disabled={loadingId === req.inboundRequestId}
-                                  onClick={() => handleCancel(req.inboundRequestId)}
+                                  onClick={() => router.push(`/dashboard/farmer/warehouse-request/${req.inboundRequestId}`)}
+                                  className="text-orange-600 border-orange-200 hover:bg-orange-50"
                                 >
-                                  <XCircle className="w-4 h-4 mr-1" />
-                                  Huỷ
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  Xem
                                 </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                                {req.status === "Pending" && (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={loadingId === req.inboundRequestId}
+                                    onClick={() => handleCancel(req.inboundRequestId)}
+                                  >
+                                    <XCircle className="w-4 h-4 mr-1" />
+                                    Huỷ
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

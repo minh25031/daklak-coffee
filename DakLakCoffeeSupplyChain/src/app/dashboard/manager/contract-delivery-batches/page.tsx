@@ -8,6 +8,7 @@ import {
   ContractDeliveryBatchStatusLabel,
 } from "@/lib/constants/contractDeliveryBatchStatus";
 import { formatDate, cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   Search,
   Eye,
@@ -169,9 +170,10 @@ export default function ContractDeliveryBatchesPage() {
       setShowDeleteDialog(false);
       setBatchToDelete(null);
       reloadData(); // hoặc fetch lại danh sách
+      toast.success("Xóa đợt giao hàng thành công!");
     } catch (error) {
       console.error("Xoá thất bại:", error);
-      alert("Không thể xoá đợt giao hàng. Vui lòng thử lại.");
+      toast.error("Xóa đợt giao hàng thất bại!");
     }
   };
 
@@ -309,9 +311,18 @@ export default function ContractDeliveryBatchesPage() {
                           : "—"}
                       </td>
                       <td className="px-4 py-2 text-center whitespace-nowrap">
-                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-purple-100 text-purple-700">
-                          {ContractDeliveryBatchStatusLabel[batch.status]}
-                        </span>
+                        {(() => {
+                          const statusDisplay = getDeliveryBatchStatusDisplay(
+                            batch.status
+                          );
+                          return (
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full font-medium ${statusDisplay.className}`}
+                            >
+                              {statusDisplay.label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-2 text-center">
                         <div className="flex justify-center gap-[2px]">

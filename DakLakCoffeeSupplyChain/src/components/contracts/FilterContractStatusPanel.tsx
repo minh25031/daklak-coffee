@@ -25,7 +25,14 @@ export default function FilterContractStatusPanel({
         onClick={() => setSelectedStatus(null)}
       />
 
-      {Object.entries(ContractStatusMap).map(([key, { label, color, icon }]) => (
+      {/* Chỉ hiển thị các trạng thái cần thiết */}
+      {[
+        { key: "NotStarted", ...ContractStatusMap.NotStarted },
+        { key: "InProgress", ...ContractStatusMap.InProgress },
+        { key: "Completed", ...ContractStatusMap.Completed },
+        { key: "Cancelled", ...ContractStatusMap.Cancelled },
+        { key: "Expired", ...ContractStatusMap.Expired },
+      ].map(({ key, label, color, icon }) => (
         <FilterBadge
           key={key}
           icon={icon}

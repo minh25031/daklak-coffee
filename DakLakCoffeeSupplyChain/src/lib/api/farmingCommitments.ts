@@ -39,6 +39,8 @@ export type FarmingCommitmentDetail = {
   deliveriedQuantity: number; // in kg
   estimatedDeliveryStart: string; // ISO date string
   estimatedDeliveryEnd: string; // ISO date string
+  expectedHarvestStart?: string; // ISO date string - thời gian thu hoạch dự kiến từ đăng ký
+  expectedHarvestEnd?: string; // ISO date string - thời gian thu hoạch dự kiến từ đăng ký
   note: string;
   progressPercentage: number;
   breachedReason: string;

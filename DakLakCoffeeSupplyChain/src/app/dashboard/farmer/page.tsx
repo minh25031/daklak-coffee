@@ -270,7 +270,7 @@ export default function FarmerDashboard() {
                             />
                             <StatCard
                                 icon={<FiPackage className="w-5 h-5" />}
-                                label="Yêu cầu nhập kho"
+                                label="Yêu cầu giao hàng"
                                 value={stats.pendingWarehouseRequests}
                                 color="blue"
                             />
@@ -334,8 +334,8 @@ export default function FarmerDashboard() {
                         />
                         <ActionCard
                             icon={<FiPackage className="w-5 h-5" />}
-                            title="Gửi yêu cầu nhập kho"
-                            description="Danh sách yêu cầu nhập kho."
+                            title="Gửi yêu cầu giao hàng"
+                            description="Danh sách yêu cầu giao hàng."
                             href="/dashboard/farmer/warehouse-request"
                             color="blue"
                         />

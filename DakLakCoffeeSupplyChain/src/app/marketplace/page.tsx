@@ -1,6 +1,5 @@
 "use client";
 
-import { AppToast } from "@/components/ui/AppToast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,8 +7,6 @@ import {
   getAllAvailableProcurementPlans,
   ProcurementPlan,
 } from "@/lib/api/procurementPlans";
-import { getErrorMessage } from "@/lib/utils";
-import { Search } from "lucide-react";
 import Link from "next/dist/client/link";
 import { useEffect, useState } from "react";
 import { differenceInCalendarDays } from "date-fns";
@@ -17,6 +14,7 @@ import { differenceInCalendarDays } from "date-fns";
 export default function MarketplacePage() {
   const [plans, setPlans] = useState<ProcurementPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -25,7 +23,7 @@ export default function MarketplacePage() {
   const fetchData = async () => {
     setLoading(true);
     const data = await getAllAvailableProcurementPlans().catch((error) => {
-      AppToast.error(getErrorMessage(error));
+      //AppToast.error(getErrorMessage(error));
       return [];
     });
     setPlans(data);
@@ -33,12 +31,28 @@ export default function MarketplacePage() {
   };
 
   const filteredPlans = plans.filter(
-    (plan) => differenceInCalendarDays(new Date(plan.endDate), new Date()) > 0
+    (plan) => 
+      (differenceInCalendarDays(new Date(plan.endDate), new Date()) > 0) &&
+      (!search || plan.title.toLowerCase().includes(search.toLowerCase()))
   );
 
   if (loading) {
     return <p className='text-center py-20'>Đang tải dữ liệu...</p>;
   }
+  if (plans.length == 0 && !loading) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center py-20 bg-[#fefaf4]">
+      <p className="text-gray-600 text-lg mb-4">Hiện tại chưa có kế hoạch thu mua nào.</p>
+      <Button
+        onClick={fetchData}
+        className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded"
+      >
+        Tải lại
+      </Button>
+    </div>
+  );
+}
+
 
   return (
     <div className='min-h-screen bg-[#fefaf4] py-8'>
@@ -53,22 +67,18 @@ export default function MarketplacePage() {
               <div className='relative'>
                 <Input
                   placeholder='Tìm kiếm...'
-                  //value={search}
-                  //onChange={(e) => setSearch(e.target.value)}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                   className='pr-10'
                 />
-                <Search className='absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
-              </div>
-              <div className='flex justify-end text-sm'>
-                <Button className='w-full bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium text-sm'>
-                  Search
-                </Button>
               </div>
             </div>
 
-            <div className='bg-white p-4 rounded shadow'>
+            <div 
+            //className='bg-white p-4 rounded shadow'
+            >
               {/* component Filter sau này */}
-              <p className='text-gray-600'>Filter (đang phát triển)</p>
+              {/* <p className='text-gray-600'>Filter (đang phát triển)</p> */}
             </div>
           </aside>
           <main className='flex-1'>
@@ -180,9 +190,11 @@ export default function MarketplacePage() {
                             <td className='px-3 py-2'>
                               {detail.coffeeType?.typeName}
                             </td>
-                            <td className='px-3 py-2'>
+                            {detail.processingMethodName && (
+                              <td className='px-3 py-2'>
                               {detail.processingMethodName}
                             </td>
+                            )}
                             <td className='px-3 py-2'>
                               {detail.targetQuantity}
                             </td>

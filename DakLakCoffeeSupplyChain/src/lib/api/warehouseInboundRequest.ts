@@ -5,7 +5,8 @@ export interface CreateWarehouseInboundRequestInput {
   requestedQuantity: number;
   preferredDeliveryDate: string;
   note?: string;
-  batchId: string;
+  batchId?: string;  // Cho cà phê đã sơ chế
+  detailId?: string; // Cho cà phê tươi
 }
 
 export async function createWarehouseInboundRequest(
