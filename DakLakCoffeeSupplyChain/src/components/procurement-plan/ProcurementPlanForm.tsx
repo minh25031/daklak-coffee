@@ -13,7 +13,7 @@ import { ProcessingMethod } from "@/lib/api/processingMethods";
 export interface ProcurementPlanDetailFormData {
   planDetailsId?: string; // Optional for new details
   coffeeTypeId: string;
-  processMethodId: number | undefined;
+  processMethodId: number;
   targetQuantity: number;
   targetRegion: string;
   minimumRegistrationQuantity: number;
@@ -115,10 +115,9 @@ export default function ProcurementPlanForm({
     const newDetails = [...form.procurementPlansDetails];
 
     if (name === "processMethodId") {
-      // Nếu chọn giá trị 0 (không chọn), gán null
       newDetails[index] = {
         ...newDetails[index],
-        [name]: Number(value) === 0 ? null : Number(value),
+        [name]: Number(value) === 0 ? 0 : Number(value),
       };
     } else {
       newDetails[index] = {

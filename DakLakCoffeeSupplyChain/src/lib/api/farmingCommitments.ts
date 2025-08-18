@@ -11,6 +11,7 @@ export type FarmingCommitment = {
   totalPrice: number;
   totalAdvancePayment: number;
   totalTaxPrice: number;
+  planId: string;
   registrationId: string;
   note: string;
   commitmentDate: string; // ISO date string

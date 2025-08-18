@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiExternalLink } from "react-icons/fi";
 import { Separator } from "@/components/ui/separator";
 import { Package } from "lucide-react";
 
@@ -22,6 +22,7 @@ import {
 } from "@/lib/api/farmingCommitments";
 import { FarmingCommitmentStatusMap } from "@/lib/constants/FarmingCommitmentStatus";
 import StatusBadge from "@/components/crop-seasons/StatusBadge";
+import Link from "next/link";
 
 export default function FarmingCommitmentDetailPageForBusiness() {
   const { id } = useParams();
@@ -109,7 +110,7 @@ export default function FarmingCommitmentDetailPageForBusiness() {
               <strong>Tên doanh nghiệp:</strong> {commitment.companyName}
             </div>
             <div>
-              <strong>Tên kế hoạch:</strong> {commitment.planTitle}
+              <strong>Tên kế hoạch:</strong> <Link href={`/dashboard/manager/procurement-plans/${commitment.planId}`}>{commitment.planTitle} <FiExternalLink className="mr-1" /></Link>
             </div>
             <div>
               <strong>Tổng chi phí:</strong>{" "}

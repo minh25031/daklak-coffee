@@ -278,6 +278,9 @@ export default function PlanDetailPage() {
                       Sản lượng (kg)
                     </th>
                     <th className='py-2 px-3 border-r border-orange-200'>
+                      Sản lượng đăng ký tối thiểu(kg)
+                    </th>
+                    <th className='py-2 px-3 border-r border-orange-200'>
                       Khu vực thu mua
                     </th>
                     <th className='py-2 px-3 border-r border-orange-200'>
@@ -295,13 +298,18 @@ export default function PlanDetailPage() {
                       <td className='py-2 px-3 border-r border-orange-200'>
                         {detail.coffeeType?.typeName}
                       </td>
-                      {detail.processingMethodName && (
-                        <td className='py-2 px-3 border-r border-orange-200'>
-                          {detail.processingMethodName}
-                        </td>
-                      )}
+                      <td className='py-2 px-3 border-r border-orange-200'>
+                        {detail.processingMethodName ? (
+                          <>{detail.processingMethodName}</>
+                        ) : (
+                          <>Không có</>
+                        )}
+                      </td>
                       <td className='py-2 px-3 border-r border-orange-200'>
                         {detail.targetQuantity?.toLocaleString()}
+                      </td>
+                      <td className='py-2 px-3 border-r border-orange-200 text-center'>
+                        {detail.minimumRegistrationQuantity?.toLocaleString()}
                       </td>
                       <td className='py-2 px-3 border-r border-orange-200'>
                         {detail.targetRegion}
@@ -429,8 +437,8 @@ export default function PlanDetailPage() {
                         <option value=''>-- Chọn chi tiết --</option>
                         {options.map((d) => (
                           <option key={d.planDetailsId} value={d.planDetailsId}>
-                            {d.coffeeType?.typeName} - {d.processingMethodName}{" "}
-                            ({d.targetRegion})
+                            {d.coffeeType?.typeName} {d.processingMethodName && (<> {" - "} {d.processingMethodName}</>)}
+                            {d.targetRegion && (<>{" "}({d.targetRegion})</>)}
                           </option>
                         ))}
                       </select>
