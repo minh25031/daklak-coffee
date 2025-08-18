@@ -153,8 +153,6 @@ export default function ContractForm({
     };
   }, [filePreviewUrl]);
 
-
-
   // Guard for null formData
   if (!formData) {
     return (
@@ -198,14 +196,20 @@ export default function ContractForm({
               // Nếu ngày kết thúc trong quá khứ, chuyển thành "Quá hạn"
               newData.status = ContractStatus.Expired;
               if (field === "endDate") {
-                toast.info("Ngày kết thúc trong quá khứ, trạng thái đã tự động cập nhật thành 'Quá hạn'");
+                toast.info(
+                  "Ngày kết thúc trong quá khứ, trạng thái đã tự động cập nhật thành 'Quá hạn'"
+                );
               } else {
-                toast.info("Trạng thái đã tự động cập nhật thành 'Quá hạn' (ngày kết thúc trong quá khứ)");
+                toast.info(
+                  "Trạng thái đã tự động cập nhật thành 'Quá hạn' (ngày kết thúc trong quá khứ)"
+                );
               }
             } else if (startDate <= today) {
               // Nếu ngày bắt đầu là hôm nay hoặc quá khứ, chuyển thành "Đang thực hiện"
               newData.status = ContractStatus.InProgress;
-              toast.info("Trạng thái đã tự động cập nhật thành 'Đang thực hiện'");
+              toast.info(
+                "Trạng thái đã tự động cập nhật thành 'Đang thực hiện'"
+              );
             } else {
               // Nếu ngày bắt đầu trong tương lai, chuyển thành "Chưa bắt đầu"
               newData.status = ContractStatus.NotStarted;
@@ -216,7 +220,9 @@ export default function ContractForm({
             if (startDate <= today) {
               // Nếu ngày bắt đầu là hôm nay hoặc quá khứ, chuyển thành "Đang thực hiện"
               newData.status = ContractStatus.InProgress;
-              toast.info("Trạng thái đã tự động cập nhật thành 'Đang thực hiện'");
+              toast.info(
+                "Trạng thái đã tự động cập nhật thành 'Đang thực hiện'"
+              );
             } else {
               // Nếu ngày bắt đầu trong tương lai, chuyển thành "Chưa bắt đầu"
               newData.status = ContractStatus.NotStarted;
@@ -383,6 +389,39 @@ export default function ContractForm({
       clientErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
     }
 
+    // Validate file upload (nếu có)
+    if (selectedFile) {
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (selectedFile.size > maxSize) {
+        clientErrors.contractFile = "File không được lớn hơn 10MB";
+      }
+
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      if (!allowedTypes.includes(selectedFile.type)) {
+        clientErrors.contractFile =
+          "Chỉ hỗ trợ file ảnh (JPG, PNG, GIF, WebP), PDF, Word (DOC, DOCX)";
+      }
+    }
+
+    // Validate tổng khối lượng và giá trị không được âm (phù hợp với backend)
+    if (data.totalQuantity !== undefined && data.totalQuantity < 0) {
+      clientErrors.totalQuantity = "Tổng khối lượng không được âm";
+    }
+
+    if (data.totalValue !== undefined && data.totalValue < 0) {
+      clientErrors.totalValue = "Tổng giá trị không được âm";
+    }
+
     // Validate lý do hủy khi trạng thái = "Đã hủy"
     if (
       data.status === ContractStatus.Cancelled &&
@@ -439,7 +478,9 @@ export default function ContractForm({
           if (endDate < today) {
             // Ngày kết thúc trong quá khứ và không phải "Hoàn thành" → tự động chuyển thành "Quá hạn"
             finalStatus = ContractStatus.Expired;
-            toast.info("Hợp đồng đã quá hạn, trạng thái sẽ được cập nhật thành 'Quá hạn'");
+            toast.info(
+              "Hợp đồng đã quá hạn, trạng thái sẽ được cập nhật thành 'Quá hạn'"
+            );
           }
         }
 
@@ -480,7 +521,9 @@ export default function ContractForm({
           if (endDate < today) {
             // Ngày kết thúc trong quá khứ và không phải "Hoàn thành" → tự động chuyển thành "Quá hạn"
             finalStatus = ContractStatus.Expired;
-            toast.info("Hợp đồng đã quá hạn, trạng thái sẽ được cập nhật thành 'Quá hạn'");
+            toast.info(
+              "Hợp đồng đã quá hạn, trạng thái sẽ được cập nhật thành 'Quá hạn'"
+            );
           }
         }
 
@@ -501,6 +544,7 @@ export default function ContractForm({
             dto.contractFileUrl?.trim() === ""
               ? undefined
               : dto.contractFileUrl,
+          contractFile: selectedFile || undefined, // Thêm file đã chọn
           contractItems: normalizedItems,
         });
 
@@ -587,7 +631,9 @@ export default function ContractForm({
               // Thêm các pattern cụ thể hơn nữa
               message.includes("Tổng khối lượng từ các dòng hợp đồng") ||
               message.includes("Tổng trị giá từ các dòng hợp đồng") ||
-              message.includes("vượt quá tổng khối lượng hợp đồng đã khai báo") ||
+              message.includes(
+                "vượt quá tổng khối lượng hợp đồng đã khai báo"
+              ) ||
               message.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
               message.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
               // Thêm các từ khóa cụ thể hơn
@@ -598,19 +644,29 @@ export default function ContractForm({
               // Thêm các từ khóa cụ thể hơn nữa
               message.includes("Tổng khối lượng từ các dòng hợp đồng (") ||
               message.includes("Tổng trị giá từ các dòng hợp đồng (") ||
-              message.includes("vượt quá tổng khối lượng hợp đồng đã khai báo (") ||
-              message.includes("vượt quá tổng giá trị hợp đồng đã khai báo (") ||
-              message.includes("vượt quá tổng trị giá hợp đồng đã khai báo (") ||
+              message.includes(
+                "vượt quá tổng khối lượng hợp đồng đã khai báo ("
+              ) ||
+              message.includes(
+                "vượt quá tổng giá trị hợp đồng đã khai báo ("
+              ) ||
+              message.includes(
+                "vượt quá tổng trị giá hợp đồng đã khai báo ("
+              ) ||
               // Thêm các từ khóa cụ thể hơn nữa
               message.includes("kg) vượt quá tổng khối lượng") ||
               message.includes("VND) vượt quá tổng giá trị") ||
-              message.includes("vượt quá tổng khối lượng hợp đồng đã khai báo") ||
+              message.includes(
+                "vượt quá tổng khối lượng hợp đồng đã khai báo"
+              ) ||
               message.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
               message.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
               // Thêm các từ khóa cụ thể hơn nữa
               message.includes("Tổng khối lượng từ các dòng hợp đồng") ||
               message.includes("Tổng trị giá từ các dòng hợp đồng") ||
-              message.includes("vượt quá tổng khối lượng hợp đồng đã khai báo") ||
+              message.includes(
+                "vượt quá tổng khối lượng hợp đồng đã khai báo"
+              ) ||
               message.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
               message.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
               // Thêm các từ khóa cụ thể hơn nữa
@@ -741,9 +797,15 @@ export default function ContractForm({
             // Thêm các pattern cụ thể hơn nữa
             errorMessage.includes("Tổng khối lượng từ các dòng hợp đồng") ||
             errorMessage.includes("Tổng trị giá từ các dòng hợp đồng") ||
-            errorMessage.includes("vượt quá tổng khối lượng hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo"
+            ) ||
             // Thêm các từ khóa cụ thể hơn
             errorMessage.includes("kg) vượt quá") ||
             errorMessage.includes("VND) vượt quá") ||
@@ -752,21 +814,39 @@ export default function ContractForm({
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("Tổng khối lượng từ các dòng hợp đồng (") ||
             errorMessage.includes("Tổng trị giá từ các dòng hợp đồng (") ||
-            errorMessage.includes("vượt quá tổng khối lượng hợp đồng đã khai báo (") ||
-            errorMessage.includes("vượt quá tổng giá trị hợp đồng đã khai báo (") ||
-            errorMessage.includes("vượt quá tổng trị giá hợp đồng đã khai báo (") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo ("
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo ("
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo ("
+            ) ||
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("kg) vượt quá tổng khối lượng") ||
             errorMessage.includes("VND) vượt quá tổng giá trị") ||
-            errorMessage.includes("vượt quá tổng khối lượng hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo"
+            ) ||
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("Tổng khối lượng từ các dòng hợp đồng") ||
             errorMessage.includes("Tổng trị giá từ các dòng hợp đồng") ||
-            errorMessage.includes("vượt quá tổng khối lượng hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo"
+            ) ||
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("kg) vượt quá") ||
             errorMessage.includes("VND) vượt quá") ||
@@ -781,21 +861,39 @@ export default function ContractForm({
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("Tổng khối lượng từ các dòng hợp đồng (") ||
             errorMessage.includes("Tổng trị giá từ các dòng hợp đồng (") ||
-            errorMessage.includes("vượt quá tổng khối lượng hợp đồng đã khai báo (") ||
-            errorMessage.includes("vượt quá tổng giá trị hợp đồng đã khai báo (") ||
-            errorMessage.includes("vượt quá tổng trị giá hợp đồng đã khai báo (") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo ("
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo ("
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo ("
+            ) ||
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("kg) vượt quá tổng khối lượng") ||
             errorMessage.includes("VND) vượt quá tổng giá trị") ||
-            errorMessage.includes("vượt quá tổng khối lượng hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo"
+            ) ||
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("Tổng khối lượng từ các dòng hợp đồng") ||
             errorMessage.includes("Tổng trị giá từ các dòng hợp đồng") ||
-            errorMessage.includes("vượt quá tổng khối lượng hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng trị giá hợp đồng đã khai báo") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo"
+            ) ||
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("kg) vượt quá") ||
             errorMessage.includes("VND) vượt quá") ||
@@ -810,14 +908,24 @@ export default function ContractForm({
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("Tổng khối lượng từ các dòng hợp đồng (") ||
             errorMessage.includes("Tổng trị giá từ các dòng hợp đồng (") ||
-            errorMessage.includes("vượt quá tổng khối lượng hợp đồng đã khai báo (") ||
-            errorMessage.includes("vượt quá tổng giá trị hợp đồng đã khai báo (") ||
-            errorMessage.includes("vượt quá tổng trị giá hợp đồng đã khai báo (") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo ("
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo ("
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng trị giá hợp đồng đã khai báo ("
+            ) ||
             // Thêm các từ khóa cụ thể hơn nữa
             errorMessage.includes("kg) vượt quá tổng khối lượng") ||
             errorMessage.includes("VND) vượt quá tổng giá trị") ||
-            errorMessage.includes("vượt quá tổng khối lượng hợp đồng đã khai báo") ||
-            errorMessage.includes("vượt quá tổng giá trị hợp đồng đã khai báo") ||
+            errorMessage.includes(
+              "vượt quá tổng khối lượng hợp đồng đã khai báo"
+            ) ||
+            errorMessage.includes(
+              "vượt quá tổng giá trị hợp đồng đã khai báo"
+            ) ||
             errorMessage.includes("vượt quá tổng trị giá hợp đồng đã khai báo");
 
           if (isBusinessError) {
@@ -955,8 +1063,6 @@ export default function ContractForm({
                 {businessErrors.length} quy tắc
               </span>
             </div>
-
-
 
             {/* Tóm tắt nhanh */}
             <div className="mb-3 p-2 bg-orange-100 rounded text-orange-800 text-sm">
@@ -1152,6 +1258,11 @@ export default function ContractForm({
               {getFieldError("contractFileUrl")}
             </p>
           )}
+          {hasFieldError("contractFile") && (
+            <p className="text-red-500 text-xs mt-1">
+              {getFieldError("contractFile")}
+            </p>
+          )}
           <p className="text-xs text-gray-500 mt-1">
             💡 Hỗ trợ: Ảnh (JPG, PNG), PDF, Word (DOC, DOCX)
           </p>
@@ -1230,6 +1341,26 @@ export default function ContractForm({
                   </div>
                 </div>
               )}
+
+              {/* Remove file button */}
+              {selectedFile && (
+                <div className="mt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setFilePreviewUrl(null);
+                      handleChange("contractFileUrl", "");
+                      toast.info("Đã xóa file đã chọn");
+                    }}
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    🗑️ Xóa file
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1239,8 +1370,9 @@ export default function ContractForm({
           <select
             value={data.buyerId}
             onChange={(e) => handleChange("buyerId", e.target.value)}
-            className={`w-full p-2 border rounded ${hasFieldError("buyerId") ? "border-red-500" : ""
-              }`}
+            className={`w-full p-2 border rounded ${
+              hasFieldError("buyerId") ? "border-red-500" : ""
+            }`}
             required
           >
             <option value="">-- Chọn đối tác --</option>
@@ -1351,8 +1483,9 @@ export default function ContractForm({
           <div>
             <label className="block mb-1 text-sm font-medium">Trạng thái</label>
             <select
-              className={`w-full p-2 border rounded ${hasFieldError("status") ? "border-red-500" : ""
-                }`}
+              className={`w-full p-2 border rounded ${
+                hasFieldError("status") ? "border-red-500" : ""
+              }`}
               value={data.status}
               onChange={(e) => handleChange("status", e.target.value)}
             >
@@ -1364,8 +1497,12 @@ export default function ContractForm({
                     today.setHours(0, 0, 0, 0);
                     const startDate = new Date(data.startDate);
                     startDate.setHours(0, 0, 0, 0);
-                    const endDate = data.endDate ? new Date(data.endDate) : null;
-                    const endDateNormalized = endDate ? new Date(endDate) : null;
+                    const endDate = data.endDate
+                      ? new Date(data.endDate)
+                      : null;
+                    const endDateNormalized = endDate
+                      ? new Date(endDate)
+                      : null;
                     if (endDateNormalized) {
                       endDateNormalized.setHours(0, 0, 0, 0);
                     }
@@ -1428,8 +1565,9 @@ export default function ContractForm({
             <label className="block mb-1 text-sm font-medium">Trạng thái</label>
             <div className="p-2 border rounded bg-gray-50">
               <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusDisplay(data.status).className
-                  }`}
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  getStatusDisplay(data.status).className
+                }`}
               >
                 {getStatusDisplay(data.status).label}
               </span>
@@ -1501,10 +1639,11 @@ export default function ContractForm({
                     onChange={(e) =>
                       updateContractItem(index, "coffeeTypeId", e.target.value)
                     }
-                    className={`p-2 border rounded ${hasFieldError(`contractItems.${index}.coffeeTypeId`)
-                      ? "border-red-500"
-                      : ""
-                      }`}
+                    className={`p-2 border rounded ${
+                      hasFieldError(`contractItems.${index}.coffeeTypeId`)
+                        ? "border-red-500"
+                        : ""
+                    }`}
                   >
                     <option value="">-- Chọn loại cà phê --</option>
                     {coffeeTypes.map((type) => (
