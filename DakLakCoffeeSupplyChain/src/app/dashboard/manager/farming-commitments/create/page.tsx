@@ -12,13 +12,12 @@ import { AppToast } from "@/components/ui/AppToast";
 import { getErrorMessage } from "@/lib/utils";
 import { FiTrash2 } from "react-icons/fi";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import {
-  createFarmingCommitment,
-} from "@/lib/api/farmingCommitments";
+import { createFarmingCommitment } from "@/lib/api/farmingCommitments";
 import {
   CultivationRegistration,
   getCultivationRegistrationById,
 } from "@/lib/api/cultivationRegistrations";
+import { LoadingButton } from "@/components/ui/loadingProgress";
 
 export default function CreateFarmingCommitmentPage() {
   useAuthGuard(["manager"]);
@@ -54,6 +53,7 @@ export default function CreateFarmingCommitmentPage() {
   const [registration, setRegistration] =
     useState<CultivationRegistration | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (paramRegistrationId) {
@@ -78,7 +78,12 @@ export default function CreateFarmingCommitmentPage() {
     }
 
     //fetchPlan(paramRegistrationId);
-  }, [paramRegistrationId, paramRegistrationDetailId, paramWantedPrice, paramEstimatedYield]);
+  }, [
+    paramRegistrationId,
+    paramRegistrationDetailId,
+    paramWantedPrice,
+    paramEstimatedYield,
+  ]);
 
   //#region API Calls
 
@@ -91,7 +96,10 @@ export default function CreateFarmingCommitmentPage() {
       }
     );
     if (data) {
-      data.cultivationRegistrationDetails = data.cultivationRegistrationDetails.filter(detail => detail.status === 'Approved');
+      data.cultivationRegistrationDetails =
+        data.cultivationRegistrationDetails.filter(
+          (detail) => detail.status === "Approved"
+        );
     }
     setRegistration(data);
     console.log("Fetched Registration:", data);
@@ -99,7 +107,7 @@ export default function CreateFarmingCommitmentPage() {
   };
   //#endregion
 
-  const validateForm = () => {
+  const validateForm = (): { isValid: boolean; errorMessages: string[] } => {
     const newErrors: Record<string, string> = {};
     if (!form.commitmentName) {
       newErrors.commitmentName = "Tên cam kết là bắt buộc.";
@@ -145,7 +153,11 @@ export default function CreateFarmingCommitmentPage() {
       });
     }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const errorMessages = Object.values(newErrors);
+    return {
+      isValid: errorMessages.length === 0,
+      errorMessages,
+    };
   };
 
   //#region Form Handlers
@@ -200,10 +212,13 @@ export default function CreateFarmingCommitmentPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting form:", form);
+    //console.log("Submitting form:", form);
+    setIsSubmitting(true);
 
-    if (!validateForm()) {
-      AppToast.error(getErrorMessage(errors));
+    const { isValid, errorMessages } = validateForm();
+    if (!isValid) {
+      setIsSubmitting(false);
+      AppToast.error(errorMessages.join("\n")); // show errors from validateForm directly
       return;
     }
 
@@ -211,7 +226,7 @@ export default function CreateFarmingCommitmentPage() {
       await createFarmingCommitment(form);
       AppToast.success("Tạo cam kết thành công!");
       router.push("/dashboard/manager/farming-commitments");
-      
+
       setErrors({});
       setForm({
         commitmentName: "",
@@ -232,6 +247,8 @@ export default function CreateFarmingCommitmentPage() {
       });
     } catch (error) {
       AppToast.error(getErrorMessage(error) || "Tạo cam kết thất bại.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -301,7 +318,8 @@ export default function CreateFarmingCommitmentPage() {
                 <CardContent className='space-y-3'>
                   <div>
                     <Label htmlFor={`registrationDetailId-${index}`}>
-                      Chi tiết đơn đăng ký (Chỉ chọn được những chi tiết đã duyệt)
+                      Chi tiết đơn đăng ký (Chỉ chọn được những chi tiết đã
+                      duyệt)
                       <span className='text-red-500'>*</span>
                     </Label>
                     {loading ? (
@@ -470,7 +488,8 @@ export default function CreateFarmingCommitmentPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor={`note-${index}`}>Các điều khoản cụ thể
+                    <Label htmlFor={`note-${index}`}>
+                      Các điều khoản cụ thể
                       <span className='text-red-500'>*</span>
                     </Label>
                     <Textarea
@@ -498,12 +517,15 @@ export default function CreateFarmingCommitmentPage() {
           </div>
 
           <div className='flex justify-end'>
-            <Button
+            <LoadingButton
+              loading={isSubmitting}
+              type='submit'
+              variant='default'
               onClick={handleSubmit}
-              className='bg-[#FD7622] hover:bg-[#d74f0f] text-white font-medium text-sm'
+              disabled={isSubmitting}
             >
               Tạo cam kết
-            </Button>
+            </LoadingButton>
           </div>
         </CardContent>
       </Card>

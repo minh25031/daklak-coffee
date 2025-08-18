@@ -158,12 +158,12 @@ export default function FarmingCommitmentForm({
             .map((d, i) => (i === index ? null : d.registrationDetailId))
             .filter(Boolean);
 
-          const options = registration?.cultivationRegistrationDetails.filter(
+            const options = registration?.cultivationRegistrationDetails.filter(
             (d) =>
               !alreadySelected.includes(
-                d.cultivationRegistrationDetailId ?? null
-              )
-          );
+              d.cultivationRegistrationDetailId ?? null
+              ) && d.status !== "Rejected"
+            );
           return (
             <Card key={index} className='mb-4 border'>
               <CardHeader className='flex justify-between items-center'>

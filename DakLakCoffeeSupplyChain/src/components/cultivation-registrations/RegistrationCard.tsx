@@ -12,7 +12,7 @@ import {
 } from "@/lib/api/cultivationRegistrations";
 import { getErrorMessage } from "@/lib/utils";
 import { ConfirmDialog } from "../ui/confirmDialog";
-import { FiCheck } from "react-icons/fi";
+import { FiCheck, FiXCircle } from "react-icons/fi";
 import { useRouter } from "next/dist/client/components/navigation";
 import StatusBadge from "@/components/crop-seasons/StatusBadge";
 import { CultivationRegistrationStatusMap } from "@/lib/constants/cultivationRegistrationStatus";
@@ -29,6 +29,7 @@ type RegistrationCardProps = {
   registeredArea: number;
   registeredAt: string;
   note: string;
+  planStatus: string | number;
   status: string | number;
   commitmentId?: string | null;
   commitmentStatus: string | number;
@@ -47,6 +48,7 @@ export default function RegistrationCard({
   cultivationRegistrationDetails,
   note,
   status,
+  planStatus,
   commitmentId,
   commitmentStatus,
   onUpdate,
@@ -56,8 +58,11 @@ export default function RegistrationCard({
   const [loadingApprovalId, setLoadingApprovalId] = useState<string | null>(
     null
   );
+  const [dialogType, setDialogType] = useState<"approve" | "reject" | null>(
+    null
+  );
   const [currentDetailId, setCurrentDetailId] = useState<string | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  // const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY_PREFIX + registrationId);
@@ -79,8 +84,18 @@ export default function RegistrationCard({
 
   const openConfirmDialog = (detailId: string) => {
     setCurrentDetailId(detailId);
-    setConfirmOpen(true);
+    //setConfirmOpen(true);
+    setDialogType("approve");
   };
+
+  const openRejectDialog = (detailId: string) => {
+    setCurrentDetailId(detailId);
+    setDialogType("reject");
+  };
+
+  function closeDialog() {
+    setDialogType(null);
+  }
 
   const currentDetail =
     cultivationRegistrationDetails.find(
@@ -96,10 +111,28 @@ export default function RegistrationCard({
         status: 1,
       });
       AppToast.success("Duyệt đơn đăng ký thành công!");
-      setConfirmOpen(false);
+      setDialogType(null);
       onUpdate?.();
     } catch (error) {
       AppToast.error(getErrorMessage(error) || "Duyệt đơn đăng ký thất bại!");
+    } finally {
+      setLoadingApprovalId(null);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!currentDetailId) return;
+
+    setLoadingApprovalId(currentDetailId);
+    try {
+      await updateCultivationRegistrationDetailStatus(currentDetailId, {
+        status: 3,
+      });
+      AppToast.success("Từ chối đơn đăng ký thành công!");
+      setDialogType(null);
+      onUpdate?.();
+    } catch (error) {
+      AppToast.error(getErrorMessage(error) || "Từ chối đơn đăng ký thất bại!");
     } finally {
       setLoadingApprovalId(null);
     }
@@ -177,8 +210,12 @@ export default function RegistrationCard({
         >
           {cultivationRegistrationDetails.map((detail) => {
             const isApproved = detail.status === "Approved";
-            const isCommitmentCreated = commitmentId && commitmentId !== "00000000-0000-0000-0000-000000000000";
+            const isRejected = detail.status === "Rejected";
+            const isCommitmentCreated =
+              commitmentId &&
+              commitmentId !== "00000000-0000-0000-0000-000000000000";
             const isCommitmentActive = commitmentStatus === "Active";
+            const isProcurementPlanCancelled = planStatus === "Cancelled" || planStatus === 2;
             return (
               <div
                 key={detail.cultivationRegistrationDetailId}
@@ -218,7 +255,7 @@ export default function RegistrationCard({
 
                 {/* Nút tạo hoặc chỉnh sửa cam kết */}
                 <div className='flex justify-end'>
-                  {isApproved && isCommitmentCreated && !isCommitmentActive? (
+                  {isApproved && isCommitmentCreated && !isCommitmentActive ? (
                     <>
                       <Button
                         size='sm'
@@ -234,37 +271,55 @@ export default function RegistrationCard({
                     </>
                   ) : isApproved && !isCommitmentCreated ? (
                     <Button
-                        size='sm'
-                        variant='secondaryGradient'
-                        onClick={() => {
-                          router.push(
-                            `/dashboard/manager/farming-commitments/create?registrationId=${registrationId}&registrationDetailId=${detail.cultivationRegistrationDetailId}&wantedPrice=${detail.wantedPrice}&estimatedYield=${detail.estimatedYield}`
-                          );
-                        }}
-                      >
-                        Tạo cam kết
-                      </Button>
-                  )
-                : isCommitmentActive ? (
+                      size='sm'
+                      variant='secondaryGradient'
+                      onClick={() => {
+                        router.push(
+                          `/dashboard/manager/farming-commitments/create?registrationId=${registrationId}&registrationDetailId=${detail.cultivationRegistrationDetailId}&wantedPrice=${detail.wantedPrice}&estimatedYield=${detail.estimatedYield}`
+                        );
+                      }}
+                    >
+                      Tạo cam kết
+                    </Button>
+                  ) : isRejected || isProcurementPlanCancelled ? (
                     <></>
                   ) : (
-                    <Button
-                      size='sm'
-                      variant='approveGradient'
-                      disabled={
-                        loadingApprovalId ===
-                        detail.cultivationRegistrationDetailId
-                      }
-                      onClick={() =>
-                        detail.cultivationRegistrationDetailId &&
-                        openConfirmDialog(
+                    <div className='flex gap-2'>
+                      <Button
+                        size='sm'
+                        variant='approveGradient'
+                        disabled={
+                          loadingApprovalId ===
                           detail.cultivationRegistrationDetailId
-                        )
-                      }
-                      //className='bg-green-200 hover:bg-emerald-400 hover:text-white text-green-800 transition'
-                    >
-                      <FiCheck className='inline-block' /> Duyệt chi tiết đơn
-                    </Button>
+                        }
+                        onClick={() =>
+                          detail.cultivationRegistrationDetailId &&
+                          openConfirmDialog(
+                            detail.cultivationRegistrationDetailId
+                          )
+                        }
+                        //className='bg-green-200 hover:bg-emerald-400 hover:text-white text-green-800 transition'
+                      >
+                        <FiCheck className='inline-block' /> Duyệt
+                      </Button>
+                      <Button
+                        size='sm'
+                        variant='destructiveGradient'
+                        disabled={
+                          loadingApprovalId ===
+                          detail.cultivationRegistrationDetailId
+                        }
+                        onClick={() =>
+                          detail.cultivationRegistrationDetailId &&
+                          openRejectDialog(
+                            detail.cultivationRegistrationDetailId
+                          )
+                        }
+                        //className='bg-green-200 hover:bg-emerald-400 hover:text-white text-green-800 transition'
+                      >
+                        <FiXCircle className='mr-1' /> Từ chối
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -273,21 +328,45 @@ export default function RegistrationCard({
 
           {/* Popup confirm duyệt */}
           <ConfirmDialog
-            open={confirmOpen}
-            onOpenChange={setConfirmOpen}
-            title='Xác nhận duyệt chi tiết đơn đăng ký'
+            open={dialogType !== null}
+            onOpenChange={(open) => !open && closeDialog()}
+            title={
+              dialogType === "approve"
+                ? "Xác nhận duyệt chi tiết đơn đăng ký"
+                : dialogType === "reject"
+                ? "Từ chối chi tiết đơn đăng ký"
+                : ""
+            }
             description={
-              <>
-                Bạn có chắc chắn muốn duyệt chi tiết đơn{" "}
-                <b>{currentDetail?.coffeeType ?? ""}</b> này? Sau khi duyệt,
-                người nông dân sẽ được thông báo và bạn có thể tiến hành các
-                bước tiếp theo. Bạn có thể tạo cam kết với họ để mở khóa tính
-                năng báo cáo mùa vụ cho nông dân.
-              </>
+              dialogType === "approve" ? (
+                <>
+                  Bạn có chắc chắn muốn duyệt chi tiết đơn{" "}
+                  <b>{currentDetail?.coffeeType ?? ""}</b> này? Sau khi duyệt,
+                  người nông dân sẽ được thông báo và bạn có thể tiến hành các
+                  bước tiếp theo. Bạn có thể tạo cam kết với họ để mở khóa tính
+                  năng báo cáo mùa vụ cho nông dân.
+                </>
+              ) : dialogType === "reject" ? (
+                <>
+                  Bạn có chắc chắn muốn từ chối chi tiết đơn{" "}
+                  <b>{currentDetail?.coffeeType ?? ""}</b> này? Sau khi từ chối,
+                  Bạn không thể duyệt lại chi tiết này của đơn đăng ký, các chi tiết đơn đăng ký khác của đơn đăng ký này sẽ không bị ảnh hưởng bởi hành động này.
+                  {/* Bạn sẽ chỉ có thể duyệt lại chi tiết đơn đăng ký này nếu như
+                  cam kết được tạo chưa được 2 bên chấp thuận. */}
+                </>
+              ) : (
+                ""
+              )
             }
             confirmText='Đồng ý'
             cancelText='Hủy'
-            onConfirm={handleApprove}
+            onConfirm={() => {
+              if (dialogType === "approve") {
+                handleApprove();
+              } else if (dialogType === "reject") {
+                handleReject();
+              }
+            }}
             loading={loadingApprovalId !== null}
           />
         </div>
