@@ -33,6 +33,28 @@ export enum ContractStatus {
   Expired = "Expired",
 }
 
+// Nhãn tiếng Việt -> tên enum
+export const ViLabelToStatus: Record<string, ContractStatus> = {
+  "Chưa bắt đầu": ContractStatus.NotStarted,
+  "Chuẩn bị giao": ContractStatus.PreparingDelivery,
+  "Đang thực hiện": ContractStatus.InProgress,
+  "Hoàn thành một phần": ContractStatus.PartialCompleted,
+  "Hoàn thành": ContractStatus.Completed,
+  "Đã hủy": ContractStatus.Cancelled,
+  "Quá hạn": ContractStatus.Expired,
+};
+
+// Chuẩn hoá giá trị để gửi lên API (form-data)
+export function normalizeStatusForApi(input: string | ContractStatus): string {
+  // Nếu đã là tên enum -> dùng luôn
+  if ((Object.values(ContractStatus) as string[]).includes(input as string)) {
+    return input as string; // "InProgress", "Cancelled", ...
+  }
+  // Nếu là nhãn TV -> map sang tên enum
+  const mapped = ViLabelToStatus[input];
+  return (mapped ?? ContractStatus.NotStarted) as string;
+}
+
 export function convertEnumStatusToApi(
   status: ContractStatus
 ): "open" | "in_progress" | "completed" {
