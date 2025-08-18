@@ -264,10 +264,11 @@ export async function createContract(data: ContractCreateDto): Promise<void> {
   fd.append('buyerId', data.buyerId);
   fd.append('contractNumber', data.contractNumber);
   fd.append('contractTitle', data.contractTitle);
+
   // Nếu người dùng dán link mà không chọn file -> gửi URL lên BE
-if (data.contractFileUrl && !data.contractFile) {
-  fd.append('contractFileUrl', data.contractFileUrl.trim());
-}
+  if (data.contractFileUrl && !data.contractFile) {
+    fd.append('contractFileUrl', data.contractFileUrl.trim());
+  }
   if (data.deliveryRounds !== undefined) fd.append('deliveryRounds', String(data.deliveryRounds));
   if (data.totalQuantity !== undefined)  fd.append('totalQuantity', String(data.totalQuantity));
   if (data.totalValue !== undefined)     fd.append('totalValue', String(data.totalValue));
@@ -285,7 +286,7 @@ if (data.contractFileUrl && !data.contractFile) {
   if (signed) fd.append('signedAt', signed);
 
   const statusForApi = normalizeStatusForApi((data as any).statusLabel ?? data.status);
-fd.append('status', statusForApi);
+  fd.append('status', statusForApi);
   fd.append('cancelReason', (data.cancelReason ?? '').trim());
 
   if (data.contractFile) fd.append('contractFile', data.contractFile);
