@@ -113,25 +113,17 @@ export async function getCropSeasonDetailsByCropSeasonId(
 // Thêm function để lấy crop season details cho farmer hiện tại
 export async function getCropSeasonDetailsForCurrentFarmer(): Promise<CropSeasonDetail[]> {
   try {
-    console.log('🔍 Calling API: GET /CropSeasonDetails/warehouse-request/available');
     const response = await api.get(`${baseUrl}/warehouse-request/available`);
-    console.log('✅ API response:', response.data);
     
     // Backend trả về ServiceResult {status, message, data}
     if (response.data && response.data.status === 1 && response.data.data) {
-      console.log('✅ Available crop season details data:', response.data.data);
       return response.data.data;
     } else {
-      console.log('⚠️ No available crop season details or error response:', response.data);
       return [];
     }
   } catch (err: any) {
-    console.error('❌ Lỗi getCropSeasonDetailsForCurrentFarmer:', err);
-    console.error('❌ Error details:', {
-      message: err.message,
-      status: err.response?.status,
-      data: err.response?.data
-    });
-    throw new Error(getErrorMessage(err) || 'Không thể lấy danh sách vùng trồng');
+    // Thay vì log ra console, throw error để UI có thể hiển thị
+    const errorMessage = getErrorMessage(err) || 'Không thể lấy danh sách vùng trồng';
+    throw new Error(errorMessage);
   }
 }
