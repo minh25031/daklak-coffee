@@ -213,9 +213,11 @@ export default function CreateDeliveryRequestPage() {
         if (requestsData.status === 1) {
           setInboundRequests(requestsData.data || []);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching data:', error);
-        toast.error('Không thể tải dữ liệu');
+        // Hiển thị thông báo lỗi cụ thể từ backend thay vì thông báo chung
+        const errorMessage = error?.message || 'Không thể tải dữ liệu';
+        toast.error(errorMessage);
       } finally {
         setIsLoadingBatches(false);
         setIsLoadingCropDetails(false);
