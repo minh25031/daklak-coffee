@@ -19,7 +19,7 @@ export default function MarketplacePage() {
   useEffect(() => {
     fetchData();
   }, []);
-  
+
   const fetchData = async () => {
     setLoading(true);
     const data = await getAllAvailableProcurementPlans().catch((error) => {
@@ -31,8 +31,8 @@ export default function MarketplacePage() {
   };
 
   const filteredPlans = plans.filter(
-    (plan) => 
-      (differenceInCalendarDays(new Date(plan.endDate), new Date()) > 0) &&
+    (plan) =>
+      differenceInCalendarDays(new Date(plan.endDate), new Date()) > 0 &&
       (!search || plan.title.toLowerCase().includes(search.toLowerCase()))
   );
 
@@ -40,25 +40,25 @@ export default function MarketplacePage() {
     return <p className='text-center py-20'>Đang tải dữ liệu...</p>;
   }
   if (plans.length == 0 && !loading) {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-20 bg-[#fefaf4]">
-      <p className="text-gray-600 text-lg mb-4">Hiện tại chưa có kế hoạch thu mua nào.</p>
-      <Button
-        onClick={fetchData}
-        className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded"
-      >
-        Tải lại
-      </Button>
-    </div>
-  );
-}
-
+    return (
+      <div className='min-h-screen flex flex-col items-center justify-center py-20 bg-[#fefaf4]'>
+        <p className='text-gray-600 text-lg mb-4'>
+          Hiện tại chưa có kế hoạch thu mua nào.
+        </p>
+        <Button
+          onClick={fetchData}
+          className='bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded'
+        >
+          Tải lại
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className='min-h-screen bg-[#fefaf4] py-8'>
       <div className='max-w-7xl mx-auto px-4 md:px-6 flex justify-center'>
         <div className='flex w-full max-w-[1200px] gap-8'>
-
           <aside className='w-64 flex flex-col space-y-4'>
             <div className='bg-white rounded-xl shadow-sm p-4 space-y-4'>
               <h2 className='text-sm font-medium text-gray-700'>
@@ -74,7 +74,7 @@ export default function MarketplacePage() {
               </div>
             </div>
 
-            <div 
+            <div
             //className='bg-white p-4 rounded shadow'
             >
               {/* component Filter sau này */}
@@ -82,7 +82,6 @@ export default function MarketplacePage() {
             </div>
           </aside>
           <main className='flex-1'>
-
             {filteredPlans.length === 0 && <p>Chưa có kế hoạch thu mua nào.</p>}
 
             <div className='space-y-5'>
@@ -106,7 +105,9 @@ export default function MarketplacePage() {
                         {plan.totalQuantity} kg
                       </p>
                       <p>
-                        <span className='font-semibold'>Hạn đăng ký còn lại:</span>{" "}
+                        <span className='font-semibold'>
+                          Hạn đăng ký còn lại:
+                        </span>{" "}
                         {Math.max(
                           differenceInCalendarDays(
                             new Date(plan.endDate),
@@ -190,11 +191,13 @@ export default function MarketplacePage() {
                             <td className='px-3 py-2'>
                               {detail.coffeeType?.typeName}
                             </td>
-                            {detail.processingMethodName && (
-                              <td className='px-3 py-2'>
-                              {detail.processingMethodName}
+                            <td className='px-3 py-2'>
+                              {detail.processingMethodName ? (
+                                <>{detail.processingMethodName}</>
+                              ) : (
+                                <>Không có</>
+                              )}
                             </td>
-                            )}
                             <td className='px-3 py-2'>
                               {detail.targetQuantity}
                             </td>

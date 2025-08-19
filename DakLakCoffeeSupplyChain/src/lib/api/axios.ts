@@ -18,8 +18,15 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // Can thiệp khi là FormData
+    const isFD = typeof FormData !== "undefined" && config.data instanceof FormData;
+    if (isFD && config.headers) {
+      delete (config.headers as any)["Content-Type"]; // để browser tự set boundary
     }
     return config;
   },

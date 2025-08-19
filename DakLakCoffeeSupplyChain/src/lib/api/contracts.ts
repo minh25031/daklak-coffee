@@ -1,5 +1,5 @@
 import api from "./axios";
-import { ContractStatus } from "@/lib/constants/contractStatus";
+import { ContractStatus, normalizeStatusForApi } from "@/lib/constants/contractStatus";
 import { ContractItemCreateDto } from "@/lib/api/contractItems";
 import { ContractItemUpdateDto } from "@/lib/api/contractItems";
 
@@ -81,6 +81,7 @@ export interface ContractCreateDto {
   contractNumber: string;
   contractTitle: string;
   contractFileUrl?: string;
+  contractFile?: File; // Thêm field cho file upload
   deliveryRounds?: number;
   totalQuantity?: number;
   totalValue?: number;
@@ -242,9 +243,63 @@ export async function softDeleteContract(contractId: string): Promise<void> {
   await api.patch(`/Contracts/soft-delete/${contractId}`);
 } 
 
+// Helper: ép về yyyy-MM-dd
+const toISODate = (d: string) => {
+  // d có thể là '08/19/2025' hoặc '2025-08-19'
+  const parts = d.includes('/') ? d.split('/') : d.split('-');
+  let yyyy: number, mm: number, dd: number;
+
+  if (d.includes('/')) { // mm/dd/yyyy
+    [mm, dd, yyyy] = parts.map(Number);
+  } else {               // yyyy-mm-dd
+    [yyyy, mm, dd] = parts.map(Number);
+  }
+  const date = new Date(Date.UTC(yyyy, mm - 1, dd));
+  return date.toISOString().slice(0, 10); // 'yyyy-MM-dd'
+};
+
 // API: Tạo mới hợp đồng
 export async function createContract(data: ContractCreateDto): Promise<void> {
-  await api.post("/Contracts", data);
+  const fd = new FormData();
+  fd.append('buyerId', data.buyerId);
+  fd.append('contractNumber', data.contractNumber);
+  fd.append('contractTitle', data.contractTitle);
+
+  // Nếu người dùng dán link mà không chọn file -> gửi URL lên BE
+  if (data.contractFileUrl && !data.contractFile) {
+    fd.append('contractFileUrl', data.contractFileUrl.trim());
+  }
+  if (data.deliveryRounds !== undefined) fd.append('deliveryRounds', String(data.deliveryRounds));
+  if (data.totalQuantity !== undefined)  fd.append('totalQuantity', String(data.totalQuantity));
+  if (data.totalValue !== undefined)     fd.append('totalValue', String(data.totalValue));
+
+  const only = (s?: string) =>
+    s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s :
+    s && /^\d{2}\/\d{2}\/\d{4}$/.test(s) ? new Date(s).toISOString().slice(0,10) :
+    undefined;
+
+  const s = only(data.startDate);
+  const e = only(data.endDate);
+  if (s) fd.append('startDate', s);
+  if (e) fd.append('endDate', e);
+  const signed = only(data.signedAt);
+  if (signed) fd.append('signedAt', signed);
+
+  const statusForApi = normalizeStatusForApi((data as any).statusLabel ?? data.status);
+  fd.append('status', statusForApi);
+  fd.append('cancelReason', (data.cancelReason ?? '').trim());
+
+  if (data.contractFile) fd.append('contractFile', data.contractFile);
+
+  data.contractItems.forEach((it, i) => {
+    fd.append(`contractItems[${i}].coffeeTypeId`, it.coffeeTypeId);
+    if (it.quantity !== undefined)       fd.append(`contractItems[${i}].quantity`, String(it.quantity));
+    if (it.unitPrice !== undefined)      fd.append(`contractItems[${i}].unitPrice`, String(it.unitPrice));
+    if (it.discountAmount !== undefined) fd.append(`contractItems[${i}].discountAmount`, String(it.discountAmount));
+    if (it.note)                         fd.append(`contractItems[${i}].note`, it.note);
+  });
+
+  await api.post('/Contracts', fd); // KHÔNG set Content-Type
 }
 
 // API: Cập nhật hợp đồng

@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { ProcessingBatchProgress } from "./processingBatchProgress";
 import { ProcessingStatus } from "@/lib/constants/batchStatus";
 import { CropSeasonListItem } from './cropSeasons';
+import { getErrorMessage } from "@/lib/utils";
 
 
 export interface ProcessingProgress {
@@ -152,21 +153,18 @@ export async function searchProcessingBatches(query: string): Promise<Processing
 
 export async function getAvailableBatchesForWarehouseRequest(): Promise<any[]> {
   try {
-    console.log("🔍 DEBUG: Calling GET /ProcessingBatch/warehouse-request/available API...");
     const res = await api.get("/ProcessingBatch/warehouse-request/available");
-    console.log("🔍 DEBUG: GET /ProcessingBatch/warehouse-request/available response:", res);
     
     // Backend trả về ServiceResult {status, message, data}
     if (res.data && res.data.status === 1 && res.data.data) {
-      console.log("✅ Available batches data:", res.data.data);
       return res.data.data;
     } else {
-      console.log("⚠️ No available batches or error response:", res.data);
       return [];
     }
-  } catch (err) {
-    console.error("❌ Lỗi getAvailableBatchesForWarehouseRequest:", err);
-    return [];
+  } catch (err: any) {
+    // Thay vì log ra console và return empty array, throw error để UI có thể hiển thị
+    const errorMessage = getErrorMessage(err) || 'Không thể lấy danh sách lô sơ chế';
+    throw new Error(errorMessage);
   }
 }
 
