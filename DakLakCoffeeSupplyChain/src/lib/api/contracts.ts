@@ -304,5 +304,47 @@ export async function createContract(data: ContractCreateDto): Promise<void> {
 
 // API: Cập nhật hợp đồng
 export async function updateContract(contractId: string, data: ContractUpdateDto): Promise<void> {
-  await api.put(`/Contracts/${contractId}`, data);
+  const fd = new FormData();
+  fd.append('contractId', data.contractId);
+  fd.append('buyerId', data.buyerId);
+  fd.append('contractNumber', data.contractNumber);
+  fd.append('contractTitle', data.contractTitle);
+
+  // Nếu người dùng dán link mà không chọn file -> gửi URL lên BE
+  if (data.contractFileUrl && !data.contractFile) {
+    fd.append('contractFileUrl', data.contractFileUrl.trim());
+  }
+  if (data.deliveryRounds !== undefined) fd.append('deliveryRounds', String(data.deliveryRounds));
+  if (data.totalQuantity !== undefined)  fd.append('totalQuantity', String(data.totalQuantity));
+  if (data.totalValue !== undefined)     fd.append('totalValue', String(data.totalValue));
+
+  const only = (s?: string) =>
+    s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s :
+    s && /^\d{2}\/\d{2}\/\d{4}$/.test(s) ? new Date(s).toISOString().slice(0,10) :
+    undefined;
+
+  const s = only(data.startDate);
+  const e = only(data.endDate);
+  if (s) fd.append('startDate', s);
+  if (e) fd.append('endDate', e);
+  const signed = only(data.signedAt);
+  if (signed) fd.append('signedAt', signed);
+
+  const statusForApi = normalizeStatusForApi((data as any).statusLabel ?? data.status);
+  fd.append('status', statusForApi);
+  fd.append('cancelReason', (data.cancelReason ?? '').trim());
+
+  if (data.contractFile) fd.append('contractFile', data.contractFile);
+
+  data.contractItems.forEach((it, i) => {
+    fd.append(`contractItems[${i}].contractItemId`, it.contractItemId);
+    fd.append(`contractItems[${i}].contractId`, it.contractId);
+    fd.append(`contractItems[${i}].coffeeTypeId`, it.coffeeTypeId);
+    if (it.quantity !== undefined)       fd.append(`contractItems[${i}].quantity`, String(it.quantity));
+    if (it.unitPrice !== undefined)      fd.append(`contractItems[${i}].unitPrice`, String(it.unitPrice));
+    if (it.discountAmount !== undefined) fd.append(`contractItems[${i}].discountAmount`, String(it.discountAmount));
+    if (it.note)                         fd.append(`contractItems[${i}].note`, it.note);
+  });
+
+  await api.put(`/Contracts/${contractId}`, fd); // KHÔNG set Content-Type
 }

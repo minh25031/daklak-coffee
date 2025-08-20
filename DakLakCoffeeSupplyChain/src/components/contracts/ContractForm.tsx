@@ -119,6 +119,10 @@ export default function ContractForm({
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+      // Khi edit, khởi tạo filePreviewUrl từ contractFileUrl hiện tại
+      if (initialData.contractFileUrl) {
+        setFilePreviewUrl(initialData.contractFileUrl);
+      }
     } else {
       setFormData({
         contractNumber: "",
@@ -135,6 +139,9 @@ export default function ContractForm({
         cancelReason: "",
         contractItems: [],
       });
+      // Reset file preview khi tạo mới
+      setFilePreviewUrl(null);
+      setSelectedFile(null);
     }
   }, [initialData]);
 
@@ -391,9 +398,9 @@ export default function ContractForm({
 
     // Validate file upload (nếu có)
     if (selectedFile) {
-      const maxSize = 10 * 1024 * 1024; // 10MB
+      const maxSize = 30 * 1024 * 1024; // 30MB
       if (selectedFile.size > maxSize) {
-        clientErrors.contractFile = "File không được lớn hơn 10MB";
+        clientErrors.contractFile = "File không được lớn hơn 30MB";
       }
 
       const allowedTypes = [
@@ -496,7 +503,8 @@ export default function ContractForm({
           })
         );
 
-        await updateContract(dto.contractId, {
+        // Chuẩn bị data cho update, bao gồm file mới nếu có
+        const updateData: ContractUpdateDto = {
           ...dto,
           status: finalStatus, // Sử dụng trạng thái đã được cập nhật
           contractFileUrl:
@@ -504,7 +512,14 @@ export default function ContractForm({
               ? undefined
               : dto.contractFileUrl,
           contractItems: normalizedItems,
-        });
+        };
+
+        // Nếu có file mới được chọn, thêm vào data
+        if (selectedFile) {
+          (updateData as any).contractFile = selectedFile;
+        }
+
+        await updateContract(dto.contractId, updateData);
 
         toast.success("Cập nhật hợp đồng thành công!");
       } else {
@@ -1221,9 +1236,9 @@ export default function ContractForm({
                       setFilePreviewUrl(null);
                     }
 
-                    // Hiển thị tên file đã chọn trong input
-                    handleChange("contractFileUrl", file.name);
-                    toast.success(`Đã chọn file: ${file.name}`);
+                    // Khi chọn file mới, xóa URL cũ và hiển thị tên file
+                    handleChange("contractFileUrl", "");
+                    toast.success(`Đã chọn file mới: ${file.name}`);
                   }
                 };
                 input.click();
@@ -1264,34 +1279,54 @@ export default function ContractForm({
             </p>
           )}
           <p className="text-xs text-gray-500 mt-1">
-            💡 Hỗ trợ: Ảnh (JPG, PNG), PDF, Word (DOC, DOCX)
+            💡 Hỗ trợ: Ảnh (JPG, PNG, GIF, WebP), PDF, Word (DOC, DOCX), Video (MP4, AVI, MOV) - Tối đa 30MB
           </p>
 
-          {/* Preview file đã chọn */}
-          {data.contractFileUrl && (
+          {/* Preview file đã chọn hoặc file hiện tại */}
+          {(data.contractFileUrl || selectedFile) && (
             <div className="mt-3 p-3 bg-gray-50 border rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-700">
-                  File đã chọn:
+                  {selectedFile ? "File mới được chọn:" : "File hiện tại:"}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {data.contractFileUrl}
+                  {selectedFile ? selectedFile.name : data.contractFileUrl}
                 </span>
               </div>
+              
+              {/* Thông báo trạng thái */}
+              {selectedFile && (
+                <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-700 text-xs">
+                  ℹ️ File mới sẽ thay thế file hiện tại khi cập nhật
+                </div>
+              )}
 
               {/* Preview cho ảnh */}
-              {data.contractFileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
+              {(data.contractFileUrl?.match(/\.(jpg|jpeg|png|gif|webp)$/i) || selectedFile?.type.startsWith("image/")) && (
                 <div className="mt-2">
-                  {data.contractFileUrl.startsWith("http") || filePreviewUrl ? (
+                  {filePreviewUrl ? (
                     <img
-                      src={filePreviewUrl || data.contractFileUrl}
+                      src={filePreviewUrl}
                       alt="Preview"
                       className="max-w-full h-32 object-contain border rounded cursor-pointer hover:opacity-80 transition-opacity"
                       onError={() => toast.error("Không thể tải ảnh preview")}
                       onClick={() => {
-                        const imageUrl = filePreviewUrl || data.contractFileUrl;
-                        if (imageUrl) {
-                          setModalImageUrl(imageUrl);
+                        if (filePreviewUrl) {
+                          setModalImageUrl(filePreviewUrl);
+                          setShowImageModal(true);
+                        }
+                      }}
+                      title="Click để xem ảnh rõ hơn"
+                    />
+                  ) : data.contractFileUrl?.startsWith("http") ? (
+                    <img
+                      src={data.contractFileUrl}
+                      alt="Preview"
+                      className="max-w-full h-32 object-contain border rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onError={() => toast.error("Không thể tải ảnh preview")}
+                      onClick={() => {
+                        if (data.contractFileUrl) {
+                          setModalImageUrl(data.contractFileUrl);
                           setShowImageModal(true);
                         }
                       }}
@@ -1300,7 +1335,7 @@ export default function ContractForm({
                   ) : (
                     <div className="h-32 bg-gray-100 border rounded flex items-center justify-center">
                       <span className="text-gray-500 text-sm">
-                        📷 {data.contractFileUrl}
+                        📷 {selectedFile ? selectedFile.name : data.contractFileUrl}
                       </span>
                     </div>
                   )}
@@ -1308,9 +1343,9 @@ export default function ContractForm({
               )}
 
               {/* Preview cho PDF */}
-              {data.contractFileUrl.match(/\.pdf$/i) && (
+              {(data.contractFileUrl?.match(/\.pdf$/i) || selectedFile?.name?.match(/\.pdf$/i)) && (
                 <div className="mt-2">
-                  {data.contractFileUrl.startsWith("http") ? (
+                  {data.contractFileUrl?.startsWith("http") ? (
                     <div className="h-32 bg-red-50 border border-red-200 rounded flex items-center justify-center">
                       <a
                         href={data.contractFileUrl}
@@ -1324,7 +1359,7 @@ export default function ContractForm({
                   ) : (
                     <div className="h-32 bg-gray-100 border rounded flex items-center justify-center">
                       <span className="text-gray-500 text-sm">
-                        📄 {data.contractFileUrl}
+                        📄 {selectedFile ? selectedFile.name : data.contractFileUrl}
                       </span>
                     </div>
                   )}
@@ -1332,19 +1367,19 @@ export default function ContractForm({
               )}
 
               {/* Preview cho Word */}
-              {data.contractFileUrl.match(/\.(doc|docx)$/i) && (
+              {(data.contractFileUrl?.match(/\.(doc|docx)$/i) || selectedFile?.name?.match(/\.(doc|docx)$/i)) && (
                 <div className="mt-2">
                   <div className="h-32 bg-blue-50 border border-blue-200 rounded flex items-center justify-center">
                     <span className="text-blue-600 text-sm font-medium">
-                      📝 {data.contractFileUrl}
+                      📝 {selectedFile ? selectedFile.name : data.contractFileUrl}
                     </span>
                   </div>
                 </div>
               )}
 
-              {/* Remove file button */}
-              {selectedFile && (
-                <div className="mt-3">
+              {/* Remove file buttons */}
+              <div className="mt-3 flex gap-2">
+                {selectedFile && (
                   <Button
                     type="button"
                     variant="outline"
@@ -1353,14 +1388,30 @@ export default function ContractForm({
                       setSelectedFile(null);
                       setFilePreviewUrl(null);
                       handleChange("contractFileUrl", "");
-                      toast.info("Đã xóa file đã chọn");
+                      toast.info("Đã xóa file mới được chọn");
                     }}
                     className="text-red-600 border-red-200 hover:bg-red-50"
                   >
-                    🗑️ Xóa file
+                    🗑️ Xóa file mới
                   </Button>
-                </div>
-              )}
+                )}
+                
+                {data.contractFileUrl && !selectedFile && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      handleChange("contractFileUrl", "");
+                      setFilePreviewUrl(null);
+                      toast.info("Đã xóa file hiện tại");
+                    }}
+                    className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                  >
+                    🗑️ Xóa file hiện tại
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
