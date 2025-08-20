@@ -65,6 +65,57 @@ export default function ManagerInventoryListPage() {
   );
 
   // Tính toán thống kê
+  // Helper function to determine coffee type (giống như Staff)
+  const getCoffeeType = (inventory: any) => {
+    // Cà phê đã sơ chế: có batchId, không có detailId
+    if (inventory.batchId && !inventory.detailId) return 'processed';
+    // Cà phê tươi: không có batchId, có detailId
+    if (!inventory.batchId && inventory.detailId) return 'fresh';
+    return 'unknown';
+  };
+
+  const getCoffeeTypeLabel = (inventory: any) => {
+    const type = getCoffeeType(inventory);
+    switch (type) {
+      case 'fresh': return 'Cà phê tươi';
+      case 'processed': return 'Cà phê đã sơ chế';
+      default: return 'Không xác định';
+    }
+  };
+
+  const getCoffeeTypeIcon = (inventory: any) => {
+    const type = getCoffeeType(inventory);
+    switch (type) {
+      case 'fresh': return <Coffee className="w-4 h-4 text-orange-600" />;
+      case 'processed': return <Coffee className="w-4 h-4 text-purple-600" />;
+      default: return <Package className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getCoffeeInfo = (inventory: any) => {
+    const type = getCoffeeType(inventory);
+    switch (type) {
+      case 'fresh':
+        return {
+          label: 'Mùa vụ',
+          value: inventory?.cropSeasonName || inventory?.detailCode || 'N/A',
+          color: 'text-orange-700'
+        };
+      case 'processed':
+        return {
+          label: 'Lô sơ chế',
+          value: inventory?.batchCode ? `${inventory.batchCode} - ${inventory.coffeeTypeName || 'Đã sơ chế'}` : 'N/A',
+          color: 'text-purple-700'
+        };
+      default:
+        return {
+          label: 'Thông tin',
+          value: 'N/A',
+          color: 'text-gray-700'
+        };
+    }
+  };
+
   const totalInventories = inventories.length;
   const totalQuantity = inventories.reduce((sum, inv) => sum + (inv.quantity || 0), 0);
   const inStockCount = inventories.filter(inv => (inv.quantity || 0) > 0).length;
@@ -223,69 +274,70 @@ export default function ManagerInventoryListPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-blue-800">Mã tồn kho</th>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-blue-800">Kho</th>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-blue-800">Sản phẩm</th>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-blue-800">Loại cà phê</th>
-                    <th className="text-center px-4 py-3 text-sm font-semibold text-blue-800">Số lượng (kg)</th>
-                    <th className="text-center px-4 py-3 text-sm font-semibold text-blue-800">Trạng thái</th>
-                    <th className="text-center px-4 py-3 text-sm font-semibold text-blue-800">Hành động</th>
-                  </tr>
-                </thead>
+                                 <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                   <tr>
+                     <th className="text-left px-4 py-3 text-sm font-semibold text-blue-800">Tên kho</th>
+                     <th className="text-left px-4 py-3 text-sm font-semibold text-blue-800">Loại cà phê</th>
+                     <th className="text-left px-4 py-3 text-sm font-semibold text-blue-800">Thông tin</th>
+                     <th className="text-left px-4 py-3 text-sm font-semibold text-blue-800">Sản phẩm</th>
+                     <th className="text-right px-4 py-3 text-sm font-semibold text-blue-800">Số lượng (kg)</th>
+                     <th className="text-center px-4 py-3 text-sm font-semibold text-blue-800">Trạng thái</th>
+                     <th className="text-center px-4 py-3 text-sm font-semibold text-blue-800">Hành động</th>
+                   </tr>
+                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {paged.map((inv, index) => (
                     <tr key={inv.inventoryId} className={`hover:bg-blue-50 transition-colors ${
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     }`}>
+                      <td className="px-4 py-3 font-semibold text-gray-900">{inv.warehouseName}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Package className="w-3 h-3 text-blue-600" />
-                          </div>
-                          <span className="font-mono text-xs font-medium text-gray-900">{inv.inventoryCode}</span>
+                          {(() => {
+                            const coffeeType = getCoffeeType(inv);
+                            const coffeeTypeLabel = getCoffeeTypeLabel(inv);
+                            const coffeeTypeIcon = getCoffeeTypeIcon(inv);
+                            return (
+                              <>
+                                {coffeeTypeIcon}
+                                <span className={`font-medium ${
+                                  coffeeType === 'fresh' ? 'text-orange-700' : 
+                                  coffeeType === 'processed' ? 'text-purple-700' : 'text-gray-700'
+                                }`}>
+                                  {coffeeTypeLabel}
+                                </span>
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <Warehouse className="w-2.5 h-2.5 text-indigo-600" />
-                          </div>
-                          <span className="text-xs text-gray-700 max-w-[200px] truncate" title={inv.warehouseName}>
-                            {inv.warehouseName}
-                          </span>
-                        </div>
+                      <td className="px-4 py-3 text-gray-700 font-mono text-sm">
+                        {(() => {
+                          const coffeeType = getCoffeeType(inv);
+                          const coffeeInfo = getCoffeeInfo(inv);
+                          return (
+                            <span className={coffeeInfo.color}>{coffeeInfo.value}</span>
+                          );
+                        })()}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-gray-700 max-w-[220px] truncate block" title={inv.productName}>
-                          {inv.productName}
-                        </span>
+                      <td className="px-4 py-3 text-gray-700">
+                        {(() => {
+                          const coffeeType = getCoffeeType(inv);
+                          return coffeeType === 'fresh' 
+                            ? (inv.coffeeTypeNameDetail || inv.coffeeTypeName || 'Cà phê tươi')
+                            : (inv.productName || 'N/A');
+                        })()}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 bg-green-100 rounded-lg flex items-center justify-center">
-                            <Coffee className="w-2.5 h-2.5 text-green-600" />
-                          </div>
-                          <span className="text-xs font-medium text-green-700 max-w-[160px] truncate" title={inv.coffeeTypeName}>
-                            {inv.coffeeTypeName}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {inv.quantity.toLocaleString()} kg
-                        </Badge>
-                      </td>
+                      <td className="px-4 py-3 text-right font-semibold">{inv.quantity?.toLocaleString() ?? 0}</td>
                       <td className="px-4 py-3 text-center">
                         <Badge
-                          className={`capitalize px-2 py-1 rounded-full font-medium text-xs ${
+                          className={`capitalize px-3 py-1 rounded-full font-medium text-sm shadow-sm ${
                             inv.quantity > 0
-                              ? "bg-green-100 text-green-800 border-green-200"
-                              : "bg-red-100 text-red-800 border-red-200"
+                              ? 'bg-green-100 text-green-800 border-green-200'
+                              : 'bg-red-100 text-red-800 border-red-200'
                           }`}
                         >
-                          {inv.quantity > 0 ? "🟢 Còn hàng" : "🔴 Hết hàng"}
+                          {inv.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-center">
