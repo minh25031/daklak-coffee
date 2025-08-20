@@ -115,14 +115,50 @@ export default function ContractForm({
     getCoffeeTypes().then(setCoffeeTypes);
   }, []);
 
+  // ✅ SỬA: Helper function để format date cho DatePicker (yyyy-MM-dd)
+  const formatDateForDatePicker = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.warn("Invalid date string:", dateString);
+        return "";
+      }
+
+      // Format: yyyy-MM-dd (đúng format DatePicker mong đợi)
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "";
+    }
+  };
+
   // Sync formData based on initialData
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      // ✅ SỬA: Format signedAt từ ISO string sang yyyy-MM-dd
+      const formattedData = {
+        ...initialData,
+        signedAt: initialData.signedAt
+          ? formatDateForDatePicker(initialData.signedAt)
+          : undefined,
+      };
+
+      setFormData(formattedData);
+
       // Khi edit, khởi tạo filePreviewUrl từ contractFileUrl hiện tại
       if (initialData.contractFileUrl) {
         setFilePreviewUrl(initialData.contractFileUrl);
       }
+
+      // ✅ THÊM: Log để debug
+      console.log("InitialData gốc:", initialData);
+      console.log("InitialData đã format:", formattedData);
+      console.log("signedAt gốc:", initialData.signedAt);
+      console.log("signedAt đã format:", formattedData.signedAt);
     } else {
       setFormData({
         contractNumber: "",
@@ -396,6 +432,10 @@ export default function ContractForm({
       clientErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
     }
 
+    if (data.signedAt && data.startDate && data.signedAt > data.startDate) {
+      clientErrors.signedAt = "Ngày ký hợp đồng không được sau ngày bắt đầu";
+    }
+
     // Validate file upload (nếu có)
     if (selectedFile) {
       const maxSize = 30 * 1024 * 1024; // 30MB
@@ -569,8 +609,6 @@ export default function ContractForm({
       onSuccess();
     } catch (err) {
       // Xử lý lỗi validation từ backend
-
-      // Xử lý lỗi validation từ backend
       if (err && typeof err === "object" && "errors" in err && err.errors) {
         const validationErrors = err.errors as Record<string, string[]>;
         const newFieldErrors: Record<string, string> = {};
@@ -697,7 +735,13 @@ export default function ContractForm({
               message.includes("vượt quá tổng trị giá");
 
             // Xử lý đặc biệt cho một số trường hợp
-            if (field === "ContractItems" && message.includes("cùng loại")) {
+            if (field === "SignedAt" || field === "StartDate") {
+              // Đây là lỗi validation ngày tháng (signedAt ≤ startDate)
+              newFieldErrors[field.toLowerCase()] = message;
+            } else if (
+              field === "ContractItems" &&
+              message.includes("cùng loại")
+            ) {
               // Lỗi trùng loại cà phê - đây là lỗi nghiệp vụ
               newBusinessErrors.push(message);
             } else if (isBusinessError) {
@@ -729,6 +773,22 @@ export default function ContractForm({
         if (newBusinessErrors.length > 0) {
           setBusinessErrors(newBusinessErrors);
           // Không hiển thị toast cho lỗi nghiệp vụ, chỉ hiển thị trong form
+        }
+
+        // Hiển thị toast với thông tin cụ thể hơn
+        if (
+          Object.keys(newFieldErrors).length > 0 ||
+          newBusinessErrors.length > 0
+        ) {
+          // Kiểm tra có lỗi ngày tháng không
+          const hasDateError =
+            newFieldErrors.signedat || newFieldErrors.startdate;
+
+          if (hasDateError) {
+            toast.error("Lỗi ngày tháng: Ngày ký hợp đồng phải ≤ Ngày bắt đầu");
+          } else {
+            toast.error("Vui lòng kiểm tra và sửa các lỗi trong biểu mẫu");
+          }
         }
 
         // Nếu chỉ có lỗi field validation
@@ -1279,7 +1339,8 @@ export default function ContractForm({
             </p>
           )}
           <p className="text-xs text-gray-500 mt-1">
-            💡 Hỗ trợ: Ảnh (JPG, PNG, GIF, WebP), PDF, Word (DOC, DOCX), Video (MP4, AVI, MOV) - Tối đa 30MB
+            💡 Hỗ trợ: Ảnh (JPG, PNG, GIF, WebP), PDF, Word (DOC, DOCX), Video
+            (MP4, AVI, MOV) - Tối đa 30MB
           </p>
 
           {/* Preview file đã chọn hoặc file hiện tại */}
@@ -1293,7 +1354,7 @@ export default function ContractForm({
                   {selectedFile ? selectedFile.name : data.contractFileUrl}
                 </span>
               </div>
-              
+
               {/* Thông báo trạng thái */}
               {selectedFile && (
                 <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-700 text-xs">
@@ -1302,7 +1363,8 @@ export default function ContractForm({
               )}
 
               {/* Preview cho ảnh */}
-              {(data.contractFileUrl?.match(/\.(jpg|jpeg|png|gif|webp)$/i) || selectedFile?.type.startsWith("image/")) && (
+              {(data.contractFileUrl?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
+                selectedFile?.type.startsWith("image/")) && (
                 <div className="mt-2">
                   {filePreviewUrl ? (
                     <img
@@ -1335,7 +1397,10 @@ export default function ContractForm({
                   ) : (
                     <div className="h-32 bg-gray-100 border rounded flex items-center justify-center">
                       <span className="text-gray-500 text-sm">
-                        📷 {selectedFile ? selectedFile.name : data.contractFileUrl}
+                        📷{" "}
+                        {selectedFile
+                          ? selectedFile.name
+                          : data.contractFileUrl}
                       </span>
                     </div>
                   )}
@@ -1343,7 +1408,8 @@ export default function ContractForm({
               )}
 
               {/* Preview cho PDF */}
-              {(data.contractFileUrl?.match(/\.pdf$/i) || selectedFile?.name?.match(/\.pdf$/i)) && (
+              {(data.contractFileUrl?.match(/\.pdf$/i) ||
+                selectedFile?.name?.match(/\.pdf$/i)) && (
                 <div className="mt-2">
                   {data.contractFileUrl?.startsWith("http") ? (
                     <div className="h-32 bg-red-50 border border-red-200 rounded flex items-center justify-center">
@@ -1359,7 +1425,10 @@ export default function ContractForm({
                   ) : (
                     <div className="h-32 bg-gray-100 border rounded flex items-center justify-center">
                       <span className="text-gray-500 text-sm">
-                        📄 {selectedFile ? selectedFile.name : data.contractFileUrl}
+                        📄{" "}
+                        {selectedFile
+                          ? selectedFile.name
+                          : data.contractFileUrl}
                       </span>
                     </div>
                   )}
@@ -1367,11 +1436,13 @@ export default function ContractForm({
               )}
 
               {/* Preview cho Word */}
-              {(data.contractFileUrl?.match(/\.(doc|docx)$/i) || selectedFile?.name?.match(/\.(doc|docx)$/i)) && (
+              {(data.contractFileUrl?.match(/\.(doc|docx)$/i) ||
+                selectedFile?.name?.match(/\.(doc|docx)$/i)) && (
                 <div className="mt-2">
                   <div className="h-32 bg-blue-50 border border-blue-200 rounded flex items-center justify-center">
                     <span className="text-blue-600 text-sm font-medium">
-                      📝 {selectedFile ? selectedFile.name : data.contractFileUrl}
+                      📝{" "}
+                      {selectedFile ? selectedFile.name : data.contractFileUrl}
                     </span>
                   </div>
                 </div>
@@ -1395,7 +1466,7 @@ export default function ContractForm({
                     🗑️ Xóa file mới
                   </Button>
                 )}
-                
+
                 {data.contractFileUrl && !selectedFile && (
                   <Button
                     type="button"
@@ -1523,7 +1594,9 @@ export default function ContractForm({
           <DatePicker
             label="Ngày ký"
             value={data.signedAt as any}
-            onChange={(date) => handleChange("signedAt", date)}
+            onChange={(date) => {
+              handleChange("signedAt", date);
+            }}
             error={hasFieldError("signedAt")}
             errorMessage={getFieldError("signedAt")}
           />
