@@ -115,7 +115,7 @@ export default function ContractForm({
     getCoffeeTypes().then(setCoffeeTypes);
   }, []);
 
-  // ✅ SỬA: Helper function để format date cho DatePicker (yyyy-MM-dd)
+  // Helper function để format date cho DatePicker (yyyy-MM-dd)
   const formatDateForDatePicker = (dateString: string): string => {
     try {
       const date = new Date(dateString);
@@ -139,7 +139,7 @@ export default function ContractForm({
   // Sync formData based on initialData
   useEffect(() => {
     if (initialData) {
-      // ✅ SỬA: Format signedAt từ ISO string sang yyyy-MM-dd
+      // Format signedAt từ ISO string sang yyyy-MM-dd
       const formattedData = {
         ...initialData,
         signedAt: initialData.signedAt
@@ -154,7 +154,7 @@ export default function ContractForm({
         setFilePreviewUrl(initialData.contractFileUrl);
       }
 
-      // ✅ THÊM: Log để debug
+      // Log để debug
       console.log("InitialData gốc:", initialData);
       console.log("InitialData đã format:", formattedData);
       console.log("signedAt gốc:", initialData.signedAt);
