@@ -206,8 +206,8 @@ export default function FarmerDeliveryRequestListPage() {
   const processedCoffeeQuantity = requests.filter(r => getCoffeeType(r) === 'processed').reduce((sum, r) => sum + (r.requestedQuantity || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-6 px-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-6 px-4 overflow-x-hidden">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-blue-100">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -229,7 +229,7 @@ export default function FarmerDeliveryRequestListPage() {
           </div>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-6">
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -284,30 +284,12 @@ export default function FarmerDeliveryRequestListPage() {
                 <Leaf className="w-6 h-6 text-green-200" />
               </div>
             </div>
-            <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl p-4 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-xs font-medium">Cà phê đã sơ chế</p>
-                  <p className="text-2xl font-bold">{processedCoffeeQuantity.toFixed(1)} kg</p>
-                </div>
-                <Coffee className="w-6 h-6 text-purple-200" />
-              </div>
-            </div>
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl p-4 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-emerald-100 text-xs font-medium">Cà phê tươi</p>
-                  <p className="text-2xl font-bold">{freshCoffeeQuantity.toFixed(1)} kg</p>
-                </div>
-                <Leaf className="w-6 h-6 text-emerald-200" />
-              </div>
-            </div>
           </div>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           {/* Sidebar */}
-          <aside className="w-56">
+          <aside className="w-full lg:w-56 flex-shrink-0">
             <div className="bg-white rounded-xl shadow-lg border border-blue-100">
               {/* Search Section */}
               <div className="border-b border-blue-100">
@@ -317,7 +299,7 @@ export default function FarmerDeliveryRequestListPage() {
                 >
                   <div className="flex items-center gap-2">
                     <Search className="w-4 h-4 text-blue-600" />
-                    <span className="text-base font-semibold text-gray-800">Tìm kiếm yêu cầu</span>
+                    <span className="text-sm font-semibold text-gray-800">Tìm kiếm yêu cầu</span>
                   </div>
                   {expandedSections.search ? (
                     <ChevronUp className="w-4 h-4 text-gray-500" />
@@ -348,7 +330,7 @@ export default function FarmerDeliveryRequestListPage() {
                 >
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-blue-600" />
-                    <span className="text-base font-semibold text-gray-800">Lọc theo loại</span>
+                    <span className="text-sm font-semibold text-gray-800">Lọc theo loại</span>
                   </div>
                   {expandedSections.type ? (
                     <ChevronUp className="w-4 h-4 text-gray-500" />
@@ -361,7 +343,7 @@ export default function FarmerDeliveryRequestListPage() {
                     <div className="space-y-2">
                       <button
                         onClick={() => setSelectedType(null)}
-                        className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm ${
+                        className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-2 text-xs ${
                           selectedType === null ? "bg-blue-100 border-2 border-blue-300 text-blue-700 font-semibold" : "hover:bg-gray-50 border-2 border-transparent"
                         }`}
                       >
@@ -372,7 +354,7 @@ export default function FarmerDeliveryRequestListPage() {
                         <button
                           key={type}
                           onClick={() => setSelectedType(type)}
-                          className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm ${
+                          className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-2 text-xs ${
                             selectedType === type
                               ? "bg-blue-100 border-2 border-blue-300 text-blue-700 font-semibold"
                               : "hover:bg-gray-50 border-2 border-transparent"
@@ -395,7 +377,7 @@ export default function FarmerDeliveryRequestListPage() {
                 >
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-blue-600" />
-                    <span className="text-base font-semibold text-gray-800">Lọc theo trạng thái</span>
+                    <span className="text-sm font-semibold text-gray-800">Lọc theo trạng thái</span>
                   </div>
                   {expandedSections.status ? (
                     <ChevronUp className="w-4 h-4 text-gray-500" />
@@ -408,7 +390,7 @@ export default function FarmerDeliveryRequestListPage() {
                     <div className="space-y-2">
                       <button
                         onClick={() => setSelectedStatus(null)}
-                        className={`w-full text-left p-3 rounded-lg transition-all duration-200 text-sm ${
+                        className={`w-full text-left p-3 rounded-lg transition-all duration-200 text-xs ${
                           selectedStatus === null ? "bg-blue-100 border-2 border-blue-300 text-blue-700 font-semibold" : "hover:bg-gray-50 border-2 border-transparent"
                         }`}
                       >
@@ -418,7 +400,7 @@ export default function FarmerDeliveryRequestListPage() {
                         <button
                           key={status}
                           onClick={() => setSelectedStatus(status)}
-                          className={`w-full text-left p-3 rounded-lg transition-all duration-200 text-sm ${
+                          className={`w-full text-left p-3 rounded-lg transition-all duration-200 text-xs ${
                             selectedStatus === status
                               ? "bg-blue-100 border-2 border-blue-300 text-blue-700 font-semibold"
                               : "hover:bg-gray-50 border-2 border-transparent"
@@ -435,7 +417,7 @@ export default function FarmerDeliveryRequestListPage() {
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1">
+          <main className="flex-1 min-w-0 w-full overflow-hidden">
             <div className="bg-white rounded-xl shadow-lg border border-blue-100">
               <div className="p-4 border-b border-blue-100">
                 <div className="flex items-center justify-between">
@@ -445,10 +427,21 @@ export default function FarmerDeliveryRequestListPage() {
                       Hiển thị {filtered.length} yêu cầu • {totalRequests} tổng cộng
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-gray-600 font-medium text-sm">
-                      {totalPages > 1 ? `Trang ${currentPage} / ${totalPages}` : "Tất cả yêu cầu"}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-gray-600 font-medium text-sm">
+                        {totalPages > 1 ? `Trang ${currentPage} / ${totalPages}` : "Tất cả yêu cầu"}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push("/dashboard/farmer/warehouse-request/create")}
+                      className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                    >
+                      <PackagePlus className="w-4 h-4 mr-2" />
+                      Tạo yêu cầu mới
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -470,117 +463,108 @@ export default function FarmerDeliveryRequestListPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Mã yêu cầu
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Loại
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Số lượng
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Nguồn
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Ngày tạo
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Trạng thái
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Hành động
-                        </th>
-                      </tr>
-                    </thead>
+                                     <table className="w-full table-fixed min-w-[720px]">
+                     <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200">
+                       <tr>
+                         <th className="w-32 px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                           Mã yêu cầu
+                         </th>
+                         <th className="w-40 px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                           Loại
+                         </th>
+                         <th className="w-24 px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                           Số lượng
+                         </th>
+                         <th className="w-48 px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                           Nguồn
+                         </th>
+                         <th className="w-32 px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                           Trạng thái
+                         </th>
+                                                   <th className="w-36 px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Hành động
+                          </th>
+                       </tr>
+                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {paginatedData.map((req) => {
                         const coffeeType = getCoffeeType(req);
                         return (
                           <tr key={req.inboundRequestId} className="hover:bg-blue-50 transition-colors duration-200">
-                            <td className="px-4 py-3 whitespace-nowrap">
+                            <td className="px-3 py-3">
                               <div className="flex flex-col">
-                                <span className="text-sm font-semibold text-gray-900">{req.requestCode}</span>
+                                <span className="text-sm font-semibold text-gray-900 truncate">{req.requestCode}</span>
                                 <span className="text-xs text-gray-500">ID: {req.inboundRequestId.slice(-6)}</span>
                               </div>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
+                            <td className="px-3 py-3">
                               <div className="flex items-center gap-2">
                                 {getCoffeeTypeIcon(coffeeType)}
-                                <Badge className={`px-2 py-1 rounded-full text-xs font-semibold ${getCoffeeTypeStyle(coffeeType)}`}>
+                                <Badge className={`px-2 py-1 rounded-full text-xs font-semibold ${getCoffeeTypeStyle(coffeeType)} truncate`}>
                                   {getCoffeeTypeLabel(coffeeType)}
                                 </Badge>
                               </div>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
+                            <td className="px-3 py-3">
                               <div className="text-sm font-semibold text-gray-900">
                                 {req.requestedQuantity} kg
                               </div>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {coffeeType === 'fresh' 
-                                    ? (req.cropSeasonName || req.detailCode || "N/A")
-                                    : coffeeType === 'processed' 
-                                      ? (req.batchCode || "N/A")
-                                      : "N/A"
-                                  }
-                                </span>
-                                <span className={`text-xs ${
-                                  coffeeType === 'fresh' ? 'text-orange-700' : 
-                                  coffeeType === 'processed' ? 'text-purple-700' : 'text-gray-700'
-                                }`}>
-                                  {coffeeType === 'fresh'
-                                    ? (req.typeName || "Cà phê tươi")
-                                    : coffeeType === 'processed'
-                                      ? (req.coffeeType || "Cà phê đã sơ chế")
-                                      : "Không rõ"
-                                  }
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {new Date(req.createdAt).toLocaleDateString("vi-VN")}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {new Date(req.createdAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-center">
+                                                         <td className="px-3 py-3">
+                               <div className="flex flex-col">
+                                 <span className="text-sm font-medium text-gray-900 truncate">
+                                   {coffeeType === 'fresh' 
+                                     ? (req.cropSeasonName || req.detailCode || "N/A")
+                                     : coffeeType === 'processed' 
+                                       ? (req.batchCode || "N/A")
+                                       : "N/A"
+                                   }
+                                 </span>
+                                 <span className={`text-xs ${
+                                   coffeeType === 'fresh' ? 'text-orange-700' : 
+                                   coffeeType === 'processed' ? 'text-purple-700' : 'text-gray-700'
+                                 } truncate`}>
+                                   {coffeeType === 'fresh'
+                                     ? (req.typeName || "Cà phê tươi")
+                                     : coffeeType === 'processed'
+                                       ? (req.coffeeType || "Cà phê đã sơ chế")
+                                       : "Không rõ"
+                                   }
+                                 </span>
+                                 <span className="text-xs text-gray-500 mt-1">
+                                   {new Date(req.createdAt).toLocaleDateString("vi-VN")} {new Date(req.createdAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                                 </span>
+                               </div>
+                             </td>
+                            
+                            <td className="px-3 py-3 text-center">
                               {getStatusBadge(req.status)}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => router.push(`/dashboard/farmer/warehouse-request/${req.inboundRequestId}`)}
-                                  className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 text-xs px-2 py-1"
-                                >
-                                  <Eye className="w-3 h-3 mr-1" />
-                                  Xem
-                                </Button>
-                                {req.status === "Pending" && (
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    disabled={loadingId === req.inboundRequestId}
-                                    onClick={() => handleCancel(req.inboundRequestId)}
-                                    className="transition-all duration-200 text-xs px-2 py-1"
-                                  >
-                                    <XCircle className="w-3 h-3 mr-1" />
-                                    Huỷ
-                                  </Button>
-                                )}
-                              </div>
-                            </td>
+                                                         <td className="px-3 py-3 text-center">
+                               <div className="flex items-center justify-center gap-1">
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={() => router.push(`/dashboard/farmer/warehouse-request/${req.inboundRequestId}`)}
+                                   className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 text-xs px-2 py-1"
+                                 >
+                                   <Eye className="w-3 h-3 mr-1" />
+                                   Xem
+                                 </Button>
+                                 {req.status === "Pending" && (
+                                   <Button
+                                     variant="destructive"
+                                     size="sm"
+                                     disabled={loadingId === req.inboundRequestId}
+                                     onClick={() => handleCancel(req.inboundRequestId)}
+                                     className="transition-all duration-200 text-xs px-1 py-1"
+                                   >
+                                     <XCircle className="w-3 h-3 mr-1" />
+                                     Huỷ
+                                   </Button>
+                                 )}
+                               </div>
+                             </td>
                           </tr>
                         );
                       })}
