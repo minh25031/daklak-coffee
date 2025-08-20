@@ -51,6 +51,8 @@ export default function ProcessingBatchesPage() {
         
         // Fetch batches
         const batchesData = await getAllProcessingBatches();
+        console.log("🔍 DEBUG: Raw batches data from API:", batchesData);
+        console.log("🔍 DEBUG: Sample batch statuses:", batchesData?.map(b => ({ batchCode: b.batchCode, status: b.status, statusType: typeof b.status })));
         setBatches(batchesData || []);
       } catch (err: unknown) {
         console.error('Error fetching data:', err);
@@ -99,22 +101,63 @@ export default function ProcessingBatchesPage() {
   }, {});
 
   const getStatusInfo = (status: any) => {
-    // Xử lý status có thể là string, number, hoặc enum
-    const statusStr = String(status || '').toLowerCase();
+    // Debug log để xem status thực tế từ API
+    console.log("🔍 DEBUG: getStatusInfo received status:", status, "type:", typeof status);
     
-    if (statusStr === 'notstarted' || statusStr === 'pending' || statusStr === 'chờ xử lý' || statusStr === '0') {
-      return { label: "Chờ xử lý", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock };
-    } else if (statusStr === 'inprogress' || statusStr === 'processing' || statusStr === 'đang xử lý' || statusStr === '1') {
-      return { label: "Đang xử lý", color: "bg-orange-100 text-orange-700 border-orange-200", icon: TrendingUp };
-    } else if (statusStr === 'completed' || statusStr === 'hoàn thành' || statusStr === '2') {
-      return { label: "Hoàn thành", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle };
-    } else if (statusStr === 'awaitingevaluation' || statusStr === 'chờ đánh giá' || statusStr === '3') {
-      return { label: "Chờ đánh giá", color: "bg-blue-100 text-blue-700 border-blue-200", icon: ClipboardCheck };
-    } else if (statusStr === 'cancelled' || statusStr === 'đã hủy' || statusStr === '4') {
-      return { label: "Đã hủy", color: "bg-red-100 text-red-700 border-red-200", icon: AlertTriangle };
-    } else {
-      return { label: "Không xác định", color: "bg-gray-100 text-gray-700 border-gray-200", icon: Package };
+    // Mapping hoàn chỉnh cho tất cả các loại status
+    const statusMap: Record<string | number, any> = {
+      // Number mapping từ Backend
+      0: { label: "Chưa bắt đầu", color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: Clock },
+      1: { label: "Đang xử lý", color: "bg-blue-100 text-blue-700 border-blue-200", icon: TrendingUp },
+      2: { label: "Hoàn thành", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
+      3: { label: "Chờ đánh giá", color: "bg-orange-100 text-orange-700 border-orange-200", icon: ClipboardCheck },
+      4: { label: "Đã hủy", color: "bg-red-100 text-red-700 border-red-200", icon: AlertTriangle },
+      
+             // String mapping từ enum (không phân biệt hoa thường)
+       "notstarted": { label: "Chưa bắt đầu", color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: Clock },
+       "not_started": { label: "Chưa bắt đầu", color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: Clock },
+       "inprogress": { label: "Đang xử lý", color: "bg-blue-100 text-blue-700 border-blue-200", icon: TrendingUp },
+       "in_progress": { label: "Đang xử lý", color: "bg-blue-100 text-blue-700 border-blue-200", icon: TrendingUp },
+       "completed": { label: "Hoàn thành", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
+       "awaitingevaluation": { label: "Chờ đánh giá", color: "bg-orange-100 text-orange-700 border-orange-200", icon: ClipboardCheck },
+       "awaiting_evaluation": { label: "Chờ đánh giá", color: "bg-orange-100 text-orange-700 border-orange-200", icon: ClipboardCheck },
+       "cancelled": { label: "Đã hủy", color: "bg-red-100 text-red-700 border-red-200", icon: AlertTriangle },
+      
+      // Vietnamese string mapping
+      "chưa bắt đầu": { label: "Chưa bắt đầu", color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: Clock },
+      "đang xử lý": { label: "Đang xử lý", color: "bg-blue-100 text-blue-700 border-blue-200", icon: TrendingUp },
+      "hoàn thành": { label: "Hoàn thành", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
+      "chờ đánh giá": { label: "Chờ đánh giá", color: "bg-orange-100 text-orange-700 border-orange-200", icon: ClipboardCheck },
+      "đã hủy": { label: "Đã hủy", color: "bg-red-100 text-red-700 border-red-200", icon: AlertTriangle },
+      
+      // Enum mapping
+      [ProcessingStatus.NotStarted]: { label: "Chưa bắt đầu", color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: Clock },
+      [ProcessingStatus.InProgress]: { label: "Đang xử lý", color: "bg-blue-100 text-blue-700 border-blue-200", icon: TrendingUp },
+      [ProcessingStatus.Completed]: { label: "Hoàn thành", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
+      [ProcessingStatus.AwaitingEvaluation]: { label: "Chờ đánh giá", color: "bg-orange-100 text-orange-700 border-orange-200", icon: ClipboardCheck },
+      [ProcessingStatus.Cancelled]: { label: "Đã hủy", color: "bg-red-100 text-red-700 border-red-200", icon: AlertTriangle },
+    };
+    
+    // Thử tìm theo key gốc
+    if (statusMap[status] !== undefined) {
+      return statusMap[status];
     }
+    
+         // Thử tìm theo string lowercase (không phân biệt hoa thường)
+     const statusStr = String(status || '').toLowerCase().trim();
+     if (statusMap[statusStr] !== undefined) {
+       return statusMap[statusStr];
+     }
+    
+    // Thử tìm theo number
+    const statusNum = Number(status);
+    if (!isNaN(statusNum) && statusMap[statusNum] !== undefined) {
+      return statusMap[statusNum];
+    }
+    
+    // Fallback cho các trường hợp khác
+    console.log("⚠️ WARNING: Unknown status:", status, "using fallback");
+    return { label: "Không xác định", color: "bg-gray-100 text-gray-700 border-gray-200", icon: Package };
   };
 
   if (loading) {
