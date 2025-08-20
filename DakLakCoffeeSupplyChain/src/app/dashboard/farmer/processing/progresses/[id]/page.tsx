@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { getAllProcessingBatches, ProcessingBatch } from '@/lib/api/processingBatches';
 import { getAllProcessingBatchProgresses, ProcessingBatchProgress } from '@/lib/api/processingBatchProgress';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, Calendar, User, Package, TrendingUp, FileImage, FileVideo, Scale, Info, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import PageTitle from '@/components/ui/PageTitle';
 import AdvanceProcessingProgressForm from '@/components/processing-batches/AdvanceProcessingProgressForm';
@@ -297,21 +297,22 @@ export default function ProgressDetailPage() {
                   Cập nhật tiến trình
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Cập nhật tiến trình sơ chế</DialogTitle>
-                </DialogHeader>
-                {batch && progresses.length > 0 && (
-                  <AdvanceProcessingProgressForm
-                    batchId={batch.batchId}
-                    latestProgress={progresses[progresses.length - 1]}
-                    onSuccess={() => {
-                      setIsUpdateDialogOpen(false);
-                      fetchBatchData(); // Refresh data
-                    }}
-                  />
-                )}
-              </DialogContent>
+                             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+                 <DialogHeader className="sr-only">
+                   <DialogTitle>Cập nhật tiến trình sơ chế</DialogTitle>
+                   <DialogDescription>Form cập nhật thông tin tiến trình sơ chế</DialogDescription>
+                 </DialogHeader>
+                                   {batch && (
+                    <AdvanceProcessingProgressForm
+                      batchId={batch.batchId}
+                      latestProgress={progresses.length > 0 ? progresses[progresses.length - 1] : undefined}
+                      onSuccess={() => {
+                        setIsUpdateDialogOpen(false);
+                        fetchBatchData(); // Refresh data
+                      }}
+                    />
+                  )}
+               </DialogContent>
             </Dialog>
             <Button 
               variant="outline" 
