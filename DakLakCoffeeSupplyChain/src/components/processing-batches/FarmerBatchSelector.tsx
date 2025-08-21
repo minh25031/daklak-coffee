@@ -16,7 +16,7 @@ interface FarmerBatchSelectorProps {
 }
 
 export default function FarmerBatchSelector({ onBatchSelect }: FarmerBatchSelectorProps) {
-  const [farmers, setFarmers] = useState<{farmerId: string; farmerName: string; batchCount: number}[]>([]);
+  const [farmers, setFarmers] = useState<{ farmerId: string; farmerName: string; batchCount: number }[]>([]);
   const [selectedFarmerId, setSelectedFarmerId] = useState<string>("");
   const [batches, setBatches] = useState<ProcessingBatch[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,7 +50,7 @@ export default function FarmerBatchSelector({ onBatchSelect }: FarmerBatchSelect
     console.log("🔍 Đang lấy batch cho farmerId:", farmerId);
     setLoading(true);
     setError("");
-    
+
     try {
       const data = await getProcessingBatchesByFarmerForBusinessManager(farmerId);
       console.log("✅ Đã lấy được batches cho farmer:", data);
@@ -198,7 +198,7 @@ export default function FarmerBatchSelector({ onBatchSelect }: FarmerBatchSelect
                       {getStatusText(batch.status)}
                     </Badge>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -207,7 +207,7 @@ export default function FarmerBatchSelector({ onBatchSelect }: FarmerBatchSelect
                       </div>
                       <p className="text-sm font-semibold text-gray-900">{batch.typeName || "N/A"}</p>
                     </div>
-                    
+
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Calendar className="h-4 w-4" />
@@ -215,12 +215,12 @@ export default function FarmerBatchSelector({ onBatchSelect }: FarmerBatchSelect
                       </div>
                       <p className="text-sm font-semibold text-gray-900">{batch.cropSeasonName}</p>
                     </div>
-                    
+
                     <div className="space-y-1">
                       <div className="text-sm text-gray-600 font-medium">Đầu vào:</div>
                       <p className="text-lg font-bold text-blue-600">{batch.totalInputQuantity} kg</p>
                     </div>
-                    
+
                     <div className="space-y-1">
                       <div className="text-sm text-gray-600 font-medium">Đầu ra:</div>
                       <p className="text-lg font-bold text-green-600">{batch.totalOutputQuantity} kg</p>
