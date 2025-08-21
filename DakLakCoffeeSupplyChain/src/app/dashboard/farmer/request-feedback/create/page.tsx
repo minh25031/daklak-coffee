@@ -40,8 +40,8 @@ export default function CreateReportPage() {
         description: '',
         cropProgressId: '',
         processingProgressId: '', // Sửa thành processingProgressId
-        imageUrl: '',
-        videoUrl: '',
+        photoFiles: [],
+        videoFiles: [],
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,6 +114,14 @@ export default function CreateReportPage() {
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
+    const handlePhotoFilesChange = (files: File[]) => {
+        setForm(prev => ({ ...prev, photoFiles: files }));
+    };
+
+    const handleVideoFilesChange = (files: File[]) => {
+        setForm(prev => ({ ...prev, videoFiles: files }));
+    };
+
     const handleSubmit = async () => {
         if (isSubmitting) return;
 
@@ -148,13 +156,15 @@ export default function CreateReportPage() {
                 title: form.title,
                 description: form.description,
                 severityLevel: form.severityLevel,
-                imageUrl: form.imageUrl || undefined,
-                videoUrl: form.videoUrl || undefined,
                 cropProgressId: form.reportType === "Crop" ? form.cropProgressId : undefined,
                 processingProgressId: form.reportType === "Processing" ? form.processingProgressId : undefined,
+                photoFiles: form.photoFiles?.length ? form.photoFiles : undefined,
+                videoFiles: form.videoFiles?.length ? form.videoFiles : undefined,
             };
 
+            // Gọi API tạo báo cáo (tự động xử lý media nếu có)
             const res = await createFarmerReport(payload);
+
             AppToast.success('Tạo báo cáo thành công!');
             router.push(`/dashboard/farmer/request-feedback/${res.reportId}`);
         } catch (err: unknown) {
@@ -438,34 +448,57 @@ export default function CreateReportPage() {
                         {/* Media Section */}
                         <div className="border-t border-gray-200 pt-6">
                             <h3 className="text-sm font-medium text-gray-700 mb-4">Tài liệu đính kèm (tùy chọn)</h3>
+                        </div>
+
+                        {/* File Upload Section */}
+                        <div className="border-t border-gray-200 pt-6">
+                            <h3 className="text-sm font-medium text-gray-700 mb-4">Tải lên file (tùy chọn)</h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Image URL */}
+                                {/* Photo Files Upload */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        <Image className="w-4 h-4 text-blue-500" />
-                                        Hình ảnh (URL)
+                                        <Image className="w-4 h-4 text-green-500" />
+                                        Tải lên hình ảnh
                                     </Label>
                                     <Input
-                                        name="imageUrl"
-                                        value={form.imageUrl}
-                                        onChange={handleChange}
-                                        placeholder="https://example.com/image.jpg"
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files || []);
+                                            handlePhotoFilesChange(files);
+                                        }}
+                                        className="cursor-pointer"
                                     />
+                                    {form.photoFiles && form.photoFiles.length > 0 && (
+                                        <div className="text-xs text-gray-500">
+                                            Đã chọn {form.photoFiles.length} file(s)
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Video URL */}
+                                {/* Video Files Upload */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                         <Video className="w-4 h-4 text-purple-500" />
-                                        Video (URL)
+                                        Tải lên video
                                     </Label>
                                     <Input
-                                        name="videoUrl"
-                                        value={form.videoUrl}
-                                        onChange={handleChange}
-                                        placeholder="https://example.com/video.mp4"
+                                        type="file"
+                                        multiple
+                                        accept="video/*"
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files || []);
+                                            handleVideoFilesChange(files);
+                                        }}
+                                        className="cursor-pointer"
                                     />
+                                    {form.videoFiles && form.videoFiles.length > 0 && (
+                                        <div className="text-xs text-gray-500">
+                                            Đã chọn {form.videoFiles.length} file(s)
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
