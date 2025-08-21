@@ -139,7 +139,7 @@ export function SidebarGroup() {
       },
       {
         title: "Sàn thu mua cà phê",
-        href: "/marketplace",
+        href: "/dashboard/farmer/market-place",
         icon: iconMap.market,
       },
       {

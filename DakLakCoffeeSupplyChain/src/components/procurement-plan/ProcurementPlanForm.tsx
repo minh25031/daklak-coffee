@@ -329,7 +329,7 @@ export default function ProcurementPlanForm({
 
               <div>
                 <Label htmlFor={`targetRegion-${index}`}>
-                  Khu vực mục tiêu
+                  Khu vực ưu tiên
                 </Label>
                 <Input
                   id={`targetRegion-${index}`}

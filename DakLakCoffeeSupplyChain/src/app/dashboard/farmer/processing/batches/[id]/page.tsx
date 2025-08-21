@@ -522,7 +522,10 @@ export default function ViewProcessingBatch() {
              {/* Nút tạo tiến trình đầu tiên - chỉ hiển thị khi chưa có progress */}
              {(!batch.progresses || batch.progresses.length === 0) && (
                <Button 
-                 onClick={() => setOpenCreateModal(true)}
+                 onClick={() => {
+                   console.log("DEBUG: Create modal button clicked");
+                   setOpenCreateModal(true);
+                 }}
                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200"
                >
                  <PlusCircle className="w-4 h-4" />
@@ -794,41 +797,9 @@ export default function ViewProcessingBatch() {
                 Tiến độ sơ chế
               </h2>
 
-              {/* Hiển thị nút tạo tiến trình đầu tiên nếu chưa có progress nào */}
-              {(!batch.progresses || batch.progresses.length === 0) && (
-                <Button
-                  onClick={() => setOpenCreateModal(true)}
-                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                >
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Tạo tiến trình đầu tiên
-                </Button>
-              )}
+              {/* Nút tạo tiến trình đầu tiên đã được di chuyển lên header */}
 
-              {/* Hiển thị nút cập nhật bước tiếp theo nếu đã có progress và chưa hoàn thành VÀ chưa có đánh giá fail VÀ chưa ở stage cuối */}
-              {(() => {
-                console.log("DEBUG BUTTON: Checking conditions for update button");
-                console.log("DEBUG BUTTON: batch.progresses?.length:", batch.progresses?.length);
-                console.log("DEBUG BUTTON: batch.status:", batch.status);
-                console.log("DEBUG BUTTON: ProcessingStatus.Completed:", ProcessingStatus.Completed);
-                console.log("DEBUG BUTTON: ProcessingStatus.AwaitingEvaluation:", ProcessingStatus.AwaitingEvaluation);
-                console.log("DEBUG BUTTON: hasFailedEvaluation:", hasFailedEvaluation);
-                console.log("DEBUG BUTTON: isAtLastStage:", isAtLastStage);
-                
-                return batch.progresses && batch.progresses.length > 0 && 
-                       batch.status !== ProcessingStatus.Completed && 
-                       batch.status !== ProcessingStatus.AwaitingEvaluation && 
-                       !hasFailedEvaluation &&
-                       !isAtLastStage;
-              })() && (
-                <Button
-                  onClick={() => setOpenAdvanceModal(true)}
-                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                >
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  {isAtLastStage ? "Hoàn thành bước cuối" : "Cập nhật bước cuối"}
-                </Button>
-              )}
+              {/* Nút cập nhật tiến trình đã được di chuyển lên header */}
 
               {/* Hiển thị thông báo nếu đã hoàn thành */}
               {batch.status === ProcessingStatus.Completed && (
@@ -1334,17 +1305,20 @@ export default function ViewProcessingBatch() {
 
         {/* Modals */}
         <Dialog open={openCreateModal} onOpenChange={setOpenCreateModal}>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-lg font-semibold">Tạo tiến trình đầu tiên</DialogTitle>
             </DialogHeader>
-            <CreateProcessingProgressForm
-              defaultBatchId={batch.batchId}
-              onSuccess={() => {
-                setOpenCreateModal(false);
-                window.location.reload();
-              }}
-            />
+            <div className="mt-4">
+              <CreateProcessingProgressForm
+                defaultBatchId={batch.batchId}
+                defaultBatchData={batch}
+                onSuccess={() => {
+                  setOpenCreateModal(false);
+                  window.location.reload();
+                }}
+              />
+            </div>
           </DialogContent>
         </Dialog>
 
