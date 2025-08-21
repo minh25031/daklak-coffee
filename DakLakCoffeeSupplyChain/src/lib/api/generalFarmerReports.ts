@@ -40,6 +40,9 @@ export interface GeneralFarmerReportCreateDto {
   severityLevel: SeverityLevelEnum;
   imageUrl?: string;
   videoUrl?: string;
+  // Media files for upload
+  photoFiles?: File[];
+  videoFiles?: File[];
 }
 
 // Interface cho ProcessingBatchProgress - khớp với ProcessingBatchProgress từ Backend
@@ -119,12 +122,53 @@ export async function createFarmerReport(
 ): Promise<GeneralFarmerReportViewDetailsDto> {
   
   try {
-    console.log("📤 Sending payload to /GeneralFarmerReports:", JSON.stringify(payload, null, 2));
+    console.log("📤 Sending payload to /GeneralFarmerReports");
     
-    const res = await api.post<GeneralFarmerReportViewDetailsDto>(
-      "/GeneralFarmerReports",
-      payload
-    );
+    // Kiểm tra xem có media files không để quyết định content type
+    const hasMediaFiles = (payload.photoFiles && payload.photoFiles.length > 0) || 
+                         (payload.videoFiles && payload.videoFiles.length > 0);
+
+    let res;
+    if (hasMediaFiles) {
+      // Có media files - sử dụng FormData
+      const formData = new FormData();
+      
+      // Thêm các trường cơ bản
+      formData.append("reportType", payload.reportType);
+      if (payload.cropProgressId) {
+        formData.append("cropProgressId", payload.cropProgressId);
+      }
+      if (payload.processingProgressId) {
+        formData.append("processingProgressId", payload.processingProgressId);
+      }
+      formData.append("title", payload.title);
+      formData.append("description", payload.description);
+      formData.append("severityLevel", payload.severityLevel.toString());
+      
+      // Thêm media files
+      if (payload.photoFiles) {
+        payload.photoFiles.forEach(file => formData.append("photoFiles", file));
+      }
+      if (payload.videoFiles) {
+        payload.videoFiles.forEach(file => formData.append("videoFiles", file));
+      }
+      
+      console.log("📤 Sending FormData with media files");
+      res = await api.post<GeneralFarmerReportViewDetailsDto>(
+        "/GeneralFarmerReports",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+    } else {
+      // Không có media files - sử dụng JSON
+      console.log("📤 Sending JSON payload:", JSON.stringify(payload, null, 2));
+      res = await api.post<GeneralFarmerReportViewDetailsDto>(
+        "/GeneralFarmerReports",
+        payload
+      );
+    }
 
     console.log("📥 Response received:", res);
     console.log("📥 Response status:", res.status);
@@ -152,9 +196,11 @@ export async function createFarmerReport(
   }
   
   throw err;
-}
+ }
 
 }
+
+
 export interface GeneralFarmerReportUpdateDto {
   reportId: string;
   title: string;
