@@ -31,6 +31,18 @@ export default function ExpertAdviceForm({ reportId, onSuccess }: Props) {
         setLoading(true);
 
         try {
+            // ✅ Validation trước khi gửi
+            if (!form.adviceText.trim()) {
+                toast.error('Vui lòng nhập nội dung phản hồi');
+                return;
+            }
+
+            // ✅ AdviceSource không bắt buộc nữa
+            // if (!form.adviceSource.trim()) {
+            //     toast.error('Vui lòng nhập nguồn tham khảo');
+            //     return;
+            // }
+
             await createExpertAdvice({
                 reportId,
                 responseType: form.responseType,
@@ -68,13 +80,13 @@ export default function ExpertAdviceForm({ reportId, onSuccess }: Props) {
             </div>
 
             <div>
-                <label className="block text-sm font-medium mb-1">Nguồn tham khảo</label>
+                <label className="block text-sm font-medium mb-1">Nguồn tham khảo (tùy chọn)</label>
                 <input
                     type="text"
                     name="adviceSource"
                     value={form.adviceSource}
                     onChange={handleChange}
-                    required
+                    placeholder="Ví dụ: Thực tế đồng ruộng, báo cáo nghiên cứu, kinh nghiệm chuyên môn..."
                     className="w-full border p-2 rounded"
                 />
             </div>
