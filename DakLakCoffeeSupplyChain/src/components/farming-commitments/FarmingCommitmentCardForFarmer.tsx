@@ -46,7 +46,7 @@ export default function FarmingCommitmentCardForFarmer({
           <DropdownMenu.Item
             className='px-3 py-2 hover:bg-gray-100 rounded cursor-pointer flex items-center'
             onClick={() => {
-              router.push(`/dashboard/manager/farming-commitments/${commitment.commitmentId}`);
+              router.push(`/dashboard/farmer/farming-commitments/${commitment.commitmentId}`);
             }}
           >
             <FiInfo className='mr-1' /> Chi tiết

@@ -10,11 +10,13 @@ import {
 import Link from "next/dist/client/link";
 import { useEffect, useState } from "react";
 import { differenceInCalendarDays } from "date-fns";
+import { usePathname } from "next/navigation";
 
 export default function MarketplacePage() {
   const [plans, setPlans] = useState<ProcurementPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const pathname = usePathname();
 
   useEffect(() => {
     fetchData();
@@ -36,6 +38,14 @@ export default function MarketplacePage() {
       (!search || plan.title.toLowerCase().includes(search.toLowerCase()))
   );
 
+  // Hàm tạo đường dẫn cho nút "Xem chi tiết"
+  const getDetailLink = (planId: string) => {
+    if (pathname.startsWith('/dashboard/farmer/market-place')) {
+      return `/dashboard/farmer/market-place/${planId}`;
+    }
+    return `/marketplace/${planId}`;
+  };
+
   if (loading) {
     return <p className='text-center py-20'>Đang tải dữ liệu...</p>;
   }
@@ -56,7 +66,7 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className='min-h-screen bg-[#fefaf4] py-8'>
+    <div className='min-h-screen bg-[#fff7ed] py-8'>
       <div className='max-w-7xl mx-auto px-4 md:px-6 flex justify-center'>
         <div className='flex w-full max-w-[1200px] gap-8'>
           <aside className='w-64 flex flex-col space-y-4'>
@@ -216,7 +226,7 @@ export default function MarketplacePage() {
                   {/* Nút xem chi tiết (dẫn đến trang chi tiết kế hoạch) */}
                   <div className='mt-4 text-right'>
                     <Link
-                      href={`/marketplace/${plan.planId}`}
+                      href={getDetailLink(plan.planId)}
                       className='inline-block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition'
                     >
                       Xem chi tiết
