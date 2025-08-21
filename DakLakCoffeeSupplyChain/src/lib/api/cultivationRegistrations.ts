@@ -34,7 +34,7 @@ export interface CultivationRegistrationDetail {
   status: string | number; // e.g. "Pending", "Approved", "Rejected"
 };
 
-export async function getCultivationRegistrationsByPlanId(planId: ParamValue): Promise<CultivationRegistration[]> {
+export async function getCultivationRegistrationsByPlanId(planId: string): Promise<CultivationRegistration[]> {
   const response = await api.get(`/CultivationRegistration/Available/${planId}`);
   return response.data;
 }
