@@ -97,6 +97,23 @@ export async function getAllCropProgresses(): Promise<CropProgressViewAllDto[]> 
   return response.data;
 }
 
+// ✅ Lấy tất cả crop progress của user hiện tại (fallback khi không có detailId)
+export async function getAllCropProgressesForCurrentUser(): Promise<CropProgressViewAllDto[]> {
+  try {
+    const response = await api.get(`/CropProgresses`);
+    return response.data || [];
+  } catch (error: unknown) {
+    console.error("Lỗi getAllCropProgressesForCurrentUser:", error);
+    if (typeof error === 'object' && error !== null && 'response' in error) {
+      const response = (error as { response?: { status?: number } }).response;
+      if (response?.status === 404) {
+        return [];
+      }
+    }
+    return [];
+  }
+}
+
 // =====================
 // GET BY DETAIL
 // =====================
