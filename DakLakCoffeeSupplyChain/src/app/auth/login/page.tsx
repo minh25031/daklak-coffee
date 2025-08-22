@@ -79,7 +79,7 @@ export default function LoginPage() {
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="w-3 h-3 bg-purple-400 rounded-full shadow-lg"></div>
-                            <span className="font-medium">Minh bạch chuỗi cung ứng</span>
+                            <span className="font-medium">Minh aaaaaaaaa bạch chuỗi cung ứng</span>
                         </div>
                     </div>
                 </div>
