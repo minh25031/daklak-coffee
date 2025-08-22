@@ -8,7 +8,6 @@ import {
   SidebarGroup,
 } from "@/components/ui/sidebar";
 import { useState, useEffect } from "react";
-import { Toaster } from "sonner"; // ✅ thêm dòng này
 import { NotificationProvider } from "@/contexts/NotificationContext";
 
 export default function AdminLayout({
@@ -43,8 +42,6 @@ export default function AdminLayout({
           </div>
           <div className="flex-1 p-5 bg-orange-50 overflow-auto ">{children}</div>
         </div>
-
-        <Toaster richColors />
       </div>
     </NotificationProvider>
   );

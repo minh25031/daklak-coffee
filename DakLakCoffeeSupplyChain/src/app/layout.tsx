@@ -5,8 +5,7 @@ import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Script from "next/script";
-import { Toaster, toast } from "sonner";
-import { useEffect } from "react";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -19,13 +18,6 @@ export default function RootLayout({
     pathname === "/" ||
     pathname.startsWith("/marketplace") ||
     pathname.startsWith("/markplace");
-
-  useEffect(() => {
-    // Example: Show a toast when the user visits the homepage
-    if (pathname === "/") {
-      toast.success("Welcome to DakLak Coffee Supply Chain Platform!");
-    }
-  }, [pathname]);
 
   return (
     <html lang="vi" className="scroll-smooth">
