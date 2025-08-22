@@ -27,14 +27,7 @@ import {
 import { Tooltip } from "@/components/ui/tooltip";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 import { ContractItemViewDto } from "@/lib/api/contractItems";
 import {
   getContractDetails,
@@ -388,29 +381,21 @@ export default function ContractDeliveryBatchDetailPage() {
         }}
       />
       {/* Dialog xác nhận xoá mặt hàng */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xoá mặt hàng?</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xoá mặt hàng{" "}
-              <strong>{itemToDelete?.coffeeTypeName}</strong> khỏi đợt giao
-              không? Hành động này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Huỷ
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Xoá
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+             <ConfirmDialog
+         open={showDeleteDialog}
+         onOpenChange={setShowDeleteDialog}
+         title="Xoá mặt hàng?"
+         description={
+           <span>
+             Bạn có chắc chắn muốn xoá mặt hàng{" "}
+             <strong>{itemToDelete?.coffeeTypeName}</strong> khỏi đợt giao
+             không? Hành động này không thể hoàn tác.
+           </span>
+         }
+         confirmText="Xoá"
+         cancelText="Huỷ"
+         onConfirm={handleDelete}
+       />
     </div>
   );
 }
