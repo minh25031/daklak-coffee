@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createExpertAdvice } from '@/lib/api/expertAdvice';
+import { createExpertAdvice, createExpertAdviceWithFiles } from '@/lib/api/expertAdvice';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -16,6 +16,7 @@ export default function ExpertAdviceForm({ reportId, onSuccess }: Props) {
         adviceSource: '',
         adviceText: '',
         attachedFileUrl: '',
+        attachedFiles: [] as File[],
     });
 
     const [loading, setLoading] = useState(false);
@@ -43,19 +44,46 @@ export default function ExpertAdviceForm({ reportId, onSuccess }: Props) {
             //     return;
             // }
 
-            await createExpertAdvice({
-                reportId,
-                responseType: form.responseType,
-                adviceSource: form.adviceSource,
-                adviceText: form.adviceText,
-                attachedFileUrl: form.attachedFileUrl || undefined,
-            });
+            // Kiểm tra xem có file upload không để quyết định content type
+            const hasFiles = form.attachedFiles.length > 0;
+
+            if (hasFiles) {
+                // Có file - sử dụng FormData
+                const formData = new FormData();
+                formData.append("reportId", reportId);
+                formData.append("responseType", form.responseType);
+                if (form.adviceSource) formData.append("adviceSource", form.adviceSource);
+                formData.append("adviceText", form.adviceText);
+                if (form.attachedFileUrl) formData.append("attachedFileUrl", form.attachedFileUrl);
+
+                // Thêm files
+                form.attachedFiles.forEach(file => formData.append("attachedFiles", file));
+
+                // Gọi API với FormData
+                await createExpertAdviceWithFiles(formData);
+            } else {
+                // Không có file - sử dụng JSON
+                await createExpertAdvice({
+                    reportId,
+                    responseType: form.responseType,
+                    adviceSource: form.adviceSource,
+                    adviceText: form.adviceText,
+                    attachedFileUrl: form.attachedFileUrl || undefined,
+                });
+            }
 
             toast.success('Phản hồi đã được gửi thành công 🎉');
 
             if (onSuccess) onSuccess(); // ✅ gọi callback nếu có
-        } catch (err) {
-            toast.error('Gửi phản hồi thất bại ❌');
+        } catch (err: any) {
+            console.error('Lỗi gửi phản hồi:', err);
+            if (err.response?.data?.message) {
+                toast.error(`Lỗi: ${err.response.data.message}`);
+            } else if (err.message) {
+                toast.error(`Lỗi: ${err.message}`);
+            } else {
+                toast.error('Gửi phản hồi thất bại ❌');
+            }
         } finally {
             setLoading(false);
         }
@@ -111,6 +139,25 @@ export default function ExpertAdviceForm({ reportId, onSuccess }: Props) {
                     onChange={handleChange}
                     className="w-full border p-2 rounded"
                 />
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium mb-1">Tải lên file đính kèm (tùy chọn)</label>
+                <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,image/*,video/*"
+                    onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        setForm(prev => ({ ...prev, attachedFiles: files }));
+                    }}
+                    className="w-full border p-2 rounded cursor-pointer"
+                />
+                {form.attachedFiles.length > 0 && (
+                    <div className="text-xs text-gray-500 mt-1">
+                        Đã chọn {form.attachedFiles.length} file(s)
+                    </div>
+                )}
             </div>
 
             <button
