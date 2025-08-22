@@ -8,10 +8,10 @@ export const roleSlugMap: Record<string, string> = {
 };
 
 export const roleIdToNameMap: Record<number, string> = {
-  1: "Nông dân",
+  1: "Chuyên gia nông nghiệp",
   2: "Quản lý doanh nghiệp",
   3: "Nhân viên doanh nghiệp",
-  4: "Chuyên gia nông nghiệp",
+  4: "Nông dân",
   5: "Nhân viên giao hàng",
   6: "Quản trị viên",
 };

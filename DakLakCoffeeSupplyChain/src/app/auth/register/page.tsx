@@ -13,6 +13,10 @@ import { resendVerificationEmail, signUp } from "@/lib/api/auth";
 import { getErrorMessage } from "@/lib/utils";
 import { AppToast } from "@/components/ui/AppToast";
 
+// Role constants
+const FARMER_ROLE_ID = 4;
+const BUSINESS_MANAGER_ROLE_ID = 2;
+
 export default function RegisterPage() {
   const [showResendBox, setShowResendBox] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +29,7 @@ export default function RegisterPage() {
     confirmPassword: "",
     name: "",
     phone: "",
-    roleId: 1, // 1 = Farmer, 2 = Business
+    roleId: "" as string | number, // Ban đầu không chọn role, phải chọn từ selector
     companyName: "",
     taxId: "",
     businessLicenseURl: "",
@@ -63,7 +67,12 @@ export default function RegisterPage() {
       newErrors.phone = "Số điện thoại không hợp lệ";
     }
 
-    if (formData.roleId === 2) {
+    // Kiểm tra role đã được chọn chưa
+    if (!formData.roleId || formData.roleId === "") {
+      newErrors.roleId = "Vui lòng chọn vai trò";
+    }
+
+    if (formData.roleId === BUSINESS_MANAGER_ROLE_ID) {
       if (!formData.companyName) {
         newErrors.companyName = "Vui lòng nhập tên công ty";
       }
@@ -94,11 +103,11 @@ export default function RegisterPage() {
       email: formData.email,
       password: formData.password,
       name: formData.name,
-      roleId: formData.roleId,
+      roleId: parseInt(formData.roleId.toString()),
       phone: formData.phone,
-      companyName: formData.roleId === 2 ? formData.companyName : "",
-      taxId: formData.roleId === 2 ? formData.taxId : "",
-      businessLicenseURl: formData.roleId === 2 ? formData.businessLicenseURl : "",
+      companyName: formData.roleId === BUSINESS_MANAGER_ROLE_ID ? formData.companyName : "",
+      taxId: formData.roleId === BUSINESS_MANAGER_ROLE_ID ? formData.taxId : "",
+      businessLicenseURl: formData.roleId === BUSINESS_MANAGER_ROLE_ID ? formData.businessLicenseURl : "",
     };
 
     setLoading(true);
@@ -192,13 +201,14 @@ export default function RegisterPage() {
                     onValueChange={(value) => setFormData(prev => ({ ...prev, roleId: parseInt(value) }))}
                   >
                     <SelectTrigger className="border-gray-200 focus:border-orange-500 focus:ring-orange-500">
-                      <SelectValue />
+                      <SelectValue placeholder="Chọn vai trò của bạn" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">🌾 Nông dân</SelectItem>
-                      <SelectItem value="2">🏢 Doanh nghiệp</SelectItem>
+                      <SelectItem value={FARMER_ROLE_ID.toString()}>🌾 Nông dân</SelectItem>
+                      <SelectItem value={BUSINESS_MANAGER_ROLE_ID.toString()}>🏢 Doanh nghiệp</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.roleId && <p className="text-red-500 text-xs">{errors.roleId}</p>}
                 </div>
 
                 {/* Email Field */}
@@ -286,7 +296,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Business Info (if role is Business) */}
-                {formData.roleId === 2 && (
+                {formData.roleId === BUSINESS_MANAGER_ROLE_ID && (
                   <div className="space-y-4 p-4 bg-orange-50 rounded-lg border border-orange-100">
                     <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                       <Building className="w-4 h-4 text-orange-600" />
