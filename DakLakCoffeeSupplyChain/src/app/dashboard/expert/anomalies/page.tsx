@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import ExpertAdviceForm from './create/page';
-import { GeneralFarmerReportViewAllDto, getAllFarmerReports } from '@/lib/api/generalFarmerReports';
+import { GeneralFarmerReportViewAllDto, getAllFarmerReports, getFarmerReportById, GeneralFarmerReportViewDetailsDto } from '@/lib/api/generalFarmerReports';
 import { ExpertAdvice, getAllExpertAdvices } from '@/lib/api/expertAdvice';
 import AdviceHistoryDialog from './AdviceHistoryDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, FileText, User, Calendar, CheckCircle, XCircle, History, MessageSquare, Filter } from 'lucide-react';
+import { AlertTriangle, FileText, User, Calendar, CheckCircle, XCircle, History, MessageSquare, Filter, Image, Video, X, Maximize2 } from 'lucide-react';
 
 type FilterType = 'all' | 'resolved' | 'unresolved';
 
@@ -20,6 +20,11 @@ export default function ReportResponsePage() {
     const [showHistoryDialog, setShowHistoryDialog] = useState(false);
     const [showFormDialog, setShowFormDialog] = useState(false);
     const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+
+    // State cho media viewer
+    const [selectedReportDetail, setSelectedReportDetail] = useState<GeneralFarmerReportViewDetailsDto | null>(null);
+    const [showMediaViewer, setShowMediaViewer] = useState(false);
+    const [selectedMedia, setSelectedMedia] = useState<{ type: 'image' | 'video', url: string } | null>(null);
 
     useEffect(() => {
         getAllFarmerReports()
@@ -37,6 +42,24 @@ export default function ReportResponsePage() {
             setFilteredAdvices(filtered);
         }
     }, [selectedReportId, allAdvices]);
+
+    // Function để xem chi tiết báo cáo
+    const handleViewReportDetail = async (reportId: string) => {
+        try {
+            const reportDetail = await getFarmerReportById(reportId);
+            if (reportDetail) {
+                setSelectedReportDetail(reportDetail);
+                setShowMediaViewer(true);
+            }
+        } catch {
+            toast.error('Không thể tải chi tiết báo cáo');
+        }
+    };
+
+    // Function để xem media
+    const handleViewMedia = (type: 'image' | 'video', url: string) => {
+        setSelectedMedia({ type, url });
+    };
 
     // Lọc báo cáo theo filter
     const filteredReports = reports.filter(report => {
@@ -203,7 +226,19 @@ export default function ReportResponsePage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex justify-between items-center">
-                                    <div className="flex-1">
+                                    <div className="flex-1 flex gap-2">
+                                        {/* Button xem chi tiết báo cáo */}
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleViewReportDetail(report.reportId)}
+                                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                        >
+                                            <FileText className="w-4 h-4 mr-2" />
+                                            Xem chi tiết
+                                        </Button>
+
+                                        {/* Button xem lịch sử phản hồi */}
                                         {allAdvices.some((a) => a.reportId === report.reportId) && (
                                             <Button
                                                 variant="ghost"
@@ -283,6 +318,151 @@ export default function ReportResponsePage() {
                         setFilteredAdvices([]);
                     }}
                 />
+            )}
+
+            {/* Media Viewer Dialog */}
+            {showMediaViewer && selectedReportDetail && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="flex justify-between items-center p-6 border-b">
+                            <h2 className="text-xl font-semibold text-gray-800">
+                                Chi tiết báo cáo: {selectedReportDetail.title}
+                            </h2>
+                            <button
+                                onClick={() => {
+                                    setShowMediaViewer(false);
+                                    setSelectedReportDetail(null);
+                                }}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                aria-label="Đóng"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6 space-y-6">
+                            {/* Thông tin cơ bản */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h3 className="font-medium text-gray-700 mb-2">Mô tả</h3>
+                                    <p className="text-gray-600">{selectedReportDetail.description}</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-medium text-gray-700 mb-2">Thông tin khác</h3>
+                                    <div className="space-y-2 text-sm text-gray-600">
+                                        <p>Người báo cáo: {selectedReportDetail.reportedByName}</p>
+                                        <p>Ngày báo cáo: {new Date(selectedReportDetail.reportedAt).toLocaleDateString('vi-VN')}</p>
+                                        <p>Trạng thái: {selectedReportDetail.isResolved ? 'Đã xử lý' : 'Chưa xử lý'}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Media Section */}
+                            {(selectedReportDetail.imageUrl || selectedReportDetail.videoUrl) && (
+                                <div>
+                                    <h3 className="font-medium text-gray-700 mb-4">Tài liệu đính kèm</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Image */}
+                                        {selectedReportDetail.imageUrl && (
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Image className="w-5 h-5 text-blue-500" />
+                                                    <span className="text-sm font-medium text-gray-700">Hình ảnh</span>
+                                                </div>
+                                                <div className="relative group cursor-pointer" onClick={() => handleViewMedia('image', selectedReportDetail.imageUrl!)}>
+                                                    <img
+                                                        src={selectedReportDetail.imageUrl}
+                                                        alt="Hình ảnh báo cáo"
+                                                        className="w-full h-48 object-cover rounded-lg border hover:shadow-lg transition-shadow"
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
+                                                        <Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Video */}
+                                        {selectedReportDetail.videoUrl && (
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Video className="w-5 h-5 text-purple-500" />
+                                                    <span className="text-sm font-medium text-gray-700">Video</span>
+                                                </div>
+                                                <div className="relative group cursor-pointer" onClick={() => handleViewMedia('video', selectedReportDetail.videoUrl!)}>
+                                                    <video
+                                                        src={selectedReportDetail.videoUrl}
+                                                        className="w-full h-48 object-cover rounded-lg border hover:shadow-lg transition-shadow"
+                                                        controls
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
+                                                        <Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Action buttons */}
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setShowMediaViewer(false);
+                                        setSelectedReportDetail(null);
+                                    }}
+                                >
+                                    Đóng
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        setSelectedReportId(selectedReportDetail.reportId);
+                                        setShowFormDialog(true);
+                                        setShowMediaViewer(false);
+                                        setSelectedReportDetail(null);
+                                    }}
+                                    className="bg-orange-600 hover:bg-orange-700"
+                                >
+                                    Gửi phản hồi
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Fullscreen Media Viewer */}
+            {selectedMedia && (
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+                    <div className="relative max-w-[90vw] max-h-[90vh]">
+                        <button
+                            onClick={() => setSelectedMedia(null)}
+                            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+                            aria-label="Đóng"
+                        >
+                            <X className="w-8 h-8" />
+                        </button>
+
+                        {selectedMedia.type === 'image' ? (
+                            <img
+                                src={selectedMedia.url}
+                                alt="Hình ảnh phóng to"
+                                className="max-w-full max-h-full object-contain"
+                            />
+                        ) : (
+                            <video
+                                src={selectedMedia.url}
+                                controls
+                                className="max-w-full max-h-full"
+                                autoPlay
+                            />
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     );

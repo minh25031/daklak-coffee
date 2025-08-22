@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,9 +14,11 @@ import { ArrowLeft, FileText, AlertTriangle, Image, Video, Loader2 } from 'lucid
 import {
     GeneralFarmerReportCreateDto,
     createFarmerReport,
+    getProcessingBatchProgressesForCurrentFarmer,
+    ProcessingBatchProgressForReport
 } from '@/lib/api/generalFarmerReports';
 import { SeverityLevelEnum, SeverityLevelLabel } from '@/lib/constants/SeverityLevelEnum';
-import { getCropProgressesByDetailId, CropProgressViewAllDto } from '@/lib/api/cropProgress';
+import { getCropProgressesByDetailId, getAllCropProgressesForCurrentUser, CropProgressViewAllDto } from '@/lib/api/cropProgress';
 
 export default function CreateReportPage() {
     const router = useRouter();
@@ -25,34 +27,84 @@ export default function CreateReportPage() {
     const detailIdFromUrl = searchParams.get("detailId") ?? "";
 
     const [cropProgressOptions, setCropProgressOptions] = useState<CropProgressViewAllDto[]>([]);
+    const [processingBatchOptions, setProcessingBatchOptions] = useState<ProcessingBatchProgressForReport[]>([]);
+
+    // State để nhóm crop progress theo mùa vụ
+    const [groupedCropProgress, setGroupedCropProgress] = useState<{ [key: string]: CropProgressViewAllDto[] }>({});
+    const [selectedCropSeason, setSelectedCropSeason] = useState<string>('');
 
     const [form, setForm] = useState<GeneralFarmerReportCreateDto>({
-        cropSeasonDetailId: detailIdFromUrl,
         reportType: 'Crop',
         severityLevel: SeverityLevelEnum.Medium,
         title: '',
         description: '',
         cropProgressId: '',
-        processingProgressId: '',
-        imageUrl: '',
-        videoUrl: '',
+        processingProgressId: '', // Sửa thành processingProgressId
+        photoFiles: [],
+        videoFiles: [],
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchProgressList = async () => {
-            if (!detailIdFromUrl) return;
             try {
-                const data = await getCropProgressesByDetailId(detailIdFromUrl);
-                setCropProgressOptions(data);
+                let data: CropProgressViewAllDto[] = [];
+
+                if (detailIdFromUrl) {
+                    data = await getCropProgressesByDetailId(detailIdFromUrl);
+                } else {
+                    data = await getAllCropProgressesForCurrentUser();
+                }
+
+                // Nhóm data theo mùa vụ
+                const grouped = data.reduce((acc, item) => {
+                    // Tạo key mùa vụ với thông tin có sẵn
+                    let seasonKey = '';
+                    if (item.cropSeasonName) {
+                        seasonKey = item.cropSeasonName;
+                        if (item.cropSeasonDetailName && item.cropSeasonDetailName !== '') {
+                            seasonKey += ` - ${item.cropSeasonDetailName}`;
+                        }
+                    } else {
+                        seasonKey = 'Mùa vụ không xác định';
+                    }
+
+                    if (!acc[seasonKey]) {
+                        acc[seasonKey] = [];
+                    }
+                    acc[seasonKey].push(item);
+                    return acc;
+                }, {} as { [key: string]: CropProgressViewAllDto[] });
+
+                setGroupedCropProgress(grouped);
+
+                // Chọn mùa vụ đầu tiên làm mặc định
+                const firstSeason = Object.keys(grouped)[0];
+                if (firstSeason) {
+                    setSelectedCropSeason(firstSeason);
+                    setCropProgressOptions(grouped[firstSeason] || []);
+                } else {
+                    setCropProgressOptions(data || []);
+                }
             } catch (error) {
-                console.error("Error fetching crop progress:", error);
+                console.error("❌ Error fetching crop progress:", error);
                 AppToast.error("Không thể tải danh sách tiến độ mùa vụ.");
             }
         };
 
+        const fetchProcessingBatches = async () => {
+            try {
+                const data = await getProcessingBatchProgressesForCurrentFarmer();
+                setProcessingBatchOptions(data || []);
+            } catch (error) {
+                console.error("❌ Error fetching processing batches:", error);
+                AppToast.error("Không thể tải danh sách lô sơ chế.");
+            }
+        };
+
         fetchProgressList();
+        fetchProcessingBatches();
     }, [detailIdFromUrl]);
 
     const handleChange = (
@@ -62,10 +114,23 @@ export default function CreateReportPage() {
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
+    const handlePhotoFilesChange = (files: File[]) => {
+        setForm(prev => ({ ...prev, photoFiles: files }));
+    };
+
+    const handleVideoFilesChange = (files: File[]) => {
+        setForm(prev => ({ ...prev, videoFiles: files }));
+    };
+
     const handleSubmit = async () => {
-        if (!detailIdFromUrl) {
-            AppToast.error("Thiếu mã chi tiết mùa vụ.");
-            return;
+        if (isSubmitting) return;
+
+        // Validation cho Crop report
+        if (form.reportType === 'Crop') {
+            if (!form.cropProgressId) {
+                AppToast.error("Vui lòng chọn tiến độ mùa vụ.");
+                return;
+            }
         }
 
         const requiredFields = ['title', 'description', 'reportType'];
@@ -87,19 +152,19 @@ export default function CreateReportPage() {
         setIsSubmitting(true);
         try {
             const payload: GeneralFarmerReportCreateDto = {
-                cropSeasonDetailId: detailIdFromUrl,
                 reportType: form.reportType,
                 title: form.title,
                 description: form.description,
                 severityLevel: form.severityLevel,
-                imageUrl: form.imageUrl || undefined,
-                videoUrl: form.videoUrl || undefined,
                 cropProgressId: form.reportType === "Crop" ? form.cropProgressId : undefined,
                 processingProgressId: form.reportType === "Processing" ? form.processingProgressId : undefined,
+                photoFiles: form.photoFiles?.length ? form.photoFiles : undefined,
+                videoFiles: form.videoFiles?.length ? form.videoFiles : undefined,
             };
 
-            console.log("📦 Final Payload:", JSON.stringify(payload, null, 2));
+            // Gọi API tạo báo cáo (tự động xử lý media nếu có)
             const res = await createFarmerReport(payload);
+
             AppToast.success('Tạo báo cáo thành công!');
             router.push(`/dashboard/farmer/request-feedback/${res.reportId}`);
         } catch (err: unknown) {
@@ -133,7 +198,10 @@ export default function CreateReportPage() {
                                     Tạo báo cáo mới
                                 </h1>
                                 <p className="text-gray-600 text-sm">
-                                    Gửi yêu cầu hỗ trợ kỹ thuật cho các vấn đề gặp phải
+                                    {form.reportType === 'Crop'
+                                        ? 'Gửi yêu cầu hỗ trợ kỹ thuật cho các vấn đề gặp phải trong mùa vụ'
+                                        : 'Gửi yêu cầu hỗ trợ kỹ thuật cho các vấn đề gặp phải trong quá trình sơ chế'
+                                    }
                                 </p>
                             </div>
                         </div>
@@ -175,41 +243,144 @@ export default function CreateReportPage() {
 
                         {/* Crop Progress Selection */}
                         {form.reportType === 'Crop' && (
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-700">Chọn tiến độ mùa vụ *</Label>
-                                <Select
-                                    value={form.cropProgressId}
-                                    onValueChange={(value) => {
-                                        setForm((prev) => ({
-                                            ...prev,
-                                            cropProgressId: value,
-                                        }));
-                                    }}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="-- Chọn giai đoạn --" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {cropProgressOptions.map(p => (
-                                            <SelectItem key={p.progressId} value={p.progressId}>
-                                                {p.stageName} – {new Date(p.progressDate).toLocaleDateString("vi-VN")}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <div className="space-y-4">
+                                {/* Chọn mùa vụ trước */}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-gray-700">Chọn mùa vụ *</Label>
+                                    <Select
+                                        value={selectedCropSeason}
+                                        onValueChange={(value) => {
+                                            setSelectedCropSeason(value);
+                                            setCropProgressOptions(groupedCropProgress[value] || []);
+                                            setForm(prev => ({ ...prev, cropProgressId: '' }));
+                                        }}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="-- Chọn mùa vụ --" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.keys(groupedCropProgress).map(seasonKey => (
+                                                <SelectItem key={seasonKey} value={seasonKey}>
+                                                    {seasonKey}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Chọn giai đoạn sau khi đã chọn mùa vụ */}
+                                {selectedCropSeason && (
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-medium text-gray-700">Chọn giai đoạn *</Label>
+                                        <Select
+                                            value={form.cropProgressId}
+                                            onValueChange={(value) => {
+                                                setForm((prev) => ({
+                                                    ...prev,
+                                                    cropProgressId: value,
+                                                }));
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="-- Chọn giai đoạn --" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {cropProgressOptions.map(p => (
+                                                    <SelectItem key={p.progressId} value={p.progressId}>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-medium text-gray-700">
+                                                                {p.cropSeasonName && `${p.cropSeasonName}`}
+                                                                {p.cropSeasonDetailName && ` • ${p.cropSeasonDetailName}`}
+                                                                {p.stepIndex && ` • Bước ${p.stepIndex}`}
+                                                                {p.progressDate ? ` • ${new Date(p.progressDate).toLocaleDateString("vi-VN")}` : ''}
+                                                            </span>
+                                                            <span className="text-sm text-gray-500">{p.stageName}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
+                                {Object.keys(groupedCropProgress).length === 0 && (
+                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <p className="text-sm text-gray-600 text-center">
+                                            Không có mùa vụ nào để chọn.
+                                            <br />
+                                            <span className="text-xs text-gray-500">
+                                                Vui lòng tạo mùa vụ trước khi gửi báo cáo.
+                                            </span>
+                                        </p>
+                                    </div>
+                                )}
+
+                                {selectedCropSeason && cropProgressOptions.length === 0 && (
+                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <p className="text-sm text-gray-600 text-center">
+                                            Mùa vụ này chưa có giai đoạn nào.
+                                            <br />
+                                            <span className="text-xs text-gray-500">
+                                                Vui lòng tạo giai đoạn cho mùa vụ này.
+                                            </span>
+                                        </p>
+                                    </div>
+                                )}
+
+                                {selectedCropSeason && cropProgressOptions.length > 0 && (
+                                    <p className="text-xs text-gray-500">
+                                        Chọn giai đoạn mùa vụ mà bạn gặp vấn đề để báo cáo
+                                    </p>
+                                )}
                             </div>
                         )}
 
                         {/* Processing Progress ID */}
                         {form.reportType === 'Processing' && (
                             <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-700">ID mẻ sơ chế *</Label>
-                                <Input
-                                    name="processingProgressId"
+                                <Label className="text-sm font-medium text-gray-700">Tiến độ sơ chế *</Label>
+                                <Select
                                     value={form.processingProgressId}
-                                    onChange={handleChange}
-                                    placeholder="Nhập ID mẻ sơ chế"
-                                />
+                                    onValueChange={(value) => {
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            processingProgressId: value,
+                                        }));
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="-- Chọn tiến độ sơ chế --" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {processingBatchOptions.map(batch => (
+                                            <SelectItem key={batch.progressId} value={batch.progressId}>
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-medium text-gray-700">
+                                                        {batch.batchCode && `${batch.batchCode}`}
+                                                        {batch.progressDate ? ` • ${new Date(batch.progressDate).toLocaleDateString("vi-VN")}` : ''}
+                                                    </span>
+                                                    <span className="text-sm text-gray-500">{batch.stageName} - Bước {batch.stepIndex}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {processingBatchOptions.length === 0 && (
+                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <p className="text-sm text-gray-600 text-center">
+                                            Không có tiến độ sơ chế nào để chọn.
+                                            <br />
+                                            <span className="text-xs text-gray-500">
+                                                Vui lòng tạo tiến độ sơ chế trước khi gửi báo cáo.
+                                            </span>
+                                        </p>
+                                    </div>
+                                )}
+                                {processingBatchOptions.length > 0 && (
+                                    <p className="text-xs text-gray-500">
+                                        Chọn tiến độ sơ chế mà bạn gặp vấn đề để báo cáo
+                                    </p>
+                                )}
                             </div>
                         )}
 
@@ -220,7 +391,11 @@ export default function CreateReportPage() {
                                 name="title"
                                 value={form.title}
                                 onChange={handleChange}
-                                placeholder="Nhập tiêu đề báo cáo"
+                                placeholder={
+                                    form.reportType === 'Crop'
+                                        ? "Ví dụ: Sâu bệnh tấn công giai đoạn ra hoa"
+                                        : "Ví dụ: Máy sơ chế bị lỗi, cà phê bị cháy khét"
+                                }
                             />
                         </div>
 
@@ -232,7 +407,11 @@ export default function CreateReportPage() {
                                 value={form.description}
                                 onChange={handleChange}
                                 rows={5}
-                                placeholder="Mô tả chi tiết vấn đề bạn gặp phải..."
+                                placeholder={
+                                    form.reportType === 'Crop'
+                                        ? "Mô tả chi tiết vấn đề bạn gặp phải trong mùa vụ (sâu bệnh, thời tiết, dinh dưỡng...)"
+                                        : "Mô tả chi tiết vấn đề bạn gặp phải trong quá trình sơ chế (máy móc, nhiệt độ, thời gian...)"
+                                }
                             />
                         </div>
 
@@ -269,34 +448,59 @@ export default function CreateReportPage() {
                         {/* Media Section */}
                         <div className="border-t border-gray-200 pt-6">
                             <h3 className="text-sm font-medium text-gray-700 mb-4">Tài liệu đính kèm (tùy chọn)</h3>
+                        </div>
+
+                        {/* File Upload Section */}
+                        <div className="border-t border-gray-200 pt-6">
+                            <h3 className="text-sm font-medium text-gray-700 mb-4">📎 Tài liệu đính kèm (tùy chọn)</h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Image URL */}
+                                {/* Photo Files Upload */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        <Image className="w-4 h-4 text-blue-500" />
-                                        Hình ảnh (URL)
+                                        <Image className="w-4 h-4 text-green-500" />
+                                        📸 Tải lên hình ảnh
                                     </Label>
                                     <Input
-                                        name="imageUrl"
-                                        value={form.imageUrl}
-                                        onChange={handleChange}
-                                        placeholder="https://example.com/image.jpg"
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files || []);
+                                            handlePhotoFilesChange(files);
+                                        }}
+                                        className="cursor-pointer"
+                                        placeholder="Chọn một hoặc nhiều ảnh..."
                                     />
+                                    {form.photoFiles && form.photoFiles.length > 0 && (
+                                        <div className="text-xs text-green-600 font-medium">
+                                            ✅ Đã chọn {form.photoFiles.length} ảnh
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Video URL */}
+                                {/* Video Files Upload */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                         <Video className="w-4 h-4 text-purple-500" />
-                                        Video (URL)
+                                        🎥 Tải lên video
                                     </Label>
                                     <Input
-                                        name="videoUrl"
-                                        value={form.videoUrl}
-                                        onChange={handleChange}
-                                        placeholder="https://example.com/video.mp4"
+                                        type="file"
+                                        multiple
+                                        accept="video/*"
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files || []);
+                                            handleVideoFilesChange(files);
+                                        }}
+                                        className="cursor-pointer"
+                                        placeholder="Chọn một hoặc nhiều video..."
                                     />
+                                    {form.videoFiles && form.videoFiles.length > 0 && (
+                                        <div className="text-xs text-purple-600 font-medium">
+                                            ✅ Đã chọn {form.videoFiles.length} video
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

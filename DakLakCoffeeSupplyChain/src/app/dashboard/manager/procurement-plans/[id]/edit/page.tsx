@@ -63,7 +63,7 @@ export default function EditProcurementPlanPage() {
               (detail: any) => ({
                 planDetailsId: detail.planDetailsId,
                 coffeeTypeId: detail.coffeeTypeId,
-                processMethodId: detail.processMethodId,
+                processMethodId: detail.processMethodId || 0,
                 targetQuantity: detail.targetQuantity,
                 targetRegion: detail.targetRegion || "",
                 minimumRegistrationQuantity: detail.minimumRegistrationQuantity,

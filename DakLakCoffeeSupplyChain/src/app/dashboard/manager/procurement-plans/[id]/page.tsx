@@ -128,7 +128,7 @@ export default function ProcurementPlanDetailPage() {
               {plan.totalQuantity.toLocaleString()} kg
             </div>
             <div>
-              <strong>Tỷ lệ hoàn thành:</strong> {plan.progressPercentage}%
+              <strong>Tỷ lệ sản lượng đã được đăng ký và có cam kết:</strong> {plan.progressPercentage}%
             </div>
             <div>
               <strong>Trạng thái:</strong>{" "}
@@ -295,6 +295,7 @@ export default function ProcurementPlanDetailPage() {
               registeredAt={reg.registeredAt}
               note={reg.note}
               status={reg.status}
+              planStatus = {plan.status}
               commitmentId={reg.commitmentId}
               commitmentStatus={reg.commitmentStatus}
               cultivationRegistrationDetails={

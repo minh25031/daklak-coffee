@@ -1,38 +1,23 @@
-// Full updated version of CropProgressPage with accurate yield handling
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardContent,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CalendarDays, Pencil, Trash } from "lucide-react";
+import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AppToast } from "@/components/ui/AppToast";
 import {
     CropProgressViewAllDto,
     deleteCropProgress,
     getCropProgressesByDetailId,
 } from "@/lib/api/cropProgress";
-import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogTrigger,
-    DialogContent,
-    DialogTitle,
-} from "@radix-ui/react-dialog";
 import { CreateProgressDialog } from "../components/CreateProgressDialog";
 import { EditProgressDialog } from "../components/EditProgressDialog";
-import {
-    CropSeasonDetail,
-    getCropSeasonDetailById,
-} from "@/lib/api/cropSeasonDetail";
+import { CropSeasonDetail, getCropSeasonDetailById } from "@/lib/api/cropSeasonDetail";
 import { CropStage, getCropStages } from "@/lib/api/cropStage";
+import { ArrowLeft, CalendarDays, FileText, Play } from "lucide-react";
 
-// Constants
 const HARVESTING_STAGE_CODE = "harvesting";
 
 export default function CropProgressPage() {
@@ -44,54 +29,17 @@ export default function CropProgressPage() {
     const [seasonDetail, setSeasonDetail] = useState<CropSeasonDetail | null>(null);
     const [allStages, setAllStages] = useState<CropStage[]>([]);
     const [loading, setLoading] = useState(true);
-    const [currentHarvestYield, setCurrentHarvestYield] = useState<number>(0); // Thêm state để theo dõi sản lượng thu hoạch
-    const [availableStagesCount, setAvailableStagesCount] = useState<number>(0); // Thêm state để theo dõi số stage có thể tạo
+
+    const [currentHarvestYield, setCurrentHarvestYield] = useState<number>(0);
+    const [availableStagesCount, setAvailableStagesCount] = useState<number>(0);
 
     const reloadData = useCallback(async () => {
         try {
             setLoading(true);
             const data = await getCropProgressesByDetailId(cropSeasonDetailId);
-
-            console.log("Raw data from backend:", data);
-            console.log("Stage codes found:", data.map(p => ({ name: p.stageName, code: p.stageCode })));
-
-            // Sắp xếp theo thứ tự giai đoạn thay vì theo ngày
-            const stageOrder = ["PLANTING", "FLOWERING", "FRUITING", "RIPENING", "HARVESTING"];
-
-            const sortedData = data.sort((a, b) => {
-                // Chuẩn hóa stageCode để so sánh
-                const aStageCode = a.stageCode?.toUpperCase() || "";
-                const bStageCode = b.stageCode?.toUpperCase() || "";
-
-                console.log(`Sorting: ${a.stageName} (${a.stageCode}) vs ${b.stageName} (${b.stageCode})`);
-                console.log(`Normalized: ${aStageCode} vs ${bStageCode}`);
-
-                const aIndex = stageOrder.indexOf(aStageCode);
-                const bIndex = stageOrder.indexOf(bStageCode);
-
-                console.log(`Indices: ${aIndex} vs ${bIndex}`);
-
-                // Nếu cả hai đều không tìm thấy trong stageOrder, sắp xếp theo ngày
-                if (aIndex === -1 && bIndex === -1) {
-                    return new Date(a.progressDate || "").getTime() - new Date(b.progressDate || "").getTime();
-                }
-
-                // Nếu một trong hai không tìm thấy, ưu tiên cái tìm thấy
-                if (aIndex === -1) return 1;
-                if (bIndex === -1) return -1;
-
-                // Nếu cùng giai đoạn thì sắp xếp theo ngày
-                if (aIndex === bIndex) {
-                    return new Date(a.progressDate || "").getTime() - new Date(b.progressDate || "").getTime();
-                }
-
-                // Sắp xếp theo thứ tự giai đoạn
-                return aIndex - bIndex;
-            });
-
-            setProgressList(sortedData);
+            setProgressList(data);
         } catch (error: unknown) {
-            if (typeof error === 'object' && error !== null && 'response' in error) {
+            if (typeof error === "object" && error !== null && "response" in error) {
                 const response = (error as { response?: { status?: number } }).response;
                 if (response?.status !== 404) {
                     AppToast.error("Đã xảy ra lỗi khi tải dữ liệu tiến độ.");
@@ -107,77 +55,48 @@ export default function CropProgressPage() {
         try {
             const detail = await getCropSeasonDetailById(cropSeasonDetailId);
             setSeasonDetail(detail);
-            // Cập nhật sản lượng thu hoạch hiện tại
-            if (detail?.actualYield) {
-                setCurrentHarvestYield(detail.actualYield);
-            }
+            if (detail?.actualYield) setCurrentHarvestYield(detail.actualYield);
         } catch {
             AppToast.error("Không thể lấy thông tin vùng trồng.");
         }
     }, [cropSeasonDetailId]);
 
     const handleEditSuccess = useCallback(() => {
-        // Cập nhật cả progress list và season detail
         reloadData();
         loadSeasonDetail();
     }, [reloadData, loadSeasonDetail]);
 
     const handleCreateSuccess = useCallback(() => {
-        // Cập nhật cả progress list và season detail
         reloadData();
         loadSeasonDetail();
     }, [reloadData, loadSeasonDetail]);
 
-    const handleSeasonDetailUpdate = useCallback((newYield: number) => {
-        // Cập nhật sản lượng ngay lập tức trong UI
-        console.log('onSeasonDetailUpdate called with yield:', newYield);
-        console.log('Current seasonDetail:', seasonDetail);
+    const handleSeasonDetailUpdate = useCallback(
+        (newYield: number) => {
+            setCurrentHarvestYield(newYield);
+            if (seasonDetail) setSeasonDetail({ ...seasonDetail, actualYield: newYield });
+        },
+        [seasonDetail]
+    );
 
-        // Cập nhật cả hai state để đảm bảo UI được refresh
-        setCurrentHarvestYield(newYield);
-
-        if (seasonDetail) {
-            const updatedSeasonDetail = {
-                ...seasonDetail,
-                actualYield: newYield
-            };
-            console.log('Updating seasonDetail to:', updatedSeasonDetail);
-            setSeasonDetail(updatedSeasonDetail);
-        } else {
-            console.log('seasonDetail is null, cannot update');
-        }
-    }, [seasonDetail]);
-
-    const handleStagesLoaded = useCallback((availableStagesCount: number) => {
-        // Callback để biết số stage thực tế có thể tạo
-        console.log('Available stages count:', availableStagesCount);
-        setAvailableStagesCount(availableStagesCount);
+    const handleStagesLoaded = useCallback((count: number) => {
+        setAvailableStagesCount(count);
     }, []);
 
     useEffect(() => {
-        if (cropSeasonDetailId) {
-            reloadData();
-            loadSeasonDetail();
-            getCropStages()
-                .then((stages) => {
-                    console.log('Stages loaded from API:', stages);
-                    setAllStages(stages);
-                    // Cập nhật availableStagesCount khi stages được load
-                    setAvailableStagesCount(stages.length);
-                    console.log('Updated availableStagesCount to:', stages.length);
-                })
-                .catch(() => {
-                    AppToast.error("Không thể tải danh sách giai đoạn.");
-                });
-        }
+        if (!cropSeasonDetailId) return;
+        reloadData();
+        loadSeasonDetail();
+        getCropStages()
+            .then((stages) => {
+                setAllStages(stages);
+                setAvailableStagesCount(stages.length);
+            })
+            .catch(() => AppToast.error("Không thể tải danh sách giai đoạn."));
     }, [cropSeasonDetailId, reloadData, loadSeasonDetail]);
 
-    // Theo dõi thay đổi của allStages để cập nhật availableStagesCount
     useEffect(() => {
-        if (allStages.length > 0) {
-            console.log('allStages changed, updating availableStagesCount to:', allStages.length);
-            setAvailableStagesCount(allStages.length);
-        }
+        if (allStages.length > 0) setAvailableStagesCount(allStages.length);
     }, [allStages]);
 
     const formatDate = (date: string | undefined) => {
@@ -186,237 +105,226 @@ export default function CropProgressPage() {
         return isNaN(d.getTime()) ? "-" : d.toLocaleDateString("vi-VN");
     };
 
+    const getProgressForStage = (stageCode: string) =>
+        progressList.find((p) => p.stageCode?.toLowerCase() === stageCode.toLowerCase());
 
+    const canCreateStage = (stageCode: string) => {
+        const order = ["planting", "flowering", "fruiting", "ripening", "harvesting"];
+        const normalized = stageCode.toLowerCase();
+        const idx = order.indexOf(normalized);
+        if (idx === -1) return false;
+
+        const requiredPrevious = order.slice(0, idx);
+        const hasAllPrevious = requiredPrevious.every((code) =>
+            progressList.some((p) => p.stageCode?.toLowerCase() === code)
+        );
+        const already = progressList.some((p) => p.stageCode?.toLowerCase() === normalized);
+        return hasAllPrevious && !already;
+    };
+
+    const sortedStages = [...allStages].sort((a, b) => {
+        const order = ["planting", "flowering", "fruiting", "ripening", "harvesting"];
+        const aIndex = order.indexOf(a.stageCode.toLowerCase());
+        const bIndex = order.indexOf(b.stageCode.toLowerCase());
+        if (aIndex === -1 && bIndex === -1) return 0;
+        if (aIndex === -1) return 1;
+        if (bIndex === -1) return -1;
+        return aIndex - bIndex;
+    });
+
+    const completionPercentage = availableStagesCount > 0
+        ? Math.round((progressList.length / availableStagesCount) * 100)
+        : 0;
 
     return (
-        <div className="max-w-5xl mx-auto py-10 px-4 space-y-6">
-            <Card className="rounded-2xl shadow-md border bg-white">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="text-2xl font-bold text-emerald-800">
-                            🌱 Tiến độ vùng trồng theo mùa vụ
+        <div className="min-h-screen bg-orange-50">
+            <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <Button variant="ghost" onClick={() => router.back()} className="text-neutral-700">
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Quay lại
+                    </Button>
+                    <Button
+                        onClick={() => router.push(`/dashboard/farmer/request-feedback/create?detailId=${cropSeasonDetailId}`)}
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                        📝 Gửi báo cáo tiến độ
+                    </Button>
+                </div>
+
+                <Card className="border-orange-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-semibold text-neutral-900">
+                            Tiến độ canh tác
                         </CardTitle>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="default"
-                                className="bg-orange-600 hover:bg-orange-700 text-white"
-                                onClick={() =>
-                                    router.push(
-                                        `/dashboard/farmer/request-feedback/create?detailId=${cropSeasonDetailId}`
-                                    )
-                                }
-                            >
-                                📝 Gửi báo cáo tiến độ
-                            </Button>
-
-                            {progressList.length < availableStagesCount && (
-                                <CreateProgressDialog
-                                    detailId={cropSeasonDetailId}
-                                    existingProgress={progressList.map((p) => ({
-                                        stageCode: p.stageCode,
-                                    }))}
-                                    onSuccess={handleCreateSuccess}
-                                    onStagesLoaded={handleStagesLoaded}
-                                    onSeasonDetailUpdate={handleSeasonDetailUpdate}
-                                />
-                            )}
+                        <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-neutral-600">
+                            <div>Tổng giai đoạn: <span className="font-medium text-neutral-800">{availableStagesCount}</span></div>
+                            <div>Đã ghi nhận: <span className="font-medium text-neutral-800">{progressList.length}</span></div>
+                            <div>Tỷ lệ: <span className="font-medium text-neutral-800">{completionPercentage}%</span></div>
+                            <div>Sản lượng (thu hoạch): <span className="font-medium text-neutral-800">{currentHarvestYield > 0 ? `${currentHarvestYield} kg` : "-"}</span></div>
                         </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="flex items-center justify-center py-10">
-                            <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                            <span>Đang tải dữ liệu...</span>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="mb-6 space-y-1">
-                                <p className="text-sm text-gray-700">
-                                    �� Giai đoạn chuẩn: {availableStagesCount > 0 ? availableStagesCount : allStages.length} bước
-                                </p>
-                                <p className="text-sm text-gray-700">
-                                    {availableStagesCount > 0
-                                        ? `✅ Đã cập nhật: ${progressList.length} / ${availableStagesCount} (${Math.round((progressList.length / availableStagesCount) * 100)}%)`
-                                        : `✅ Đã cập nhật: ${progressList.length} / ${allStages.length} (${Math.round((progressList.length / allStages.length) * 100)}%)`}
-                                </p>
-                                {progressList.length > 0 && (
-                                    <>
-                                        {progressList[0].cropSeasonName && (
-                                            <p className="text-sm text-gray-700">
-                                                🌾 Mùa vụ: <strong>{progressList[0].cropSeasonName}</strong>
-                                            </p>
-                                        )}
-                                        {progressList[0].cropSeasonDetailName && (
-                                            <p className="text-sm text-gray-700">
-                                                📍 Vùng trồng: <strong>{progressList[0].cropSeasonDetailName}</strong>
-                                            </p>
-                                        )}
-                                    </>
-                                )}
-                                <p className="text-sm font-semibold text-orange-700">
-                                    🎯 Sản lượng thu hoạch: {currentHarvestYield > 0 ? `${currentHarvestYield} kg` : "Chưa có ghi nhận"}
-                                </p>
-                            </div>
-                            <div className="space-y-8">
-                                {progressList.map((progress, index) => (
-                                    <div
-                                        key={progress.progressId}
-                                        className="relative p-5 rounded-xl border shadow hover:shadow-lg transition-all bg-gray-50"
-                                    >
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg text-emerald-700">
-                                                    {index + 1}. {progress.stageName}
-                                                </h3>
-                                                {progress.stageDescription && (
-                                                    <p className="text-sm text-gray-600 mt-1 italic">
-                                                        {progress.stageDescription}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className="flex flex-col items-end space-y-1 text-right">
-                                                <Badge className="text-xs bg-emerald-100 text-emerald-700">
-                                                    <CalendarDays className="inline w-4 h-4 mr-1" />
-                                                    {formatDate(progress.progressDate)}
-                                                </Badge>
-                                                {progress.stageCode?.toLowerCase() === HARVESTING_STAGE_CODE && (
-                                                    <span className="text-xs text-orange-600 font-semibold">
-                                                        Tổng thu hoạch: {seasonDetail?.actualYield ?? "-"} kg
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
+                    </CardHeader>
 
+                    <CardContent>
+                        {loading ? (
+                            <div className="py-10 text-center text-sm text-neutral-600">Đang tải dữ liệu…</div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-orange-100 text-neutral-700">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left font-medium">#</th>
+                                            <th className="px-3 py-2 text-left font-medium">Giai đoạn</th>
+                                            <th className="px-3 py-2 text-left font-medium">Trạng thái</th>
+                                            <th className="px-3 py-2 text-left font-medium">Ngày</th>
+                                            <th className="px-3 py-2 text-left font-medium">Ghi chú</th>
+                                            <th className="px-3 py-2 text-left font-medium">Ảnh/Vidieo</th>
+                                            <th className="px-3 py-2 text-center font-medium">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-neutral-200">
+                                        {sortedStages.map((stage, idx) => {
+                                            const progress = getProgressForStage(stage.stageCode);
+                                            const isCompleted = !!progress;
+                                            const ready = canCreateStage(stage.stageCode);
 
-
-
-
-                                        {/* Thông tin người cập nhật - chỉ hiển thị nếu có */}
-                                        {progress.updatedByName && (
-                                            <div className="text-xs text-gray-500 mb-3">
-                                                👤 Cập nhật bởi: {progress.updatedByName}
-                                            </div>
-                                        )}
-
-
-
-                                        {progress.note && (
-                                            <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">
-                                                {progress.note}
-                                            </p>
-                                        )}
-                                        {progress.stageCode?.toLowerCase() === HARVESTING_STAGE_CODE && progress.actualYield && (
-                                            <p className="text-sm text-gray-700 mt-1">
-                                                👉 Sản lượng thực tế: <strong>{progress.actualYield} kg</strong>
-                                            </p>
-                                        )}
-                                        {(progress.photoUrl || progress.videoUrl) && (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-                                                {/* Ảnh */}
-                                                {progress.photoUrl && (
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <div className="relative cursor-pointer group">
-                                                                <img
-                                                                    src={progress.photoUrl}
-                                                                    alt="Ảnh tiến độ"
-                                                                    className="rounded-xl border object-cover h-40 w-full opacity-70 group-hover:opacity-100 transition"
+                                            return (
+                                                <tr key={stage.stageId} className="bg-white">
+                                                    <td className="px-3 py-2 align-top text-neutral-700">{idx + 1}</td>
+                                                    <td className="px-3 py-2 align-top">
+                                                        <div className="font-medium text-neutral-900">{stage.stageName}</div>
+                                                        {stage.description && (
+                                                            <div className="text-xs text-neutral-500">{stage.description}</div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 align-top">
+                                                        {isCompleted ? (
+                                                            <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Đã ghi nhận</Badge>
+                                                        ) : ready ? (
+                                                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">Sẵn sàng</Badge>
+                                                        ) : (
+                                                            <Badge variant="secondary" className="bg-neutral-100 text-neutral-600 border-neutral-200">Chờ</Badge>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 align-top text-neutral-800">
+                                                        {isCompleted ? (
+                                                            <div className="flex items-center gap-1"><CalendarDays className="w-4 h-4 text-neutral-400" />{formatDate(progress?.progressDate)}</div>
+                                                        ) : (
+                                                            "-"
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 align-top text-neutral-800 max-w-[280px]">
+                                                        {isCompleted && progress?.note ? (
+                                                            <div className="flex items-start gap-2 text-neutral-700">
+                                                                <FileText className="w-4 h-4 shrink-0 text-neutral-400 mt-0.5" />
+                                                                <span className="line-clamp-2">{progress.note}</span>
+                                                            </div>
+                                                        ) : (
+                                                            "-"
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 align-top">
+                                                        {(isCompleted && (progress?.photoUrl || progress?.videoUrl)) ? (
+                                                            <div className="flex gap-2">
+                                                                {progress?.photoUrl && (
+                                                                    <Dialog>
+                                                                        <DialogTrigger asChild>
+                                                                            <button className="h-14 w-20 border border-neutral-200 rounded-md overflow-hidden hover:border-neutral-300">
+                                                                                <img src={progress.photoUrl} alt="Ảnh" className="h-full w-full object-cover" />
+                                                                            </button>
+                                                                        </DialogTrigger>
+                                                                        <DialogContent className="max-w-4xl">
+                                                                            <DialogTitle className="sr-only">Xem ảnh</DialogTitle>
+                                                                            <img src={progress.photoUrl} alt="Ảnh lớn" className="max-h-[75vh] w-auto object-contain mx-auto" />
+                                                                        </DialogContent>
+                                                                    </Dialog>
+                                                                )}
+                                                                {progress?.videoUrl && (
+                                                                    <Dialog>
+                                                                        <DialogTrigger asChild>
+                                                                            <button className="h-14 w-20 border border-neutral-200 rounded-md overflow-hidden hover:border-neutral-300 relative">
+                                                                                <video muted playsInline className="h-full w-full object-cover">
+                                                                                    <source src={progress.videoUrl} />
+                                                                                </video>
+                                                                                <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
+                                                                                    <Play className="w-5 h-5 text-white" />
+                                                                                </div>
+                                                                            </button>
+                                                                        </DialogTrigger>
+                                                                        <DialogContent className="max-w-5xl">
+                                                                            <DialogTitle className="sr-only">Xem video</DialogTitle>
+                                                                            <video controls autoPlay className="max-h-[75vh] w-auto mx-auto rounded-md">
+                                                                                <source src={progress.videoUrl} />
+                                                                            </video>
+                                                                        </DialogContent>
+                                                                    </Dialog>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            "-"
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 align-top text-center">
+                                                        {isCompleted ? (
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <EditProgressDialog
+                                                                    progress={progress!}
+                                                                    onSuccess={handleEditSuccess}
+                                                                    onSeasonDetailUpdate={handleSeasonDetailUpdate}
+                                                                    triggerButton={
+                                                                        <Button variant="outline" size="sm" className="border-neutral-300">Sửa</Button>
+                                                                    }
                                                                 />
-                                                            </div>
-                                                        </DialogTrigger>
-                                                        <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-0 max-w-4xl max-h-[85vh] flex items-center justify-center bg-white rounded-lg shadow-xl z-50">
-                                                            <DialogTitle className="sr-only">Xem ảnh</DialogTitle>
-                                                            <img
-                                                                src={progress.photoUrl}
-                                                                alt="Ảnh lớn"
-                                                                className="rounded-md object-contain max-h-[80vh] max-w-full"
-                                                            />
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                )}
-
-                                                {/* Video */}
-                                                {progress.videoUrl && (
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <div className="relative cursor-pointer group">
-                                                                <video
-                                                                    muted
-                                                                    playsInline
-                                                                    className="rounded-xl border object-cover h-40 w-full opacity-70 group-hover:opacity-100 transition"
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="border-red-300 text-red-600"
+                                                                    onClick={async () => {
+                                                                        const confirmDelete = confirm("Bạn chắc chắn muốn xoá tiến độ này?");
+                                                                        if (!confirmDelete) return;
+                                                                        try {
+                                                                            await deleteCropProgress(progress!.progressId);
+                                                                            AppToast.success("Xoá tiến độ thành công!");
+                                                                            reloadData();
+                                                                        } catch (error: unknown) {
+                                                                            let errorMessage = "Xoá thất bại.";
+                                                                            if (typeof error === "object" && error !== null && "response" in error) {
+                                                                                const response = (error as { response?: { data?: { message?: string } } }).response;
+                                                                                if (response?.data?.message) errorMessage = response.data.message;
+                                                                            }
+                                                                            AppToast.error(errorMessage);
+                                                                        }
+                                                                    }}
                                                                 >
-                                                                    <source src={progress.videoUrl} />
-                                                                </video>
+                                                                    Xoá
+                                                                </Button>
                                                             </div>
-                                                        </DialogTrigger>
-                                                        <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-0 max-w-5xl max-h-[85vh] flex items-center justify-center bg-white rounded-lg shadow-xl z-50">
-                                                            <DialogTitle className="sr-only">Xem video</DialogTitle>
-                                                            <video
-                                                                controls
-                                                                autoPlay
-                                                                className="rounded-md object-contain max-h-[80vh] max-w-full"
-                                                            >
-                                                                <source src={progress.videoUrl} />
-                                                            </video>
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        <div className="flex gap-2 mt-4">
-                                            <EditProgressDialog
-                                                progress={progress}
-                                                onSuccess={handleEditSuccess}
-                                                onSeasonDetailUpdate={handleSeasonDetailUpdate}
-                                                triggerButton={
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                        title="Chỉnh sửa tiến độ"
-                                                    >
-                                                        <Pencil className="h-4 w-4 text-red-600" />
-                                                    </Button>
-                                                }
-                                            />
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 hover:bg-red-100"
-                                                title="Xoá tiến độ"
-                                                onClick={async () => {
-                                                    const confirmDelete = confirm(
-                                                        "Bạn chắc chắn muốn xoá tiến độ này?"
-                                                    );
-                                                    if (!confirmDelete) return;
-                                                    try {
-                                                        await deleteCropProgress(progress.progressId);
-                                                        AppToast.success("Xoá tiến độ thành công!");
-                                                        reloadData();
-                                                    } catch (error: unknown) {
-                                                        let errorMessage = "Xoá thất bại.";
-                                                        if (typeof error === 'object' && error !== null && 'response' in error) {
-                                                            const response = (error as { response?: { data?: { message?: string } } }).response;
-                                                            if (response?.data?.message) {
-                                                                errorMessage = response.data.message;
-                                                            }
-                                                        }
-                                                        AppToast.error(errorMessage);
-                                                    }
-                                                }}
-                                            >
-                                                <Trash className="h-4 w-4 text-red-600" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
+                                                        ) : ready ? (
+                                                            <CreateProgressDialog
+                                                                detailId={cropSeasonDetailId}
+                                                                existingProgress={progressList.map((p) => ({ stageCode: p.stageCode }))}
+                                                                onSuccess={handleCreateSuccess}
+                                                                onStagesLoaded={handleStagesLoaded}
+                                                                onSeasonDetailUpdate={handleSeasonDetailUpdate}
+                                                                triggerButton={
+                                                                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">Ghi nhận</Button>
+                                                                }
+                                                            />
+                                                        ) : (
+                                                            <span className="text-xs text-neutral-500">—</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
-                        </>
-                    )}
-                </CardContent>
-            </Card>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }

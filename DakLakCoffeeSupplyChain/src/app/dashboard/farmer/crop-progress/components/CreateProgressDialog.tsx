@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { AppToast } from "@/components/ui/AppToast";
-import { Upload, X, Image, Video } from "lucide-react";
+import { Upload, X, Image, Video, Leaf, Calendar, Camera, Play } from "lucide-react";
 
 import { createCropProgress, CropProgressCreateRequest } from "@/lib/api/cropProgress";
 import { getCropStages, CropStage } from "@/lib/api/cropStage";
@@ -33,8 +33,9 @@ type Props = {
     existingProgress: { stageCode: string }[];
     onSuccess: () => void;
     disabled?: boolean;
-    onStagesLoaded?: (availableStagesCount: number) => void; // Callback để thông báo số stage có thể tạo
-    onSeasonDetailUpdate?: (newYield: number) => void; // Callback để cập nhật sản lượng ngay lập tức
+    onStagesLoaded?: (availableStagesCount: number) => void;
+    onSeasonDetailUpdate?: (newYield: number) => void;
+    triggerButton?: React.ReactNode
 };
 
 export function CreateProgressDialog({
@@ -43,7 +44,8 @@ export function CreateProgressDialog({
     existingProgress,
     disabled,
     onStagesLoaded,
-    onSeasonDetailUpdate
+    onSeasonDetailUpdate,
+    triggerButton
 }: Props) {
     const [note, setNote] = useState("");
     const [stageOptions, setStageOptions] = useState<CropStage[]>([]);
@@ -68,354 +70,359 @@ export function CreateProgressDialog({
         const alreadyExists = createdStageCodes
             .map((c) => c.toUpperCase())
             .includes(normalizedStageCode);
+
         return hasAllPrevious && !alreadyExists;
     };
 
-    const selectedStage = stageOptions.find((s) => s.stageId === stageId);
-    const isHarvestingStage = selectedStage?.stageCode === HARVESTING_STAGE_CODE;
-    const allStagesCompleted = STAGE_ORDER.every((code) => createdStageCodes.includes(code));
-
-    useEffect(() => {
-        const fetchStages = async () => {
-            try {
-                const stages = await getCropStages();
-                setStageOptions(stages);
-                const next = stages.find((s) => canCreateStage(s.stageCode));
-                if (next) setStageId(next.stageId);
-                if (onStagesLoaded) onStagesLoaded(stages.length);
-            } catch {
-                AppToast.error("Không thể tải danh sách giai đoạn.");
+    const loadStageOptions = useCallback(async () => {
+        try {
+            const stages = await getCropStages();
+            const availableStages = stages.filter(stage => canCreateStage(stage.stageCode));
+            setStageOptions(availableStages);
+            if (onStagesLoaded) {
+                onStagesLoaded(availableStages.length);
             }
-        };
-        fetchStages();
-    }, []);
-
-    // Reset form khi dialog đóng
-    useEffect(() => {
-        if (!open) {
-            setNote("");
-            setActualYield(undefined);
-            setProgressDate("");
-            setMediaFiles([]);
-            // Reset stageId về stage đầu tiên có thể tạo
-            if (stageOptions.length > 0) {
-                const next = stageOptions.find((s) => canCreateStage(s.stageCode));
-                if (next) setStageId(next.stageId);
-            }
+        } catch (error) {
+            console.error("Error loading stages:", error);
+            AppToast.error("Không thể tải danh sách giai đoạn.");
         }
-    }, [open, stageOptions]);
+    }, [onStagesLoaded]);
 
-    const handleDrag = (e: React.DragEvent) => {
+    useEffect(() => {
+        if (open) {
+            loadStageOptions();
+            setProgressDate(new Date().toISOString().split("T")[0]);
+        }
+    }, [open, loadStageOptions]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        e.stopPropagation();
-        if (e.type === "dragenter" || e.type === "dragover") {
-            setDragActive(true);
-        } else if (e.type === "dragleave") {
-            setDragActive(false);
+        if (!stageId) {
+            AppToast.error("Vui lòng chọn giai đoạn.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const createData: CropProgressCreateRequest = {
+                cropSeasonDetailId: detailId,
+                stageId: stageId,
+                progressDate: progressDate,
+                notes: note,
+                // Chỉ gửi sản lượng khi là giai đoạn thu hoạch
+                actualYield: stageOptions.find(s => s.stageId === stageId)?.stageCode?.toLowerCase() === HARVESTING_STAGE_CODE ? actualYield : undefined,
+                mediaFiles: mediaFiles,
+            };
+
+            await createCropProgress(createData);
+            AppToast.success("Tạo tiến độ thành công!");
+            setOpen(false);
+            resetForm();
+            onSuccess();
+        } catch (error: unknown) {
+            let errorMessage = "Tạo tiến độ thất bại.";
+            if (typeof error === 'object' && error !== null && 'response' in error) {
+                const response = (error as { response?: { data?: { message?: string } } }).response;
+                if (response?.data?.message) {
+                    errorMessage = response.data.message;
+                }
+            }
+            AppToast.error(errorMessage);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            const files = Array.from(e.dataTransfer.files);
-            const validFiles = files.filter(file =>
-                file.type.startsWith('image/') || file.type.startsWith('video/')
-            );
-
-            if (validFiles.length !== files.length) {
-                AppToast.error("Chỉ chấp nhận file ảnh hoặc video.");
-            }
-
-            setMediaFiles(prev => [...prev, ...validFiles]);
-        }
+    const resetForm = () => {
+        setNote("");
+        setStageId(null);
+        setProgressDate("");
+        setActualYield(undefined);
+        setMediaFiles([]);
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const files = Array.from(e.target.files);
-            const validFiles = files.filter(file =>
-                file.type.startsWith('image/') || file.type.startsWith('video/')
-            );
-
-            if (validFiles.length !== files.length) {
-                AppToast.error("Chỉ chấp nhận file ảnh hoặc video.");
-            }
-
-            setMediaFiles(prev => [...prev, ...validFiles]);
-        }
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        setMediaFiles(prev => [...prev, ...files]);
     };
 
     const removeFile = (index: number) => {
         setMediaFiles(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleSubmit = async () => {
-        if (!stageId || !selectedStage) {
-            AppToast.error("Vui lòng chọn giai đoạn hợp lệ.");
-            return;
+    const getFileIcon = (file: File) => {
+        if (file.type.startsWith("image/")) {
+            return <Camera className="w-4 h-4 text-gray-600" />;
+        } else if (file.type.startsWith("video/")) {
+            return <Play className="w-4 h-4 text-gray-600" />;
         }
-
-        if (!progressDate) {
-            AppToast.error("Vui lòng chọn ngày ghi nhận.");
-            return;
-        }
-
-        // Kiểm tra ngày không được lớn hơn hoặc bằng hôm nay
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const selectedDate = new Date(progressDate);
-        if (selectedDate >= today) {
-            AppToast.error("Ngày ghi nhận không được lớn hơn hoặc bằng hôm nay.");
-            return;
-        }
-
-        if (isHarvestingStage && (actualYield === undefined || actualYield <= 0)) {
-            AppToast.error("Vui lòng nhập sản lượng thực tế hợp lệ (> 0) cho giai đoạn thu hoạch.");
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const payload: CropProgressCreateRequest = {
-                cropSeasonDetailId: detailId,
-                stageId: selectedStage.stageId,
-                progressDate,
-                notes: note,
-                mediaFiles: mediaFiles.length > 0 ? mediaFiles : undefined,
-            };
-
-            if (isHarvestingStage) {
-                payload.actualYield = actualYield;
-            }
-
-            const result = await createCropProgress(payload);
-
-            AppToast.success("Ghi nhận tiến độ thành công.");
-            setOpen(false);
-
-            // Cập nhật sản lượng ngay lập tức nếu là giai đoạn thu hoạch
-            if (isHarvestingStage && actualYield && onSeasonDetailUpdate) {
-                console.log('Create successful, harvest yield:', actualYield);
-                console.log('Calling onSeasonDetailUpdate with new yield:', actualYield);
-                onSeasonDetailUpdate(actualYield);
-            }
-
-            // Reset form
-            setNote("");
-            setActualYield(undefined);
-            setProgressDate("");
-            setMediaFiles([]);
-
-            // Gọi callback thành công
-            if (onSuccess) onSuccess();
-        } catch (err: unknown) {
-            let msg = "Lỗi khi ghi nhận tiến độ.";
-
-            if (typeof err === 'object' && err !== null && 'response' in err) {
-                const response = (err as { response?: { data?: { message?: string } } }).response;
-                if (response?.data?.message) {
-                    msg = response.data.message;
-                }
-            }
-
-            if (msg.includes("đã tồn tại")) {
-                AppToast.error("Tiến độ hôm nay cho giai đoạn này đã được ghi nhận.");
-            } else {
-                AppToast.error(msg);
-            }
-        } finally {
-            setLoading(false);
-        }
+        return <Leaf className="w-4 h-4 text-gray-600" />;
     };
 
-    // Kiểm tra xem form có hợp lệ không
-    const isFormValid = useCallback(() => {
-        return stageId &&
-            progressDate &&
-            note.trim() &&
-            (!isHarvestingStage || (actualYield !== undefined && actualYield > 0));
-    }, [stageId, progressDate, note, isHarvestingStage, actualYield]);
+    const getFilePreview = (file: File) => {
+        if (file.type.startsWith("image/")) {
+            return (
+                <img
+                    src={URL.createObjectURL(file)}
+                    alt="Preview"
+                    className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                />
+            );
+        } else if (file.type.startsWith("video/")) {
+            return (
+                <video
+                    src={URL.createObjectURL(file)}
+                    className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                    controls
+                />
+            );
+        }
+        return (
+            <div className="w-full h-20 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                <Leaf className="w-8 h-8 text-gray-400" />
+            </div>
+        );
+    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {!allStagesCompleted && (
-                <DialogTrigger asChild>
-                    <Button
-                        variant="default"
-                        className="bg-orange-600 hover:bg-orange-700 text-white"
-                        disabled={disabled}
-                    >
-                        Ghi nhận tiến độ
+            <DialogTrigger asChild>
+                {triggerButton || (
+                    <Button disabled={disabled} className="bg-gray-700 hover:bg-gray-800">
+                        Tạo tiến độ mới
                     </Button>
-                </DialogTrigger>
-            )}
-            <DialogContent className="max-w-md">
-                <DialogTitle>Ghi nhận tiến độ</DialogTitle>
-                <DialogDescription>
-                    {allStagesCompleted
-                        ? "Tất cả các giai đoạn đã được ghi nhận. Không thể tạo mới."
-                        : "Chọn giai đoạn và nhập nội dung tiến độ cho hôm nay."}
-                </DialogDescription>
-
-                {!allStagesCompleted && (
-                    <form
-                        className="space-y-4 mt-2"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            handleSubmit();
-                        }}
-                    >
+                )}
+            </DialogTrigger>
+            <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto p-0">
+                <form onSubmit={handleSubmit} className="w-full">
+                    {/* Header - Simple gray */}
+                    <div className="bg-gray-700 p-4 flex items-center gap-4">
+                        <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
+                            <Leaf className="w-5 h-5 text-white" />
+                        </div>
                         <div>
-                            <Label>Giai đoạn</Label>
-                            <Select
-                                value={stageId ? String(stageId) : ""}
-                                onValueChange={(value) => setStageId(Number(value))}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Chọn giai đoạn" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {stageOptions.map((s) => (
-                                        <SelectItem
-                                            key={s.stageId}
-                                            value={String(s.stageId)}
-                                            disabled={!canCreateStage(s.stageCode)}
+                            <DialogTitle className="text-white font-bold text-lg">
+                                Ghi nhận tiến độ canh tác
+                            </DialogTitle>
+                            <p className="text-gray-300 text-xs">
+                                Cập nhật thông tin về giai đoạn phát triển của cây cà phê
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Content - 3 columns horizontal layout */}
+                    <div className="p-6">
+                        {/* Main form - 2 columns horizontal layout */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+
+                            {/* Column 1 - Basic Info */}
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                    <div className="w-4 h-4 bg-gray-100 rounded flex items-center justify-center">
+                                        <Leaf className="w-3 h-3 text-gray-600" />
+                                    </div>
+                                    Thông tin cơ bản
+                                </h3>
+
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            Giai đoạn
+                                        </label>
+                                        <Select
+                                            value={stageId?.toString() || ""}
+                                            onValueChange={(value) => setStageId(parseInt(value))}
                                         >
-                                            {s.stageName}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {selectedStage?.description && (
-                                <p className="text-sm text-gray-500 italic mt-1">
-                                    {selectedStage.description}
-                                </p>
-                            )}
-                        </div>
+                                            <SelectTrigger className="w-full h-10 text-sm">
+                                                <SelectValue placeholder="Chọn giai đoạn..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {stageOptions.map((stage) => (
+                                                    <SelectItem key={stage.stageId} value={stage.stageId.toString()}>
+                                                        {stage.stageName}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
-                        <div>
-                            <Label>Ngày ghi nhận</Label>
-                            <Input
-                                type="date"
-                                value={progressDate}
-                                onChange={(e) => setProgressDate(e.target.value)}
-                                max={new Date().toISOString().split("T")[0]}
-                                required
-                            />
-                        </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            Ngày thực hiện
+                                        </label>
+                                        <Input
+                                            type="date"
+                                            value={progressDate}
+                                            onChange={(e) => setProgressDate(e.target.value)}
+                                            required
+                                            className="w-full h-10 text-sm"
+                                        />
+                                    </div>
 
-                        {isHarvestingStage && (
-                            <div>
-                                <Label>Năng suất thực tế (kg) <span className="text-red-500">*</span></Label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={actualYield ?? ""}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        setActualYield(val === "" ? undefined : parseFloat(val));
-                                    }}
-                                    placeholder="Nhập năng suất thu hoạch..."
-                                    required
-                                />
-                                {actualYield && actualYield > 0 && (
-                                    <p className="text-xs text-blue-600 mt-1">
-                                        💡 Sản lượng {actualYield} kg sẽ được ghi nhận
-                                    </p>
-                                )}
-                            </div>
-                        )}
+                                    {/* Chỉ hiển thị sản lượng khi chọn giai đoạn thu hoạch */}
+                                    {stageId && stageOptions.find(s => s.stageId === stageId)?.stageCode?.toLowerCase() === HARVESTING_STAGE_CODE && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Sản lượng (kg)
+                                            </label>
+                                            <Input
+                                                type="number"
+                                                value={actualYield || ""}
+                                                onChange={(e) => setActualYield(e.target.value ? parseFloat(e.target.value) : undefined)}
+                                                min={0}
+                                                step="any"
+                                                className="w-full h-10 text-sm"
+                                                placeholder="Nhập sản lượng thu hoạch..."
+                                            />
+                                        </div>
+                                    )}
 
-                        <div>
-                            <Label>Ghi chú <span className="text-red-500">*</span></Label>
-                            <Textarea
-                                value={note}
-                                onChange={(e) => setNote(e.target.value)}
-                                placeholder="Nhập nội dung tiến độ..."
-                                maxLength={1000}
-                                required
-                            />
-                            <div className="text-xs text-gray-500 mt-1">
-                                {note.length}/1000 ký tự
-                            </div>
-                        </div>
-
-                        {/* Media Upload */}
-                        <div>
-                            <Label>Ảnh/Video (tùy chọn)</Label>
-                            <div
-                                className={`border-2 border-dashed rounded-lg p-4 text-center ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-                                    }`}
-                                onDragEnter={handleDrag}
-                                onDragLeave={handleDrag}
-                                onDragOver={handleDrag}
-                                onDrop={handleDrop}
-                            >
-                                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                                <p className="text-sm text-gray-600 mb-2">
-                                    Kéo thả file hoặc click để chọn
-                                </p>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => document.getElementById('file-input')?.click()}
-                                >
-                                    Chọn file
-                                </Button>
-                                <input
-                                    id="file-input"
-                                    type="file"
-                                    multiple
-                                    accept="image/*,video/*"
-                                    onChange={handleFileSelect}
-                                    className="hidden"
-                                    aria-label="Chọn file ảnh hoặc video"
-                                />
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            Ghi chú
+                                        </label>
+                                        <Textarea
+                                            value={note}
+                                            onChange={(e) => setNote(e.target.value)}
+                                            placeholder="Mô tả chi tiết về giai đoạn, điều kiện môi trường, phương pháp chăm sóc..."
+                                            className="w-full min-h-[80px] text-sm resize-none"
+                                            rows={3}
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Display selected files */}
-                            {mediaFiles.length > 0 && (
-                                <div className="mt-3 space-y-2">
-                                    {mediaFiles.map((file, index) => (
-                                        <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                                            {file.type.startsWith('image/') ? (
-                                                <Image className="h-4 w-4 text-blue-500" />
-                                            ) : (
-                                                <Video className="h-4 w-4 text-red-500" />
-                                            )}
-                                            <span className="text-sm flex-1 truncate">{file.name}</span>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => removeFile(index)}
-                                                className="h-6 w-6 p-0"
+                            {/* Column 2 - Media Upload */}
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                    <div className="w-4 h-4 bg-gray-100 rounded flex items-center justify-center">
+                                        <Camera className="w-3 h-3 text-gray-600" />
+                                    </div>
+                                    Tài liệu minh họa
+                                </h3>
+
+                                <div className="space-y-3">
+                                    {/* Photo upload */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            Ảnh minh hoạ
+                                        </label>
+                                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-gray-500 transition-colors bg-gray-50">
+                                            <input
+                                                type="file"
+                                                multiple
+                                                accept="image/*"
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                                id="photo-upload"
+                                            />
+                                            <label
+                                                htmlFor="photo-upload"
+                                                className="text-xs text-gray-600 cursor-pointer hover:text-gray-800 flex flex-col items-center gap-1"
                                             >
-                                                <X className="h-3 w-3" />
-                                            </Button>
+                                                <Upload className="w-5 h-5 text-gray-400" />
+                                                Chọn ảnh
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Video upload */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            Video minh hoạ
+                                        </label>
+                                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-gray-500 transition-colors bg-gray-50">
+                                            <input
+                                                type="file"
+                                                multiple
+                                                accept="video/*"
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                                id="video-upload"
+                                            />
+                                            <label
+                                                htmlFor="video-upload"
+                                                className="text-xs text-gray-600 cursor-pointer hover:text-gray-800 flex flex-col items-center gap-1"
+                                            >
+                                                <Upload className="w-5 h-5 text-gray-400" />
+                                                Chọn video
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* Media previews - Horizontal layout */}
+                        {mediaFiles.length > 0 && (
+                            <div className="mb-6">
+                                <h4 className="text-sm font-medium text-gray-700 mb-3">Xem trước tài liệu:</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                    {mediaFiles.map((file, index) => (
+                                        <div key={index} className="relative group">
+                                            {getFilePreview(file)}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFile(index)}
+                                                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                            <div className="absolute bottom-1 left-1">
+                                                {getFileIcon(file)}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
-                        <div className="flex justify-end">
-                            <Button
-                                type="submit"
-                                disabled={loading || !isFormValid()}
-                                className="min-w-[120px]"
-                            >
-                                {loading ? "Đang lưu..." : "Lưu"}
-                            </Button>
+                        {/* Submit button and info */}
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-4 text-xs text-gray-600">
+                                <div className="flex items-center gap-1">
+                                    <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Tối đa 10 files, 50MB</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Ảnh tự động nén</span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setOpen(false)}
+                                    className="px-6 py-3"
+                                >
+                                    Hủy
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="px-8 py-3 bg-gray-700 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors"
+                                >
+                                    {loading ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Đang lưu...
+                                        </div>
+                                    ) : (
+                                        "Ghi nhận tiến độ"
+                                    )}
+                                </Button>
+                            </div>
                         </div>
-                    </form>
-                )}
+                    </div>
+                </form>
             </DialogContent>
         </Dialog>
     );

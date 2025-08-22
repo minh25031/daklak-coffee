@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
 import React from "react";
+import { authService } from "@/lib/auth/authService";
 import {
   FiPieChart,
   FiUsers,
@@ -123,8 +124,10 @@ export function SidebarGroup() {
   const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
-    const storedRole = localStorage.getItem("user_role"); // slug: "admin", "expert", ...
-    setRole(storedRole);
+    const user = authService.getUser();
+    if (user) {
+      setRole(user.role);
+    }
   }, []);
 
   const navigationItems: Record<
@@ -139,7 +142,7 @@ export function SidebarGroup() {
       },
       {
         title: "Sàn thu mua cà phê",
-        href: "/marketplace",
+        href: "/dashboard/farmer/market-place",
         icon: iconMap.market,
       },
       {
@@ -179,6 +182,11 @@ export function SidebarGroup() {
         title: "Quản lý người dùng",
         href: "/dashboard/admin/users",
         icon: iconMap.users,
+      },
+      {
+        title: "Quản lý chuyên gia",
+        href: "/dashboard/admin/experts",
+        icon: <FiUsers />,
       },
       {
         title: "Hợp đồng",
@@ -600,8 +608,8 @@ export function SidebarGroup() {
             className={cn(
               "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all duration-200",
               pathname.startsWith("/dashboard/manager/reports") ||
-              pathname.startsWith("/dashboard/manager/processing") ||
-              pathname === "/dashboard/manager/processing/farmer-batches"
+                pathname.startsWith("/dashboard/manager/processing") ||
+                pathname === "/dashboard/manager/processing/farmer-batches"
                 ? "bg-orange-100 text-orange-700 shadow-sm"
                 : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
             )}
@@ -970,8 +978,10 @@ export function SidebarFooter({ isCollapsed }: SidebarFooterProps) {
   const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedName = localStorage.getItem("user_name");
-    setUserName(storedName);
+    const user = authService.getUser();
+    if (user) {
+      setUserName(user.name);
+    }
   }, []);
 
   if (isCollapsed) return null;
@@ -986,10 +996,10 @@ export function SidebarFooter({ isCollapsed }: SidebarFooterProps) {
       </div>
       <button
         onClick={() => {
-          localStorage.clear();
-          window.location.href = "/auth/login";
+          authService.logout();
         }}
         className="text-red-600 text-sm hover:underline transition-all"
+        title="Đăng xuất và về trang chính"
       >
         Đăng xuất
       </button>

@@ -10,16 +10,18 @@ import {
 import Link from "next/dist/client/link";
 import { useEffect, useState } from "react";
 import { differenceInCalendarDays } from "date-fns";
+import { usePathname } from "next/navigation";
 
 export default function MarketplacePage() {
   const [plans, setPlans] = useState<ProcurementPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const pathname = usePathname();
 
   useEffect(() => {
     fetchData();
   }, []);
-  
+
   const fetchData = async () => {
     setLoading(true);
     const data = await getAllAvailableProcurementPlans().catch((error) => {
@@ -31,34 +33,42 @@ export default function MarketplacePage() {
   };
 
   const filteredPlans = plans.filter(
-    (plan) => 
-      (differenceInCalendarDays(new Date(plan.endDate), new Date()) > 0) &&
+    (plan) =>
+      differenceInCalendarDays(new Date(plan.endDate), new Date()) > 0 &&
       (!search || plan.title.toLowerCase().includes(search.toLowerCase()))
   );
+
+  // Hàm tạo đường dẫn cho nút "Xem chi tiết"
+  const getDetailLink = (planId: string) => {
+    if (pathname.startsWith('/dashboard/farmer/market-place')) {
+      return `/dashboard/farmer/market-place/${planId}`;
+    }
+    return `/marketplace/${planId}`;
+  };
 
   if (loading) {
     return <p className='text-center py-20'>Đang tải dữ liệu...</p>;
   }
   if (plans.length == 0 && !loading) {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-20 bg-[#fefaf4]">
-      <p className="text-gray-600 text-lg mb-4">Hiện tại chưa có kế hoạch thu mua nào.</p>
-      <Button
-        onClick={fetchData}
-        className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded"
-      >
-        Tải lại
-      </Button>
-    </div>
-  );
-}
+    return (
+      <div className='min-h-screen flex flex-col items-center justify-center py-20 bg-[#fefaf4]'>
+        <p className='text-gray-600 text-lg mb-4'>
+          Hiện tại chưa có kế hoạch thu mua nào.
+        </p>
+        <Button
+          onClick={fetchData}
+          className='bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded'
+        >
+          Tải lại
+        </Button>
+      </div>
+    );
+  }
 
-
   return (
-    <div className='min-h-screen bg-[#fefaf4] py-8'>
+    <div className='min-h-screen bg-[#fff7ed] py-8'>
       <div className='max-w-7xl mx-auto px-4 md:px-6 flex justify-center'>
         <div className='flex w-full max-w-[1200px] gap-8'>
-
           <aside className='w-64 flex flex-col space-y-4'>
             <div className='bg-white rounded-xl shadow-sm p-4 space-y-4'>
               <h2 className='text-sm font-medium text-gray-700'>
@@ -74,7 +84,7 @@ export default function MarketplacePage() {
               </div>
             </div>
 
-            <div 
+            <div
             //className='bg-white p-4 rounded shadow'
             >
               {/* component Filter sau này */}
@@ -82,7 +92,6 @@ export default function MarketplacePage() {
             </div>
           </aside>
           <main className='flex-1'>
-
             {filteredPlans.length === 0 && <p>Chưa có kế hoạch thu mua nào.</p>}
 
             <div className='space-y-5'>
@@ -106,7 +115,9 @@ export default function MarketplacePage() {
                         {plan.totalQuantity} kg
                       </p>
                       <p>
-                        <span className='font-semibold'>Hạn đăng ký còn lại:</span>{" "}
+                        <span className='font-semibold'>
+                          Hạn đăng ký còn lại:
+                        </span>{" "}
                         {Math.max(
                           differenceInCalendarDays(
                             new Date(plan.endDate),
@@ -190,11 +201,13 @@ export default function MarketplacePage() {
                             <td className='px-3 py-2'>
                               {detail.coffeeType?.typeName}
                             </td>
-                            {detail.processingMethodName && (
-                              <td className='px-3 py-2'>
-                              {detail.processingMethodName}
+                            <td className='px-3 py-2'>
+                              {detail.processingMethodName ? (
+                                <>{detail.processingMethodName}</>
+                              ) : (
+                                <>Không có</>
+                              )}
                             </td>
-                            )}
                             <td className='px-3 py-2'>
                               {detail.targetQuantity}
                             </td>
@@ -213,7 +226,7 @@ export default function MarketplacePage() {
                   {/* Nút xem chi tiết (dẫn đến trang chi tiết kế hoạch) */}
                   <div className='mt-4 text-right'>
                     <Link
-                      href={`/marketplace/${plan.planId}`}
+                      href={getDetailLink(plan.planId)}
                       className='inline-block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition'
                     >
                       Xem chi tiết

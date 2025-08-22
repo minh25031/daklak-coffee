@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Script from "next/script";
-import { Toaster, toast } from "sonner";
-import { useEffect } from "react";
+import { Toaster } from "sonner";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 export default function RootLayout({
   children,
@@ -20,13 +20,6 @@ export default function RootLayout({
     pathname.startsWith("/marketplace") ||
     pathname.startsWith("/markplace");
 
-  useEffect(() => {
-    // Example: Show a toast when the user visits the homepage
-    if (pathname === "/") {
-      toast.success("Welcome to DakLak Coffee Supply Chain Platform!");
-    }
-  }, [pathname]);
-
   return (
     <html lang="vi" className="scroll-smooth">
       <meta charSet="UTF-8" />
@@ -36,12 +29,14 @@ export default function RootLayout({
         <Script src="https://cdn.lordicon.com/lordicon.js" strategy="afterInteractive" />
       </head>
       <body className="bg-white text-black">
-        {showHeaderFooter && <Header />}
-        <main className="min-h-screen">
-          {children}
-          <Toaster richColors />
-        </main>
-        {showHeaderFooter && <Footer />}
+        <AuthProvider>
+          {showHeaderFooter && <Header />}
+          <main className="min-h-screen">
+            {children}
+            <Toaster richColors />
+          </main>
+          {showHeaderFooter && <Footer />}
+        </AuthProvider>
       </body>
     </html>
   );

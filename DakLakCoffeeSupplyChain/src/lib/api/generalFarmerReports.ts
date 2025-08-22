@@ -13,7 +13,7 @@ export interface GeneralFarmerReportViewAllDto {
 
 export interface GeneralFarmerReportViewDetailsDto {
   cropStageCode: string;
-  cropStageDescription: any;
+  cropStageDescription: string;
   reportId: string;
   title: string;
   description: string;
@@ -32,21 +32,38 @@ export interface GeneralFarmerReportViewDetailsDto {
 export type ReportType = "Crop" | "Processing";
 
 export interface GeneralFarmerReportCreateDto {
-   cropSeasonDetailId: string;
   reportType: ReportType;
   cropProgressId?: string;
-  processingProgressId?: string;
+  processingProgressId?: string; // Sửa thành ProcessingProgressId để khớp với Backend DTO
   title: string;
   description: string;
   severityLevel: SeverityLevelEnum;
   imageUrl?: string;
   videoUrl?: string;
+  // Media files for upload
+  photoFiles?: File[];
+  videoFiles?: File[];
 }
-interface ServiceResult<T = any> {
-  status: string | number;
-  message: string;
-  data: T | null;
+
+// Interface cho ProcessingBatchProgress - khớp với ProcessingBatchProgress từ Backend
+export interface ProcessingBatchProgressForReport {
+  progressId: string;
+  batchId: string;
+  batchCode: string;
+  stepIndex: number;
+  stageId: number;
+  stageName: string;
+  stageDescription: string;
+  progressDate: string;
+  outputQuantity: number;
+  outputUnit: string;
+  updatedBy: string;
+  photoUrl?: string;
+  videoUrl?: string;
+  createdAt: string;
+  updatedAt: string;
 }
+
 // ✅ Lấy danh sách báo cáo (của chính Farmer đang login)
 export async function getAllFarmerReports(): Promise<GeneralFarmerReportViewAllDto[]> {
   try {
@@ -105,25 +122,85 @@ export async function createFarmerReport(
 ): Promise<GeneralFarmerReportViewDetailsDto> {
   
   try {
-    const res = await api.post<GeneralFarmerReportViewDetailsDto>(
-      "/GeneralFarmerReports",
-      payload
-    );
+    console.log("📤 Sending payload to /GeneralFarmerReports");
+    
+    // Kiểm tra xem có media files không để quyết định content type
+    const hasMediaFiles = (payload.photoFiles && payload.photoFiles.length > 0) || 
+                         (payload.videoFiles && payload.videoFiles.length > 0);
+
+    let res;
+    if (hasMediaFiles) {
+      // Có media files - sử dụng FormData
+      const formData = new FormData();
+      
+      // Thêm các trường cơ bản
+      formData.append("reportType", payload.reportType);
+      if (payload.cropProgressId) {
+        formData.append("cropProgressId", payload.cropProgressId);
+      }
+      if (payload.processingProgressId) {
+        formData.append("processingProgressId", payload.processingProgressId);
+      }
+      formData.append("title", payload.title);
+      formData.append("description", payload.description);
+      formData.append("severityLevel", payload.severityLevel.toString());
+      
+      // Thêm media files
+      if (payload.photoFiles) {
+        payload.photoFiles.forEach(file => formData.append("photoFiles", file));
+      }
+      if (payload.videoFiles) {
+        payload.videoFiles.forEach(file => formData.append("videoFiles", file));
+      }
+      
+      console.log("📤 Sending FormData with media files");
+      res = await api.post<GeneralFarmerReportViewDetailsDto>(
+        "/GeneralFarmerReports",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+    } else {
+      // Không có media files - sử dụng JSON
+      console.log("📤 Sending JSON payload:", JSON.stringify(payload, null, 2));
+      res = await api.post<GeneralFarmerReportViewDetailsDto>(
+        "/GeneralFarmerReports",
+        payload
+      );
+    }
+
+    console.log("📥 Response received:", res);
+    console.log("📥 Response status:", res.status);
+    console.log("📥 Response data:", res.data);
 
     if (!res.data || !res.data.reportId) {
-      throw new Error("Tạo báo cáo thất bại.");
+      throw new Error("Tạo báo cáo thất bại - Không có reportId trong response.");
     }
 
     return res.data;
- } catch (err: any) {
+ } catch (err: unknown) {
   console.error("❌ Lỗi createFarmerReport:");
-  console.error("📦 Status:", err.response?.status);
-  console.error("📨 Message:", err.response?.data?.message || err.message);
-  console.error("🧾 Errors:", err.response?.data?.errors || err.response?.data);
+  
+  if (err && typeof err === 'object' && 'response' in err) {
+    const response = (err as any).response;
+    console.error("📦 Response Status:", response?.status);
+    console.error("📦 Response StatusText:", response?.statusText);
+    console.error("📦 Response Headers:", response?.headers);
+    console.error("📦 Response Data:", response?.data);
+    console.error("📦 Response Config:", response?.config);
+  } else {
+    console.error("📦 Error is not an axios error:", err);
+    console.error("📦 Error type:", typeof err);
+    console.error("📦 Error message:", err instanceof Error ? err.message : 'Unknown error');
+  }
+  
   throw err;
-}
+ }
 
 }
+
+
 export interface GeneralFarmerReportUpdateDto {
   reportId: string;
   title: string;
@@ -142,7 +219,7 @@ export async function updateFarmerReport(
       payload
     );
     return res.data;
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Lỗi updateFarmerReport:", err);
     throw err;
   }
@@ -164,5 +241,16 @@ export async function hardDeleteFarmerReport(reportId: string): Promise<void> {
   } catch (err) {
     console.error("❌ Lỗi hardDeleteFarmerReport:", err);
     throw err;
+  }
+}
+
+// ✅ Lấy danh sách ProcessingBatchProgress cho Farmer hiện tại
+export async function getProcessingBatchProgressesForCurrentFarmer(): Promise<ProcessingBatchProgressForReport[]> {
+  try {
+    const res = await api.get<ProcessingBatchProgressForReport[]>("/ProcessingBatchsProgress");
+    return res.data || [];
+  } catch (err) {
+    console.error("Lỗi getProcessingBatchProgressesForCurrentFarmer:", err);
+    return [];
   }
 }

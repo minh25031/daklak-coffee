@@ -178,10 +178,10 @@ export default function CreateProcurementPlanPage() {
 
     const { isValid, errorMessages } = validateForm();
     if (!isValid) {
-    setIsSubmitting(false);
-    AppToast.error(errorMessages.join('\n')); // show errors from validateForm directly
-    return;
-  }
+      setIsSubmitting(false);
+      AppToast.error(errorMessages.join("\n")); // show errors from validateForm directly
+      return;
+    }
 
     try {
       const formDataToSend = {
