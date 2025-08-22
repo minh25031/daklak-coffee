@@ -15,7 +15,6 @@ export default function ExpertAdviceForm({ reportId, onSuccess }: Props) {
         responseType: 'Observation',
         adviceSource: '',
         adviceText: '',
-        attachedFileUrl: '',
         attachedFiles: [] as File[],
     });
 
@@ -54,7 +53,6 @@ export default function ExpertAdviceForm({ reportId, onSuccess }: Props) {
                 formData.append("responseType", form.responseType);
                 if (form.adviceSource) formData.append("adviceSource", form.adviceSource);
                 formData.append("adviceText", form.adviceText);
-                if (form.attachedFileUrl) formData.append("attachedFileUrl", form.attachedFileUrl);
 
                 // Thêm files
                 form.attachedFiles.forEach(file => formData.append("attachedFiles", file));
@@ -68,7 +66,6 @@ export default function ExpertAdviceForm({ reportId, onSuccess }: Props) {
                     responseType: form.responseType,
                     adviceSource: form.adviceSource,
                     adviceText: form.adviceText,
-                    attachedFileUrl: form.attachedFileUrl || undefined,
                 });
             }
 
@@ -130,34 +127,29 @@ export default function ExpertAdviceForm({ reportId, onSuccess }: Props) {
                 />
             </div>
 
-            <div>
-                <label className="block text-sm font-medium mb-1">URL tệp đính kèm (nếu có)</label>
-                <input
-                    type="text"
-                    name="attachedFileUrl"
-                    value={form.attachedFileUrl}
-                    onChange={handleChange}
-                    className="w-full border p-2 rounded"
-                />
-            </div>
+
 
             <div>
-                <label className="block text-sm font-medium mb-1">Tải lên file đính kèm (tùy chọn)</label>
+                <label className="block text-sm font-medium mb-1">📎 Tải lên file đính kèm (tùy chọn)</label>
                 <input
                     type="file"
                     multiple
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,image/*,video/*"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.rtf,image/*,video/*"
                     onChange={(e) => {
                         const files = Array.from(e.target.files || []);
                         setForm(prev => ({ ...prev, attachedFiles: files }));
                     }}
                     className="w-full border p-2 rounded cursor-pointer"
+                    placeholder="Chọn một hoặc nhiều file (PDF, Word, Excel, ảnh, video...)"
                 />
                 {form.attachedFiles.length > 0 && (
-                    <div className="text-xs text-gray-500 mt-1">
-                        Đã chọn {form.attachedFiles.length} file(s)
+                    <div className="text-xs text-blue-600 font-medium mt-1">
+                        ✅ Đã chọn {form.attachedFiles.length} file(s)
                     </div>
                 )}
+                <div className="text-xs text-gray-500 mt-1">
+                    💡 Hỗ trợ: PDF, Word (.doc, .docx), Excel (.xls, .xlsx), ảnh, video
+                </div>
             </div>
 
             <button
