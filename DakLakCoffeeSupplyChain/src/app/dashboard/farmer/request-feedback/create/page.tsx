@@ -452,14 +452,14 @@ export default function CreateReportPage() {
 
                         {/* File Upload Section */}
                         <div className="border-t border-gray-200 pt-6">
-                            <h3 className="text-sm font-medium text-gray-700 mb-4">Tải lên file (tùy chọn)</h3>
+                            <h3 className="text-sm font-medium text-gray-700 mb-4">📎 Tài liệu đính kèm (tùy chọn)</h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Photo Files Upload */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                         <Image className="w-4 h-4 text-green-500" />
-                                        Tải lên hình ảnh
+                                        📸 Tải lên hình ảnh
                                     </Label>
                                     <Input
                                         type="file"
@@ -470,10 +470,11 @@ export default function CreateReportPage() {
                                             handlePhotoFilesChange(files);
                                         }}
                                         className="cursor-pointer"
+                                        placeholder="Chọn một hoặc nhiều ảnh..."
                                     />
                                     {form.photoFiles && form.photoFiles.length > 0 && (
-                                        <div className="text-xs text-gray-500">
-                                            Đã chọn {form.photoFiles.length} file(s)
+                                        <div className="text-xs text-green-600 font-medium">
+                                            ✅ Đã chọn {form.photoFiles.length} ảnh
                                         </div>
                                     )}
                                 </div>
@@ -482,7 +483,7 @@ export default function CreateReportPage() {
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                         <Video className="w-4 h-4 text-purple-500" />
-                                        Tải lên video
+                                        🎥 Tải lên video
                                     </Label>
                                     <Input
                                         type="file"
@@ -493,10 +494,11 @@ export default function CreateReportPage() {
                                             handleVideoFilesChange(files);
                                         }}
                                         className="cursor-pointer"
+                                        placeholder="Chọn một hoặc nhiều video..."
                                     />
                                     {form.videoFiles && form.videoFiles.length > 0 && (
-                                        <div className="text-xs text-gray-500">
-                                            Đã chọn {form.videoFiles.length} file(s)
+                                        <div className="text-xs text-purple-600 font-medium">
+                                            ✅ Đã chọn {form.videoFiles.length} video
                                         </div>
                                     )}
                                 </div>

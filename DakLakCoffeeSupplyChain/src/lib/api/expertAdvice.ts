@@ -88,6 +88,24 @@ export async function createExpertAdvice(input: CreateExpertAdviceInput): Promis
     throw error;
   }
 }
+
+// ✅ Thêm function để upload file với FormData
+export async function createExpertAdviceWithFiles(formData: FormData): Promise<ExpertAdvice> {
+  try {
+    const res = await api.post<ExpertAdvice>("/ExpertAdvices", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    });
+    return res.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new Error("Chuyên gia hoặc báo cáo không tồn tại.");
+    }
+    console.error("[createExpertAdviceWithFiles] Error:", error);
+    throw error;
+  }
+}
 export async function updateExpertAdvice(adviceId: string, input: UpdateExpertAdviceInput): Promise<ExpertAdvice> {
   try {
     const res = await api.put<ExpertAdvice>(`/ExpertAdvices/${adviceId}`, input);
