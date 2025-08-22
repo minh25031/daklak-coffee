@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { AppToast } from "@/components/ui/AppToast";
 import { getErrorMessage } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -14,14 +14,17 @@ import {
 import FarmingCommitmentForm, { FarmingCommitmentFormData } from "@/components/farming-commitments/FarmingCommitmentForm";
 import { getCommitmentById, updateFarmingCommitment } from "@/lib/api/farmingCommitments";
 
-export default function EditFarmmingCommitmentPage() {
+export default function EditFarmmingCommitmentPage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   useAuthGuard(["manager"]);
 
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
   const commitmentId = params.id as string;
-  const registrationId = searchParams.get("registrationId") as string;
+  const registrationId = typeof searchParams.registrationId === "string" ? searchParams.registrationId : "";
   console.log("registrationId: ", registrationId);
   console.log("commitmentId: ", commitmentId);
 

@@ -1,14 +1,17 @@
 "use client";
 
 import ShipmentForm from "@/components/shipments/ShipmentForm";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getAllUserAccounts } from "@/lib/api/userAccounts";
 
-export default function CreateShipmentPage() {
+export default function CreateShipmentPage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const router = useRouter();
-  const params = useSearchParams();
-  const orderId = params.get("orderId") || undefined;
+  const orderId = typeof searchParams.orderId === "string" ? searchParams.orderId : undefined;
 
   const [staffOptions, setStaffOptions] = useState<
     { deliveryStaffId: string; name: string }[]

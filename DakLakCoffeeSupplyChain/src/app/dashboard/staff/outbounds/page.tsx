@@ -6,7 +6,7 @@ import {
   acceptOutboundRequest,
   rejectOutboundRequest,
 } from '@/lib/api/warehouseOutboundRequest';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,22 +14,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ChevronLeft, ChevronRight, Eye, Check, X, TrendingDown, Clock, CheckCircle, XCircle, Package } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function StaffOutboundRequestList() {
+export default function StaffOutboundRequestList({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const pageSize = 4;
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Lấy status filter từ URL query params
-    const statusFromUrl = searchParams.get('status');
+    const statusFromUrl = typeof searchParams.status === "string" ? searchParams.status : undefined;
     if (statusFromUrl) {
       setStatusFilter(statusFromUrl);
     }
-  }, [searchParams]);
+  }, [searchParams.status]);
 
   useEffect(() => {
     getAllOutboundRequests()
@@ -46,7 +49,7 @@ export default function StaffOutboundRequestList() {
 
   const filteredData = data.filter((item) => {
     if (!statusFilter || statusFilter === 'all') return true;
-    
+
     // Xử lý lọc trạng thái
     if (statusFilter === 'Pending') {
       return item.status === 'Pending' || item.status === 'Processing';
@@ -184,7 +187,7 @@ export default function StaffOutboundRequestList() {
                 </p>
               </div>
             </div>
-            
+
             {/* Status Filter */}
             <Select onValueChange={(value) => {
               setStatusFilter(value);
@@ -349,11 +352,10 @@ export default function StaffOutboundRequestList() {
                           <Button
                             key={page}
                             onClick={() => setCurrentPage(page)}
-                            className={`rounded-full px-3 py-1 text-sm ${
-                              page === currentPage
+                            className={`rounded-full px-3 py-1 text-sm ${page === currentPage
                                 ? 'bg-red-600 text-white'
                                 : 'bg-white text-red-600 border border-red-400 hover:bg-red-50'
-                            }`}
+                              }`}
                           >
                             {page}
                           </Button>

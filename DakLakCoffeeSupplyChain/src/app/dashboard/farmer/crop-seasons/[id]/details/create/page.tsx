@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,13 +19,33 @@ import {
 import { getAvailableCommitments } from "@/lib/api/farmingCommitments";
 import { FarmingCommitmentDetail } from "@/lib/api/farmingCommitments";
 
-export default function CreateCropSeasonDetailPage() {
+// (tuỳ chọn)
+// export const dynamic = 'force-dynamic';
+
+// Wrapper trang: bọc client component trong <Suspense/>
+export default function Page({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <CreateCropSeasonDetailPageClient searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+// --- Toàn bộ code gốc chuyển xuống client component này ---
+function CreateCropSeasonDetailPageClient({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const params = useParams();
-  const searchParams = useSearchParams();
   const router = useRouter();
 
   const cropSeasonId = params.id as string;
-  const commitmentId = searchParams.get("commitmentId") || "";
+  const commitmentId = typeof searchParams.commitmentId === "string" ? searchParams.commitmentId : "";
 
   const [form, setForm] = useState({
     commitmentDetailId: "",
@@ -90,8 +110,8 @@ export default function CreateCropSeasonDetailPage() {
 
         const details = matched.farmingCommitmentDetails.map((detail: Partial<FarmingCommitmentDetail>) => ({
           commitmentDetailId: detail.commitmentDetailId || "",
-          commitmentDetailCode: detail.commitmentDetailCode,
-          note: detail.note,
+          commitmentDetailCode: detail.commitmentDetailCode || "",
+          note: detail.note || "",
           committedQuantity: detail.committedQuantity || 0,
           estimatedDeliveryStart: detail.estimatedDeliveryStart || "",
           estimatedDeliveryEnd: detail.estimatedDeliveryEnd || "",
@@ -103,7 +123,7 @@ export default function CreateCropSeasonDetailPage() {
 
         setCommitmentDetailOptions(details);
 
-        // Log thông tin commitment details để kiểm tra
+        // debug
         console.log("Commitment Details loaded:", details);
         console.log("Selected Commitment ID:", commitmentId);
         console.log("Matched Commitment:", matched);
@@ -121,7 +141,6 @@ export default function CreateCropSeasonDetailPage() {
     setSelectedCommitmentDetail(selected || null);
     setForm(prev => ({ ...prev, commitmentDetailId: value }));
 
-    // Log thông tin commitment detail được chọn
     if (selected) {
       console.log("Selected Commitment Detail:", selected);
       console.log("Estimated Delivery Start:", selected.estimatedDeliveryStart);
@@ -150,7 +169,6 @@ export default function CreateCropSeasonDetailPage() {
       return "Vui lòng điền đầy đủ các trường bắt buộc.";
     }
 
-    // Validation cho ngày thu hoạch
     if (selectedCommitmentDetail) {
       const harvestStart = new Date(form.expectedHarvestStart);
       const harvestEnd = new Date(form.expectedHarvestEnd);
@@ -182,7 +200,6 @@ export default function CreateCropSeasonDetailPage() {
 
     setIsSubmitting(true);
     try {
-      // Log thông tin trước khi gửi
       console.log("Submitting crop season detail:", {
         cropSeasonId,
         commitmentDetailId: form.commitmentDetailId,
@@ -239,7 +256,6 @@ export default function CreateCropSeasonDetailPage() {
             </Select>
           </div>
 
-          {/* Hiển thị thông tin commitment detail được chọn */}
           {selectedCommitmentDetail && (
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="pt-4">

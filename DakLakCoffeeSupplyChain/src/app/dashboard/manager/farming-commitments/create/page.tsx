@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,16 +19,19 @@ import {
 } from "@/lib/api/cultivationRegistrations";
 import { LoadingButton } from "@/components/ui/loadingProgress";
 
-export default function CreateFarmingCommitmentPage() {
+export default function CreateFarmingCommitmentPage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   useAuthGuard(["manager"]);
 
   // const formatDate = (d: string) => new Date(d).toISOString().split("T")[0];
-  const searchParams = useSearchParams();
-  const paramRegistrationId = searchParams.get("registrationId") || "";
+  const paramRegistrationId = typeof searchParams.registrationId === "string" ? searchParams.registrationId : "";
   const paramRegistrationDetailId =
-    searchParams.get("registrationDetailId") || "";
-  const paramWantedPrice = searchParams.get("wantedPrice") || "0";
-  const paramEstimatedYield = searchParams.get("estimatedYield") || "0";
+    typeof searchParams.registrationDetailId === "string" ? searchParams.registrationDetailId : "";
+  const paramWantedPrice = typeof searchParams.wantedPrice === "string" ? searchParams.wantedPrice : "0";
+  const paramEstimatedYield = typeof searchParams.estimatedYield === "string" ? searchParams.estimatedYield : "0";
   const router = useRouter();
 
   const [form, setForm] = useState({

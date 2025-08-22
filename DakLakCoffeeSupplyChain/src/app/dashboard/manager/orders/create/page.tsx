@@ -1,15 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import OrderForm from "@/components/orders/OrderForm";
 
-export default function OrderCreatePage() {
+export default function OrderCreatePage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const router = useRouter();
-  const search = useSearchParams();
 
   // cho phép truyền sẵn deliveryBatchId qua URL: ?deliveryBatchId=...
-  const deliveryBatchId = search.get("deliveryBatchId") ?? undefined;
+  const deliveryBatchId = typeof searchParams.deliveryBatchId === "string" ? searchParams.deliveryBatchId : undefined;
 
   return (
     <div className="max-w-6xl mx-auto py-6">

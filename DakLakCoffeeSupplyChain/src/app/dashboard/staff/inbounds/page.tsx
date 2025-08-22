@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { getAllInboundRequests } from "@/lib/api/warehouseInboundRequest";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, ChevronRight, Search, Eye, Package, TrendingUp, Clock, CheckCircle, XCircle, Leaf, Coffee } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function InboundRequestListPage() {
+export default function InboundRequestListPage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const [requests, setRequests] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -20,15 +24,14 @@ export default function InboundRequestListPage() {
   const [loading, setLoading] = useState(true);
   const pageSize = 15;
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Lấy status filter từ URL query params
-    const statusFromUrl = searchParams.get('status');
+    const statusFromUrl = typeof searchParams.status === "string" ? searchParams.status : undefined;
     if (statusFromUrl) {
       setStatusFilter(statusFromUrl);
     }
-  }, [searchParams]);
+  }, [searchParams.status]);
 
   useEffect(() => {
     (async () => {
@@ -77,14 +80,14 @@ export default function InboundRequestListPage() {
   };
 
   const filtered = requests.filter((r) => {
-    const matchesSearch = 
+    const matchesSearch =
       r.requestCode?.toLowerCase().includes(search.toLowerCase()) ||
       r.farmerName?.toLowerCase().includes(search.toLowerCase()) ||
       r.batchCode?.toLowerCase().includes(search.toLowerCase()) ||
       r.cropSeasonName?.toLowerCase().includes(search.toLowerCase()) ||
       r.detailCode?.toLowerCase().includes(search.toLowerCase()) ||
       r.coffeeType?.toLowerCase().includes(search.toLowerCase());
-    
+
     // Xử lý lọc trạng thái
     let matchesStatus = true;
     if (statusFilter && statusFilter !== 'all') {
@@ -98,10 +101,10 @@ export default function InboundRequestListPage() {
     }
 
     // Xử lý lọc loại cà phê
-    const matchesType = 
-      coffeeTypeFilter === 'all' || 
+    const matchesType =
+      coffeeTypeFilter === 'all' ||
       getCoffeeType(r) === coffeeTypeFilter;
-    
+
     return matchesSearch && matchesStatus && matchesType;
   });
 
@@ -349,7 +352,7 @@ export default function InboundRequestListPage() {
                       const coffeeType = getCoffeeType(req);
                       const coffeeTypeLabel = getCoffeeTypeLabel(req);
                       const coffeeTypeIcon = getCoffeeTypeIcon(req);
-                      
+
                       // Thông tin hiển thị
                       let displayInfo = '';
                       if (coffeeType === 'fresh') {
@@ -367,10 +370,9 @@ export default function InboundRequestListPage() {
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               {coffeeTypeIcon}
-                              <span className={`font-medium ${
-                                coffeeType === 'fresh' ? 'text-orange-700' : 
-                                coffeeType === 'processed' ? 'text-purple-700' : 'text-gray-700'
-                              }`}>
+                              <span className={`font-medium ${coffeeType === 'fresh' ? 'text-orange-700' :
+                                  coffeeType === 'processed' ? 'text-purple-700' : 'text-gray-700'
+                                }`}>
                                 {coffeeTypeLabel}
                               </span>
                             </div>

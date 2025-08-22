@@ -1,7 +1,7 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -20,24 +20,14 @@ import {
 import { SeverityLevelEnum, SeverityLevelLabel } from '@/lib/constants/SeverityLevelEnum';
 import { getCropProgressesByDetailId, getAllCropProgressesForCurrentUser, CropProgressViewAllDto } from '@/lib/api/cropProgress';
 
-// (Tùy chọn) nếu trang này luôn động, mở comment dòng sau để tránh Next cố prerender tĩnh
-// export const dynamic = 'force-dynamic';
-
-// ✅ Page (client) bọc ClientComponent trong <Suspense/>
-export default function Page() {
-    return (
-        <Suspense fallback={null}>
-            <CreateReportPageClient />
-        </Suspense>
-    );
-}
-
-// 👇 Toàn bộ code cũ chuyển vào client component này
-function CreateReportPageClient() {
+export default function CreateReportPage({
+    searchParams,
+}: {
+    searchParams: Record<string, string | string[] | undefined>;
+}) {
     const router = useRouter();
-    const searchParams = useSearchParams();
 
-    const detailIdFromUrl = searchParams.get("detailId") ?? "";
+    const detailIdFromUrl = typeof searchParams.detailId === "string" ? searchParams.detailId : "";
 
     const [cropProgressOptions, setCropProgressOptions] = useState<CropProgressViewAllDto[]>([]);
     const [processingBatchOptions, setProcessingBatchOptions] = useState<ProcessingBatchProgressForReport[]>([]);
@@ -52,7 +42,7 @@ function CreateReportPageClient() {
         title: '',
         description: '',
         cropProgressId: '',
-        processingProgressId: '',
+        processingProgressId: '', // Sửa thành processingProgressId
         photoFiles: [],
         videoFiles: [],
     });
@@ -72,6 +62,7 @@ function CreateReportPageClient() {
 
                 // Nhóm data theo mùa vụ
                 const grouped = data.reduce((acc, item) => {
+                    // Tạo key mùa vụ với thông tin có sẵn
                     let seasonKey = '';
                     if (item.cropSeasonName) {
                         seasonKey = item.cropSeasonName;
@@ -82,13 +73,16 @@ function CreateReportPageClient() {
                         seasonKey = 'Mùa vụ không xác định';
                     }
 
-                    if (!acc[seasonKey]) acc[seasonKey] = [];
+                    if (!acc[seasonKey]) {
+                        acc[seasonKey] = [];
+                    }
                     acc[seasonKey].push(item);
                     return acc;
                 }, {} as { [key: string]: CropProgressViewAllDto[] });
 
                 setGroupedCropProgress(grouped);
 
+                // Chọn mùa vụ đầu tiên làm mặc định
                 const firstSeason = Object.keys(grouped)[0];
                 if (firstSeason) {
                     setSelectedCropSeason(firstSeason);
@@ -116,7 +110,9 @@ function CreateReportPageClient() {
         fetchProcessingBatches();
     }, [detailIdFromUrl]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
     };
@@ -132,9 +128,12 @@ function CreateReportPageClient() {
     const handleSubmit = async () => {
         if (isSubmitting) return;
 
-        if (form.reportType === 'Crop' && !form.cropProgressId) {
-            AppToast.error("Vui lòng chọn tiến độ mùa vụ.");
-            return;
+        // Validation cho Crop report
+        if (form.reportType === 'Crop') {
+            if (!form.cropProgressId) {
+                AppToast.error("Vui lòng chọn tiến độ mùa vụ.");
+                return;
+            }
         }
 
         const requiredFields = ['title', 'description', 'reportType'];
@@ -166,6 +165,7 @@ function CreateReportPageClient() {
                 videoFiles: form.videoFiles?.length ? form.videoFiles : undefined,
             };
 
+            // Gọi API tạo báo cáo (tự động xử lý media nếu có)
             const res = await createFarmerReport(payload);
 
             AppToast.success('Tạo báo cáo thành công!');
@@ -187,17 +187,24 @@ function CreateReportPageClient() {
                 {/* Header */}
                 <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-6 mb-6">
                     <div className="flex items-center gap-4">
-                        <Button variant="outline" size="icon" onClick={() => router.back()}>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => router.back()}
+                        >
                             <ArrowLeft className="w-4 h-4" />
                         </Button>
                         <div className="flex items-center gap-3">
                             <div className="w-1 h-8 bg-gradient-to-b from-orange-500 to-amber-500 rounded-full"></div>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-800">Tạo báo cáo mới</h1>
+                                <h1 className="text-2xl font-bold text-gray-800">
+                                    Tạo báo cáo mới
+                                </h1>
                                 <p className="text-gray-600 text-sm">
                                     {form.reportType === 'Crop'
                                         ? 'Gửi yêu cầu hỗ trợ kỹ thuật cho các vấn đề gặp phải trong mùa vụ'
-                                        : 'Gửi yêu cầu hỗ trợ kỹ thuật cho các vấn đề gặp phải trong quá trình sơ chế'}
+                                        : 'Gửi yêu cầu hỗ trợ kỹ thuật cho các vấn đề gặp phải trong quá trình sơ chế'
+                                    }
                                 </p>
                             </div>
                         </div>
@@ -264,7 +271,7 @@ function CreateReportPageClient() {
                                     </Select>
                                 </div>
 
-                                {/* Chọn giai đoạn */}
+                                {/* Chọn giai đoạn sau khi đã chọn mùa vụ */}
                                 {selectedCropSeason && (
                                     <div className="space-y-2">
                                         <Label className="text-sm font-medium text-gray-700">Chọn giai đoạn *</Label>
@@ -331,7 +338,7 @@ function CreateReportPageClient() {
                             </div>
                         )}
 
-                        {/* Processing Progress */}
+                        {/* Processing Progress ID */}
                         {form.reportType === 'Processing' && (
                             <div className="space-y-2">
                                 <Label className="text-sm font-medium text-gray-700">Tiến độ sơ chế *</Label>
@@ -443,10 +450,15 @@ function CreateReportPageClient() {
 
                         {/* Media Section */}
                         <div className="border-t border-gray-200 pt-6">
+                            <h3 className="text-sm font-medium text-gray-700 mb-4">Tài liệu đính kèm (tùy chọn)</h3>
+                        </div>
+
+                        {/* File Upload Section */}
+                        <div className="border-t border-gray-200 pt-6">
                             <h3 className="text-sm font-medium text-gray-700 mb-4">📎 Tài liệu đính kèm (tùy chọn)</h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Photo */}
+                                {/* Photo Files Upload */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                         <Image className="w-4 h-4 text-green-500" />
@@ -458,7 +470,7 @@ function CreateReportPageClient() {
                                         accept="image/*"
                                         onChange={(e) => {
                                             const files = Array.from(e.target.files || []);
-                                            handlePhotoFilesChange(files as File[]);
+                                            handlePhotoFilesChange(files);
                                         }}
                                         className="cursor-pointer"
                                         placeholder="Chọn một hoặc nhiều ảnh..."
@@ -470,7 +482,7 @@ function CreateReportPageClient() {
                                     )}
                                 </div>
 
-                                {/* Video */}
+                                {/* Video Files Upload */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                         <Video className="w-4 h-4 text-purple-500" />
@@ -482,7 +494,7 @@ function CreateReportPageClient() {
                                         accept="video/*"
                                         onChange={(e) => {
                                             const files = Array.from(e.target.files || []);
-                                            handleVideoFilesChange(files as File[]);
+                                            handleVideoFilesChange(files);
                                         }}
                                         className="cursor-pointer"
                                         placeholder="Chọn một hoặc nhiều video..."
@@ -496,13 +508,21 @@ function CreateReportPageClient() {
                             </div>
                         </div>
 
-                        {/* Submit */}
+                        {/* Submit Button */}
                         <div className="flex justify-end pt-6 border-t border-gray-200">
                             <div className="flex gap-3">
-                                <Button variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => router.back()}
+                                    disabled={isSubmitting}
+                                >
                                     Hủy
                                 </Button>
-                                <Button onClick={handleSubmit} disabled={isSubmitting} className="min-w-[120px]">
+                                <Button
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                    className="min-w-[120px]"
+                                >
                                     {isSubmitting ? (
                                         <>
                                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
